@@ -55,9 +55,14 @@ const SHOW_KPI_HEADER_TABS = new Set(['queues-activity', 'campaign-activity', 'd
 
 // Maps onto the shared status tokens in mcm-page.css rather than raw colours,
 // so the band stays legible in dark mode.
+/**
+ * On-target is the expected state, so it stays in plain ink — colouring it
+ * green as well would leave the band lit end to end and cost the two tones
+ * that do mean something their weight.
+ */
 const KPI_TONE_STYLES: Record<string, string> = {
   default: '',
-  success: 'good',
+  success: '',
   warning: 'warnv',
   danger: 'bad',
 };
@@ -67,6 +72,17 @@ const slaTone = (sla: number | null): 'default' | 'success' | 'warning' | 'dange
   if (sla >= 80) return 'success';
   if (sla >= 60) return 'warning';
   return 'danger';
+};
+
+/** The KPI band's four-way tone, in the wallboard's three-way vocabulary. */
+const WALLBOARD_TONE_BY_KPI_TONE: Record<
+  'default' | 'success' | 'warning' | 'danger',
+  WallboardTile['tone']
+> = {
+  default: undefined,
+  success: 'good',
+  warning: 'warn',
+  danger: 'crit',
 };
 
 const Performance = () => {
@@ -203,6 +219,9 @@ const Performance = () => {
       value: avgSla === null ? '—' : `${Math.round(avgSla)}%`,
       warn: avgSla !== null && avgSla < 80,
       good: avgSla !== null && avgSla >= 80,
+      // Graded the same way the KPI band above grades it, so the wall never
+      // paints an under-target service level the same red as a real breach.
+      tone: WALLBOARD_TONE_BY_KPI_TONE[slaTone(avgSla)],
     },
     { key: 'answered', label: 'Answered today', value: String(totals.answered) },
     {
@@ -278,6 +297,23 @@ const Performance = () => {
           control height and border colour, which is what made the row look
           unsettled. This puts them on one baseline. */}
       <style>{`
+        /* Performance-only brand override: the console design system's
+           --accent is blue (mcm-page.css), but this app is branded Acepeak,
+           whose accent is red (#dc2626, from acepeak.com). Overridden here
+           rather than in mcm-page.css so the other 30+ pages sharing that
+           file keep the original blue. */
+        .mcm-page {
+          --accent: #dc2626;
+          --accent-ink: #b91c1c;
+          --accent-wash: #fee2e2;
+          --accent-edge: #fecaca;
+        }
+        .dark .mcm-page {
+          --accent: #f87171;
+          --accent-ink: #fca5a5;
+          --accent-wash: #3a1616;
+          --accent-edge: #5c2626;
+        }
         .mcm-page .perf-tbar {
           display:flex; align-items:center; gap:10px 16px;
           flex-wrap:wrap; margin-bottom:0;
@@ -342,19 +378,11 @@ const Performance = () => {
               Waiting, Longest wait, Service level, On queue agents and Occupancy are live right
               now. Answered, Abandon rate and Avg handle time cover the selected date range.
             </p>
-            {/* The design system's auto-fit grid left the 8th tile alone on a
-              second row with the container's divider colour showing through as
-              a large grey block. Fixed column counts divide the 8 evenly. */}
-            <style>{`
-            .mcm-page .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            @media (min-width: 700px) {
-              .mcm-page .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-            }
-            @media (min-width: 1500px) {
-              .mcm-page .kpis { grid-template-columns: repeat(8, minmax(0, 1fr)); }
-            }
-          `}</style>
-            <div className="kpis">
+            {/* `kpis-flat` is this page's own treatment of the shared band —
+                four across in two rows, more air, and the type doing the work
+                instead of colour. Scoped as a modifier so Home and the dialer
+                summary, which render the same `.kpis`, are untouched. */}
+            <div className="kpis kpis-flat">
               {kpis.map((kpi) => (
                 <div key={kpi.label} className="kpi">
                   <div className="k">{kpi.label}</div>
@@ -378,6 +406,7 @@ const Performance = () => {
             liveSlaByName={liveSlaByName}
             liveQueueStatsByName={liveQueueStatsByName}
             cdrByQueueUuid={cdrByQueueUuid}
+            cdrRows={callStats.rows}
             isCdrSampled={isCdrSampled}
             usersOnlineStatus={usersOnlineStatus || []}
             isLoading={isQueuesLoading}

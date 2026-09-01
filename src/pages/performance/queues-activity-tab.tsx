@@ -15,6 +15,56 @@ const STATUS_STYLES: Record<string, string> = {
   Offline: 'state away',
 };
 
+/**
+ * Calls accumulated across the loaded CDR range, oldest hour first.
+ *
+ * Cumulative rather than per-hour on purpose. Per-hour counts are the same
+ * information, but on a quiet queue they are mostly zeroes with the odd single
+ * call between them, which draws a row of spikes that looks like noise and
+ * reads like nothing. The running total answers the question the card is
+ * actually asking — how the day built up to the figure above it.
+ *
+ * This is the only history the page holds. The live figures (who is on the
+ * roster, who is free, who is on a call right now) are point-in-time reads with
+ * nothing behind them, so the cards built on those carry no chart at all rather
+ * than a shape that isn't a measurement.
+ */
+const HOUR_MS = 60 * 60 * 1000;
+
+const callVolumeSeries = (rows: any[], queueUuid?: string): number[] => {
+  if (!Array.isArray(rows) || rows.length === 0) return [];
+
+  const buckets = new Map<number, number>();
+  rows.forEach((row) => {
+    if (queueUuid && String(row?.queue_uuid || '') !== queueUuid) return;
+    const stamp = Date.parse(row?.start_stamp);
+    if (Number.isNaN(stamp)) return;
+    // Keyed by absolute hour so a range spanning midnight stays in order
+    // instead of wrapping back round to 00:00.
+    const hour = Math.floor(stamp / HOUR_MS);
+    buckets.set(hour, (buckets.get(hour) || 0) + 1);
+  });
+
+  if (buckets.size < 2) return [];
+
+  const hours = [...buckets.keys()].sort((a, b) => a - b);
+  const series: number[] = [];
+  let running = 0;
+  for (let hour = hours[0]; hour <= hours[hours.length - 1]; hour += 1) {
+    running += buckets.get(hour) || 0;
+    series.push(running);
+  }
+  return series;
+};
+
+/** Mirrors the KPI band's grading so the dot and the console agree. */
+const queueTone = (sla: number | null | undefined) => {
+  if (sla === null || sla === undefined) return 'muted';
+  if (sla >= 80) return 'good';
+  if (sla >= 60) return 'warn';
+  return 'crit';
+};
+
 const getMemberStatus = (member: any, usersOnlineStatus: any[], activeQueueCalls: any[]) => {
   const key = member?.user_uuid || member?.extension || member?.uuid;
   if (!key) return 'Offline';
@@ -30,6 +80,7 @@ const QueuesActivityTab = ({
   liveSlaByName,
   liveQueueStatsByName,
   cdrByQueueUuid,
+  cdrRows,
   isCdrSampled,
   usersOnlineStatus,
   isLoading,
@@ -42,6 +93,8 @@ const QueuesActivityTab = ({
   liveSlaByName: Record<string, number>;
   liveQueueStatsByName: Record<string, LiveQueueStats>;
   cdrByQueueUuid?: Record<string, QueueCallStats>;
+  /** Raw CDR rows for the selected range — the source of the cards' history. */
+  cdrRows?: any[];
   isCdrSampled?: boolean;
   usersOnlineStatus: any[];
   isLoading: boolean;
@@ -104,19 +157,25 @@ const QueuesActivityTab = ({
     {
       header: 'Queue',
       accessorKey: 'name',
+      /* The name is the row's anchor, so it carries the most weight and the
+         health dot rather than a badge. Left in ink rather than the accent —
+         coloured, it read as a hyperlink; the accent arrives on hover, where
+         it means "this is clickable". */
       cell: ({ row }: any) => (
-        <span
-          className="cursor-pointer font-semibold text-primary hover:underline"
+        <button
+          type="button"
+          className={`qt-name tone-${queueTone(row.original.sla)}`}
           onClick={() => setSelectedQueueUuid(row.original.uuid)}
         >
+          <i className="qt-dot" aria-hidden="true" />
           {row.original.name}
-        </span>
+        </button>
       ),
     },
     {
       header: 'Media',
       accessorKey: 'media',
-      cell: () => <span style={{ color: 'var(--ink-2)' }}>Voice</span>,
+      cell: () => <span className="qt-mute">Voice</span>,
     },
     { header: 'Waiting', accessorKey: 'waiting' },
     {
@@ -147,22 +206,41 @@ const QueuesActivityTab = ({
     {
       header: 'SL today',
       accessorKey: 'sla',
-      cell: ({ row }: any) =>
-        row.original.sla === null ? '—' : `${Math.round(row.original.sla)}%`,
+      /* The one column that earns a graphic: a hairline meter under the figure
+         turns "which queue is in trouble" into something you catch without
+         reading any of the numbers. It is also the only column allowed colour. */
+      cell: ({ row }: any) => {
+        if (row.original.sla === null) return <span className="qt-mute">—</span>;
+        const pct = Math.round(row.original.sla);
+        return (
+          <span className={`qt-sla tone-${queueTone(row.original.sla)}`}>
+            <span className="qt-sla-v">{pct}%</span>
+            <span className="qt-sla-bar">
+              <i style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+            </span>
+          </span>
+        );
+      },
     },
     {
       header: 'ASA',
       accessorKey: 'asa',
       cell: ({ row }: any) =>
-        row.original.asa === null || row.original.asa === undefined
-          ? '—'
-          : formatSecsToClock(row.original.asa),
+        row.original.asa === null || row.original.asa === undefined ? (
+          <span className="qt-mute">—</span>
+        ) : (
+          <span className="qt-mute">{formatSecsToClock(row.original.asa)}</span>
+        ),
     },
     {
       header: 'AHT',
       accessorKey: 'aht',
       cell: ({ row }: any) =>
-        row.original.aht === null ? '—' : formatSecsToClock(row.original.aht),
+        row.original.aht === null ? (
+          <span className="qt-mute">—</span>
+        ) : (
+          <span className="qt-mute">{formatSecsToClock(row.original.aht)}</span>
+        ),
     },
     { header: 'Abandon', accessorKey: 'abandonRate' },
   ];
@@ -264,8 +342,17 @@ const QueuesActivityTab = ({
 
   return (
     <div className="flex flex-col gap-3 px-[22px] py-4">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
+      {/* Charts appear only on the cards whose figure has a run of history
+          behind it — the three queue-scoped ones plus overall traffic. Members,
+          available and interacting are live counts with nothing to plot. */}
+      {/* Six across from tablet up so the row never wraps and the queue table
+          stays above the fold — it used to break to three columns under 1280px,
+          which pushed the table off screen on a laptop. `stat-row` caps how
+          wide the row may grow, which is what keeps the cards upright on a
+          large screen. */}
+      <div className="stat-row grid grid-cols-3 gap-2 md:grid-cols-6">
         <PerfStatCard
+          portrait
           label="Busiest queue"
           value={busiestQueue ? busiestQueue.name : '—'}
           sub={
@@ -275,8 +362,10 @@ const QueuesActivityTab = ({
                 : `${busiestQueue.handledToday} handled today`
               : undefined
           }
+          series={busiestQueue ? callVolumeSeries(cdrRows || [], busiestQueue.uuid) : undefined}
         />
         <PerfStatCard
+          portrait
           label="Longest waiting"
           value={
             longestWaitingQueue && longestWaitingQueue.longestWaitTimestamp !== null ? (
@@ -290,23 +379,38 @@ const QueuesActivityTab = ({
               ? longestWaitingQueue.name
               : undefined
           }
+          series={
+            longestWaitingQueue
+              ? callVolumeSeries(cdrRows || [], longestWaitingQueue.uuid)
+              : undefined
+          }
         />
         <PerfStatCard
+          portrait
           label="Lowest SLA today"
           value={lowestSlaQueue ? `${Math.round(lowestSlaQueue.sla as number)}%` : '—'}
           sub={lowestSlaQueue ? lowestSlaQueue.name : undefined}
           tone={lowestSlaQueue && (lowestSlaQueue.sla as number) < 60 ? 'danger' : 'default'}
+          series={lowestSlaQueue ? callVolumeSeries(cdrRows || [], lowestSlaQueue.uuid) : undefined}
         />
-        <PerfStatCard label="Total members" value={String(totalMembers)} sub="across all queues" />
         <PerfStatCard
+          portrait
+          label="Total members"
+          value={String(totalMembers)}
+          sub="across all queues"
+        />
+        <PerfStatCard
+          portrait
           label="Available now"
           value={String(totalAvailable)}
           sub="free to take a call"
         />
         <PerfStatCard
+          portrait
           label="Total interacting"
           value={String(totalInteracting)}
           sub="on a call right now"
+          series={callVolumeSeries(cdrRows || [])}
         />
       </div>
       {isCdrSampled && (
@@ -320,6 +424,9 @@ const QueuesActivityTab = ({
         staticData={rows}
         loading={isLoading}
         showPagination={false}
+        /* Scopes this page's table treatment — TableManager is shared by ~84
+           screens, so none of it is applied globally. */
+        customClass="queues-table"
         emptyTablePlaceholder="No queues configured"
         descriptionEmptyTable="Call queues you create will show live activity here."
       />

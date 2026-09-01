@@ -52,6 +52,7 @@ export type McmIconName =
   | 'globe'
   | 'headset'
   | 'moon'
+  | 'sun'
   | 'pin'
   | 'filter'
   | 'arrow-in'
@@ -139,6 +140,7 @@ const SPRITE = `<g id="mcmp-trash"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/
 <g id="mcmp-globe"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></g>
 <g id="mcmp-headset"><path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14a2 2 0 0 1 2-2h1v7H6a2 2 0 0 1-2-2zM20 14a2 2 0 0 0-2-2h-1v7h1a2 2 0 0 0 2-2z"/></g>
 <g id="mcmp-moon"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></g>
+<g id="mcmp-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.2v2.4M12 19.4v2.4M4.5 4.5l1.7 1.7M17.8 17.8l1.7 1.7M2.2 12h2.4M19.4 12h2.4M4.5 19.5l1.7-1.7M17.8 6.2l1.7-1.7"/></g>
 <g id="mcmp-pin"><path d="M12 17v5M8 3h8l-1 6 3 3v2H6v-2l3-3z"/></g>
 <g id="mcmp-filter"><path d="M3 4h18l-7 8v7l-4 2v-9z"/></g>
 <g id="mcmp-arrow-in"><path d="M20 4 9 15M9 15V8M9 15h7"/></g>

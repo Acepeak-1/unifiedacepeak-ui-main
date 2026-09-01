@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Sparkline from './sparkline';
 
 /**
  * The stat tile every Performance tab is built from, on the MCM Unified
@@ -21,14 +22,24 @@ const PerfStatCard = ({
   sub,
   icon: Icon,
   tone = 'default',
+  portrait = false,
+  series,
 }: {
   label: string;
   value: ReactNode;
   sub?: ReactNode;
   icon?: any;
   tone?: StatCardTone;
+  /** Taller layout with the chart on the floor of the card. */
+  portrait?: boolean;
+  /**
+   * Real measurements over time, oldest first. Left undefined for a metric
+   * that has no history behind it — the card then simply has no chart, rather
+   * than a shape invented to fill the space.
+   */
+  series?: number[];
 }) => (
-  <div className="stat">
+  <div className={`stat${portrait ? ' stat-portrait' : ''}`}>
     <div
       style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}
     >
@@ -58,6 +69,7 @@ const PerfStatCard = ({
         {sub}
       </div>
     )}
+    {portrait && series && <Sparkline points={series} tone={TONE_STYLE[tone]} />}
   </div>
 );
 
