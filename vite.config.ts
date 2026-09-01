@@ -1,15 +1,25 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import fs from "fs";
 import tailwindcss from "@tailwindcss/vite";
 
 const enableCrossOriginIsolation = process.env.VITE_CROSS_ORIGIN_ISOLATION === 'true';
 
+// On the deployment server the .env files live outside the repo (real secrets —
+// Stripe, PayPal, HubSpot, WhatsApp token, Turnstile — shouldn't sit in a
+// project directory that could end up in version control or get shared).
+//
+// That path only exists on the server, and pointing envDir at a directory that
+// isn't there loads no variables at all rather than falling back: every
+// VITE_* value came through undefined, so axios had no baseURL, the org
+// metadata request failed and the app rendered the maintenance screen. On a
+// local checkout fall back to the project root and read the .env there.
+const SERVER_ENV_DIR = '/etc/mycountrymobile-web';
+const envDir = fs.existsSync(SERVER_ENV_DIR) ? SERVER_ENV_DIR : undefined;
+
 export default defineConfig({
-  // .env files live outside the repo (real secrets — Stripe, PayPal,
-  // HubSpot, WhatsApp token, Turnstile — shouldn't sit in a project
-  // directory that could end up in version control or get shared).
-  envDir: '/etc/mycountrymobile-web',
+  envDir,
   define: {
     global: 'globalThis',
     Lame: {},
@@ -36,6 +46,22 @@ export default defineConfig({
           'Cross-Origin-Opener-Policy': 'same-origin',
         }
       : undefined,
+    // Dev only — Vite's proxy is not part of `vite build`, so this changes
+    // nothing about how the deployed app reaches the API.
+    //
+    // The backend answers preflights with Allow-Credentials, Allow-Methods,
+    // Allow-Headers and Max-Age but never Access-Control-Allow-Origin, so a
+    // browser rejects every cross-origin response from it and the app renders
+    // the maintenance screen. Proxying makes the request same-origin from the
+    // browser's point of view: it goes to localhost and Vite forwards it
+    // server-side, where CORS does not apply. Leave VITE_API_BASE_URL empty in
+    // the local .env for this to be used.
+    proxy: {
+      '/api': {
+        target: 'https://api2.acepeak.com',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     rollupOptions: {
