@@ -332,7 +332,19 @@ const SiteInfo = ({ formInstance }: any) => {
                 {watchedCallerIdType === 'CUSTOM' && (
                   <Input
                     label="Name to show"
-                    {...register('caller_id_name')}
+                    /* Anything that is not a letter is dropped on the way in, so
+                       the field cannot hold a character the schema will later
+                       reject. Rewritten only when it actually differs, to avoid
+                       fighting the caret on every keystroke. */
+                    {...register('caller_id_name', {
+                      onChange: (event: any) => {
+                        const typed = event?.target?.value ?? '';
+                        const letters = typed.replace(/[^A-Za-z]/g, '');
+                        if (letters !== typed) {
+                          setValue('caller_id_name', letters, { shouldValidate: true });
+                        }
+                      },
+                    })}
                     error={errors?.caller_id_name?.message}
                     placeholder="Enter caller ID name"
                     maxLength={15}

@@ -128,7 +128,7 @@ const CompanyRulesForm = ({ tab }: { tab: string }) => {
       )}
 
       {isRules && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-xs text-gray-700 mb-3">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 mb-3">
           <p className="font-semibold text-gray-900 mb-1">How these settings are used</p>
           <p className="mb-1">
             These are what everybody at your company starts with. Each one has a{' '}
