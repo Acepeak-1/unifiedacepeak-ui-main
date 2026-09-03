@@ -2,20 +2,112 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { handleAlert } from '@/lib/utils';
 import { getChatAgentList, getAIReceptionistList } from '@/services/api';
-import { MessageSquare, Phone, Search, Activity, Zap, Sparkles } from 'lucide-react';
+import {
+  MessageSquare,
+  Phone,
+  Search,
+  Plus,
+  RotateCw,
+  MoreVertical,
+  Mic,
+  Send,
+  Settings2,
+  Info,
+} from 'lucide-react';
 import Loader from '@/components/custom/loader';
-import CustomAvatar from '@/components/custom/custom-avatar';
 import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import VoiceTestCard from './voice-test-card';
 import { getAi360WidgetKey, getChatWidgetScriptSrc } from '../ai-agent/chat-agent-configure-modal';
 
 const EMBED_SCRIPT_ID = 'ai-agent-test-embed-script';
-const CHAT_WIDGET_MAX_WIDTH = 423;
-const CHAT_WIDGET_MAX_HEIGHT = 600;
+const CHAT_WIDGET_MAX_WIDTH = 360;
+const CHAT_WIDGET_MAX_HEIGHT = 440;
 const CALL_WIDGET_MAX_WIDTH = 360;
-const CALL_WIDGET_MAX_HEIGHT = 580;
+const CALL_WIDGET_MAX_HEIGHT = 440;
 const CHAT_WIDGET_VIEWPORT_GAP = 8;
 
+/* Console design tokens — white + red + black */
+const RED = '#E50914';
+/* Single hover / pressed red used everywhere on this page */
+const RED_HOVER = '#B91C1C';
+const RED_SOFT = '#FFF1F2';
+const BORDER = '#E5E7EB';
+const INK = '#111111';
+const MUTED = '#6B7280';
+const SURFACE = '#FAFAFA';
+/* Agent bubbles reuse the selected-row gray */
+const BUBBLE = '#E5E7EB';
+const GREEN = '#22C55E';
+
+/* Compact preview card — the live widget is docked into exactly this box */
+const PREVIEW_CARD_WIDTH = 360;
+const PREVIEW_CARD_HEIGHT = 440;
+
+const DEFAULT_SUGGESTIONS = [
+  'How do payouts work?',
+  'Why did my payment fail?',
+  'Explore Stripe Billing',
+];
+
 const sanitizeWidgetKey = (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, '');
+
+const getAgentName = (agent: any) =>
+  String(agent?.agentName || agent?.name || agent?.agent_name || '').trim();
+
+const getAgentBrain = (agent: any) => agent?.forward_call_actions?.chatbot_builder?.brain;
+
+const getAgentWelcome = (agent: any) =>
+  String(getAgentBrain(agent)?.welcomeMessage || '').trim() || 'Hi! What can I help you with?';
+
+const getAgentSuggestions = (agent: any): string[] => {
+  const brain = getAgentBrain(agent);
+  const raw = brain?.suggestedQuestions || brain?.customGreetings;
+  const list = Array.isArray(raw)
+    ? raw.map((item: any) => String(item?.question ?? item?.label ?? item ?? '').trim())
+    : [];
+  const cleaned = list.filter(Boolean);
+  return cleaned.length ? cleaned.slice(0, 4) : DEFAULT_SUGGESTIONS;
+};
+
+type PreviewMessage = { id: number; role: 'agent' | 'user'; text: string };
+
+/**
+ * Sandbox replies. The real conversation runs inside the embedded widget; when
+ * no widget is available this keeps the preview interactive with sample answers.
+ */
+const buildSandboxReply = (question: string, agentName: string) => {
+  const q = question.toLowerCase();
+
+  if (/^(hi|hey|hello|yo)\b/.test(q) || q.includes('how are you')) {
+    return `Hi there! I'm ${agentName}. Ask me anything about your account, billing, or payments and I'll do my best to help.`;
+  }
+  if (q.includes('payout')) {
+    return 'Payouts settle to your connected bank account on a rolling 2-day schedule. You can change the cadence to weekly or monthly under Settings → Payouts.';
+  }
+  if (q.includes('payment') && (q.includes('fail') || q.includes('decline'))) {
+    return 'Payments usually fail for three reasons: insufficient funds, an expired card, or a bank-side block. Retrying with an updated card resolves most cases.';
+  }
+  if (q.includes('billing') || q.includes('stripe') || q.includes('invoice')) {
+    return 'Billing covers subscriptions, invoices, and metered usage. I can walk you through plans, proration, or how to pull an invoice PDF.';
+  }
+  if (q.includes('refund')) {
+    return 'Refunds can be issued in full or partially within 90 days of the original charge, and typically reach the customer in 5–10 business days.';
+  }
+  if (q.includes('price') || q.includes('cost') || q.includes('plan')) {
+    return 'Plans scale with usage. Tell me roughly how many conversations you expect each month and I can point you at the right tier.';
+  }
+  if (q.endsWith('?')) {
+    return `Good question. In this sandbox I answer from sample data, so here's the short version: ${agentName} would look this up in its knowledge base and reply with the matching article.`;
+  }
+  return `Got it — "${question}". This is a sandbox session, so I'm replying with sample content. Connect this agent's widget to test its real answers.`;
+};
 
 const unloadEmbedScript = () => {
   document
@@ -36,14 +128,172 @@ const unloadEmbedScript = () => {
     .forEach((el) => el.remove());
 };
 
-// function StatCard({ label, value }: { label: string; value: string | number }) {
-//   return (
-//     <div className="min-h-[76px] rounded-lg border border-gray-200 bg-white px-5 py-4 shadow-sm">
-//       <p className="text-sm text-slate-500">{label}</p>
-//       <p className="mt-1 text-2xl font-bold leading-7 text-gray-950">{value}</p>
-//     </div>
-//   );
-// }
+/**
+ * Playground mark — a robot head with a chat bubble, ringed by an orbit and
+ * two sparkles. Strokes follow `currentColor`; `bg` fills the overlapping
+ * shapes so they read cleanly against the tile behind them.
+ */
+function AgentPlaygroundIcon({ className, bg = '#FFF1F2' }: { className?: string; bg?: string }) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.3}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* Stage — angled supports plus a tinted slab */}
+      <path d="M12 31.5l3.4-7.2a2.4 2.4 0 0 1 2.2-1.4h0.6" />
+      <path d="M36 31.5l-3.4-7.2a2.4 2.4 0 0 0-2.2-1.4h-0.6" />
+      <rect
+        x="10"
+        y="30.6"
+        width="28"
+        height="6.6"
+        rx="3.3"
+        fill="currentColor"
+        fillOpacity={0.18}
+      />
+
+      {/* Play disc */}
+      <circle cx="23.4" cy="20.2" r="10.4" fill={bg} />
+      <path
+        d="M20.6 15.6l7.6 4.2a0.9 0.9 0 0 1 0 1.6l-7.6 4.2a0.9 0.9 0 0 1-1.4-0.8v-8.4a0.9 0.9 0 0 1 1.4-0.8z"
+        fill="currentColor"
+      />
+
+      {/* Sparkles — larger above, smaller beside */}
+      <path
+        d="M36.6 10.4q0.8 4.1 4.4 4.9-3.6 0.8-4.4 4.9-0.8-4.1-4.4-4.9 3.6-0.8 4.4-4.9z"
+        fill="currentColor"
+        strokeWidth={1}
+      />
+      <path
+        d="M41.2 20.6q0.5 2.6 2.8 3.1-2.3 0.5-2.8 3.1-0.5-2.6-2.8-3.1 2.3-0.5 2.8-3.1z"
+        fill="currentColor"
+        strokeWidth={1}
+      />
+    </svg>
+  );
+}
+
+/* Non-red monogram palette — picked deterministically from the agent name. */
+const AVATAR_COLORS = [
+  { bg: '#EEF2FF', fg: '#4338CA' },
+  { bg: '#ECFDF5', fg: '#047857' },
+  { bg: '#FFF7ED', fg: '#C2410C' },
+  { bg: '#EFF6FF', fg: '#1D4ED8' },
+  { bg: '#F5F3FF', fg: '#6D28D9' },
+  { bg: '#ECFEFF', fg: '#0E7490' },
+  { bg: '#FEFCE8', fg: '#A16207' },
+  { bg: '#FDF2F8', fg: '#9D174D' },
+];
+
+/** Same name always gets the same swatch, so rows stay stable across renders. */
+const getAvatarColors = (name: string) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) {
+    hash = (hash * 31 + name.charCodeAt(i)) % 100000;
+  }
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+};
+
+/** Monogram avatar with an online dot — the initial comes from the agent name. */
+function AgentAvatar({
+  name,
+  size = 36,
+  online = true,
+  onDark = false,
+}: {
+  name?: string;
+  size?: number;
+  online?: boolean;
+  onDark?: boolean;
+}) {
+  const trimmed = String(name || '').trim();
+  const initial = trimmed.charAt(0).toUpperCase() || '?';
+  const swatch = getAvatarColors(trimmed || '?');
+  return (
+    <span className="relative inline-flex shrink-0" style={{ width: size, height: size }}>
+      <span
+        className="flex items-center justify-center rounded-full font-semibold"
+        style={{
+          width: size,
+          height: size,
+          fontSize: Math.max(11, Math.round(size * 0.42)),
+          background: onDark ? 'rgba(255,255,255,0.16)' : swatch.bg,
+          color: onDark ? '#FFFFFF' : swatch.fg,
+        }}
+      >
+        {initial}
+      </span>
+      {online && (
+        <span
+          className="absolute bottom-0 right-0 rounded-full"
+          style={{
+            width: Math.max(8, Math.round(size * 0.26)),
+            height: Math.max(8, Math.round(size * 0.26)),
+            background: '#16A34A',
+            border: `2px solid ${onDark ? RED : '#FFFFFF'}`,
+          }}
+        />
+      )}
+    </span>
+  );
+}
+
+/** Three-dot menu used by both the mock card header and the live-widget overlay. */
+function PreviewMenu({
+  onRestart,
+  onSettings,
+  className,
+}: {
+  onRestart: () => void;
+  onSettings: () => void;
+  className?: string;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" title="More options" className={className}>
+          <MoreVertical className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48 border-0">
+        <DropdownMenuItem
+          onClick={onRestart}
+          className="focus:bg-[#FFF1F2] focus:text-[#E50914] [&:focus_svg]:text-[#E50914]"
+        >
+          <RotateCw className="h-4 w-4" />
+          Reset conversation
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={onSettings}
+          className="focus:bg-[#FFF1F2] focus:text-[#E50914] [&:focus_svg]:text-[#E50914]"
+        >
+          <Settings2 className="h-4 w-4" />
+          Agent settings
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function StatBlock({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+  return (
+    <div className="text-center sm:text-left">
+      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: MUTED }}>
+        {label}
+      </p>
+      <p className="text-lg font-bold leading-6" style={{ color: accent ? RED : INK }}>
+        {value}
+      </p>
+    </div>
+  );
+}
 
 function Playground() {
   const location = useLocation();
@@ -55,6 +305,15 @@ function Playground() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<any>(initialState?.selectedAgent || null);
   const [activeEmbedId, setActiveEmbedId] = useState<string | null>(null);
+  const [draftMessage, setDraftMessage] = useState('');
+  /** Sandbox conversation shown after the welcome bubble. */
+  const [messages, setMessages] = useState<PreviewMessage[]>([]);
+  const [isAgentTyping, setIsAgentTyping] = useState(false);
+  const replyTimerRef = useRef<number | null>(null);
+  const messageIdRef = useRef(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  /** Which segmented-control button is currently held down (red only while pressed). */
+  const [pressedTab, setPressedTab] = useState<'chat' | 'voice' | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, height: 0 });
@@ -80,12 +339,11 @@ function Playground() {
       typeof window === 'undefined' ? coords.left + coords.width : window.innerWidth;
     const viewportHeight =
       typeof window === 'undefined' ? coords.top + coords.height : window.innerHeight;
+    // The widget fills the compact card slot exactly, clamped to the viewport.
     const maxWidgetWidth = activeTab === 'voice' ? CALL_WIDGET_MAX_WIDTH : CHAT_WIDGET_MAX_WIDTH;
     const maxWidgetHeight = activeTab === 'voice' ? CALL_WIDGET_MAX_HEIGHT : CHAT_WIDGET_MAX_HEIGHT;
-    const panelGap = coords.width <= maxWidgetWidth + 24 ? 8 : 16;
-    const panelWidth = Math.max(0, coords.width - panelGap * 2);
     const viewportWidthLimit = Math.max(0, viewportWidth - CHAT_WIDGET_VIEWPORT_GAP * 2);
-    const width = Math.min(maxWidgetWidth, panelWidth, viewportWidthLimit);
+    const width = Math.min(maxWidgetWidth, Math.max(0, coords.width), viewportWidthLimit);
     const viewportHeightLimit = Math.max(0, viewportHeight - coords.top - CHAT_WIDGET_VIEWPORT_GAP);
     const height = Math.min(maxWidgetHeight, Math.max(0, coords.height), viewportHeightLimit);
     const centeredLeft = coords.left + (coords.width - width) / 2;
@@ -112,7 +370,7 @@ function Playground() {
     select: (data: any) => data?.data?.data?.result?.rows || [],
   });
 
-  // Monitor bounding rect of middle container for absolute/fixed iframe positioning
+  // Monitor bounding rect of preview container for absolute/fixed iframe positioning
   useEffect(() => {
     if (!selectedAgent || !containerRef.current) return;
 
@@ -158,6 +416,7 @@ function Playground() {
   // Sync selected agent when tab changes
   useEffect(() => {
     setSelectedAgent(null);
+    setDraftMessage('');
     invalidateEmbedRequest();
   }, [activeTab, invalidateEmbedRequest]);
 
@@ -248,6 +507,96 @@ function Playground() {
     setSelectedAgent(agent);
   };
 
+  /** Tear the widget down; the effect below re-mounts it for the selected agent. */
+  const handleRestartSession = useCallback(() => {
+    setDraftMessage('');
+    setMessages([]);
+    setIsAgentTyping(false);
+    if (replyTimerRef.current !== null) {
+      window.clearTimeout(replyTimerRef.current);
+      replyTimerRef.current = null;
+    }
+    if (!selectedAgent) return;
+    invalidateEmbedRequest();
+  }, [invalidateEmbedRequest, selectedAgent]);
+
+  const handleOpenAgentSettings = useCallback(() => {
+    navigate(
+      activeTab === 'chat'
+        ? '/admin-settings/knowledge/ai-agent'
+        : '/admin-settings/knowledge/ai-receptionist',
+    );
+  }, [activeTab, navigate]);
+
+  /** Append a message to the sandbox conversation and answer it. */
+  const sendSandboxMessage = useCallback(
+    (text: string, agentName: string) => {
+      const message = text.trim();
+      if (!message) return;
+
+      messageIdRef.current += 1;
+      setMessages((prev) => [
+        ...prev,
+        { id: messageIdRef.current, role: 'user', text: message },
+      ]);
+      setDraftMessage('');
+      setIsAgentTyping(true);
+
+      if (replyTimerRef.current !== null) window.clearTimeout(replyTimerRef.current);
+      replyTimerRef.current = window.setTimeout(() => {
+        replyTimerRef.current = null;
+        messageIdRef.current += 1;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: messageIdRef.current,
+            role: 'agent',
+            text: buildSandboxReply(message, agentName),
+          },
+        ]);
+        setIsAgentTyping(false);
+      }, 700);
+    },
+    [],
+  );
+
+  const handleVoiceInput = useCallback(() => {
+    handleAlert({
+      text: 'Voice input is available inside the live session once an agent is selected.',
+      type: 'info',
+    });
+  }, []);
+
+  // Clear the conversation when the agent or mode changes.
+  useEffect(() => {
+    setMessages([]);
+    setIsAgentTyping(false);
+    if (replyTimerRef.current !== null) {
+      window.clearTimeout(replyTimerRef.current);
+      replyTimerRef.current = null;
+    }
+  }, [selectedAgent, activeTab]);
+
+  useEffect(
+    () => () => {
+      if (replyTimerRef.current !== null) window.clearTimeout(replyTimerRef.current);
+    },
+    [],
+  );
+
+  // Keep the newest message in view.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+  }, [messages, isAgentTyping]);
+
+  const handleAddNewAgent = useCallback(() => {
+    navigate(
+      activeTab === 'chat'
+        ? '/admin-settings/knowledge/ai-agent'
+        : '/admin-settings/knowledge/ai-receptionist',
+    );
+  }, [activeTab, navigate]);
+
   useEffect(() => {
     if (!selectedAgent) return;
     const rowId = selectedAgent?.agent_uuid || selectedAgent?.id;
@@ -263,13 +612,15 @@ function Playground() {
   }, [activeTab, chatAgents, receptionistAgents]);
 
   const filteredAgents = useMemo(() => {
-    if (!searchQuery.trim()) return currentAgentsList;
-    return currentAgentsList.filter((agent: any) =>
-      String(agent?.agentName || '')
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()),
-    );
-  }, [currentAgentsList, searchQuery]);
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return currentAgentsList;
+    // Match the agent name plus the type label shown on the row.
+    const typeText = activeTab === 'chat' ? 'chat agent' : 'voice agent';
+    return currentAgentsList.filter((agent: any) => {
+      const name = getAgentName(agent).toLowerCase();
+      return name.includes(query) || typeText.includes(query);
+    });
+  }, [activeTab, currentAgentsList, searchQuery]);
 
   const totalAgentsCount = chatAgents.length + receptionistAgents.length;
   const isPageLoading = isChatLoading || isReceptionistLoading;
@@ -307,9 +658,56 @@ function Playground() {
     return () => observer.disconnect();
   }, []);
 
+  const typeLabel = activeTab === 'chat' ? 'Chat Agent' : 'Voice Agent';
+  const previewAgent = selectedAgent || filteredAgents?.[0] || null;
+  const previewName = getAgentName(previewAgent) || 'Your agent';
+  const previewSuggestions = getAgentSuggestions(previewAgent);
+
   return (
-    <section className="flex h-full min-h-0 w-full flex-col overflow-auto bg-[#f3f4f6] text-[#07142f]">
-      {/* Dynamic Style Override to position AI360 widget in Middle Panel */}
+    <section
+      className="playground-scroll flex h-full min-h-0 w-full flex-col overflow-hidden bg-white"
+      style={{ color: INK }}
+    >
+      {/* Scrollbars stay functional but are visually hidden inside the playground */}
+      <style>{`
+        .playground-scroll,
+        .playground-scroll * {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .playground-scroll::-webkit-scrollbar,
+        .playground-scroll *::-webkit-scrollbar {
+          width: 0;
+          height: 0;
+          display: none;
+        }
+        /* Every button on this page turns its text/icon red on hover, except the
+           segmented AI Receptionist / AI Chatbot tabs, which stay black/gray. */
+        .playground-scroll button:not(.playground-tab):not(.playground-add-agent):not(.playground-voice-cta):hover:not(:disabled),
+        .playground-scroll button:not(.playground-tab):not(.playground-add-agent):not(.playground-voice-cta):hover:not(:disabled) svg,
+        .playground-scroll button:not(.playground-tab):not(.playground-add-agent):not(.playground-voice-cta):hover:not(:disabled) p,
+        .playground-scroll a:hover,
+        .playground-hover-red:hover:not(:disabled),
+        .playground-hover-red:hover:not(:disabled) svg {
+          color: ${RED_HOVER} !important;
+        }
+        /* Agent list uses a lighter red on hover than the rest of the page */
+        .playground-scroll button.playground-agent-row:hover:not(:disabled),
+        .playground-scroll button.playground-agent-row:hover:not(:disabled) p {
+          color: #ef4444 !important;
+        }
+        /* On an agent row only the name reddens — the type label stays black */
+        .playground-scroll button:hover:not(:disabled) p.playground-agent-type {
+          color: ${INK} !important;
+        }
+        /* Keep solid-red buttons (send) legible — their icon stays white */
+        .playground-scroll button.playground-solid-red:hover:not(:disabled),
+        .playground-scroll button.playground-solid-red:hover:not(:disabled) svg {
+          color: #ffffff !important;
+        }
+      `}</style>
+
+      {/* Dynamic style override to dock the AI360 widget inside the preview frame */}
       {selectedAgent && activeWidgetId && (
         <style>{`
           body > [data-ai-widget],
@@ -342,129 +740,222 @@ function Playground() {
             height: 100% !important;
             max-height: 100% !important;
             box-sizing: border-box !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: ${activeWidgetMode === 'call' ? 28 : 12}px !important;
-            box-shadow: none !important;
+            border: 1px solid ${BORDER} !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 16px rgba(17,17,17,0.06) !important;
           }
         `}</style>
       )}
 
-      {/* Page Header (Matching other AI pages) */}
-      <div className="flex min-h-[64px] items-center justify-between border-b border-gray-200 bg-white px-4 shrink-0">
-        <div className="flex items-center gap-2 text-base font-semibold text-slate-500">
+      {/* Breadcrumb */}
+      <div
+        className="flex min-h-[56px] shrink-0 items-center justify-between border-b bg-white px-5"
+        style={{ borderColor: BORDER }}
+      >
+        <div className="flex items-center gap-2 text-sm font-semibold">
           <button
             type="button"
             onClick={() => navigate('/admin-settings/knowledge/ai-agent')}
-            className="transition-colors hover:text-primary"
+            className="cursor-pointer bg-transparent transition-colors"
+            style={{ color: MUTED }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = RED_HOVER)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = MUTED)}
           >
             AI Agents
           </button>
-          <span>/</span>
-          <span className="text-gray-950">Playground</span>
+          <span style={{ color: '#D1D5DB' }}>/</span>
+          <span
+            className="transition-colors"
+            style={{ color: INK }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = RED_HOVER)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = INK)}
+          >
+            Playground
+          </span>
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-4 pb-2">
-        {/* Dynamic Stats Banner */}
-        <div className="relative overflow-hidden bg-slate-900 border border-slate-800 text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 shrink-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(99,102,241,0.15),transparent_60%)] pointer-events-none" />
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <Sparkles className="w-6 h-6 text-white animate-pulse" />
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 pb-4 pt-1 sm:overflow-hidden sm:px-5 sm:pb-5">
+        {/* Summary banner */}
+        <div
+          className="flex shrink-0 flex-col items-start justify-between gap-3 rounded-xl bg-white px-4 py-1 sm:flex-row sm:items-center"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
+              style={{ background: RED_SOFT, color: RED }}
+            >
+              <AgentPlaygroundIcon className="h-9 w-9" bg={RED_SOFT} />
             </div>
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight">Agent Playground</h1>
-              <p className="text-slate-400 text-sm mt-1 max-w-lg">
-                Test any AI Receptionist (voice) or Chat Agent in a safe sandbox. Sessions don't
-                count toward analytics.
-              </p>
+            <div className="min-w-0">
+              <h1
+                className="flex items-center gap-2 text-lg font-small leading-6 tracking-tight"
+                style={{ color: INK }}
+              >
+                <span
+                  className="cursor-default transition-colors"
+                  style={{ color: INK }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = RED_HOVER)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = INK)}
+                >
+                  Agent Playground
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="About the Agent Playground"
+                      className="playground-hover-red flex cursor-pointer items-center justify-center rounded-full border-0 bg-transparent font-small p-0 transition-colors"
+                      style={{ color: MUTED }}
+                    >
+                      <Info className="h-5 w-5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="max-w-xs bg-gray-200 text-black [&>svg]:fill-gray-200"
+                  >
+                    Test any AI Receptionist (voice) or Chat Agent in a safe sandbox. Sessions don't
+                    count toward analytics.
+                  </TooltipContent>
+                </Tooltip>
+              </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-6 md:gap-8 relative z-10 shrink-0">
-            <div className="text-center md:text-left">
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-                Total Agents
-              </p>
-              <p className="text-3xl font-extrabold text-white mt-1">
-                {isPageLoading ? '...' : totalAgentsCount}
-              </p>
-            </div>
-            <div className="w-px h-10 bg-slate-800" />
-            <div className="text-center md:text-left">
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-                Receptionists
-              </p>
-              <p className="text-3xl font-extrabold text-indigo-400 mt-1">
-                {isPageLoading ? '...' : receptionistAgents?.length}
-              </p>
-            </div>
-            <div className="w-px h-10 bg-slate-800" />
-            <div className="text-center md:text-left">
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-                AI Chatbots
-              </p>
-              <p className="text-3xl font-extrabold text-purple-400 mt-1">
-                {isPageLoading ? '...' : chatAgents?.length || 0}
-              </p>
-            </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 sm:gap-6">
+            <StatBlock
+              label="Total Agents"
+              value={isPageLoading ? '—' : totalAgentsCount}
+              accent
+            />
+            <div className="h-7 w-px" style={{ background: BORDER }} />
+            <StatBlock
+              label="Receptionists"
+              value={isPageLoading ? '—' : receptionistAgents?.length || 0}
+            />
+            <div className="h-7 w-px" style={{ background: BORDER }} />
+            <StatBlock
+              label="AI Chatbots"
+              value={isPageLoading ? '—' : chatAgents?.length || 0}
+            />
           </div>
         </div>
 
-        {/* Workspace Columns */}
-        <div className="flex-1 flex gap-4 min-h-0 overflow-hidden">
-          {/* Left Column: Pick Agent List */}
-          <div className="w-82 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden shrink-0">
-            <div className="p-3 border-b border-gray-100 bg-gray-50/50 space-y-2.5">
-              {/* Mini Tabs (Primary UCAAS selected tab) */}
-              <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200/40">
-                <button
-                  onClick={() => setActiveTab('voice')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all border-0 cursor-pointer ${
-                    activeTab === 'voice'
-                      ? 'bg-ucass-primary-200 text-primary shadow-sm'
-                      : 'text-gray-500 hover:text-gray-800 bg-transparent'
-                  }`}
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  AI Receptionist
-                </button>
-                <button
-                  onClick={() => setActiveTab('chat')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold transition-all border-0 cursor-pointer ${
-                    activeTab === 'chat'
-                      ? 'bg-ucass-primary-200 text-primary shadow-sm'
-                      : 'text-gray-500 hover:text-gray-800 bg-transparent'
-                  }`}
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  AI Chatbot
-                </button>
+        {/* Workspace */}
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto sm:flex-row sm:gap-4 sm:overflow-hidden">
+          {/* LEFT — agent selector */}
+          <div
+            className="flex max-h-[320px] w-full shrink-0 flex-col overflow-hidden rounded-2xl border bg-white shadow-sm sm:max-h-none sm:w-[320px] md:w-[380px]"
+            style={{ borderColor: BORDER }}
+          >
+            <div className="space-y-3 border-b p-3" style={{ borderColor: BORDER }}>
+              {/* Segmented control */}
+              <div
+                className="relative flex gap-1 rounded-xl border p-1"
+                style={{ background: '#ECEEF1', borderColor: '#DDE0E5' }}
+              >
+                {/* Sliding thumb — marks the active side and animates between them */}
+                <span
+                  aria-hidden
+                  className="absolute rounded-lg transition-all duration-200 ease-out"
+                  style={{
+                    top: 4,
+                    bottom: 4,
+                    left: activeTab === 'voice' ? 4 : 'calc(50% + 2px)',
+                    width: 'calc(50% - 6px)',
+                    background: '#FFFFFF',
+                    border: '1px solid #C9CDD4',
+                    boxShadow: '0 1px 4px rgba(17,17,17,0.18)',
+                  }}
+                />
+                {(
+                  [
+                    { key: 'voice', label: 'AI Receptionist', Icon: Phone },
+                    { key: 'chat', label: 'AI Chatbot', Icon: MessageSquare },
+                  ] as const
+                ).map(({ key, label, Icon }) => {
+                  const active = activeTab === key;
+                  // Red shows only while the button is held down; otherwise black.
+                  const pressed = pressedTab === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setActiveTab(key)}
+                      onPointerDown={() => setPressedTab(key)}
+                      onPointerUp={() => setPressedTab(null)}
+                      onPointerLeave={() => setPressedTab(null)}
+                      onPointerCancel={() => setPressedTab(null)}
+                      onBlur={() => setPressedTab(null)}
+                      className="playground-tab relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg border-0 bg-transparent px-2 py-2 text-sm font-bold transition-colors"
+                      style={{
+                        background: pressed ? RED_SOFT : 'transparent',
+                        color: pressed ? RED_HOVER : active ? INK : '#5B6270',
+                      }}
+                      onMouseEnter={(e) => {
+                        // Hover turns the label (and its icon, via currentColor) red.
+                        e.currentTarget.style.color = RED_HOVER;
+                      }}
+                      onMouseLeave={(e) => {
+                        // Back to black for the active tab, gray for the others.
+                        e.currentTarget.style.color = active ? INK : '#5B6270';
+                      }}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
+                  style={{ color: '#9CA3AF' }}
+                />
                 <input
                   type="text"
                   placeholder="Search agents..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg outline-none focus:border-primary transition-all placeholder:text-gray-400"
+                  className="w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm outline-none transition-all placeholder:text-gray-400 focus:outline-none focus-visible:outline-none"
+                  style={{ borderColor: BORDER, color: INK, outline: 'none', boxShadow: 'none' }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = RED;
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = BORDER)}
                 />
               </div>
             </div>
 
-            {/* List */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {/* Agent list */}
+            <div className="flex-1 space-y-1 overflow-y-auto p-2">
               {isPageLoading ? (
-                <div className="py-8 flex flex-col items-center justify-center gap-2">
+                <div className="flex flex-col items-center justify-center gap-2 py-10">
                   <Loader variant="custom" />
-                  <p className="text-[11px] text-gray-400">Loading agents...</p>
+                  <p className="text-xs" style={{ color: MUTED }}>
+                    Loading agents...
+                  </p>
                 </div>
               ) : filteredAgents.length === 0 ? (
-                <div className="py-8 px-4 text-center">
-                  <p className="text-xs text-gray-500 font-medium">No agents found</p>
+                <div className="px-4 py-10 text-center">
+                  <div
+                    className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ background: SURFACE }}
+                  >
+                    <Search className="h-4 w-4" style={{ color: '#9CA3AF' }} />
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: INK }}>
+                    No agents found
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed" style={{ color: MUTED }}>
+                    {searchQuery.trim()
+                      ? 'Try a different search term.'
+                      : `Create your first ${typeLabel.toLowerCase()} to start testing.`}
+                  </p>
                 </div>
               ) : (
                 filteredAgents.map((agent: any) => {
@@ -472,107 +963,309 @@ function Playground() {
                   const isSelected =
                     selectedAgent &&
                     (selectedAgent?.agent_uuid === agentId || selectedAgent?.id === agentId);
-                  // const isLive = String(agent?.status || agent?.agentStatus || '').toLowerCase() === 'live';
 
                   return (
                     <button
                       key={agentId}
+                      type="button"
                       onClick={() => handleSelectAgent(agent)}
-                      className={`w-full text-left flex items-center justify-between p-2 rounded-lg border transition-all ${
-                        isSelected
-                          ? 'bg-ucass-primary-200/50 border-primary text-primary shadow-sm'
-                          : 'bg-white border-transparent hover:bg-slate-50 text-gray-700'
-                      }`}
+                      className="playground-agent-row relative flex w-full cursor-pointer items-center gap-3 overflow-hidden rounded-xl border p-2.5 text-left transition-all"
+                      style={{
+                        background: isSelected ? '#E5E7EB' : '#FFFFFF',
+                        borderColor: 'transparent',
+                        boxShadow: 'none',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) e.currentTarget.style.background = RED_SOFT;
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) e.currentTarget.style.background = '#FFFFFF';
+                      }}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <CustomAvatar
-                          name={agent?.agentName}
-                          showPresence={false}
-                          size="32"
-                          isActivityInfo={false}
-                        />
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold truncate leading-4">
-                            {agent?.agentName}
-                          </p>
-                          <p className="text-[10px] text-gray-500 truncate leading-3">
-                            {activeTab === 'chat' ? 'Chat Agent' : 'Voice Agent'}
-                          </p>
-                        </div>
+                      <AgentAvatar name={getAgentName(agent)} size={36} />
+                      <div className="min-w-0">
+                        <p
+                          className="truncate text-sm font-semibold leading-5"
+                          style={{ color: INK }}
+                        >
+                          {getAgentName(agent) || 'Untitled agent'}
+                        </p>
+                        <p
+                          className="playground-agent-type truncate text-xs leading-4"
+                          style={{ color: INK }}
+                        >
+                          {typeLabel}
+                        </p>
                       </div>
                     </button>
                   );
                 })
               )}
             </div>
+
+            {/* Add new agent */}
+            <div className="border-t p-3" style={{ borderColor: BORDER }}>
+              <button
+                type="button"
+                onClick={handleAddNewAgent}
+                className="playground-add-agent flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border bg-white py-2.5 text-sm font-bold transition-colors duration-200 ease-out focus:outline-none focus-visible:outline-none"
+                style={{ borderColor: BORDER, color: INK, background: '#FFFFFF' }}
+                onMouseEnter={(e) => {
+                  // Hover: border + text + icon go red; background stays white.
+                  e.currentTarget.style.borderColor = RED;
+                  e.currentTarget.style.color = RED;
+                }}
+                onMouseLeave={(e) => {
+                  // Back to black text with a neutral border.
+                  e.currentTarget.style.borderColor = BORDER;
+                  e.currentTarget.style.color = INK;
+                }}
+                onFocus={(e) => {
+                  // Keyboard focus mirrors the hover state (no blue browser ring).
+                  e.currentTarget.style.borderColor = RED;
+                  e.currentTarget.style.color = RED;
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = BORDER;
+                  e.currentTarget.style.color = INK;
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                Add New Agent
+              </button>
+            </div>
           </div>
 
-          {/* Middle Column: Inline Sandbox Session */}
-          <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0 relative">
-            {!selectedAgent ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto">
-                <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center mb-3 text-primary">
-                  <Activity className="w-6 h-6" />
-                </div>
-                <h3 className="text-sm font-bold text-gray-900">Sandbox Preview</h3>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                  Select an agent from the left column. The playground will immediately launch the
-                  chat session or initiate a test voice call.
-                </p>
+          {/* RIGHT — dotted workspace canvas holding one compact chatbot card */}
+          <div
+            className="relative flex min-h-[420px] flex-1 items-center justify-center overflow-hidden rounded-2xl border p-3 sm:min-h-0 sm:p-4"
+            style={{
+              borderColor: BORDER,
+              background: '#FFFFFF',
+              backgroundImage: `radial-gradient(${BORDER} 1px, transparent 1px)`,
+              backgroundSize: '16px 16px',
+            }}
+          >
+            {/* Card slot — the live widget is docked exactly over this box */}
+            <div
+              className="relative shrink"
+              style={{
+                width: `min(${PREVIEW_CARD_WIDTH}px, 100%)`,
+                height: `min(${PREVIEW_CARD_HEIGHT}px, 100%)`,
+                minHeight: 0,
+              }}
+            >
+              <div ref={containerRef} className="absolute inset-0">
+                <div id="ai-chat-widget-root" className="h-full w-full" />
               </div>
-            ) : (
-              <div className="flex-1 flex flex-col min-h-0 ">
-                {/* Middle Column Header */}
-                <div className="p-3 border-b border-gray-100 flex items-center justify-between gap-3 bg-gray-50/30 shrink-0">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-sm uppercase shrink-0">
-                      {String(selectedAgent?.agentName || 'A').charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <h2 className="text-xs font-bold text-gray-900 truncate max-w-[120px]">
-                          {selectedAgent?.agentName}
-                        </h2>
-                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/10 shrink-0">
-                          Live
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-[10px] text-gray-500 leading-3">
-                        <span>{activeTab === 'chat' ? 'Chat agent' : 'Voice receptionist'}</span>
-                        <span>•</span>
-                        <span className="text-primary font-semibold flex items-center gap-0.5">
-                          <Zap className="w-2.5 h-2.5" /> Sandbox mode
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+
+              {/* Floating controls stay reachable while the live widget occupies the slot */}
+              {isWidgetActive && (
+                <div className="absolute right-3 top-3 z-50 flex items-center gap-1">
+                  <PreviewMenu
+                    onRestart={handleRestartSession}
+                    onSettings={handleOpenAgentSettings}
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border-0 bg-black/20 text-white backdrop-blur-sm transition-colors hover:bg-black/35"
+                  />
                 </div>
+              )}
 
-                {/* Inline Sandbox Console */}
-                <div className="flex-1 flex flex-col min-h-0 overflow-auto">
-                  <div ref={containerRef} className="w-full flex-1 relative bg-gray-50/50">
-                    <div id="ai-chat-widget-root" className="w-full h-full" />
-
-                    {!activeWidgetKey ? (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-white z-10">
-                        <p className="text-sm font-semibold text-gray-900">Widget key missing</p>
-                        <p className="mt-1 max-w-xs text-xs leading-relaxed text-gray-500">
-                          Save the agent widget configuration first, then test it here.
+              {/* Mock/preview card — shown whenever the live widget is not occupying the slot */}
+              {/* AI Receptionist -> voice testing panel (chatbot tab is untouched) */}
+              {!isWidgetActive && activeTab === 'voice' && (
+                <VoiceTestCard
+                  agentName={previewName}
+                  phoneNumber={
+                    previewAgent?.did ||
+                    previewAgent?.phone_number ||
+                    previewAgent?.phoneNumber ||
+                    previewAgent?.number ||
+                    undefined
+                  }
+                  location={previewAgent?.location || previewAgent?.language || undefined}
+                  onError={(text) => handleAlert({ text, type: 'error' })}
+                />
+              )}
+              
+              {!isWidgetActive && activeTab !== 'voice' && (
+                <div
+                  className="absolute inset-0 z-10 flex flex-col overflow-hidden rounded-2xl border bg-white"
+                  style={{ borderColor: BORDER, boxShadow: '0 4px 16px rgba(17,17,17,0.06)' }}
+                >
+                  {/* Card header */}
+                  <div
+                    className="flex h-[55px] shrink-0 items-center justify-between gap-2 border-b px-4"
+                    style={{ background: '#FFFFFF', borderColor: BORDER }}
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <AgentAvatar name={previewName} size={30} online={false} />
+                      <div className="min-w-0">
+                        <p
+                          className="truncate text-sm font-semibold leading-4"
+                          style={{ color: INK }}
+                        >
+                          {previewName}
+                        </p>
+                        <p
+                          className="mt-0.5 flex items-center gap-1.5 text-[11px] leading-3"
+                          style={{ color: MUTED }}
+                        >
+                          <span
+                            className="inline-block h-1.5 w-1.5 rounded-full"
+                            style={{ background: GREEN }}
+                          />
+                          {typeLabel}
                         </p>
                       </div>
-                    ) : !isWidgetActive ? (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-white z-10">
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <PreviewMenu
+                        onRestart={handleRestartSession}
+                        onSettings={handleOpenAgentSettings}
+                        className="playground-hover-red flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-[#111111] transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Card body */}
+                  <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
+                    {selectedAgent && activeWidgetKey ? (
+                      <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
                         <Loader variant="custom" />
-                        <p className="text-xs text-gray-500 mt-2">
-                          Loading {activeWidgetMode === 'call' ? 'call' : 'chat'} widget inside
-                          center layout...
+                        <p className="text-xs" style={{ color: MUTED }}>
+                          Starting {activeWidgetMode === 'call' ? 'voice' : 'chat'} session with{' '}
+                          {previewName}...
                         </p>
                       </div>
-                    ) : null}
+                    ) : (
+                      <>
+                        <div className="flex items-start gap-2.5">
+                          <AgentAvatar name={previewName} size={28} online={false} />
+                          <div
+                            className="max-w-[75%] rounded-2xl rounded-tl-md px-3.5 py-2.5 text-sm leading-snug"
+                            style={{ background: BUBBLE, color: INK }}
+                          >
+                            {getAgentWelcome(previewAgent)}
+                          </div>
+                        </div>
+
+                        {messages.length === 0 && (
+                          <div className="flex flex-col items-end gap-2">
+                            {previewSuggestions.map((question) => (
+                              <button
+                                key={question}
+                                type="button"
+                                onClick={() => sendSandboxMessage(question, previewName)}
+                                className="cursor-pointer rounded-full border bg-white px-3.5 py-2 text-xs font-medium transition-colors"
+                                style={{ borderColor: RED, color: RED }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = RED_SOFT)}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+                              >
+                                {question}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {messages.map((message) =>
+                          message.role === 'user' ? (
+                            <div key={message.id} className="flex justify-end">
+                              <div
+                                className="max-w-[80%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-sm leading-snug text-white"
+                                style={{ background: RED }}
+                              >
+                                {message.text}
+                              </div>
+                            </div>
+                          ) : (
+                            <div key={message.id} className="flex items-start gap-2.5">
+                              <AgentAvatar name={previewName} size={28} online={false} />
+                              <div
+                                className="max-w-[75%] rounded-2xl rounded-tl-md px-3.5 py-2.5 text-sm leading-snug"
+                                style={{ background: BUBBLE, color: INK }}
+                              >
+                                {message.text}
+                              </div>
+                            </div>
+                          ),
+                        )}
+
+                        {isAgentTyping && (
+                          <div className="flex items-start gap-2.5">
+                            <AgentAvatar name={previewName} size={28} online={false} />
+                            <div
+                              className="flex items-center gap-1 rounded-2xl rounded-tl-md px-3.5 py-3"
+                              style={{ background: BUBBLE }}
+                            >
+                              {[0, 1, 2].map((dot) => (
+                                <span
+                                  key={dot}
+                                  className="inline-block h-1.5 w-1.5 animate-pulse rounded-full"
+                                  style={{
+                                    background: MUTED,
+                                    animationDelay: `${dot * 150}ms`,
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div ref={messagesEndRef} />
+                      </>
+                    )}
+                  </div>
+
+                  {/* Card input */}
+                  <div className="shrink-0 border-t px-3 pb-3 pt-2.5" style={{ borderColor: BORDER }}>
+                    <form
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        sendSandboxMessage(draftMessage, previewName);
+                      }}
+                      className="flex items-center gap-1.5 rounded-full border bg-white py-1 pl-4 pr-1 transition-colors"
+                      style={{ borderColor: BORDER }}
+                    >
+                      <input
+                        type="text"
+                        value={draftMessage}
+                        onChange={(e) => setDraftMessage(e.target.value)}
+                        placeholder="Type your message..."
+                        className="min-w-0 flex-1 border-0 bg-transparent py-1.5 text-sm outline-none placeholder:text-gray-400 focus:outline-none focus-visible:outline-none"
+                        style={{ color: INK, outline: 'none', boxShadow: 'none' }}
+                        onFocus={(e) => {
+                          const form = e.currentTarget.closest('form');
+                          if (form) form.style.borderColor = RED;
+                        }}
+                        onBlur={(e) => {
+                          const form = e.currentTarget.closest('form');
+                          if (form) form.style.borderColor = BORDER;
+                        }}
+                      />
+                      <button
+                        type="button"
+                        title="Voice input"
+                        onClick={handleVoiceInput}
+                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent transition-colors hover:bg-gray-100"
+                      >
+                        <Mic className="h-4 w-4" style={{ color: MUTED }} />
+                      </button>
+                      <button
+                        type="submit"
+                        title="Send"
+                        disabled={!draftMessage.trim()}
+                        className="playground-solid-red flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+                        style={{ background: RED }}
+                      >
+                        <Send className="h-3.5 w-3.5 text-white" />
+                      </button>
+                    </form>
+
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

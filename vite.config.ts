@@ -18,6 +18,9 @@ const enableCrossOriginIsolation = process.env.VITE_CROSS_ORIGIN_ISOLATION === '
 const SERVER_ENV_DIR = '/etc/mycountrymobile-web';
 const envDir = fs.existsSync(SERVER_ENV_DIR) ? SERVER_ENV_DIR : undefined;
 
+// Origin the API recognises as this deployment's tenant; see the dev proxy below.
+const TENANT_ORIGIN = process.env.VITE_DEV_PROXY_ORIGIN || 'https://ucaas.acepeak.com';
+
 export default defineConfig({
   envDir,
   define: {
@@ -60,6 +63,19 @@ export default defineConfig({
       '/api': {
         target: 'https://api2.acepeak.com',
         changeOrigin: true,
+        // The API resolves which tenant ("website settings") a request belongs
+        // to from Origin/Referer, not from the path or anything the app sends.
+        // changeOrigin only rewrites Host, so a proxied dev request still
+        // arrives with Origin http://localhost:5173, matches no site and comes
+        // back 422 "Website settings not found" — which the login screen
+        // reports as bad credentials even when they are correct. Present the
+        // deployed domain so local dev hits the same tenant as production.
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('origin', TENANT_ORIGIN);
+            proxyReq.setHeader('referer', `${TENANT_ORIGIN}/`);
+          });
+        },
       },
     },
   },
