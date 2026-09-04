@@ -590,7 +590,7 @@ const AiBotSession = () => {
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="Search by contact, agent, intent or transcript..."
-              className="h-[38px] w-full rounded-[10px] border border-slate-200 bg-white pl-[38px] pr-3 text-[13.5px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10"
+              className="h-[38px] w-full rounded-[10px] border border-slate-200 bg-white pl-[38px] pr-3 text-[13.5px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-red-600 focus:ring-4 focus:ring-red-600/10"
             />
           </div>
           {(['all', 'call', 'chat'] as SessionChannel[]).map((channel) => {
@@ -603,7 +603,7 @@ const AiBotSession = () => {
                 onClick={() => setActiveChannel(channel)}
                 className={`inline-flex h-[34px] items-center gap-1.5 rounded-full border px-3 text-xs font-semibold ${
                   isActive
-                    ? 'border-blue-600 bg-blue-600 text-white'
+                    ? 'border-red-600 bg-red-600 text-white'
                     : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                 }`}
               >

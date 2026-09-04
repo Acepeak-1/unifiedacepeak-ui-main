@@ -16,7 +16,7 @@ const DialpadIncomingCallPopup = ({
   const number = session.remoteNumber || 'Unknown Number';
 
   return (
-    <div className="mb-3 rounded-2xl border border-[#d8e4f8] bg-[#f6f9ff] px-3 py-3 shadow-[0_12px_25px_rgba(25,58,112,0.12)]">
+    <div className="mb-3 rounded-2xl border border-[#fecaca] bg-[#fef2f2] px-3 py-3 shadow-[0_12px_25px_rgba(153,27,27,0.12)]">
       <div className="flex items-center gap-2.5">
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ucass-active-bg text-primary">
           <UserCircle2 className="h-6 w-6" />

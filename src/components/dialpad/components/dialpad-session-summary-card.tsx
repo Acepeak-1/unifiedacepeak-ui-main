@@ -63,9 +63,9 @@ const DialpadSessionSummaryCard = ({
   const badgeClass = isTerminalStatus
     ? 'bg-[#fef2f4] text-[#b33a49]'
     : isProgressStatus
-      ? 'bg-ucass-active-bg text-[#2a5ec4]'
-      : 'bg-[#f4f8ff] text-[#1d5fd9]';
-  const dotClass = isTerminalStatus ? 'bg-[#b33a49]' : 'bg-[#1d5fd9]';
+      ? 'bg-ucass-active-bg text-[#b91c1c]'
+      : 'bg-[#fef2f2] text-[#b91c1c]';
+  const dotClass = isTerminalStatus ? 'bg-[#b33a49]' : 'bg-[#b91c1c]';
 
   return (
     <div className="flex items-start justify-between gap-2 rounded-2xl border border-[#e3e9f3] bg-white p-1 xl:p-2">

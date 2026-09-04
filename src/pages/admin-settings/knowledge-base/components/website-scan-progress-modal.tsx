@@ -55,7 +55,7 @@ const WebsiteScanProgressModal = ({ open, status }: WebsiteScanProgressModalProp
           ) : (
             <div
               className={`h-14 w-14 rounded-full border-4 border-slate-200 ${
-                isError ? 'border-b-red-500' : 'border-b-blue-600'
+                isError ? 'border-b-red-500' : 'border-b-red-700'
               } animate-spin`}
             />
           )}
@@ -72,10 +72,10 @@ const WebsiteScanProgressModal = ({ open, status }: WebsiteScanProgressModalProp
               : 'Picking the best pages...'}
         </p>
 
-        <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-blue-100">
+        <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-red-100">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
-              isError ? 'bg-red-500' : 'bg-blue-500'
+              isError ? 'bg-red-500' : 'bg-red-700'
             }`}
             style={{
               width: isComplete
@@ -97,14 +97,14 @@ const WebsiteScanProgressModal = ({ open, status }: WebsiteScanProgressModalProp
                     isStepComplete
                       ? 'bg-emerald-500 text-white'
                       : isStepActive
-                        ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-200'
+                        ? 'bg-red-50 text-red-700 ring-1 ring-red-200'
                         : 'bg-slate-100 text-slate-500'
                   }`}
                 >
                   {isStepComplete ? (
                     <Check className="h-3.5 w-3.5" />
                   ) : isStepActive ? (
-                    <span className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-blue-200 border-b-blue-600" />
+                    <span className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-red-200 border-b-red-700" />
                   ) : (
                     index + 1
                   )}

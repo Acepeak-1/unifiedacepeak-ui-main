@@ -207,7 +207,7 @@ const People = () => {
           <>
             <button
               type="button"
-              className="btn ghost"
+              className="btn ghost soft-accent"
               onClick={() => navigate('/directory?view=groups')}
             >
               <Ic n="users" />
@@ -218,7 +218,7 @@ const People = () => {
                 filtered list as the whole company. */}
             <button
               type="button"
-              className="btn ghost"
+              className="btn ghost soft-accent"
               disabled={!visible.length}
               title={
                 visible.length === rows.length
@@ -231,7 +231,11 @@ const People = () => {
               Export {visible.length}
             </button>
             {canInvite ? (
-              <button type="button" className="btn primary" onClick={() => setInviting(true)}>
+              <button
+                type="button"
+                className="btn primary soft-accent"
+                onClick={() => setInviting(true)}
+              >
                 <Ic n="plus" />
                 Invite person
               </button>

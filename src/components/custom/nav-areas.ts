@@ -138,20 +138,20 @@ export const DIRECTORY_VIEWS: AreaView[] = [
 
 export const PERFORMANCE_VIEWS: AreaView[] = [
   // the five the console leads with
-  { key: 'queues-activity', label: 'Queues', icon: 'ReportsLineIcon' },
+  { key: 'queues-activity', label: 'Queues', icon: 'ListIcon' },
   { key: 'agents', label: 'Agents', icon: 'ContactIcon' },
   { key: 'interactions', label: 'Calls', icon: 'PhoneIcon' },
   { key: 'flows', label: 'Flows', icon: 'IntegrationIcon' },
   { key: 'dashboards', label: 'Boards', icon: 'AnalyticsIcon' },
   // everything the platform has that the console does not
-  { key: 'live-interactions', label: 'Live', icon: 'PhoneIcon', sep: true },
-  { key: 'callbacks', label: 'Callbacks', icon: 'DialerIcon' },
+  { key: 'live-interactions', label: 'Live', icon: 'ActivityIcon', sep: true },
+  { key: 'callbacks', label: 'Callbacks', icon: 'CallBackReschuledStrokeIcon' },
   { key: 'campaign-activity', label: 'Campaigns', icon: 'DialerIcon' },
   { key: 'speech-text', label: 'Speech', icon: 'MessageIcon' },
   { key: 'reports', label: 'Reports', icon: 'ReportsLineIcon' },
-  { key: 'live-wallboard', label: 'Wallboard', icon: 'AnalyticsIcon' },
-  { key: 'ai-wallboard', label: 'AI Wall', icon: 'AnalyticsIcon', feature: 'ai' },
-  { key: 'call-queue', label: 'Queue', icon: 'PhoneIcon', feature: 'queue' },
+  { key: 'live-wallboard', label: 'Wallboard', icon: 'Grid2' },
+  { key: 'ai-wallboard', label: 'AI Wall', icon: 'AIBrainIcon', feature: 'ai' },
+  { key: 'call-queue', label: 'Queue', icon: 'CallQueue', feature: 'queue' },
   { key: 'video-dashboard', label: 'Video', icon: 'VideoIcon', feature: 'video' },
 ];
 
