@@ -55,7 +55,7 @@ const ThemeToggle = () => {
         onClick={toggle}
         aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         aria-pressed={theme === 'dark'}
-        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-gray-100 text-gray-700 transition-colors hover:bg-ucass-primary-200 hover:text-primary"
+        className="flex h-[38px] w-[38px] shrink-0 cursor-pointer items-center justify-center rounded-xl bg-gray-100 text-gray-700 shadow-sm transition-all hover:bg-ucass-primary-200 hover:text-foreground hover:shadow"
       >
         {theme === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
       </button>

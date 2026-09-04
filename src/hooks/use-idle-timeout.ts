@@ -140,6 +140,12 @@ export const useIdleTimeout = (options: UseIdleTimeoutOptions = {}): UseIdleTime
   });
 
   const idleSeconds = useMemo(() => {
+    // Local dev only: `npm run dev` never enforces the idle timeout, so it
+    // cannot sign a developer out mid-work. Production builds are unaffected —
+    // `import.meta.env.DEV` is statically `false` there and this branch is
+    // dead-code-eliminated.
+    if (import.meta.env.DEV) return 0;
+
     const settings = toObject(companyDefaults?.settings);
     const idle = toObject(settings?.[SECURITY_KEY]?.idle_timeout);
 
@@ -267,7 +273,7 @@ export const useIdleTimeout = (options: UseIdleTimeoutOptions = {}): UseIdleTime
         'cursor:pointer',
         'border:0',
         'border-radius:10px',
-        'background:#2563eb',
+        'background:#dc2626',
         'color:#ffffff',
         'font-size:13px',
         'font-weight:600',

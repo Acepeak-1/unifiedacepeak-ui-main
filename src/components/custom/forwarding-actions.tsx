@@ -423,7 +423,7 @@ const ForwardingActions = ({
                     <RadioGroupItem
                       value="true"
                       id={`${forwardState}-true`}
-                      className="cursor-pointer w-4 h-4 accent-blue-500"
+                      className="cursor-pointer w-4 h-4 accent-red-500"
                     />
                     <Label htmlFor={`${forwardState}-true`} className="cursor-pointer">
                       My Voicemail

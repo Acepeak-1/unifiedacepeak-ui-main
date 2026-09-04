@@ -13,7 +13,7 @@ const buttonVariants = cva(
           'bg-ucass-primary-200 border border-primary text-primary shadow-xs hover:bg-primary/90 hover:text-white cursor-pointer min-h-10',
         primary:
           'bg-primary border border-primary text-white shadow-xs hover:bg-primary/90 cursor-pointer min-h-10',
-        variantIcon: 'bg-primary text-primary shadow-xs hover:bg-primary/90 cursor-pointer',
+        variantIcon: 'bg-primary text-white shadow-xs hover:bg-primary/90 cursor-pointer',
         destructive:
           'bg-destructive border border-destructive text-white shadow-xs hover:bg-destructive/90 cursor-pointer min-h-10',
         destructiveOutline:

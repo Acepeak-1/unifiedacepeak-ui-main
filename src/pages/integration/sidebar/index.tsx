@@ -159,7 +159,7 @@ const Tile = ({
 
   return (
     <div
-      className={`flex items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer whitespace-nowrap ${isActive ? (isChildrenExist ? 'text-primary' : 'text-primary bg-ucass-primary-200/50 border-r-primary border-r-2') : 'text-gray-900/80'} ${child ? 'border-t border-gray-200 p-0 pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
+      className={`flex items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer whitespace-nowrap transition-colors duration-150 ${isActive ? (isChildrenExist ? 'text-primary' : 'text-primary bg-ucass-primary-200/50 border-r-primary border-r-2') : 'text-gray-900/80 hover:bg-[#e3e3e3] hover:text-[#dc2626]'} ${child ? 'border-t border-gray-200 p-0 pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
       {...getRoutePrefetchHandlers(path)}
       onClick={handleClick}
     >

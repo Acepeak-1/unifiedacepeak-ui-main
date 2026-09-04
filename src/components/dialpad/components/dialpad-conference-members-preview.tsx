@@ -83,7 +83,7 @@ const DialpadConferenceMembersPreview = ({
         type="button"
         onClick={onClick}
         className={cn(
-          'inline-flex min-h-[22px] items-center gap-1.5 rounded-full border border-[#d8e4f7] bg-[#f4f8ff] px-2 py-1 hover:bg-[#ebf2ff]',
+          'inline-flex min-h-[22px] items-center gap-1.5 rounded-full border border-[#fecaca] bg-[#fef2f2] px-2 py-1 hover:bg-[#fee2e2]',
           className,
         )}
       >
