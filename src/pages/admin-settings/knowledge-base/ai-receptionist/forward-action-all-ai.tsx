@@ -1,12 +1,81 @@
 import { ISELECTVALUE } from '@/interfaces/api-interfaces';
 import PhoneInput from 'react-phone-input-2';
-import CustomSelect from '@/components/custom/custom-select';
 import { Label } from '@/components/ui/label';
 import ErrorTooltip from '@/components/custom/error-tooltip';
 import { SetValueConfig } from 'react-hook-form';
 import SelectGreeting from '@/components/custom/greeting-select';
-import { ExtensionListView } from '@/pages/admin-settings/people/update-forwarding/call-rules/add-coworker';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Check, ChevronDown } from 'lucide-react';
+import { Grid } from '@/assets/icons';
+
+const cx = (...classes: Array<string | false | null | undefined>) =>
+  classes.filter(Boolean).join(' ');
+
+const PillSelect = ({
+  options,
+  value,
+  onChange,
+  placeholder = 'Select',
+  showExtension = false,
+  disabled = false,
+}: {
+  options: ISELECTVALUE[];
+  value: ISELECTVALUE | null;
+  onChange: (option: ISELECTVALUE) => void;
+  placeholder?: string;
+  showExtension?: boolean;
+  disabled?: boolean;
+}) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <button
+        type="button"
+        disabled={disabled}
+        className="flex h-10 w-full items-center justify-between rounded-xl border! border-neutral-300! bg-white! px-3 text-sm outline-none! transition-colors hover:border-black! disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500"
+      >
+        <span className={cx('truncate', value?.label ? 'text-neutral-900!' : 'text-neutral-400!')}>
+          {value?.label || placeholder}
+        </span>
+        <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+      </button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent
+      align="start"
+      className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-[280px] overflow-y-auto rounded-xl! border! border-neutral-200! bg-white p-1.5 shadow-lg z-50 animate-none"
+    >
+      {options.map((option) => {
+        const isSelected = option.value === value?.value;
+        return (
+          <DropdownMenuItem
+            key={String(option.value)}
+            onClick={() => onChange(option)}
+            className={cx(
+              'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-red-50! focus:bg-red-50!',
+              isSelected ? 'bg-red-50! text-red-600! font-semibold' : 'text-neutral-900',
+            )}
+          >
+            <span className="truncate">{option.label}</span>
+            <span className="flex shrink-0 items-center gap-1.5">
+              {showExtension && (option as any)?.value && (
+                <span className="flex items-center gap-1 text-xs font-normal text-neutral-400">
+                  <Grid className="h-3.5 w-3.5" />
+                  {(option as any).value}
+                </span>
+              )}
+              {isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-red-600!" />}
+            </span>
+          </DropdownMenuItem>
+        );
+      })}
+    </DropdownMenuContent>
+  </DropdownMenu>
+);
 
 const FORWARD_TYPES = {
   VOICEMAIL: 'VOICEMAIL',
@@ -75,7 +144,6 @@ const ForwardActionAllAi: React.FC<ForwardActionAiProps> = ({
   forwardValueClass = 'w-full',
   forwardValueLabel = '',
   selectCustomClassSecond = '',
-  menuPlacement = 'auto',
   enableVoicemailChoice = false,
   voicemailPersonalField = '',
   userExtension = '',
@@ -195,29 +263,27 @@ const ForwardActionAllAi: React.FC<ForwardActionAiProps> = ({
       case FORWARD_TYPES.EXTENSION:
       case FORWARD_TYPES.VOICEMAIL:
         return (
-          <CustomSelect
+          <PillSelect
             options={forwardValueOptions}
-            menuPlacement={menuPlacement}
-            handleChange={(val: ISELECTVALUE) =>
+            value={selectedForwardValue}
+            onChange={(val) =>
               setValue(forwardValue, val, {
                 shouldValidate: true,
               })
             }
-            value={selectedForwardValue}
-            FormatOptionLabel={ExtensionListView}
+            showExtension
           />
         );
       default:
         return (
-          <CustomSelect
+          <PillSelect
             options={forwardValueOptions}
-            menuPlacement={menuPlacement}
-            handleChange={(val: ISELECTVALUE) =>
+            value={selectedForwardValue}
+            onChange={(val) =>
               setValue(forwardValue, val, {
                 shouldValidate: true,
               })
             }
-            value={selectedForwardValue}
           />
         );
     }
@@ -234,10 +300,22 @@ const ForwardActionAllAi: React.FC<ForwardActionAiProps> = ({
             </div>
           )}
         </div>
-        <CustomSelect
+        <PillSelect
           options={forwardTypesOptions}
-          menuPlacement={menuPlacement}
-          handleChange={(val: ISELECTVALUE) => {
+          value={
+            watchForwardType
+              ? {
+                  label:
+                    watchForwardType?.label ||
+                    (typeof watchForwardType.value === 'string' &&
+                    watchForwardType.value in FORWARD_TYPES_LABEL
+                      ? FORWARD_TYPES_LABEL[watchForwardType.value as ForwardType]
+                      : ''),
+                  value: watchForwardType?.value || '',
+                }
+              : null
+          }
+          onChange={(val) => {
             setValue(forwardType, val, { shouldValidate: true });
             if (
               enableVoicemailChoice &&
@@ -254,19 +332,6 @@ const ForwardActionAllAi: React.FC<ForwardActionAiProps> = ({
               setValue(forwardValue, { label: 'Select', value: '' }, { shouldValidate: true });
             }
           }}
-          value={
-            watchForwardType
-              ? {
-                  label:
-                    watchForwardType?.label ||
-                    (typeof watchForwardType.value === 'string' &&
-                    watchForwardType.value in FORWARD_TYPES_LABEL
-                      ? FORWARD_TYPES_LABEL[watchForwardType.value as ForwardType]
-                      : ''),
-                  value: watchForwardType?.value || '',
-                }
-              : { label: 'Select', value: '' }
-          }
         />
       </div>
 

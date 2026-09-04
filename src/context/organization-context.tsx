@@ -84,7 +84,7 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchMainSiteInfo = useCallback(async () => {
     const domain = getDomain().includes('localhost')
-      ? 'https://qa.mycountrymobile.com'
+      ? 'https://ucaas.acepeak.com'
       : getDomain();
     // const domain = "https://mcm.mycountrymobile.com";
     try {
@@ -208,10 +208,6 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     error,
   };
 
-  if (!stripePublishableKey) {
-    return <FullPageLoader />;
-  }
-
   if (isNoOrgPage) {
     return (
       <OrganizationContext.Provider value={{ ...value, isLoading: false }}>
@@ -228,6 +224,10 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
 
   if (error) {
     return <ServerMaintenance onRefresh={fetchMainSiteInfo} />;
+  }
+
+  if (!stripePublishableKey) {
+    return <FullPageLoader />;
   }
 
   return (
