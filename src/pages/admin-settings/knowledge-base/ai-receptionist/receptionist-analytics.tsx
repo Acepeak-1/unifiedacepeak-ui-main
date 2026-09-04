@@ -883,7 +883,7 @@ export default function ReceptionistAnalytics({
         ref={analyticsContentRef}
         className="w-full flex-1 space-y-3.5 overflow-y-auto px-7 py-6"
       >
-        <div className="flex items-center gap-3 rounded-[10px] border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+        <div className="flex items-center gap-3 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           <Info className="h-4 w-4 shrink-0" />
           <span>
             <strong>{periodLabel}</strong> · {periodCompare}. Voice-specific KPIs below — sentiment,

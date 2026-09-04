@@ -291,7 +291,7 @@ const DialpadTransferList = ({ onBack, onOpenMerge }: DialpadTransferListProps) 
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1 rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-[#2d466b] transition max-[380px]:px-1.5 max-[380px]:py-0.5 max-[380px]:text-[10px] sm:px-2.5 sm:py-1.5 sm:text-xs md:text-[13px] hover:bg-[#edf3ff]"
+          className="flex items-center gap-1 rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-[#2d466b] transition max-[380px]:px-1.5 max-[380px]:py-0.5 max-[380px]:text-[10px] sm:px-2.5 sm:py-1.5 sm:text-xs md:text-[13px] hover:bg-[#fef2f2]"
         >
           <ChevronLeft className="h-3.5 w-3.5 max-[380px]:h-3 max-[380px]:w-3 sm:h-4 sm:w-4" />
           Back
@@ -372,7 +372,7 @@ const DialpadTransferList = ({ onBack, onOpenMerge }: DialpadTransferListProps) 
               inputMode="tel"
               placeholder="Enter number"
               disabled={isSpeakFirstLocked}
-              className="w-full rounded-lg border border-[#d2ddef] bg-white px-2.5 py-1.5 text-[12px] font-medium text-[#1f2f47] outline-none transition placeholder:text-[#90a0b8] max-[380px]:px-2 max-[380px]:py-1 max-[380px]:text-[11px] sm:px-3 sm:py-2 sm:text-sm md:text-[14px] focus:border-[#8ec0ff] focus:ring-2 focus:ring-[#8ec0ff]/30"
+              className="w-full rounded-lg border border-[#d2ddef] bg-white px-2.5 py-1.5 text-[12px] font-medium text-[#1f2f47] outline-none transition placeholder:text-[#90a0b8] max-[380px]:px-2 max-[380px]:py-1 max-[380px]:text-[11px] sm:px-3 sm:py-2 sm:text-sm md:text-[14px] focus:border-[#dc2626] focus:ring-2 focus:ring-[#dc2626]/30"
             />
             {/* Says why, rather than only greying the button out. An agent who
                 cannot complete a transfer needs the reason while the caller is

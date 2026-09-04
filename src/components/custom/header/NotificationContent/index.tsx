@@ -68,7 +68,7 @@ const NotificationContent = ({ setNotificationState }: { setNotificationState: a
   }, [notificationArr, notificationFilterValue]);
   return (
     <div className="w-full mx-auto ">
-      <div className="flex flex-col  gap-2 px-1 py-2">
+      <div className="flex flex-col  gap-2 px-1 py-2 pr-14">
         <div className="flex justify-between items-center ">
           <div className=" text-gray-900 font-semibold flex gap-2 items-center justify-between w-full">
             <div className="flex items-center gap-3 ">
