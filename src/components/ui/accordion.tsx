@@ -40,7 +40,12 @@ function AccordionTrigger({
       className={cn(
         'flex',
         isSidebar &&
-          'text-gray-900/80 [&>button[data-state=open]]:bg-ucass-primary-200/50 [&>button[data-state=open]]:text-primary [&>button[data-state=open]]:border-r-primary [&>button[data-state=open]]:border-r-2',
+          // An inset box-shadow reads as the same right-edge accent line a
+          // border would, but doesn't consume layout width the way a real
+          // border does — a real border-right shrinks the trigger's content
+          // box by its own width, which nudged the trailing chevron in the
+          // active row a couple pixels out of line with every other row's.
+          'text-gray-900/80 [&>button[data-state=open]]:bg-ucass-primary-200/50 [&>button[data-state=open]]:text-primary [&>button[data-state=open]]:shadow-[inset_-2px_0_0_var(--primary)]',
       )}
     >
       <AccordionPrimitive.Trigger

@@ -35,7 +35,7 @@ export const BILLING_SECTIONS: BillingSection[] = [
        the only page that answers all three without a click. */
     path: 'summary',
     label: 'Summary',
-    icon: 'BillingPlanIcon',
+    icon: 'OverviewIcon',
     purpose: 'What am I paying, and when.',
   },
   {
@@ -45,7 +45,7 @@ export const BILLING_SECTIONS: BillingSection[] = [
        question was "am I about to be charged extra". */
     path: 'usage',
     label: 'Usage',
-    icon: 'BillingPlanIcon',
+    icon: 'PieChart',
     purpose: 'Allowances against what has been used, and where the money went.',
   },
   {
@@ -61,7 +61,7 @@ export const BILLING_SECTIONS: BillingSection[] = [
        each. */
     path: 'resources',
     label: 'Licences & resources',
-    icon: 'BillingPlanIcon',
+    icon: 'Key',
     purpose: 'Seats, numbers, storage and AI - bought, assigned and spare.',
   },
   {
@@ -81,7 +81,7 @@ export const BILLING_SECTIONS: BillingSection[] = [
   {
     path: 'statement',
     label: 'Statement',
-    icon: 'BillingPlanIcon',
+    icon: 'Reports',
     purpose: 'The running ledger, for when the summary is not enough.',
   },
   {
@@ -90,7 +90,7 @@ export const BILLING_SECTIONS: BillingSection[] = [
        this person's role can see them. */
     path: 'modules',
     label: 'Modules & access',
-    icon: 'AllNumberIcon',
+    icon: 'Grid2',
     purpose: 'Which modules the plan carries, and who can see them.',
   },
   {
@@ -99,13 +99,13 @@ export const BILLING_SECTIONS: BillingSection[] = [
        rather than offering a button that would take a browser-supplied price. */
     path: 'add-ons',
     label: 'Add-ons',
-    icon: 'BillingPlanIcon',
+    icon: 'WidgetAdd',
     purpose: 'Extras on top of your plan, and which ones you already have.',
   },
   {
     path: 'cost-centres',
     label: 'Cost centres',
-    icon: 'BillingPlanIcon',
+    icon: 'CategoryIcon',
     purpose: 'Reporting labels. They change nothing about what is charged.',
   },
 ];

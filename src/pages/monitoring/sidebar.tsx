@@ -80,7 +80,7 @@ const Sidebar = () => {
               }}
             >
               <div
-                className={`flex relative items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer ${pathname.includes(item?.path) ? 'text-primary' : 'text-gray-900/80'}  ${!isEnabled ? 'opacity-60' : ''}`}
+                className={`flex relative items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer transition-colors duration-150 ${pathname.includes(item?.path) ? 'text-primary' : 'text-gray-900/80 hover:bg-[#e3e3e3] hover:text-[#dc2626]'}  ${!isEnabled ? 'opacity-60' : ''}`}
               >
                 {item?.icon}
                 <p className="font-medium truncate text-sm">{item?.name}</p>

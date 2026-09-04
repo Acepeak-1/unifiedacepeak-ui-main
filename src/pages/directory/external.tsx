@@ -143,7 +143,7 @@ const External = () => {
         title="External Contacts"
         description="People outside the organisation — who they work for, how to reach them, and every channel you can use."
         actions={
-          <button type="button" className="btn primary" onClick={() => navigate('/contact')}>
+          <button type="button" className="btn primary soft-accent" onClick={() => navigate('/contact')}>
             <Ic n="plus" />
             New contact
           </button>
