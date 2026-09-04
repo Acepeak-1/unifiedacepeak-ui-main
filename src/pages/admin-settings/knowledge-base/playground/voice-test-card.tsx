@@ -104,12 +104,13 @@ export default function VoiceTestCard({
         .playground-voice-ring {
           animation: playgroundVoiceRipple 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
         }
-        /* The page-wide red hover would vanish on this solid red button. */
+        /* Black/white button: keep the label and icon white on hover (the
+           page-wide red hover, and black text, would both be wrong here). */
         .playground-scroll button.playground-voice-cta:hover:not(:disabled),
         .playground-scroll button.playground-voice-cta:hover:not(:disabled) svg,
         button.playground-voice-cta:hover:not(:disabled),
         button.playground-voice-cta:hover:not(:disabled) svg {
-          color: #111111 !important;
+          color: #ffffff !important;
         }
         .playground-voice-ring--active {
           animation-duration: 1.4s;
@@ -204,7 +205,13 @@ export default function VoiceTestCard({
           onClick={handleStart}
           disabled={state === 'connecting'}
           className="playground-voice-cta mt-1 flex cursor-pointer items-center gap-2 rounded-full border-0 px-6 py-2.5 text-sm font-semibold text-white transition-colors disabled:cursor-wait disabled:opacity-70"
-          style={{ background: RED, color: '#FFFFFF' }}
+          style={{ background: '#111111', color: '#FFFFFF' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#333333';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#111111';
+          }}
         >
           {isRunning ? <PhoneOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           {isRunning ? 'End test' : state === 'connecting' ? 'Connecting...' : 'Start test'}

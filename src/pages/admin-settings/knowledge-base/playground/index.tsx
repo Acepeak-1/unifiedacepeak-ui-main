@@ -128,57 +128,6 @@ const unloadEmbedScript = () => {
     .forEach((el) => el.remove());
 };
 
-/**
- * Playground mark — a robot head with a chat bubble, ringed by an orbit and
- * two sparkles. Strokes follow `currentColor`; `bg` fills the overlapping
- * shapes so they read cleanly against the tile behind them.
- */
-function AgentPlaygroundIcon({ className, bg = '#FFF1F2' }: { className?: string; bg?: string }) {
-  return (
-    <svg
-      viewBox="0 0 48 48"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.3}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      {/* Stage — angled supports plus a tinted slab */}
-      <path d="M12 31.5l3.4-7.2a2.4 2.4 0 0 1 2.2-1.4h0.6" />
-      <path d="M36 31.5l-3.4-7.2a2.4 2.4 0 0 0-2.2-1.4h-0.6" />
-      <rect
-        x="10"
-        y="30.6"
-        width="28"
-        height="6.6"
-        rx="3.3"
-        fill="currentColor"
-        fillOpacity={0.18}
-      />
-
-      {/* Play disc */}
-      <circle cx="23.4" cy="20.2" r="10.4" fill={bg} />
-      <path
-        d="M20.6 15.6l7.6 4.2a0.9 0.9 0 0 1 0 1.6l-7.6 4.2a0.9 0.9 0 0 1-1.4-0.8v-8.4a0.9 0.9 0 0 1 1.4-0.8z"
-        fill="currentColor"
-      />
-
-      {/* Sparkles — larger above, smaller beside */}
-      <path
-        d="M36.6 10.4q0.8 4.1 4.4 4.9-3.6 0.8-4.4 4.9-0.8-4.1-4.4-4.9 3.6-0.8 4.4-4.9z"
-        fill="currentColor"
-        strokeWidth={1}
-      />
-      <path
-        d="M41.2 20.6q0.5 2.6 2.8 3.1-2.3 0.5-2.8 3.1-0.5-2.6-2.8-3.1 2.3-0.5 2.8-3.1z"
-        fill="currentColor"
-        strokeWidth={1}
-      />
-    </svg>
-  );
-}
 
 /* Non-red monogram palette — picked deterministically from the agent name. */
 const AVATAR_COLORS = [
@@ -665,7 +614,7 @@ function Playground() {
 
   return (
     <section
-      className="playground-scroll flex h-full min-h-0 w-full flex-col overflow-hidden bg-white"
+      className="playground-scroll flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#efefef]"
       style={{ color: INK }}
     >
       {/* Scrollbars stay functional but are visually hidden inside the playground */}
@@ -778,25 +727,23 @@ function Playground() {
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 pb-4 pt-1 sm:overflow-hidden sm:px-5 sm:pb-5">
         {/* Summary banner */}
         <div
-          className="flex shrink-0 flex-col items-start justify-between gap-3 rounded-xl bg-white px-4 py-1 sm:flex-row sm:items-center"
+          className="flex shrink-0 flex-col items-start justify-between gap-3 px-4 py-1 sm:flex-row sm:items-center"
         >
           <div className="flex min-w-0 items-center gap-3">
-            <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: RED_SOFT, color: RED }}
-            >
-              <AgentPlaygroundIcon className="h-9 w-9" bg={RED_SOFT} />
-            </div>
             <div className="min-w-0">
               <h1
-                className="flex items-center gap-2 text-lg font-small leading-6 tracking-tight"
+                className="flex items-center gap-2 text-lg font-medium leading-6 tracking-tight"
                 style={{ color: INK }}
               >
                 <span
-                  className="cursor-default transition-colors"
-                  style={{ color: INK }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = RED_HOVER)}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = INK)}
+                  style={{
+                    color: INK,
+                    fontFamily: "'Instrument Serif', Georgia, 'Times New Roman', serif",
+                    fontStyle: 'italic',
+                    fontWeight: 400,
+                    fontSize: 27,
+                    lineHeight: 1.1,
+                  }}
                 >
                   Agent Playground
                 </span>
@@ -813,7 +760,13 @@ function Playground() {
                   </TooltipTrigger>
                   <TooltipContent
                     side="right"
-                    className="max-w-xs bg-gray-200 text-black [&>svg]:fill-gray-200"
+                    className="w-max max-w-[340px] text-black [&_svg]:fill-[#fdf7f5]"
+                    style={{
+                      background: '#fdf7f5',
+                      border: 'none',
+                      color: '#000',
+                      boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+                    }}
                   >
                     Test any AI Receptionist (voice) or Chat Agent in a safe sandbox. Sessions don't
                     count toward analytics.
@@ -1008,26 +961,30 @@ function Playground() {
               <button
                 type="button"
                 onClick={handleAddNewAgent}
-                className="playground-add-agent flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border bg-white py-2.5 text-sm font-bold transition-colors duration-200 ease-out focus:outline-none focus-visible:outline-none"
-                style={{ borderColor: BORDER, color: INK, background: '#FFFFFF' }}
+                className="playground-add-agent flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 py-2.5 text-sm font-extrabold shadow-sm transition-colors duration-200 ease-out focus:outline-none focus-visible:outline-none"
+                style={{ borderColor: '#D1D5DB', color: INK, background: '#F9FAFB' }}
                 onMouseEnter={(e) => {
-                  // Hover: border + text + icon go red; background stays white.
+                  // Hover: border + text + icon go red; subtle red-tinted fill.
                   e.currentTarget.style.borderColor = RED;
                   e.currentTarget.style.color = RED;
+                  e.currentTarget.style.background = RED_SOFT;
                 }}
                 onMouseLeave={(e) => {
-                  // Back to black text with a neutral border.
-                  e.currentTarget.style.borderColor = BORDER;
+                  // Back to a neutral outlined button.
+                  e.currentTarget.style.borderColor = '#D1D5DB';
                   e.currentTarget.style.color = INK;
+                  e.currentTarget.style.background = '#F9FAFB';
                 }}
                 onFocus={(e) => {
                   // Keyboard focus mirrors the hover state (no blue browser ring).
                   e.currentTarget.style.borderColor = RED;
                   e.currentTarget.style.color = RED;
+                  e.currentTarget.style.background = RED_SOFT;
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = BORDER;
+                  e.currentTarget.style.borderColor = '#D1D5DB';
                   e.currentTarget.style.color = INK;
+                  e.currentTarget.style.background = '#F9FAFB';
                 }}
               >
                 <Plus className="h-4 w-4" />
@@ -1042,8 +999,6 @@ function Playground() {
             style={{
               borderColor: BORDER,
               background: '#FFFFFF',
-              backgroundImage: `radial-gradient(${BORDER} 1px, transparent 1px)`,
-              backgroundSize: '16px 16px',
             }}
           >
             {/* Card slot — the live widget is docked exactly over this box */}
