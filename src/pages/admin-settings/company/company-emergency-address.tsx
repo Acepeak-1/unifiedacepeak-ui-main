@@ -51,7 +51,7 @@ import {
 const EMERGENCY_ADDRESS_KEY = 'emergency_address';
 const EMERGENCY_ADDRESS_SCHEMA_VERSION = 1;
 
-// established systems and most E911 address validators reject PO boxes: responders cannot
+// Dialpad and most E911 address validators reject PO boxes: responders cannot
 // be sent to a mailbox. Catches "PO Box", "P.O. Box", "Post Office Box", "PMB".
 const PO_BOX_PATTERN =
   /(\bp\.?\s*o\.?\s*box\b)|(\bpost\s*office\s*box\b)|(\bpostal\s*box\b)|(\bpo\s*bx\b)|(\bp\.?\s*m\.?\s*b\.?\s*#?\s*\d)/i;
@@ -102,18 +102,14 @@ const EMERGENCY_ADDRESS_SCHEMA = yup.object({
     .trim()
     .required('Street address is required')
     .min(3, 'Enter the full street address')
-    .test(
-      'no-po-box',
-      'A PO box cannot be used. Emergency services need a street address.',
-      (v) => !isPoBox(v),
+    .test('no-po-box', 'A PO box cannot be used. Emergency services need a street address.', (v) =>
+      !isPoBox(v),
     ),
   address_line_2: yup
     .string()
     .trim()
-    .test(
-      'no-po-box',
-      'A PO box cannot be used. Emergency services need a street address.',
-      (v) => !isPoBox(v),
+    .test('no-po-box', 'A PO box cannot be used. Emergency services need a street address.', (v) =>
+      !isPoBox(v),
     ),
   country: yup
     .object({
@@ -351,7 +347,7 @@ const CompanyEmergencyAddress = () => {
 
   if (!canView) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white px-4 py-8 text-center">
+      <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-8 text-center">
         <p className="text-sm font-semibold text-gray-900">
           You do not have permission to view the emergency address
         </p>
@@ -368,8 +364,8 @@ const CompanyEmergencyAddress = () => {
             Emergency address (E911)
           </h5>
           <p className="text-xs font-medium text-gray-700">
-            The street address emergency responders would be sent to, and the number they would call
-            back on.
+            The street address emergency responders would be sent to, and the number they would
+            call back on.
           </p>
         </div>
       </div>
@@ -398,8 +394,8 @@ const CompanyEmergencyAddress = () => {
               help.
             </p>
             <p className="text-sm font-medium">
-              In the US, Kari&apos;s Law and the RAY BAUM&apos;S Act require emergency calls to work
-              and to carry a usable address. Saving this form does{' '}
+              In the US, Kari&apos;s Law and the RAY BAUM&apos;S Act require emergency calls to
+              work and to carry a usable address. Saving this form does{' '}
               <span className="font-bold">not</span> make the account compliant with either law.
             </p>
           </div>
@@ -413,7 +409,7 @@ const CompanyEmergencyAddress = () => {
           </div>
         </div>
       ) : isError ? (
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-8 text-center">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-8 text-center">
           <p className="text-sm font-semibold text-gray-900">
             Could not load the saved emergency address
           </p>
@@ -425,7 +421,7 @@ const CompanyEmergencyAddress = () => {
           className="flex flex-col gap-5 rounded-xl bg-white p-4 shadow-sm"
         >
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 pb-3">
-            <p className="text-sm font-semibold text-gray-900">Emergency address</p>
+            <p className="text-sm font-semibold text-gray-900">Address on record</p>
             <p className="text-xs text-gray-500">
               {hasSavedAddress && savedAt
                 ? `Last saved ${savedAt.toLocaleString()} - recorded only, not routed`
@@ -565,9 +561,9 @@ const CompanyEmergencyAddress = () => {
             </div>
             <div className="flex w-full items-end md:w-1/2">
               <p className="text-xs text-gray-500">
-                The number responders would ring if the emergency call drops. Today nothing dials it
-                automatically - it is stored for your records and for whoever you hand this address
-                to.
+                The number responders would ring if the emergency call drops. Today nothing dials
+                it automatically - it is stored for your records and for whoever you hand this
+                address to.
               </p>
             </div>
           </div>
@@ -575,7 +571,7 @@ const CompanyEmergencyAddress = () => {
           <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
             <p className="text-xs font-medium text-amber-900">
               A PO box will be rejected. Emergency responders need a street address they can drive
-              to, so a mailbox is not accepted here - this matches what carriers and other providers
+              to, so a mailbox is not accepted here - this matches what Dialpad and other providers
               require.
             </p>
           </div>

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SettingCard, SettingRow } from '@/components/mcm/setting-card';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Flag, Globe, Headphones, Mic, PhoneOutgoing, Voicemail, Archive } from 'lucide-react';
+import { Globe, Mic, PhoneOutgoing, Voicemail, Archive } from 'lucide-react';
 
 import CustomSelect from '@/components/custom/custom-select';
 import Loader from '@/components/custom/loader';
@@ -9,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { handleAlert } from '@/lib/utils';
-import { COUNTRY_OPTIONS } from '@/lib/company-default-country';
 import {
   COMPLIANT_RECORDING_ANNOUNCEMENTS,
   validateRecordingAnnouncement,
 } from '@/lib/recording-announcement';
 import {
   COMPANY_DEFAULTS_QUERY_KEY,
+  COMPANY_DEFAULT_TEMPLATE_NAME,
   fetchCompanyDefaults,
   saveCompanyDefaults,
 } from '@/lib/company-defaults';
@@ -28,20 +27,18 @@ import {
  * key written from here is namespaced under `settings.company_policies` and
  * nothing else in that blob is touched on save.
  *
- * IMPORTANT — the call switch, the recording pipeline and the API all ignore
- * `settings.company_policies.*` entirely. Some of it is read by this app, which
- * is a real thing but a smaller one, and the rest is a stored preference that
- * nothing acts on at all. Each card carries a `status` saying which it is:
- * 'active' where it does exactly what the card claims, 'app-only' where this
- * app is the only thing doing the work, 'coming-soon' where we have not built
- * it. Keep those accurate if a key starts being honoured.
+ * IMPORTANT — nothing in this product reads `settings.company_policies.*` yet.
+ * The call switch, the recording pipeline and the API all ignore it today, so
+ * every control on this page is a stored preference, not an enforced rule.
+ * Each card says so in its own words; please keep those notes accurate if the
+ * backend starts honouring a key.
  */
 
 const POLICIES_KEY = 'company_policies';
 const POLICIES_SCHEMA_VERSION = 1;
 
 /**
- * the safe default ships 20 prompt languages. We deliberately expose a shorter list:
+ * Dialpad ships 20 prompt languages. We deliberately expose a shorter list:
  * these are the languages this account can actually be given recorded prompts
  * or a TTS voice for today (English, Spanish and Hindi already have AI voices
  * in Knowledge Base) plus the markets numbers are most often bought in. A short
@@ -100,9 +97,6 @@ interface PoliciesForm {
   recording_mode: string;
   recording_announcement: boolean;
   recording_announcement_text: string;
-  default_country: string;
-  recording_access_own: boolean;
-  recording_access_admins_all: boolean;
   retention_recordings: RetentionForm;
   retention_voicemails: RetentionForm;
   international_new_user_default: string;
@@ -117,15 +111,9 @@ const DEFAULT_FORM: PoliciesForm = {
   // Announcement defaults on: in most places it is the caller's legal notice.
   recording_announcement: true,
   recording_announcement_text: '',
-  /* Both true, matching how the product behaves today, so switching this on
-     changes nothing until an admin decides otherwise. */
-  /* Empty means not chosen, which is exactly today's behaviour. */
-  default_country: '',
-  recording_access_own: true,
-  recording_access_admins_all: true,
   retention_recordings: { mode: 'indefinite', days: '30' },
   retention_voicemails: { mode: 'indefinite', days: '30' },
-  // established systems blocks international dialling by default as fraud prevention. Same here.
+  // Dialpad blocks international dialling by default as fraud prevention. Same here.
   international_new_user_default: 'blocked',
 };
 
@@ -188,21 +176,6 @@ const buildFormFromSettings = (settings: Record<string, any>): PoliciesForm => {
         ? recording.announcement_to_caller
         : DEFAULT_FORM.recording_announcement,
     recording_announcement_text: `${recording?.announcement_text || ''}`,
-    /* Only a stored boolean counts as a decision. A tenant that never opened
-       this page has no value here, and reading that as "no" would take away
-       everyone's own recordings the day this ships. */
-    default_country:
-      COUNTRY_OPTIONS.find(
-        (option) => option.value === String(policies?.default_country || '').toUpperCase(),
-      )?.value || DEFAULT_FORM.default_country,
-    recording_access_own:
-      typeof policies?.recording_access?.own === 'boolean'
-        ? policies.recording_access.own
-        : DEFAULT_FORM.recording_access_own,
-    recording_access_admins_all:
-      typeof policies?.recording_access?.admins_all === 'boolean'
-        ? policies.recording_access.admins_all
-        : DEFAULT_FORM.recording_access_admins_all,
     retention_recordings: toRetentionForm(
       retention?.call_recordings,
       DEFAULT_FORM.retention_recordings,
@@ -234,11 +207,6 @@ const buildPoliciesPayload = (form: PoliciesForm) => ({
     mode: form.recording_mode,
     announcement_to_caller: form.recording_announcement,
     announcement_text: form.recording_announcement_text.trim(),
-  },
-  default_country: form.default_country || null,
-  recording_access: {
-    own: form.recording_access_own,
-    admins_all: form.recording_access_admins_all,
   },
   data_retention: {
     call_recordings: buildRetentionPayload(form.retention_recordings),
@@ -283,15 +251,6 @@ const validateForm = (form: PoliciesForm): Record<string, string> => {
     errors.retention_voicemails = `Enter a whole number of days between ${RETENTION_MIN_DAYS} and ${RETENTION_MAX_DAYS}`;
   }
 
-  /* The announcement check was only rendered, never enforced, so wording that
-     the screen flagged in red still saved without complaint — an admin could
-     reasonably conclude it had been accepted. Blank is allowed (the wording is
-     optional); wording that has been entered must pass. */
-  if (form.recording_announcement && form.recording_announcement_text.trim()) {
-    const check = validateRecordingAnnouncement(form.recording_announcement_text);
-    if (!check.valid) errors.recording_announcement_text = check.reason;
-  }
-
   return errors;
 };
 
@@ -302,6 +261,62 @@ const selectedOption = (options: { label: string; value: string }[], value: stri
  * A per-setting honesty badge. `enforced` is only ever passed `true` once the
  * backend genuinely acts on that key — today nothing does.
  */
+const StatusBadge = ({ enforced }: { enforced: boolean }) =>
+  enforced ? (
+    <span className="rounded-sm bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700">
+      In effect now
+    </span>
+  ) : (
+    <span className="rounded-sm bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
+      Saved, not enforced yet
+    </span>
+  );
+
+interface PolicyCardProps {
+  icon: React.ReactNode;
+  title: string;
+  summary: string;
+  enforced: boolean;
+  enforcementNote: string;
+  children: React.ReactNode;
+}
+
+const PolicyCard = ({
+  icon,
+  title,
+  summary,
+  enforced,
+  enforcementNote,
+  children,
+}: PolicyCardProps) => (
+  <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="flex flex-wrap items-start gap-3 border-b border-gray-200 p-4">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
+        {icon}
+      </div>
+      <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-base font-semibold text-gray-900">{title}</p>
+          <StatusBadge enforced={enforced} />
+        </div>
+        <p className="text-xs text-gray-500">{summary}</p>
+      </div>
+    </div>
+    <div className="flex flex-col gap-4 p-4">
+      {children}
+      <p
+        className={`rounded-lg border px-3 py-2 text-xs ${
+          enforced
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-amber-200 bg-amber-50 text-amber-800'
+        }`}
+      >
+        {enforcementNote}
+      </p>
+    </div>
+  </div>
+);
+
 const CompanyPolicies = () => {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<PoliciesForm>(DEFAULT_FORM);
@@ -436,7 +451,7 @@ const CompanyPolicies = () => {
   return (
     <section className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-200/15">
       <div className="flex min-h-[65px] flex-col justify-center border-b border-gray-200 bg-white px-4 py-3">
-        <p className="text-lg font-semibold text-gray-900">Policies</p>
+        <p className="text-lg font-semibold text-gray-900">Company policies</p>
         <p className="text-xs text-gray-500">
           One set of rules for the whole company — prompt language, voicemail, call recording, how
           long we keep files and who may dial abroad.
@@ -461,17 +476,18 @@ const CompanyPolicies = () => {
             <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-4">
               <p className="text-sm font-semibold text-gray-900">No policies saved yet</p>
               <p className="text-xs text-gray-500">
-                Nothing has been set for your company yet. Choose what you want below and save.
+                The reserved &ldquo;{COMPANY_DEFAULT_TEMPLATE_NAME}&rdquo; record does not exist for
+                this account. Saving creates it with the values below.
               </p>
             </div>
           )}
 
-          <SettingCard
+          <PolicyCard
             icon={<Globe className="h-5 w-5" />}
             title="Default language"
-            description="The language used for voicemail prompts and IVR menus when nothing more specific is set."
-            status="active"
-            note="Active. Used when you record a new greeting — it opens in this language. Greetings and menus you already have keep the language they were made in."
+            summary="The language used for voicemail prompts and IVR menus when nothing more specific is set."
+            enforced={false}
+            enforcementNote="Saved only. Prompts and IVR menus still play in whatever language their own recording or voice was built in — this choice does not change them. It gives the platform a company answer for when prompt language becomes selectable."
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1">
@@ -484,65 +500,21 @@ const CompanyPolicies = () => {
                   }
                 />
                 <p className="text-xs text-gray-500">
-                  New greetings you record will open in this language.
+                  Ten languages, not twenty. These are the ones this account can actually be given a
+                  recorded prompt set or a voice for — English, Spanish and Hindi already have AI
+                  voices here. A shorter list beats a long one where most choices quietly fall back
+                  to English.
                 </p>
               </div>
             </div>
-          </SettingCard>
+          </PolicyCard>
 
-          <SettingCard
-            icon={<Flag className="h-5 w-5" />}
-            title="Default country"
-            description="The country your number search opens on."
-            status="active"
-            note="Active. When you buy a number, the country box starts here. You can still choose a different country for any purchase."
-          >
-            <CustomSelect
-              label="Default country"
-              options={COUNTRY_OPTIONS}
-              value={selectedOption(COUNTRY_OPTIONS, form.default_country)}
-              placeholder="No default chosen"
-              handleChange={(option: any) => updateForm({ default_country: option?.value || '' })}
-            />
-          </SettingCard>
-
-          <SettingCard
-            icon={<Headphones className="h-5 w-5" />}
-            title="Who may listen to call recordings"
-            description="Whether people can play their own calls back, and whether admins can play anyone's."
-            status="app-only"
-            note="Works in this app. Turning one off hides the play button for those recordings here. It does not stop somebody who already has a direct link to the file."
-          >
-            <SettingRow
-              label="People can play their own calls"
-              description="Off means nobody can listen back to their own recorded calls."
-              control={
-                <Switch
-                  checked={form.recording_access_own}
-                  onCheckedChange={(checked) => updateForm({ recording_access_own: checked })}
-                />
-              }
-            />
-            <SettingRow
-              label="Admins can play anyone's calls"
-              description="Off means an admin sees only their own recordings. Please tell your team before changing this — listening to someone's calls is something they expect to know about."
-              control={
-                <Switch
-                  checked={form.recording_access_admins_all}
-                  onCheckedChange={(checked) =>
-                    updateForm({ recording_access_admins_all: checked })
-                  }
-                />
-              }
-            />
-          </SettingCard>
-
-          <SettingCard
+          <PolicyCard
             icon={<Voicemail className="h-5 w-5" />}
             title="Voicemail policy"
-            description="PIN strength, how long a caller may talk, and whether messages are transcribed for new users."
-            status="coming-soon"
-            note="Coming soon: the PIN length rule and the message length limit are saved but nothing checks them yet. The transcription switch below is the exception — it already applies to each new person you add."
+            summary="PIN strength, how long a caller may talk, and whether messages are transcribed for new users."
+            enforced={false}
+            enforcementNote="Saved only. Voicemail PINs are not checked against this minimum anywhere yet, and a caller can still record for as long as the carrier allows. Transcription is set per user under User settings today; this value is the intended default for new users, not a switch that turns transcription on for anyone."
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1">
@@ -578,26 +550,31 @@ const CompanyPolicies = () => {
                 </p>
               </div>
             </div>
-            <SettingRow
-              label="Transcribe voicemail by default"
-              description="New users would get voicemail-to-text switched on. Existing users keep whatever they have now — changing this never edits anyone's current setting."
-              control={
-                <Switch
-                  checked={form.voicemail_transcription_default}
-                  onCheckedChange={(checked) =>
-                    updateForm({ voicemail_transcription_default: checked })
-                  }
-                />
-              }
-            />
-          </SettingCard>
+            <div className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 p-3">
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-semibold text-gray-900">
+                  Transcribe voicemail by default
+                </p>
+                <p className="text-xs text-gray-500">
+                  New users would get voicemail-to-text switched on. Existing users keep whatever
+                  they have now — changing this never edits anyone&rsquo;s current setting.
+                </p>
+              </div>
+              <Switch
+                checked={form.voicemail_transcription_default}
+                onCheckedChange={(checked) =>
+                  updateForm({ voicemail_transcription_default: checked })
+                }
+              />
+            </div>
+          </PolicyCard>
 
-          <SettingCard
+          <PolicyCard
             icon={<Mic className="h-5 w-5" />}
             title="Call recording policy"
-            description="Whether calls are recorded across the company, and whether callers are told."
-            status="coming-soon"
-            note="Coming soon. Nothing here starts or stops recording yet — which matters, because it means this cannot switch recording off. Recording is turned on for each person under their own settings."
+            summary="Whether calls are recorded across the company, and whether callers are told."
+            enforced={false}
+            enforcementNote="Saved only — and this is the one to be careful with. Setting this to Off does NOT stop any recording: recording is still driven entirely by the per-user and per-template Automatic Call Recording settings, and by anyone pressing record during a call. Do not treat this card as proof that recording is off. The announcement toggle likewise plays nothing yet."
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1">
@@ -615,18 +592,21 @@ const CompanyPolicies = () => {
                 </p>
               </div>
             </div>
-            <SettingRow
-              label="Announce recording to callers"
-              description="Play a short notice before a recorded call starts. Many countries require it, so check your local rules before turning it off."
-              control={
-                <Switch
-                  checked={form.recording_announcement}
-                  onCheckedChange={(checked) => updateForm({ recording_announcement: checked })}
-                />
-              }
-            />
+            <div className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 p-3">
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-semibold text-gray-900">Announce recording to callers</p>
+                <p className="text-xs text-gray-500">
+                  Play a short notice before a recorded call starts. Many countries require it, so
+                  check your local rules before turning it off.
+                </p>
+              </div>
+              <Switch
+                checked={form.recording_announcement}
+                onCheckedChange={(checked) => updateForm({ recording_announcement: checked })}
+              />
+            </div>
 
-            {/* Compliance guidance rejects wording that mentions recording but not that a
+            {/* Dialpad rejects wording that mentions recording but not that a
                 third party may be doing it — "this call may be recorded for
                 quality purposes" is their own example of a FAILING announcement.
                 The check runs as you type so the wording is fixed here rather
@@ -680,14 +660,14 @@ const CompanyPolicies = () => {
                 </div>
               </div>
             )}
-          </SettingCard>
+          </PolicyCard>
 
-          <SettingCard
+          <PolicyCard
             icon={<Archive className="h-5 w-5" />}
             title="Data retention"
-            description="How long call recordings and voicemail messages are kept before deletion."
-            status="coming-soon"
-            note="Coming soon. Nothing is deleted automatically yet — recordings and messages are kept until somebody removes them by hand."
+            summary="How long call recordings and voicemail messages are kept before deletion."
+            enforced={false}
+            enforcementNote="Saved only. Nothing deletes recordings or voicemails on this schedule today — there is no retention job behind it, so files stay until someone removes them by hand. Do not rely on this card to answer a compliance or data-deletion question."
           >
             {renderRetention(
               'retention_recordings',
@@ -699,14 +679,14 @@ const CompanyPolicies = () => {
               'Voicemail messages',
               'How long a voicemail is kept once it is left.',
             )}
-          </SettingCard>
+          </PolicyCard>
 
-          <SettingCard
+          <PolicyCard
             icon={<PhoneOutgoing className="h-5 w-5" />}
             title="International calling"
-            description="Whether a newly created user may dial abroad before an admin says otherwise."
-            status="app-only"
-            note="Works in this app when you add somebody: a new person starts on this setting. It does not change anyone already added."
+            summary="Whether a newly created user may dial abroad before an admin says otherwise."
+            enforced={false}
+            enforcementNote="Saved only. There is no international-dialling check in the product yet, so a new user can dial abroad regardless of what this says. Blocked is the safer value to record, and it matches the way Dialpad ships: off by default, because toll fraud usually shows up as international calls."
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1">
@@ -727,11 +707,13 @@ const CompanyPolicies = () => {
                 </p>
               </div>
             </div>
-          </SettingCard>
+          </PolicyCard>
 
           <div className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-gray-500">
-              Saved for your whole company. Your other settings are not affected.
+              Saved to the reserved &ldquo;{COMPANY_DEFAULT_TEMPLATE_NAME}&rdquo; record under
+              <span className="font-semibold"> settings.company_policies</span>. Everything else in
+              that record is left untouched.
             </p>
             <Button
               type="button"

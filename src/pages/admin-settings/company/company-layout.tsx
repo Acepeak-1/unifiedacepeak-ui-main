@@ -37,7 +37,7 @@ const CompanyLayout = () => {
     user?.company_info?.company_name || user?.user_info?.company_name || 'your company';
 
   return (
-    <section className="w-full h-full min-h-0 flex flex-col overflow-hidden bg-gray-200/15">
+    <section className="mcm-company-theme w-full h-full min-h-0 flex flex-col overflow-hidden bg-gray-200/15">
       <div className="flex items-start justify-between gap-4 p-3 border-b border-gray-200 min-h-[65px] bg-white">
         <div>
           <p className="text-gray-900 font-semibold text-lg">Company Phone Preferences</p>

@@ -174,7 +174,7 @@ const CompanyInfo = () => {
   };
 
   return (
-    <section className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-200/15">
+    <section className="mcm-company-theme flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-200/15">
       <div className="flex min-h-[65px] flex-col justify-center border-b border-gray-200 bg-white px-4 py-3">
         <p className="text-gray-900 font-semibold text-lg">Company &amp; Locations</p>
         <p className="text-gray-500 text-xs">
@@ -244,8 +244,8 @@ const CompanyInfo = () => {
             {defaultSite ? (
               <div className="rounded-xl border-t-3 border-primary bg-white shadow-sm">
                 <div className="flex gap-3 p-4">
-                  <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
-                    <Icon name="CompayIcon" className="h-6 w-6" />
+                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
+                    <Icon name="CompayIcon" className="h-5 w-5" />
                     <span className="absolute bottom-0 -right-1 h-3 w-3 rounded-full border border-white bg-green-500" />
                   </div>
                   <div className="flex flex-1 flex-col">
@@ -271,7 +271,7 @@ const CompanyInfo = () => {
                           <button
                             type="button"
                             aria-label="Edit the default location"
-                            title="Edit the default location"
+                            title="Edit"
                             className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-gray-500 hover:bg-primary hover:text-white"
                             onClick={() => handleEditSite(defaultSite)}
                           >
@@ -370,7 +370,7 @@ const CompanyInfo = () => {
                       if (value.startsWith(' ')) return;
                       setSearch(e.target.value);
                     }}
-                    Icon={<SearchLine className=" text-gray-700" />}
+                    Icon={<SearchLine className="h-4 w-4 text-gray-700" />}
                   />
                 </div>
                 {/* Comparing locations is a different job from reading one, and
@@ -454,6 +454,7 @@ const CompanyInfo = () => {
                             <button
                               type="button"
                               aria-label={`Edit ${site?.name || 'site'}`}
+                              title="Edit"
                               className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-gray-500 hover:bg-primary hover:text-white"
                               onClick={() => {
                                 handleEditSite(site);
@@ -466,6 +467,11 @@ const CompanyInfo = () => {
                             <button
                               type="button"
                               disabled={isDefault}
+                              aria-label={`Delete ${site?.name || 'site'}`}
+                              /* The main location cannot be deleted, so the
+                                 disabled button says why rather than leaving an
+                                 admin clicking at something inert. */
+                              title={isDefault ? 'The main location cannot be deleted' : 'Delete'}
                               className={`flex h-8 w-8 items-center justify-center rounded-full border ${
                                 isDefault
                                   ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-300'

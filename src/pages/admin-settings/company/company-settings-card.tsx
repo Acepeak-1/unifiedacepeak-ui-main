@@ -134,12 +134,12 @@ const CompanySettingsCard = () => {
           {rows.map((row) => (
             <div
               key={row.label}
-              className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 p-3"
+              className="mcm-accent-row flex items-start justify-between gap-3 rounded-lg border border-gray-200 p-3"
             >
               <div className="flex min-w-0 items-start gap-2">
                 <span className="mt-0.5 text-primary">{row.icon}</span>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-gray-500">{row.label}</p>
+                  <p className="text-xs font-semibold text-gray-900">{row.label}</p>
                   <p className="text-sm font-medium text-gray-900">{row.value}</p>
                 </div>
               </div>
