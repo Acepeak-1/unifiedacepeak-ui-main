@@ -1,7 +1,31 @@
-import { getAgentList, getChatAgentList, getSessionList } from '@/services/api';
+import { getAIReceptionistList, getChatAgentList, getSessionList } from '@/services/api';
 import AiSessionDetailDrawer from '@/pages/admin-settings/knowledge-base/components/ai-session-detail-drawer';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Download, Loader2, MessageSquare, Phone, Search } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Circle,
+  Download,
+  History,
+  Loader2,
+  MessageSquare,
+  Phone,
+  PhoneForwarded,
+  Search,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,6 +43,11 @@ const dateRangeOptions: SelectOption[] = [
 
 const allAgentsOption: SelectOption = { label: 'All agents', value: '' };
 const allOutcomesOption: SelectOption = { label: 'All outcomes', value: '' };
+const channelOptions: SelectOption[] = [
+  { label: 'All channels', value: 'all' },
+  { label: 'Voice', value: 'call' },
+  { label: 'Chat', value: 'chat' },
+];
 const sessionPageSize = 10;
 const sentimentScoreRows: Array<{
   key: SentimentKey;
@@ -29,6 +58,9 @@ const sentimentScoreRows: Array<{
   { key: 'neutral', label: 'Neutral', colorClass: 'bg-amber-400' },
   { key: 'negative', label: 'Negative', colorClass: 'bg-rose-500' },
 ];
+
+const cx = (...classes: Array<string | false | null | undefined>) =>
+  classes.filter(Boolean).join(' ');
 
 const safeNumber = (value: any) => {
   const number = Number(value);
@@ -108,16 +140,6 @@ const formatFullDateTime = (value: any) => {
   });
 };
 
-const getInitials = (value: any) => {
-  const words = String(value || '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!words.length) return 'AI';
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return `${words[0][0]}${words[1][0]}`.toUpperCase();
-};
-
 const getSessionIntents = (data: any): SessionIntent[] => {
   const seen = new Set<string>();
   return (Array.isArray(data?.intents) ? data.intents : [])
@@ -156,14 +178,6 @@ const getSentimentScores = (session: any) => {
   }));
 };
 
-const getSentimentEmoji = (session: any) => {
-  const sentiment = getSentimentLabel(session);
-  if (sentiment === 'positive') return '😊';
-  if (sentiment === 'negative') return '😞';
-  if (sentiment === 'neutral') return '😐';
-  return '–';
-};
-
 const getOutcome = (session: any) => {
   if (session?.status === 'active') return 'Active';
   if (session?.handoff) return 'Handoff';
@@ -172,11 +186,27 @@ const getOutcome = (session: any) => {
 };
 
 const getOutcomeClass = (outcome: string) => {
-  if (outcome === 'Resolved') return 'bg-emerald-100 text-emerald-700';
-  if (outcome === 'Handoff') return 'bg-amber-100 text-amber-800';
-  if (outcome === 'Callback') return 'bg-blue-100 text-blue-700';
-  if (outcome === 'Active') return 'bg-slate-100 text-slate-700';
-  return 'bg-rose-100 text-rose-700';
+  if (outcome === 'Resolved') return 'text-emerald-600';
+  if (outcome === 'Handoff') return 'text-amber-600';
+  if (outcome === 'Callback') return 'text-amber-600';
+  if (outcome === 'Active') return 'text-red-600';
+  return 'text-red-600';
+};
+
+const getOutcomeBorderClass = (outcome: string) => {
+  if (outcome === 'Resolved') return 'border-emerald-500';
+  if (outcome === 'Handoff') return 'border-amber-500';
+  if (outcome === 'Callback') return 'border-amber-500';
+  if (outcome === 'Active') return 'border-red-500';
+  return 'border-red-500';
+};
+
+const getOutcomeIcon = (outcome: string): LucideIcon => {
+  if (outcome === 'Resolved') return Check;
+  if (outcome === 'Handoff') return PhoneForwarded;
+  if (outcome === 'Callback') return ArrowUpRight;
+  if (outcome === 'Active') return Circle;
+  return X;
 };
 
 const getContactTitle = (session: any) => {
@@ -261,7 +291,7 @@ const ChannelPill = ({
   isSessionLabel?: boolean;
 }) => {
   const isCall = channel === 'call';
-  const icon = isCall ? '📞' : '💬';
+  const Icon = isCall ? Phone : MessageSquare;
   const label = isCall
     ? isSessionLabel
       ? 'Voice call'
@@ -270,31 +300,54 @@ const ChannelPill = ({
       ? 'Chat session'
       : 'Chat';
 
+  if (isSessionLabel) {
+    return (
+      <span
+        className={`inline-flex w-fit items-center gap-1.5 rounded-full px-[9px] py-1 text-[11.5px] font-bold ${
+          isCall ? 'bg-red-50 text-red-600' : 'bg-neutral-100 text-neutral-600'
+        }`}
+      >
+        <Icon className="h-3 w-3" strokeWidth={2.5} />
+        {label}
+      </span>
+    );
+  }
+
   return (
     <span
-      className={`inline-flex w-fit items-center gap-1.5 rounded-full px-[9px] py-1 text-[11.5px] font-bold ${
-        isCall ? 'bg-indigo-50 text-indigo-700' : 'bg-cyan-50 text-cyan-700'
+      title={label}
+      className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+        isCall ? 'bg-red-50 text-red-600' : 'bg-neutral-100 text-neutral-600'
       }`}
     >
-      <span className="text-[13px] leading-none">{icon}</span>
-      {label}
+      <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
     </span>
   );
 };
 
+const getSentimentPillClass = (session: any) => {
+  const sentiment = getSentimentLabel(session);
+  if (sentiment === 'positive') return 'bg-green-50! text-green-700!';
+  if (sentiment === 'negative') return 'bg-red-50! text-red-600!';
+  if (sentiment === 'neutral') return 'bg-amber-50! text-amber-700!';
+  return 'bg-gray-100! text-gray-500!';
+};
+
 const SentimentGraph = ({ session }: { session: any }) => {
   const score = getSentimentScore(session);
+  const label = getSentimentLabel(session) || 'neutral';
   const sentimentScores = getSentimentScores(session);
   const hasScores = sentimentScores.some((item) => item.score > 0);
 
   return (
-    <div className="group relative flex w-fit items-center gap-[7px]">
-      <span className="text-sm">{getSentimentEmoji(session)}</span>
-      <div className="h-1.5 w-[70px] overflow-hidden rounded-full bg-slate-200">
-        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${score}%` }} />
-      </div>
-      <div className="pointer-events-none absolute right-0 top-6 z-30 hidden w-[190px] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-xl group-hover:block">
-        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-slate-500">
+    <div className="group relative flex w-fit items-center">
+      <span
+        className={`inline-flex w-fit items-center justify-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold capitalize ${getSentimentPillClass(session)}`}
+      >
+        {label} · {Math.round(score)}
+      </span>
+      <div className="pointer-events-none absolute right-0 top-7 z-30 hidden w-[190px] rounded-2xl border border-neutral-200 bg-white p-3 text-left shadow-[0_8px_24px_rgba(0,0,0,.08)] group-hover:block">
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-red-600">
           Sentiment scores
         </div>
         {hasScores ? (
@@ -322,14 +375,111 @@ const SentimentGraph = ({ session }: { session: any }) => {
   );
 };
 
-const StatCard = ({ title, value, icon }: { title: string; value: string; icon?: string }) => (
-  <div className="rounded-[10px] border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-    <div className="text-[11px] font-medium text-slate-500">{title}</div>
-    <div className="mt-1 text-[22px] font-bold leading-tight text-slate-950">{value}</div>
-    <div className="mt-0.5 min-h-[14px] text-[11px] leading-none text-emerald-600">
-      {icon || '\u00a0'}
-    </div>
+const StatCard = ({
+  title,
+  value,
+  description,
+  isLast = false,
+  valueTone = 'default',
+}: {
+  title: string;
+  value: string;
+  description?: string;
+  isLast?: boolean;
+  valueTone?: 'default' | 'warn' | 'critical';
+}) => (
+  <div className={cx('flex flex-col gap-1.5 p-4', !isLast && 'border-b border-slate-100 sm:border-b-0 sm:border-r')}>
+    <span className="text-[11.5px] font-bold uppercase tracking-[0.06em] whitespace-nowrap text-neutral-700">
+      {title}
+    </span>
+    <span
+      className={`text-[26px] font-bold leading-tight tracking-tight whitespace-nowrap ${
+        valueTone === 'critical'
+          ? 'text-red-600'
+          : valueTone === 'warn'
+            ? 'text-amber-600'
+            : 'text-neutral-900'
+      }`}
+    >
+      {value}
+    </span>
+    <span className="text-xs text-neutral-400 whitespace-nowrap">{description || '\u00a0'}</span>
   </div>
+);
+
+const SessionsBreakdownCard = ({
+  total,
+  voice,
+  chat,
+  isLast = false,
+}: {
+  total: number;
+  voice: number;
+  chat: number;
+  isLast?: boolean;
+}) => (
+  <div className={cx('flex flex-col gap-1.5 p-4', !isLast && 'border-b border-slate-100 sm:border-b-0 sm:border-r')}>
+    <span className="text-[11.5px] font-bold uppercase tracking-[0.06em] whitespace-nowrap text-neutral-700">
+      Total sessions
+    </span>
+    <span className="text-[26px] font-bold leading-tight tracking-tight whitespace-nowrap text-neutral-900">
+      {total}
+    </span>
+    <span className="flex items-center gap-1.5">
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-indigo-50 px-2 py-0.5 text-[10.5px] font-semibold text-indigo-700">
+        <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+        {voice} voice
+      </span>
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-teal-50 px-2 py-0.5 text-[10.5px] font-semibold text-teal-700">
+        <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+        {chat} chat
+      </span>
+    </span>
+  </div>
+);
+
+const PillDropdown = ({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: SelectOption[];
+  onChange: (option: SelectOption) => void;
+}) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <button
+        type="button"
+        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border! border-neutral-200! bg-white! px-4 text-sm font-semibold text-neutral-700! shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-colors hover:border-red-300!"
+      >
+        {label}
+        <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+      </button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent
+      align="start"
+      className="w-[200px] max-h-[280px] overflow-y-auto bg-white border border-slate-200 shadow-lg rounded-xl p-1 z-50 animate-none"
+    >
+      {options.map((option) => {
+        const isSelected = value === option.value;
+        return (
+          <DropdownMenuItem
+            key={option.value || `all-${label}`}
+            onClick={() => onChange(option)}
+            className={`flex items-center justify-between gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer rounded-lg hover:bg-red-50! focus:bg-red-50! ${
+              isSelected ? 'bg-red-50! text-red-600! font-semibold' : 'text-slate-900'
+            }`}
+          >
+            <span className="truncate">{option.label}</span>
+            {isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-red-600" />}
+          </DropdownMenuItem>
+        );
+      })}
+    </DropdownMenuContent>
+  </DropdownMenu>
 );
 
 const AiBotSession = () => {
@@ -343,8 +493,8 @@ const AiBotSession = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: receptionistAgentList = [], isLoading: isLoadingReceptionists } = useQuery({
-    queryKey: ['getAgentList'],
-    queryFn: () => getAgentList(),
+    queryKey: ['getAIReceptionistList', 'sessions-agent-list'],
+    queryFn: () => getAIReceptionistList({ page: 1, limit: 1000 }),
     select: (data) => data?.data?.data?.result?.rows || [],
   });
 
@@ -443,6 +593,14 @@ const AiBotSession = () => {
   const pageStart = tableRows.length ? (currentPage - 1) * sessionPageSize + 1 : 0;
   const pageEnd = Math.min(tableRows.length, currentPage * sessionPageSize);
 
+  const pageWindow = useMemo(() => {
+    const windowSize = 5;
+    let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+    const end = Math.min(totalPages, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [currentPage, totalPages]);
+
   const pagedTableRows = useMemo(() => {
     const start = (currentPage - 1) * sessionPageSize;
     return tableRows.slice(start, start + sessionPageSize);
@@ -475,12 +633,21 @@ const AiBotSession = () => {
       0,
     );
 
+    const resolutionRateNumeric = totalSessions ? Math.round((resolved / totalSessions) * 100) : 0;
+
     return {
       totalSessions,
       voiceCalls,
       chatSessions,
       avgDuration: totalSessions ? formatDuration(totalDuration / totalSessions) : '0:00',
-      resolutionRate: totalSessions ? `${Math.round((resolved / totalSessions) * 100)}%` : '0%',
+      resolutionRate: totalSessions ? `${resolutionRateNumeric}%` : '0%',
+      resolutionRateTone: !totalSessions
+        ? 'default'
+        : resolutionRateNumeric < 50
+          ? 'critical'
+          : resolutionRateNumeric < 80
+            ? 'warn'
+            : 'default',
       handoffs,
       totalCost: formatCost(totalCost),
     };
@@ -503,8 +670,8 @@ const AiBotSession = () => {
       'Contact',
       'Started',
       'Duration',
-      'Cost',
       'Outcome',
+      'Cost',
       'Sentiment',
     ];
     const csvRows = tableRows.map((session: any) =>
@@ -514,8 +681,8 @@ const AiBotSession = () => {
         `${getContactTitle(session)} ${getContactSubText(session)}`,
         formatFullDateTime(session?.startedAt || session?.createdAt),
         formatDuration(session?.durationMs),
-        formatCost(session?.totalCostUSD),
         getOutcome(session),
+        formatCost(session?.totalCostUSD),
         getSentimentLabel(session),
       ]
         .map((value) => `"${String(value || '').replace(/"/g, '""')}"`)
@@ -525,140 +692,161 @@ const AiBotSession = () => {
   };
 
   return (
-    <section className="relative flex h-full w-full flex-col overflow-hidden bg-slate-50">
-      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-7 py-[18px]">
-        <div className="text-base font-semibold text-slate-950">
-          <button
-            type="button"
-            onClick={() => navigate('/admin-settings/knowledge/ai-agent')}
-            className="font-medium text-slate-500 transition-colors hover:text-primary"
-          >
-            AI Agents
-          </button>
-          <span className="mx-2 text-slate-400">/</span>
-          Sessions
+    <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#eef1f8] text-neutral-900">
+      <div className="flex min-h-[72px] items-center justify-between border-b border-neutral-200 bg-white px-7">
+        <div className="flex items-center gap-3">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-red-50 p-1.5">
+            <span className="flex h-full w-full items-center justify-center rounded-xl border-2 border-red-200 bg-white text-red-600">
+              <History className="h-5 w-5" strokeWidth={2.25} />
+            </span>
+          </span>
+          <div>
+            <div className="flex items-center gap-2 text-base font-medium text-neutral-500">
+              <button
+                type="button"
+                onClick={() => navigate('/admin-settings/knowledge/ai-agent')}
+                className="transition-colors hover:text-neutral-900"
+              >
+                AI Agents
+              </button>
+              <span>/</span>
+              <span className="text-neutral-900">Sessions</span>
+            </div>
+            <p className="mt-0.5 text-xs font-normal text-neutral-400">
+              Every AI receptionist call &amp; AI chatbot conversation — with transcripts,
+              sentiment &amp; outcomes.
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <select
-              value={dateRange}
-              onChange={(event) => setDateRange(event.target.value)}
-              className="h-[34px] min-w-[140px] appearance-none rounded-[7px] border border-slate-200 bg-white px-3 pr-9 text-xs font-semibold text-slate-950 outline-none"
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex h-10 min-w-[140px] shrink-0 items-center gap-1.5 rounded-full border! border-neutral-200! bg-white! px-4 text-sm font-semibold text-neutral-700! shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-colors hover:border-red-300!"
+              >
+                {dateRangeOptions.find((option) => option.value === dateRange)?.label ||
+                  'Date range'}
+                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-[180px] bg-white border border-slate-200 shadow-lg rounded-xl p-1 z-50 animate-none"
             >
-              {dateRangeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-          </div>
+              {dateRangeOptions.map((option) => {
+                const isSelected = dateRange === option.value;
+                return (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setDateRange(option.value)}
+                    className={`flex items-center justify-between gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer rounded-lg hover:bg-red-50! focus:bg-red-50! ${
+                      isSelected ? 'bg-red-50! text-red-600! font-semibold' : 'text-slate-900'
+                    }`}
+                  >
+                    <span className="truncate">{option.label}</span>
+                    {isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-red-600" />}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
             type="button"
             onClick={exportCsv}
-            className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-slate-400"
+            className="inline-flex h-10 items-center gap-1.5 rounded-full border! border-neutral-200! bg-white! px-4 text-sm font-semibold text-neutral-700! shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-colors hover:border-red-200! hover:bg-red-50! hover:text-red-600!"
           >
-            <Download className="h-3.5 w-3.5" />
-            Export CSV
+            <Download className="h-4 w-4 shrink-0" />
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-7 py-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-7 overflow-auto bg-[#eef1f8] px-7 py-6">
         <div>
-          <h1 className="text-[19px] font-extrabold leading-tight text-slate-950">Sessions</h1>
-          <p className="mt-1 text-[13px] text-slate-500">
-            Every AI receptionist call & AI chatbot conversation — with transcripts, sentiment &
-            outcomes.
-          </p>
-        </div>
-
-        <div className="my-4 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-          <StatCard title="Total sessions" value={String(stats.totalSessions)} />
-          <StatCard title="Voice calls" value={String(stats.voiceCalls)} />
-          <StatCard title="Chat sessions" value={String(stats.chatSessions)} />
-          <StatCard title="Avg duration" value={stats.avgDuration} />
-          <StatCard title="Resolution rate" value={stats.resolutionRate} />
-          <StatCard title="Escalations / handoffs" value={String(stats.handoffs)} />
-          <StatCard title="Total cost" value={stats.totalCost} />
-        </div>
-
-        <div className="mb-3.5 flex flex-nowrap items-center gap-2.5 max-xl:flex-wrap">
-          <div className="relative min-w-[220px] flex-[1_1_220px]">
-            <Search className="absolute left-[13px] top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              placeholder="Search by contact, agent, intent or transcript..."
-              className="h-[38px] w-full rounded-[10px] border border-slate-200 bg-white pl-[38px] pr-3 text-[13.5px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-red-600 focus:ring-4 focus:ring-red-600/10"
+          <div className="mb-3 flex items-center gap-2.5">
+            <h2 className="text-[12.5px] font-semibold uppercase tracking-[0.05em] text-red-600">
+              Overview
+            </h2>
+            <span className="h-px flex-1 bg-neutral-200" />
+          </div>
+          <div className="relative grid grid-cols-1 rounded-[14px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:grid-cols-2 lg:grid-cols-5">
+            <SessionsBreakdownCard
+              total={stats.totalSessions}
+              voice={stats.voiceCalls}
+              chat={stats.chatSessions}
             />
-          </div>
-          {(['all', 'call', 'chat'] as SessionChannel[]).map((channel) => {
-            const isActive = activeChannel === channel;
-            const Icon = channel === 'call' ? Phone : channel === 'chat' ? MessageSquare : null;
-            return (
-              <button
-                key={channel}
-                type="button"
-                onClick={() => setActiveChannel(channel)}
-                className={`inline-flex h-[34px] items-center gap-1.5 rounded-full border px-3 text-xs font-semibold ${
-                  isActive
-                    ? 'border-red-600 bg-red-600 text-white'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
-                {channel === 'all' ? 'All' : channel === 'call' ? 'Voice' : 'Chat'}
-              </button>
-            );
-          })}
-          <div className="relative min-w-[190px]">
-            <select
-              value={selectedAgent.value}
-              onChange={(event) => {
-                const option = agentOptions.find((item) => item.value === event.target.value);
-                setSelectedAgent(option || allAgentsOption);
-              }}
-              className="h-[38px] w-full appearance-none rounded-[10px] border border-slate-200 bg-white px-3 pr-8 text-[13.5px] text-slate-900 outline-none"
-            >
-              {agentOptions.map((option) => (
-                <option key={option.value || 'all-agents'} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
-          </div>
-          <div className="relative min-w-[170px]">
-            <select
-              value={selectedOutcome.value}
-              onChange={(event) => {
-                const option = outcomeOptions.find((item) => item.value === event.target.value);
-                setSelectedOutcome(option || allOutcomesOption);
-              }}
-              className="h-[38px] w-full appearance-none rounded-[10px] border border-slate-200 bg-white px-3 pr-8 text-[13.5px] text-slate-900 outline-none"
-            >
-              {outcomeOptions.map((option) => (
-                <option key={option.value || 'all-outcomes'} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+            <StatCard title="Avg duration" value={stats.avgDuration} description="Per session" />
+            <StatCard
+              title="Resolution rate"
+              value={stats.resolutionRate}
+              description="Resolved without handoff"
+              valueTone={stats.resolutionRateTone as 'default' | 'warn' | 'critical'}
+            />
+            <StatCard
+              title="Escalations"
+              value={String(stats.handoffs)}
+              description="Handed off to a human"
+            />
+            <StatCard title="Total cost" value={stats.totalCost} description="This range" isLast />
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="grid w-full min-w-0 grid-cols-[82px_1.3fr_1.4fr_0.95fr_0.7fr_0.72fr_0.95fr_1fr_96px] items-center gap-3 border-b border-slate-200 bg-gradient-to-b from-white to-slate-50 px-[18px] py-3 text-[11px] font-bold uppercase tracking-[0.04em] text-slate-500">
-            <div>Channel</div>
+        <div className="flex flex-col gap-3 pb-4">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-[12.5px] font-semibold uppercase tracking-[0.05em] text-red-600">
+              Sessions
+            </h2>
+            <span className="h-px flex-1 bg-neutral-200" />
+          </div>
+
+        <div className="overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
+          <div className="flex flex-col gap-3 border-b border-neutral-200 bg-white px-[18px] py-3 sm:flex-row sm:items-center">
+            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border! border-neutral-200! bg-white! pl-2 pr-3 shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-all focus-within:border-red-300! focus-within:shadow-[0_0_0_4px_rgba(220,38,38,.1)]!">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <Search className="h-3.5 w-3.5" />
+              </span>
+              <input
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                placeholder="Search by contact, agent, intent..."
+                className="min-w-0 flex-1 border-none bg-transparent text-sm text-neutral-900 outline-none! placeholder:text-neutral-400"
+              />
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
+              <PillDropdown
+                label="Channel"
+                value={activeChannel}
+                options={channelOptions}
+                onChange={(option) => setActiveChannel((option.value || 'all') as SessionChannel)}
+              />
+              <PillDropdown
+                label="Agent"
+                value={selectedAgent.value}
+                options={agentOptions}
+                onChange={(option) => setSelectedAgent(option)}
+              />
+              <PillDropdown
+                label="Outcome"
+                value={selectedOutcome.value}
+                options={outcomeOptions}
+                onChange={(option) => setSelectedOutcome(option)}
+              />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+          <div className="min-w-[900px]">
+          <div className="grid w-full grid-cols-[82px_1.8fr_1.2fr_1fr_0.8fr_1fr_0.6fr_1fr] items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-[18px] py-[13px] text-[12px] font-bold uppercase tracking-[0.04em] text-neutral-500">
+            <div className="text-center">Channel</div>
             <div>Agent</div>
             <div>Contact</div>
             <div>Started</div>
-            <div>Duration</div>
-            <div>Cost</div>
+            <div className="text-center">Duration</div>
             <div>Outcome</div>
+            <div>Cost</div>
             <div>Sentiment</div>
-            <div className="text-right">Actions</div>
           </div>
 
           {isLoadingSessions || isLoadingReceptionists || isLoadingChatAgents ? (
@@ -675,34 +863,29 @@ const AiBotSession = () => {
               return (
                 <div
                   key={session?.sessionId}
-                  className="grid w-full min-w-0 cursor-pointer grid-cols-[82px_1.3fr_1.4fr_0.95fr_0.7fr_0.72fr_0.95fr_1fr_96px] items-center gap-3 border-b border-slate-100 px-[18px] py-3 last:border-b-0 hover:bg-slate-50"
+                  className="grid w-full min-w-0 cursor-pointer grid-cols-[82px_1.8fr_1.2fr_1fr_0.8fr_1fr_0.6fr_1fr] items-center gap-3 border-b border-neutral-100 px-[18px] py-2 transition-colors last:border-b-0 hover:bg-neutral-50"
                   onClick={() => setSelectedSession(session)}
                 >
-                  <div>
+                  <div className="flex justify-center">
                     <ChannelPill channel={session?.channel} />
                   </div>
-                  <div className="flex min-w-0 items-center gap-[9px]">
-                    <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
-                      {getInitials(agentName)}
+                  <div className="min-w-0">
+                    <div
+                      className="truncate text-[13px] font-normal text-slate-950"
+                      title={agentName}
+                    >
+                      {agentName}
                     </div>
-                    <div className="min-w-0">
-                      <div
-                        className="truncate text-[13px] font-bold text-slate-950"
-                        title={agentName}
-                      >
-                        {agentName}
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                        {deletedAgent ? (
-                          <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600">
-                            Deleted
-                          </span>
-                        ) : session?.channel === 'call' ? (
-                          'Receptionist'
-                        ) : (
-                          'Chat agent'
-                        )}
-                      </div>
+                    <div className="flex items-center gap-2 whitespace-nowrap text-[11px] text-slate-500">
+                      {deletedAgent ? (
+                        <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600">
+                          Deleted
+                        </span>
+                      ) : session?.channel === 'call' ? (
+                        'Receptionist'
+                      ) : (
+                        'Chat agent'
+                      )}
                     </div>
                   </div>
                   <div className="min-w-0">
@@ -713,75 +896,122 @@ const AiBotSession = () => {
                       {getContactSubText(session)}
                     </div>
                   </div>
-                  <div className="whitespace-nowrap text-[12.5px] text-slate-700">
+                  <div className="min-w-0 truncate text-[12.5px] text-slate-700">
                     {formatStarted(session?.startedAt || session?.createdAt)}
                   </div>
-                  <div className="whitespace-nowrap text-[12.5px] text-slate-700">
+                  <div className="min-w-0 truncate text-center text-[12.5px] text-slate-700">
                     {formatDuration(session?.durationMs)}
                   </div>
+                  <div className="flex min-w-0 justify-start">
+                    {(() => {
+                      const OutcomeIcon = getOutcomeIcon(outcome);
+                      return (
+                        <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-[12px] font-semibold text-neutral-900">
+                          <span
+                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1.5px] ${getOutcomeBorderClass(outcome)} ${getOutcomeClass(outcome)}`}
+                          >
+                            <OutcomeIcon
+                              className="h-2.5 w-2.5 shrink-0"
+                              strokeWidth={2.75}
+                              fill={outcome === 'Active' ? 'currentColor' : 'none'}
+                            />
+                          </span>
+                          {outcome}
+                        </span>
+                      );
+                    })()}
+                  </div>
                   <div
-                    className="whitespace-nowrap text-[12.5px] font-bold text-slate-900"
+                    className="min-w-0 truncate text-[12.5px] font-bold text-slate-900"
                     title={getCostBasis(session)}
                   >
                     {hasSessionCost(session) ? formatCost(session?.totalCostUSD) : '-'}
                   </div>
-                  <div>
-                    <span
-                      className={`inline-flex rounded-[9px] px-[9px] py-[3px] text-[11px] font-bold ${getOutcomeClass(outcome)}`}
-                    >
-                      {outcome}
-                    </span>
-                  </div>
-                  <SentimentGraph session={session} />
-                  <div className="flex justify-end gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSession(session)}
-                      className="grid h-[30px] w-[30px] place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                      aria-label="Open session"
-                    >
-                      <MessageSquare className="h-[15px] w-[15px]" />
-                    </button>
+                  <div className="flex justify-start">
+                    <SentimentGraph session={session} />
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="flex min-h-[260px] items-center justify-center text-slate-500">
+            <div className="flex min-h-[260px] items-center justify-center text-neutral-500">
               No sessions found.
             </div>
           )}
+          </div>
+          </div>
           {!isLoadingSessions &&
           !isLoadingReceptionists &&
           !isLoadingChatAgents &&
           tableRows.length ? (
-            <div className="flex items-center justify-between border-t border-slate-200 px-[18px] py-3 text-xs text-slate-500">
-              <div>
-                Showing {pageStart}-{pageEnd} of {tableRows.length}
+            <div className="flex flex-col gap-2 border-t border-neutral-200 bg-white px-[18px] py-3 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between">
+              <div className="font-medium">
+                Showing {pageStart}-{pageEnd} of {tableRows.length} record(s)
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(1)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+                >
+                  <ChevronsLeft className="h-3.5 w-3.5" />
+                </button>
                 <button
                   type="button"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
                 >
-                  Previous
+                  <ChevronLeft className="h-3.5 w-3.5" />
                 </button>
-                <span className="font-semibold text-slate-700">
-                  Page {currentPage} of {totalPages}
-                </span>
+                {pageWindow[0] > 1 && (
+                  <span className="flex h-7 w-7 items-center justify-center text-neutral-400">
+                    …
+                  </span>
+                )}
+                {pageWindow.map((page) => {
+                  const isActive = page === currentPage;
+                  return (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page)}
+                      className={
+                        isActive
+                          ? 'flex h-7 w-7 items-center justify-center rounded-full border border-red-600! bg-red-600! text-[11px] font-bold text-white!'
+                          : 'flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900'
+                      }
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                {pageWindow[pageWindow.length - 1] < totalPages && (
+                  <span className="flex h-7 w-7 items-center justify-center text-neutral-400">
+                    …
+                  </span>
+                )}
                 <button
                   type="button"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
                 >
-                  Next
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-500"
+                >
+                  <ChevronsRight className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
           ) : null}
+        </div>
         </div>
       </div>
 

@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '../ui/button';
-import { Label } from '../ui/label';
 import useDebounce from '@/hooks/use-debounce';
 // import { Icon } from '@/assets/icons/icon';
 import NotFound from '@/assets/images/not-found-img.svg';
@@ -59,13 +58,12 @@ function TableManager({
   initiallySelectedRows = {},
   extraParams = {},
   search = '',
-  emptyAction,
   staticData,
   showPagination = true,
   loaderTableClass = '',
   type = '',
   getRowClassName = defaultGetRowClassName,
-  emptyTablePlaceholder = 'Nothing here yet',
+  emptyTablePlaceholder = 'No Record Found!',
   tableRef,
   isHeightSet = true,
   tableMaxHeight = null,
@@ -83,9 +81,15 @@ function TableManager({
   handleFilterSelect = defaultHandleFilterSelect,
   customClass = '',
   descriptionEmptyTable = '',
+  emptyIcon = null,
   imageSize = 'min-w-44  max-w-44',
   clientSideSearch = false,
   renderSubComponent,
+  hideFooterRefresh = false,
+  recordsPosition = 'left',
+  centerPager = false,
+  pagerAccentClassName = 'border-ucass-blue-600 text-ucass-blue-600 bg-white',
+  disablePerPageMenuPortal = false,
 }: Readonly<{
   columns: any;
   loading?: boolean;
@@ -105,10 +109,6 @@ function TableManager({
   showPagination?: boolean;
   type?: string;
   emptyTablePlaceholder?: string;
-  /* The button that fixes an empty screen. Shown only when the list is
-     genuinely empty, never when a search found nothing - adding something is
-     not the answer to a search that missed. */
-  emptyAction?: React.ReactNode;
   getRowClassName?: (row: any) => string;
   isHeightSet?: boolean;
   tableMaxHeight?: any;
@@ -127,8 +127,14 @@ function TableManager({
   customClass?: string;
   descriptionEmptyTable?: string;
   imageSize?: string;
+  emptyIcon?: React.ReactNode;
   clientSideSearch?: boolean;
   renderSubComponent?: (rowOriginal: any) => React.ReactNode;
+  hideFooterRefresh?: boolean;
+  recordsPosition?: 'left' | 'right';
+  centerPager?: boolean;
+  pagerAccentClassName?: string;
+  disablePerPageMenuPortal?: boolean;
 }>) {
   const [rowSelection, setRowSelection] = useState(initiallySelectedRows);
   const [maxPageNumberListLimit, setMaxPageNumberListLimit] = useState(5);
@@ -426,32 +432,25 @@ function TableManager({
             <Loader variant="blue" />
           </div>
         ) : !hasRows ? (
-          /* A search that found nothing and an account with nothing in it looked
-             identical, so somebody who mistyped a name was told the same thing as
-             somebody who has not set anything up. They are different problems and
-             need different words - and offering "add your first one" to somebody
-             whose search simply missed would be actively unhelpful. */
-          <div className="mx-auto flex h-[calc(100%_-_45px)] w-full flex-col items-center justify-center gap-2 py-5 text-center">
-            <img src={NotFound} alt="" className={imageSize} />
-            {String(search || '').trim() ? (
-              <>
-                <p className="text-md font-medium text-gray-900">
-                  Nothing matches &ldquo;{String(search).trim()}&rdquo;
-                </p>
-                <p className="max-w-md text-sm text-gray-700">
-                  Check the spelling, or clear the search to see everything.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-md font-medium text-gray-900">{emptyTablePlaceholder}</p>
-                {descriptionEmptyTable ? (
-                  <p className="max-w-md text-sm text-gray-700">{descriptionEmptyTable}</p>
-                ) : null}
-                {emptyAction ? <div className="pt-2">{emptyAction}</div> : null}
-              </>
-            )}
-          </div>
+          emptyIcon ? (
+            <div className="flex h-[calc(100%_-_45px)] w-full flex-col items-center justify-center gap-3 py-5 text-center">
+              <div className="grid h-12 w-12 place-items-center rounded-full bg-ucass-blue-600/10 text-ucass-blue-600">
+                {emptyIcon}
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">{emptyTablePlaceholder}</p>
+                {descriptionEmptyTable && (
+                  <p className="mt-1 max-w-[320px] text-xs text-slate-500">{descriptionEmptyTable}</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col justify-center items-center gap-1 py-5 h-[calc(100%_-_45px)] w-full mx-auto">
+              <img src={NotFound} alt="BusyImage" className={imageSize} />
+              <p className="text-md font-medium text-gray-900">{emptyTablePlaceholder}</p>
+              <p className="text-sm text-gray-700">{descriptionEmptyTable}</p>
+            </div>
+          )
         ) : null}
 
         {/* {!table.getRowModel().rows?.length && !isLoading && !isFetching && (
@@ -468,124 +467,152 @@ function TableManager({
         )} */}
       </div>
 
-      {showPagination && (
+      {showPagination && (() => {
+        const recordCount = tbldata?.data?.data?.result?.totalItems || tbldata?.data?.data?.result?.total || 0;
+        const recordLabel = (
+          <span className={`whitespace-nowrap font-normal ${recordsPosition === 'left' ? 'sm:pl-3' : ''}`}>
+            {recordCount} record(s)
+          </span>
+        );
+        const perPageSelect = (
+          <span className="flex items-center gap-1.5">
+            <div className="w-16 tableSelect tableSelect--sm">
+              <CustomSelect
+                options={perPagesArr?.map((page) => ({
+                  label: page,
+                  value: page,
+                }))}
+                handleChange={(value) => {
+                  setPerPage(value);
+                  setPagination({
+                    pageIndex: 0,
+                    pageSize: value.value,
+                  });
+                  setMinPageNumberListLimit(0);
+                  setMaxPageNumberListLimit(pageNumberListLimit);
+                }}
+                value={perPage}
+                menuPlacement="top"
+                menuPortalTarget={disablePerPageMenuPortal ? false : undefined}
+              />
+            </div>
+            <span>per page</span>
+          </span>
+        );
+        const refreshButton = !hideFooterRefresh && (
+          <Button
+            className="cursor-pointer text-gray-900/80 hover:text-primary h-6 w-6"
+            type="button"
+            variant={'ghost'}
+            onClick={() => refetch()}
+          >
+            {isRefetching || isFetching ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCcw width={14} height={14} className="cursor-pointer" />
+            )}
+          </Button>
+        );
+        const pagerControls = (
+          <>
+            <button
+              type="button"
+              onClick={() => handleFirstPage()}
+              disabled={!table?.getCanPreviousPage()}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+            >
+              <ChevronsLeft className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePreviousPage()}
+              disabled={!table?.getCanPreviousPage()}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+
+            {table?.getPageOptions()?.map((page, index) => {
+              let start = pageIndex - Math.floor(pageNumberListLimit / 2);
+              let end = pageIndex + Math.ceil(pageNumberListLimit / 2);
+              if (start < 0) {
+                end += Math.abs(start);
+                start = 0;
+              }
+              if (page < end && page >= start) {
+                const isCurrent = table?.getState()?.pagination?.pageIndex === index;
+                return (
+                  <button
+                    type="button"
+                    key={page}
+                    onClick={() => table?.setPageIndex(index)}
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] transition-colors ${
+                      isCurrent
+                        ? `${pagerAccentClassName} border font-bold shadow-[0_1px_2px_rgba(0,0,0,.06)]`
+                        : 'text-slate-500 font-medium hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                  >
+                    {page + 1}
+                  </button>
+                );
+              } else {
+                return null;
+              }
+            })}
+
+            <button
+              type="button"
+              onClick={() => handleNextPage()}
+              disabled={!table?.getCanNextPage()}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleLastPage()}
+              disabled={!table?.getCanNextPage()}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+            >
+              <ChevronsRight className="h-3.5 w-3.5" />
+            </button>
+          </>
+        );
+
+        if (centerPager) {
+          return (
+            <div className="border-t border-slate-200 px-[18px] py-1.5">
+              <div className="flex w-full flex-col items-center gap-1.5 bg-white px-2 py-1 sm:flex-row sm:justify-between">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 sm:gap-4">
+                  {perPageSelect}
+                  {recordLabel}
+                  {refreshButton}
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">{pagerControls}</div>
+              </div>
+            </div>
+          );
+        }
+
+        return (
         // sticky left-0 bottom-2
         <div className="z-10 flex w-full flex-col gap-2 rounded-xl border border-gray-200 bg-white px-2 py-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2 font-semibold sm:gap-3">
               <div className="flex flex-wrap items-center gap-3 sm:divide-x sm:divide-gray-200">
-                <div className="flex items-center gap-2">
-                  <div className="w-20 tableSelect">
-                    <CustomSelect
-                      options={perPagesArr?.map((page) => ({
-                        label: page,
-                        value: page,
-                      }))}
-                      handleChange={(value) => {
-                        setPerPage(value);
-                        setPagination({
-                          pageIndex: 0,
-                          pageSize: value.value,
-                        });
-                        setMinPageNumberListLimit(0);
-                        setMaxPageNumberListLimit(pageNumberListLimit);
-                      }}
-                      value={perPage}
-                      menuPlacement="top"
-                    />
-                  </div>
-                  <Label className="text-gray-900/80 sm:pr-3">per page</Label>
-                </div>
-                <Label className="text-gray-900/80 sm:pl-3">
-                  {tbldata?.data?.data?.result?.totalItems ||
-                    tbldata?.data?.data?.result?.total ||
-                    0}{' '}
-                  record(s)
-                </Label>
+                {perPageSelect}
+                {recordsPosition === 'left' && recordLabel}
               </div>
-              <Button
-                className="cursor-pointer text-gray-900/80 hover:text-primary"
-                type="button"
-                variant={'ghost'}
-                onClick={() => refetch()}
-              >
-                {isRefetching || isFetching ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <RefreshCcw width={16} height={16} className="cursor-pointer" />
-                )}
-              </Button>
+              {refreshButton}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-1 sm:justify-end">
-              <Button
-                className="cursor-pointer hover:text-primary max-w-7 min-w-7 max-h-7 min-h-7"
-                variant={'ghost'}
-                type="button"
-                onClick={() => handleFirstPage()}
-                disabled={!table?.getCanPreviousPage()}
-              >
-                <ChevronsLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                className="cursor-pointer hover:text-primary max-w-7 min-w-7 max-h-7 min-h-7"
-                variant={'ghost'}
-                type="button"
-                onClick={() => handlePreviousPage()}
-                disabled={!table?.getCanPreviousPage()}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-
-              {table?.getPageOptions()?.map((page, index) => {
-                let start = pageIndex - Math.floor(pageNumberListLimit / 2);
-                let end = pageIndex + Math.ceil(pageNumberListLimit / 2);
-                if (start < 0) {
-                  end += Math.abs(start);
-                  start = 0;
-                }
-                if (page < end && page >= start) {
-                  return (
-                    <div
-                      className={`max-w-7 min-w-7 max-h-7 min-h-7  font-medium rounded-xl flex items-center justify-center cursor-pointer shadow-none text-sm
-                            ${
-                              table?.getState()?.pagination?.pageIndex === index
-                                ? 'text-white font-semibold bg-primary rounded-xl'
-                                : ' text-gray-900'
-                            }
-                            `}
-                      key={page}
-                      onClick={() => table?.setPageIndex(index)}
-                    >
-                      {page + 1}
-                    </div>
-                  );
-                } else {
-                  return null;
-                }
-              })}
-
-              <Button
-                className="cursor-pointer hover:text-primary max-w-7 min-w-7 max-h-7 min-h-7"
-                type="button"
-                variant={'ghost'}
-                onClick={() => handleNextPage()}
-                disabled={!table?.getCanNextPage()}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-              <Button
-                className="cursor-pointer hover:text-primary max-w-7 min-w-7 max-h-7 min-h-7"
-                type="button"
-                variant={'ghost'}
-                onClick={() => handleLastPage()}
-                disabled={!table?.getCanNextPage()}
-              >
-                <ChevronsRight className="w-4 h-4" />
-              </Button>
+              {pagerControls}
+              {recordsPosition === 'right' && recordLabel}
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </>
   );
 }

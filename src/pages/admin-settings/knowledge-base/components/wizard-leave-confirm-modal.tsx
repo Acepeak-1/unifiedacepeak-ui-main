@@ -13,30 +13,28 @@ function WizardLeaveConfirmModal({
 
   return (
     <div className="fixed inset-0 z-[200] grid place-items-center bg-slate-950/55 px-4">
-      <div className="w-[440px] max-w-[92vw] overflow-hidden rounded-[14px] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
-        <div className="flex items-start gap-[14px] px-6 pb-[14px] pt-[22px]">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#FEF3C7] text-[#92400E]">
-            <AlertTriangle className="h-[22px] w-[22px]" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="mb-[5px] text-[17px] font-bold text-gray-950">Leave the wizard?</h3>
-            <p className="text-[13px] leading-[1.55] text-slate-600">
-              You're in the middle of creating an agent. Leaving will discard your unsaved changes.
-            </p>
-          </div>
-        </div>
-        <div className="flex justify-end gap-[9px] px-6 pb-[22px] pt-[14px]">
+      <div className="w-[420px] max-w-[92vw] overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white p-7 text-center shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
+        <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 p-2">
+          <span className="flex h-full w-full items-center justify-center rounded-xl border-2 border-red-200 bg-white text-red-600">
+            <AlertTriangle className="h-6 w-6" strokeWidth={2.25} />
+          </span>
+        </span>
+        <h3 className="text-[19px] font-bold text-neutral-950">Leave the wizard?</h3>
+        <p className="mx-auto mt-2 max-w-[320px] text-[14px] leading-[1.55] text-neutral-500">
+          You're in the middle of creating an agent. Leaving will discard your unsaved changes.
+        </p>
+        <div className="mt-6 flex items-center justify-center gap-4">
           <button
             type="button"
             onClick={onStay}
-            className="rounded-lg border border-gray-200 bg-white px-[18px] py-[9px] text-sm font-semibold text-slate-700 transition hover:bg-gray-50"
+            className="rounded-full border! border-neutral-300! bg-white px-6 py-2.5 text-sm font-semibold text-neutral-700 outline-none! transition-colors hover:border-red-300!"
           >
             Stay
           </button>
           <button
             type="button"
             onClick={onDiscard}
-            className="rounded-lg bg-[#EF4444] px-[18px] py-[9px] text-sm font-semibold text-white transition hover:bg-[#B91C1C]"
+            className="rounded-full bg-red-600! px-6 py-2.5 text-sm font-bold text-white! outline-none! shadow-[0_2px_6px_rgba(220,38,38,.25)] transition-all hover:bg-red-700!"
           >
             Discard & leave
           </button>
