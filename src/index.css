@@ -3,7 +3,7 @@
    stay tabular and stop jittering as they tick.
    Must stay at the very top: CSS requires every @import to precede all other
    statements, and the imports below pull in real rules. */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 /* Loaded once here rather than from each page. Every rule in it is scoped to
@@ -629,6 +629,15 @@
   .custom-react-select__placeholder {
     color: var(--color-gray-700) !important;
     margin: 0 !important;
+  }
+
+  /* Location management's Country/Status filters: shown value reads in the
+     same light grey as an empty placeholder, matching the search box beside
+     them, instead of the usual dark selected-value colour. Scoped to this one
+     select via inputClass so other selects in the app keep their normal
+     weight. */
+  .loc-filter-select.custom-react-select__single-value {
+    color: var(--color-gray-700) !important;
   }
 
   .custom-react-select__multi-value {

@@ -12,10 +12,12 @@ import { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { Info } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { useUser } from '@/hooks/use-user';
 import { handleAlert } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   COMPANY_DEFAULTS_QUERY_KEY,
   COMPANY_DEFAULT_TEMPLATE_NAME,
@@ -112,7 +114,7 @@ const CompanyRulesForm = ({ tab }: { tab: string }) => {
   const isRules = tab === TAB_CONSTANT.SETTING_PERMISSIONS;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="company-rules-page flex min-h-0 flex-1 flex-col">
       {isError && (
         <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700 mb-3">
           Company preferences could not be loaded. Anything saved now would replace them, so saving
@@ -128,17 +130,26 @@ const CompanyRulesForm = ({ tab }: { tab: string }) => {
       )}
 
       {isRules && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 mb-3">
-          <p className="font-semibold text-gray-900 mb-1">How these settings are used</p>
-          <p className="mb-1">
-            These are what everybody at your company starts with. Each one has a{' '}
-            <strong>Let people change this themselves</strong> switch: leave it off and the company
-            setting stands for everyone, turn it on and a person may change that one thing on their
-            own phone.
-          </p>
-          <p className="text-gray-600">
-            Saving here does not rewrite phones that are already set up.
-          </p>
+        <div className="mb-3 flex items-center gap-1.5 text-xs text-gray-500">
+          <span>These are the company-wide defaults everyone starts with.</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 shrink-0 cursor-help text-gray-400" />
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              className="w-max max-w-[280px] [text-wrap:pretty] text-black"
+              style={{
+                background: '#fdf7f5',
+                border: 'none',
+                color: '#000',
+                boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+              }}
+            >
+              Turn on &ldquo;Let people change this themselves&rdquo; to let a person pick their
+              own setting. Leave it off to use this default for everyone.
+            </TooltipContent>
+          </Tooltip>
         </div>
       )}
 

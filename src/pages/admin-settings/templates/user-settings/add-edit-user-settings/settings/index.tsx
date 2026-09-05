@@ -101,7 +101,7 @@ const SettingPermission: FC<any> = ({ data }) => {
         <SettingCard
           title="Where this company works"
           status="coming-soon"
-          note="Saved, but no call uses it yet. The country and time zone here are what opening hours will be judged against once that is switched on."
+          note="Saved, but not used by any call yet — it only feeds opening hours once that's on."
           description="The country and clock everything else is measured against - opening hours, holidays, and the times shown in reports."
           aside={
             <Button type="button" variant="outline" onClick={() => openModal('regionalModal')}>
@@ -132,7 +132,7 @@ const SettingPermission: FC<any> = ({ data }) => {
         <SettingCard
           title="When you are open"
           status="coming-soon"
-          note="Saved, but calls are not routed by it yet — a call at 2am is treated exactly like one at 2pm. Nothing here changes what a caller hears until the switch reads it."
+          note="Saved, but calls aren't routed by it yet — every hour is still treated the same."
           description="Calls outside these hours are handled differently - that is what the closed-hours action on your numbers and queues points at."
           aside={
             <Button
@@ -160,7 +160,7 @@ const SettingPermission: FC<any> = ({ data }) => {
         <SettingCard
           title="Call recording"
           status="coming-soon"
-          note="Saved, but nothing is being recorded. Recording worked until 22 August and stopped when the call router was rebuilt; restoring it is separate from this setting."
+          note="Saved, but nothing is being recorded right now — that's separate from this setting."
           description="Whether calls are recorded automatically, or only when somebody chooses to start recording."
           aside={
             <Button

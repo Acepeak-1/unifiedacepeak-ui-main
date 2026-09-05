@@ -83,10 +83,14 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchMainSiteInfo = useCallback(async () => {
+    /* The API resolves the tenant from Origin/Referer (see the dev proxy in
+       vite.config.ts), not from this field — but it still validates it, and a
+       stale domain here (qa.mycountrymobile.com) gets rejected with 422. Match
+       the same tenant domain the proxy presents, so local dev asks for the
+       tenant it's actually about to be answered as. */
     const domain = getDomain().includes('localhost')
-      ? 'https://qa.mycountrymobile.com'
+      ? `https://${getEnv().VITE_APP_DOMAIN || 'ucaas.acepeak.com'}`
       : getDomain();
-    // const domain = "https://mcm.mycountrymobile.com";
     try {
       setIsLoading(true);
       setError(null);
@@ -208,10 +212,6 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     error,
   };
 
-  if (!stripePublishableKey) {
-    return <FullPageLoader />;
-  }
-
   if (isNoOrgPage) {
     return (
       <OrganizationContext.Provider value={{ ...value, isLoading: false }}>
@@ -228,6 +228,13 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
 
   if (error) {
     return <ServerMaintenance onRefresh={fetchMainSiteInfo} />;
+  }
+
+  /* Only reached once the org fetch has actually succeeded, so a missing key
+     here means the response genuinely had none — not that the fetch is still
+     in flight or failed, both of which are handled above. */
+  if (!stripePublishableKey) {
+    return <FullPageLoader />;
   }
 
   return (
