@@ -455,6 +455,20 @@
     border-color: var(--color-red-500) !important;
   }
 
+  /* The Custom Days entry card in Business Hours reads its own black theme
+     (see bussiness-hours-dialog.tsx), so its fields' borders stay black too
+     instead of the app-wide red used for a required/invalid state elsewhere. */
+  .custom-day-entry .border-red-500,
+  .custom-day-entry .react-select-error .custom-react-select__control {
+    border-color: #111111 !important;
+  }
+  .custom-day-entry button[data-slot='button'] {
+    border-color: #d4d4d4 !important;
+  }
+  .custom-day-entry button[data-slot='button']:hover {
+    border-color: #111111 !important;
+  }
+
   .custom-react-select__value-container {
     text-align: left !important;
     overflow: hidden !important;
@@ -663,6 +677,18 @@
   .custom-react-select__control--is-focused,
   .custom-react-select__control--menu-is-open {
     border-color: var(--primary) !important;
+  }
+
+  /* "Select Type" in the Custom Days card: no visible border until the field
+     is actually active, then black (this card's own theme) instead of the
+     app-wide red/primary focus colour. Scoped via `inputClass` so it doesn't
+     touch any other CustomSelect. */
+  .select-type-plain.custom-react-select__control {
+    border-color: transparent !important;
+  }
+  .select-type-plain.custom-react-select__control--is-focused,
+  .select-type-plain.custom-react-select__control--menu-is-open {
+    border-color: #111111 !important;
   }
 
   .custom-react-select__menu {

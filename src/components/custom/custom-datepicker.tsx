@@ -15,6 +15,7 @@ interface CustomDatePickerProps {
   minDate?: Date;
   label?: React.ReactNode;
   error?: any;
+  className?: string;
 }
 
 export function CustomDatePicker({
@@ -25,6 +26,7 @@ export function CustomDatePicker({
   minDate,
   label = null,
   error = '',
+  className,
 }: CustomDatePickerProps) {
   return (
     <div className="flex flex-col gap-1.5 w-full">
@@ -42,8 +44,9 @@ export function CustomDatePicker({
             variant="outline"
             disabled={disabled}
             className={cn(
-              'w-full justify-between text-left font-normal p-0 border-gray-300 hover:bg-white hover:border-primary hover:text-gray-900 gap-2',
-              !value && 'text-gray-900',
+              'w-full justify-between text-left font-normal p-0 border-gray-300 text-gray-900 hover:bg-white hover:border-primary hover:text-gray-900 gap-2',
+              error && 'border-red-500 hover:border-red-500',
+              className,
             )}
           >
             {value ? moment(value).format('YYYY-MM-DD') : <span>{placeholder}</span>}

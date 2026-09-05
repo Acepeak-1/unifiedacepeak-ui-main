@@ -73,7 +73,7 @@ const RoleModal: FC<RoleModalProps> = ({ modalState, setModalState, data }) => {
             <Button type="button" variant={'transparent'} onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="button" variant={'outline'} onClick={() => handleSubmit()}>
+            <Button type="button" variant={'dark'} onClick={() => handleSubmit()}>
               Submit
             </Button>
           </div>

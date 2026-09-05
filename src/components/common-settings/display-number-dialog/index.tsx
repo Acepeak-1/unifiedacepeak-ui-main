@@ -109,8 +109,8 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
           <li className="py-4 first:pt-0 last:pb-0">
             <div className="flex gap-2 flex-col">
               <div className="flex flex-col gap-1">
-                <p className="font-semibold text-md text-gray-900">Incoming number</p>
-                <small className="text-gray-700 text-sm">
+                <p className="font-semibold text-[14px] text-gray-900">Incoming number</p>
+                <small className="text-gray-700 text-[12px]">
                   Show the number the caller is using to call you
                 </small>
               </div>
@@ -145,8 +145,8 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
             <li className="py-4 flex flex-col gap-4">
               <div className="flex gap-2 flex-col">
                 <div className="flex flex-col gap-1">
-                  <p className="font-semibold text-md text-gray-900">Masking</p>
-                  <p className="text-gray-800 text-sm">
+                  <p className="font-semibold text-[14px] text-gray-900">Masking</p>
+                  <p className="text-gray-800 text-[12px]">
                     {showMaskingInputDesc[maskingValue as Exclude<MaskingType, 'N'>] ??
                       'Invalid masking type'}
                   </p>
@@ -263,7 +263,7 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
           {/* Final note */}
           <li className="pt-4">
             <div className="flex gap-2 justify-between items-center">
-              <Label className="text-sm">
+              <Label className="text-[12px]">
                 If number is blocked or unknown, show my number instead
               </Label>
 
@@ -285,7 +285,7 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
             <Button type="button" variant={'transparent'} onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="button" variant={'outline'} onClick={() => handleSubmit()}>
+            <Button type="button" variant={'dark'} onClick={() => handleSubmit()}>
               Submit
             </Button>
           </div>
