@@ -83,20 +83,10 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchMainSiteInfo = useCallback(async () => {
-    /* On localhost there is no tenant domain to read off the URL, so one has
-       to be named. This used to be hardcoded to qa.mycountrymobile.com, which
-       the API no longer has settings for — it answers "Website settings not
-       found", the fetch throws, and the app sits on a loader forever. It
-       takes the domain this build is for (VITE_APP_DOMAIN) instead, so a dev
-       server shows the same branding as the deployment it belongs to. */
-    const configuredDomain = (
-      (getEnv() as { VITE_APP_DOMAIN?: string }).VITE_APP_DOMAIN || ''
-    ).trim();
-    const localDomain = configuredDomain
-      ? `https://${configuredDomain.replace(/^https?:\/\//i, '').replace(/\/$/, '')}`
-      : 'https://qa.mycountrymobile.com';
-    const domain = getDomain().includes('localhost') ? localDomain : getDomain();
-    // const domain = "https://mcm.mycountrymobile.com";
+    const configuredDomain = (getEnv() as { VITE_APP_DOMAIN?: string }).VITE_APP_DOMAIN;
+    const domain = getDomain().includes('localhost')
+      ? `https://${configuredDomain || 'ucaas.acepeak.com'}`
+      : getDomain();
     try {
       setIsLoading(true);
       setError(null);
@@ -123,31 +113,11 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     document.title = '';
     fetchMainSiteInfo();
   }, [fetchMainSiteInfo]);
-  // Apply mainSiteInfo colors to CSS variables: --primary, --color-ucass-primary-200, --color-ucass-active
-  useEffect(() => {
-    if (!mainSiteInfo || typeof document === 'undefined') return;
-    const root = document.documentElement;
-    const primary = mainSiteInfo.primary_color;
-    const secondary = mainSiteInfo.secondary_color;
-    const activeSidebar = mainSiteInfo.active_sidebar_color;
-    const activeSidebarbg = mainSiteInfo.active_sidebar_bg_color;
-    const loginBgColor = mainSiteInfo.login_page_bg_color;
-    if (typeof primary === 'string' && primary) {
-      root.style.setProperty('--primary', primary);
-    }
-    if (typeof secondary === 'string' && secondary) {
-      root.style.setProperty('--color-ucass-primary-200', secondary);
-    }
-    if (typeof activeSidebar === 'string' && activeSidebar) {
-      root.style.setProperty('--color-ucass-active', activeSidebar);
-    }
-    if (typeof activeSidebarbg === 'string' && activeSidebarbg) {
-      root.style.setProperty('--color-ucass-active-bg', activeSidebarbg);
-    }
-    if (typeof loginBgColor === 'string' && loginBgColor) {
-      root.style.setProperty('--color-ucass-login-bg', loginBgColor);
-    }
-  }, [mainSiteInfo]);
+  // Per-org white-label color override — disabled. This build is locked to the
+  // Acepeak red/neutral brand (index.css fallbacks), so a backend org record's
+  // own primary/secondary/sidebar/login-bg colors (e.g. MCM's blue on the qa
+  // domain) must not overwrite it at runtime. Re-enable by restoring the
+  // setProperty calls here if per-tenant color white-labeling is needed again.
 
   // Apply organization branding to the document and social-sharing metadata.
   useEffect(() => {
@@ -218,18 +188,6 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     error,
   };
 
-  /* Loading and failure are checked first. This guard used to run ahead of
-     them, and since the key only arrives with the organisation, any failed
-     fetch left the app on a permanent spinner — the maintenance screen below,
-     with its retry, could never be reached. */
-  if (isLoading) {
-    return <FullPageLoader />;
-  }
-
-  if (error) {
-    return <ServerMaintenance onRefresh={fetchMainSiteInfo} />;
-  }
-
   if (isNoOrgPage) {
     return (
       <OrganizationContext.Provider value={{ ...value, isLoading: false }}>
@@ -238,6 +196,18 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
         </Elements>
       </OrganizationContext.Provider>
     );
+  }
+
+  if (isLoading) {
+    return <FullPageLoader />;
+  }
+
+  if (error) {
+    return <ServerMaintenance onRefresh={fetchMainSiteInfo} />;
+  }
+
+  if (!stripePublishableKey) {
+    return <FullPageLoader />;
   }
 
   return (

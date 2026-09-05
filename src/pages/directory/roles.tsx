@@ -9,6 +9,15 @@ import AlertConfirm from '@/components/custom/alert-confirm';
 import AddNewRole from '@/pages/admin-settings/roles/add-new-role';
 import AssignUsersModal from '@/pages/admin-settings/roles/assign-users-modal';
 import { DirectoryPage, EmptyRow, SearchChip } from './page-shell';
+import { InfoIcon, MoreVertical } from 'lucide-react';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import './roles-theme.css';
 
 /**
  * Directory ▸ Roles — what people are allowed to do.
@@ -87,31 +96,30 @@ const Roles = () => {
   };
 
   return (
-    <>
+    <div className="rol-theme">
       <DirectoryPage
-        title="Roles"
-        description="What each person sees in this app — and how many people hold each role."
-        /* The description used to say "what each person is allowed to do", which
-           is the one thing a role here does not decide. The three screens that
-           only describe this model — the capability table, Admin scope and
-           Default permissions — all warn that the platform does not check
-           permissions when it answers a request. This screen and the permission
-           tick-boxes are where an administrator actually builds and saves the
-           thing, and they were the two carrying no warning at all, so the
-           caveat was on the map and not on the controls. */
-        note={
-          <>
-            <b>These decide what the app shows, not what the platform allows.</b> A role is checked
-            when this app draws a screen, and it is not checked again when the platform answers a
-            request. So tightening a role makes the product simpler for the person using it rather
-            than locking anything away, and it is not a security control on its own. The one thing
-            that does hold is the kind of person somebody is — administrator, agent — which is
-            checked properly.
-          </>
+        titleClassName="dir-serif-heading"
+        title={
+          <span className="flex items-center gap-2">
+            Roles
+            <CustomTooltip
+              text={
+                <>
+                  What each person sees in this app —
+                  <br />
+                  and how many people hold each role.
+                </>
+              }
+              side="top"
+              className="!bg-gray-300 !text-black whitespace-normal text-left"
+            >
+              <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+            </CustomTooltip>
+          </span>
         }
         actions={
           isAdmin ? (
-            <button type="button" className="btn primary" onClick={() => setCreating(true)}>
+            <button type="button" className="btn primary soft-accent" onClick={() => setCreating(true)}>
               <Ic n="plus" />
               New role
             </button>
@@ -126,13 +134,13 @@ const Roles = () => {
           </>
         }
       >
-        <table>
+        <table className="tbl">
           <thead>
-            <tr>
-              <th>Role</th>
-              <th>Type</th>
-              <th>People</th>
-              <th>Actions</th>
+            <tr className="tbl__head-row">
+              <th className="tbl__th tbl__th--left">Role</th>
+              <th className="tbl__th tbl__th--left">Type</th>
+              <th className="tbl__th tbl__th--left">People</th>
+              <th className="tbl__th tbl__th--left">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -142,55 +150,64 @@ const Roles = () => {
               visible.map((role: Role) => {
                 const system = isSystemRole(role);
                 return (
-                  <tr key={role?.uuid || role?.role_uuid || role?.name}>
-                    <td>
-                      <div className="list-row-name">{role?.name || '—'}</div>
-                      <div className="list-row-sub">{role?.description || 'No description'}</div>
+                  <tr key={role?.uuid || role?.role_uuid || role?.name} className="tbl__row">
+                    <td className="tbl__td tbl__td--left">
+                      <div className="tbl__name">{role?.name || '—'}</div>
+                      <div className="tbl__subtitle">{role?.description || 'No description'}</div>
                     </td>
-                    <td>
+                    <td className="tbl__td tbl__td--left">
                       <span className={system ? 'tag neu' : 'tag acc'}>
                         {system ? 'System' : 'Custom'}
                       </span>
                     </td>
-                    <td className="num">{usersOn(role)}</td>
-                    <td>
-                      <span className="flex items-center gap-1">
-                        {isAdmin ? (
-                          <button
-                            type="button"
-                            className="mini"
-                            title={`Assign people to ${role?.name}`}
-                            aria-label={`Assign people to ${role?.name}`}
-                            onClick={() => setAssigning(role)}
-                          >
-                            <Ic n="users" size={12} />
-                          </button>
-                        ) : null}
-                        {/* Predefined roles belong to the platform — the
-                            platform's own screen refuses these too. */}
-                        {isAdmin && !system ? (
-                          <button
-                            type="button"
-                            className="mini"
-                            title={`Edit ${role?.name}`}
-                            aria-label={`Edit ${role?.name}`}
-                            onClick={() => setEditing(role)}
-                          >
-                            <Ic n="sliders" size={12} />
-                          </button>
-                        ) : null}
-                        {isAdmin && !system ? (
-                          <button
-                            type="button"
-                            className="mini"
-                            title={`Delete ${role?.name}`}
-                            aria-label={`Delete ${role?.name}`}
-                            onClick={() => setDeleting(role)}
-                          >
-                            <Ic n="trash" size={12} />
-                          </button>
-                        ) : null}
-                      </span>
+                    <td className="tbl__td tbl__td--left num tbl__value">{usersOn(role)}</td>
+                    <td className="tbl__td tbl__td--left" onClick={(event) => event.stopPropagation()}>
+                      {isAdmin ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="mini"
+                              title={`Actions for ${role?.name}`}
+                              aria-label={`Actions for ${role?.name}`}
+                            >
+                              <MoreVertical size={14} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="border-transparent">
+                            <DropdownMenuItem
+                              className="ppl-row-menu-item"
+                              onSelect={() => setAssigning(role)}
+                            >
+                              <Ic n="users" size={14} />
+                              Assign people
+                            </DropdownMenuItem>
+                            {/* Predefined roles belong to the platform — the
+                                platform's own screen refuses these too. */}
+                            {!system ? (
+                              <DropdownMenuItem
+                                className="ppl-row-menu-item"
+                                onSelect={() => setEditing(role)}
+                              >
+                                <Ic n="sliders" size={14} />
+                                Edit
+                              </DropdownMenuItem>
+                            ) : null}
+                            {!system ? (
+                              <DropdownMenuItem
+                                variant="destructive"
+                                className="ppl-row-menu-item"
+                                onSelect={() => setDeleting(role)}
+                              >
+                                <Ic n="trash" size={14} />
+                                Delete
+                              </DropdownMenuItem>
+                            ) : null}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                   </tr>
                 );
@@ -256,7 +273,7 @@ const Roles = () => {
           ),
         }}
       />
-    </>
+    </div>
   );
 };
 

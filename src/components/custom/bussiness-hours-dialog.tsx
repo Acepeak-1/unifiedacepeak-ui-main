@@ -1,27 +1,26 @@
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { CUSTOM_HOURS_SCHEDULE_OPTIONS } from '@/constants/forwarding-consts';
 import { ModalProps } from '@/interfaces/common-interface';
 import { FC, useEffect, useState } from 'react';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 import ErrorTooltip from './error-tooltip';
-import { AddCircle, CloseIcon } from '@/assets/icons';
 import { CustomDatePicker } from './custom-datepicker';
+import { TimePicker } from './time-picker';
 import moment from 'moment';
 import ForwardingActions from './forwarding-actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { useUser } from '@/hooks/use-user';
-import { getHolidaysFormVal, handleAlert } from '@/lib/utils';
+import { cn, getHolidaysFormVal, handleAlert } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { COMPANY_DEFAULTS_QUERY_KEY, fetchCompanyDefaults } from '@/lib/company-defaults';
 import { buildHolidayImport, readCompanyHolidays } from '@/lib/company-holiday-import';
 import ForwardingHolidaysActions from './forward-holidays-action';
 import { OPERATIONAL_HOURS } from '../common-settings/constants';
+import { CalendarClock, Clock3, Plus, Trash2, X } from 'lucide-react';
 
 interface IBussinessModalProps extends ModalProps {
   setError: (value: string | null) => void;
@@ -191,6 +190,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
       return handleAlert({
         text: 'Set what happens outside opening hours first. Each holiday needs an action, and company holidays copy that one.',
         type: 'error',
+        position: 'top-right',
       });
     }
 
@@ -203,16 +203,20 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
           ? 'Those company holidays are already on this line.'
           : 'No company holidays have been set up yet.',
         type: 'info',
+        position: 'top-right',
       });
     }
 
     /* The capacity message names the limit, because "3 could not be added" with
-       no reason reads as a bug. */
+       no reason reads as a bug. Placed top-right rather than the default
+       top-center: this dialog is itself centred on screen, so a centred toast
+       rendered directly over its title bar and covered it while showing. */
     handleAlert({
       text: skippedCapacity
         ? `Added ${added}. ${skippedCapacity} did not fit — a line holds ${MAX_HOLIDAYS} holidays. Remove some, or add the rest by hand.`
         : `Added ${added} company ${added === 1 ? 'holiday' : 'holidays'}. Check the action on each, then save.`,
       type: skippedCapacity ? 'info' : 'success',
+      position: 'top-right',
     });
   };
 
@@ -279,62 +283,95 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
 
   return (
     <Dialog open={modalState} onOpenChange={(val) => setModalState(val)}>
-      <DialogContent className="md:w-1/2   p-3 max-h-[99%] overflow-y-auto" showCloseButton={false}>
-        <div className="flex flex-col gap-1.5  text-900/80">
-          <div className="font-semibold truncate text-md flex items-center justify-between">
-            <DialogTitle className="text-base font-semibold">Business Hours</DialogTitle>
-            <div
+      <DialogContent
+        className="max-h-[92vh] overflow-y-auto rounded-2xl border border-neutral-200 p-0 shadow-[0_20px_60px_rgba(0,0,0,0.18)] md:w-1/2"
+        showCloseButton={false}
+      >
+        <div className="flex flex-col gap-1.5 px-5 pt-5 text-900/80">
+          <div className="flex items-center justify-between gap-3 truncate text-md font-semibold">
+            <DialogTitle className="flex items-center gap-2.5 text-[18px] font-bold text-neutral-950">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-red-50 text-red-600">
+                <Clock3 className="h-4 w-4" />
+              </span>
+              Business Hours
+            </DialogTitle>
+            <button
+              type="button"
               onClick={handleCancel}
-              className="cursor-pointer text-gray-500 ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
+              className="shrink-0 rounded-full p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
             >
-              <CloseIcon className="w-3 h-3" />
-            </div>
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
+
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="flex w-full max-h-[calc(100vh-250px)] overflow-auto pr-1"
+          className="flex max-h-[calc(100vh-250px)] w-full flex-col overflow-auto px-5 pb-5"
         >
-          <div className="border-b border-gray-200 w-full">
-            <TabsList className="flex text-sm font-semibold text-center  p-0 rounded-none bg-transparent min-h-10 ">
-              <TabsTrigger
-                className="data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:text-primary border-b-2 px-6  text-gray-700 cursor-pointer h-full rounded-none w-2/4   m-auto relative flex gap-1 bg-transparent font-semibold data-[state=active]:shadow-2xs"
-                value={TABS.GENERAL_SETTINGS}
-              >
-                {TABS.GENERAL_SETTINGS}{' '}
-              </TabsTrigger>
-              <TabsTrigger
-                className="data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:text-primary border-b-2 px-6  text-gray-700 cursor-pointer h-full rounded-none w-2/4   m-auto relative flex gap-1 bg-transparent font-semibold data-[state=active]:shadow-2xs"
-                value={TABS.CUSTOM_SETTINGS}
-              >
-                {TABS.CUSTOM_SETTINGS}{' '}
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="mb-4 mt-1 inline-flex h-auto w-fit gap-[3px] self-start rounded-full bg-neutral-100 p-1 text-sm">
+            <TabsTrigger
+              className="rounded-full px-4 py-1.5 text-xs font-semibold text-neutral-600 transition-colors data-[state=active]:bg-white data-[state=active]:text-neutral-950 data-[state=active]:shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+              value={TABS.GENERAL_SETTINGS}
+            >
+              {TABS.GENERAL_SETTINGS}
+            </TabsTrigger>
+            <TabsTrigger
+              className="rounded-full px-4 py-1.5 text-xs font-semibold text-neutral-600 transition-colors data-[state=active]:bg-white data-[state=active]:text-neutral-950 data-[state=active]:shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+              value={TABS.CUSTOM_SETTINGS}
+            >
+              {TABS.CUSTOM_SETTINGS}
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value={TABS.GENERAL_SETTINGS}>
-            <RadioGroup
-              className="border border-gray-200 rounded-xl flex gap-4 p-3 min-h-10 mb-2"
-              value={watch('settings.operational_hours.type')}
-              onValueChange={(value) => {
-                handleRadioChange(value);
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="24_hours" id="24_hours" className="cursor-pointer" />
-                <Label htmlFor="24_hours" className="cursor-pointer">
-                  24 Hours, all times
-                </Label>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="weekly" id="weekly" className="cursor-pointer" />
-                <Label htmlFor="weekly" className="cursor-pointer">
-                  Weekly Schedule
-                </Label>
-              </div>
-            </RadioGroup>
+            <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {[
+                {
+                  value: '24_hours',
+                  label: '24 Hours, all times',
+                  copy: 'The AI answers around the clock — no after-hours handling needed.',
+                  icon: <Clock3 className="h-4 w-4" />,
+                },
+                {
+                  value: 'weekly',
+                  label: 'Weekly Schedule',
+                  copy: 'Set specific open hours per day. Outside those hours, callers hit your after-hours flow.',
+                  icon: <CalendarClock className="h-4 w-4" />,
+                },
+              ].map((option) => {
+                const isSelected = watch('settings.operational_hours.type') === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleRadioChange(option.value)}
+                    className={cn(
+                      'flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all duration-150',
+                      isSelected
+                        ? 'border-neutral-900 bg-neutral-100'
+                        : 'border-neutral-200 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'grid h-9 w-9 shrink-0 place-items-center rounded-lg',
+                        isSelected ? 'bg-black text-white' : 'bg-neutral-100 text-neutral-500',
+                      )}
+                    >
+                      {option.icon}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-neutral-950">
+                        {option.label}
+                      </p>
+                      <p className="mt-0.5 text-xs leading-5 text-neutral-500">{option.copy}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
             {watchBusinessHour?.type === 'weekly' && (
               <div className="min-h-[350px]">
                 <div className="flex flex-col gap-2">
@@ -355,46 +392,58 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                     return (
                       <div
                         key={`${day}-${index}`}
-                        className="flex items-center gap-4 bg-ucass-primary-200/50 p-2 rounded-lg"
+                        className={cn(
+                          'flex flex-wrap items-center justify-between gap-3 rounded-2xl px-5 py-4 transition-colors',
+                          open ? 'bg-neutral-100' : 'bg-neutral-50',
+                        )}
                       >
-                        <div className="inline-flex">
-                          {/* <div className="bg-primary/20 rounded-xl py-3 px-4 flex gap-4 min-w-40 justify-between"> */}
-                          <div className="py-2 px-3 flex gap-4 min-w-40 justify-between">
-                            <div className="flex gap-2">
-                              <Label className="capitalize">{day}</Label>
-                            </div>
-                            <Switch
-                              onCheckedChange={(checked) => {
-                                handleChangeScheduleOption(checked, day);
-                              }}
-                              checked={open}
-                            />
-                          </div>
+                        <div className="flex w-[152px] shrink-0 items-center justify-between gap-3">
+                          <Label className="text-sm font-semibold capitalize text-neutral-600">
+                            {day}
+                          </Label>
+                          <Switch
+                            onCheckedChange={(checked) => {
+                              handleChangeScheduleOption(checked, day);
+                            }}
+                            checked={open}
+                          />
                         </div>
                         {open && (
-                          <div className="flex gap-4 w-full">
-                            <Input
-                              placeholder="Enter start"
-                              type="time"
-                              {...register(`settings.operational_hours.value.${day}.start`)}
-                            />
-
-                            <Input
-                              placeholder="Enter end"
-                              type="time"
-                              {...register(`settings.operational_hours.value.${day}.end`)}
-                            />
-                            {(errors?.settings as any)?.operational_hours?.value?.[day]?.end
-                              ?.message && (
-                              <ErrorTooltip
-                                text={
-                                  (errors?.settings as any)?.operational_hours?.value?.[day]?.end
-                                    ?.message
+                          <>
+                            <div className="flex shrink-0 flex-nowrap items-center gap-3">
+                              <TimePicker
+                                placeholder="Enter start"
+                                value={watch(`settings.operational_hours.value.${day}.start`)}
+                                onChange={(next) =>
+                                  setValue(`settings.operational_hours.value.${day}.start`, next, {
+                                    shouldValidate: true,
+                                  })
                                 }
                               />
-                            )}
+                              <span className="shrink-0 text-xs font-medium text-neutral-400">
+                                to
+                              </span>
+                              <TimePicker
+                                placeholder="Enter end"
+                                value={watch(`settings.operational_hours.value.${day}.end`)}
+                                onChange={(next) =>
+                                  setValue(`settings.operational_hours.value.${day}.end`, next, {
+                                    shouldValidate: true,
+                                  })
+                                }
+                              />
+                              {(errors?.settings as any)?.operational_hours?.value?.[day]?.end
+                                ?.message && (
+                                <ErrorTooltip
+                                  text={
+                                    (errors?.settings as any)?.operational_hours?.value?.[day]?.end
+                                      ?.message
+                                  }
+                                />
+                              )}
+                            </div>
 
-                            <div className="flex gap-2 items-center w-full">
+                            <div className="flex shrink-0 items-center gap-2">
                               <Checkbox
                                 checked={watch(
                                   `settings.operational_hours.value.${day}.is_checked`,
@@ -426,18 +475,21 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                                 }}
                                 id={`check-${index}`}
                               />
-                              <Label htmlFor={`check-${index}`} className="cursor-pointer">
+                              <Label
+                                htmlFor={`check-${index}`}
+                                className="cursor-pointer whitespace-nowrap text-sm font-semibold text-neutral-600"
+                              >
                                 24 Hours
                               </Label>
                             </div>
-                          </div>
+                          </>
                         )}
                       </div>
                     );
                   })}
 
                   {!aiMode && (
-                    <div className="p-3 border border-gray-200 rounded-lg gap-3 flex flex-col">
+                    <div className="p-4 border border-neutral-200 rounded-lg gap-3 flex flex-col">
                       <ForwardingActions
                         setValue={setValue}
                         watch={watch}
@@ -446,11 +498,12 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                         mainClasses="w-full"
                         selectWidth="w-1/2"
                         selectInnerWidth="w-fit"
-                        selectTwoWidth="w-fit"
-                        gap="sm:gap-2 xs:gap-2"
-                        mainGapClasses="gap-0"
-                        mainTypeDivClass="w-1/3"
+                        selectTwoWidth="flex-1 min-w-[220px]"
+                        gap="sm:gap-8 xs:gap-2"
+                        mainGapClasses="gap-2"
+                        mainTypeDivClass="sm:w-1/3!"
                         radioClass="w-fit pr-2"
+                        mainValueDivClass="sm:w-full!"
                         mainValueJustifyClass="justify-between w-full"
                         audioCustomClass="w-80"
                         typeLabel="Closed Hour Type"
@@ -468,17 +521,14 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
 
           <TabsContent value={TABS.CUSTOM_SETTINGS}>
             {/* Custom Days */}
-            <div className="p-3 bg-ucass-primary-200/50  border border-ucass-primary-200 rounded-lg gap-3 flex flex-col">
-              <div className="flex justify-between items-center">
-                <div className="font-semibold truncate text-md flex items-center justify-between">
-                  Custom Days Settings
-                </div>
+            <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-neutral-100 p-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-bold text-neutral-950">Custom Days Settings</p>
                 <div className="flex items-center gap-2">
                   {/* Only offered when the company has actually declared holidays,
                       so the button never promises something that does nothing. */}
                   {companyHolidays.length > 0 && (
-                    <Button
-                      variant={'outline'}
+                    <button
                       type="button"
                       onClick={() => importCompanyHolidays()}
                       disabled={fields?.length >= MAX_HOLIDAYS}
@@ -487,19 +537,20 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                           ? `This line already holds ${MAX_HOLIDAYS} holidays`
                           : 'Copy the holidays set up for your company onto this line'
                       }
-                      className="h-10 text-xs font-semibold"
+                      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border! border-neutral-300! bg-white! px-3 text-xs font-semibold text-neutral-700 outline-none! transition-all duration-150 hover:-translate-y-0.5 hover:border-red-300! disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                     >
                       Add company holidays ({companyHolidays.length})
-                    </Button>
+                    </button>
                   )}
-                  <Button
-                    variant={'outline'}
+                  <button
                     type="button"
                     onClick={() => appendCustomDays()}
-                    className="w-10 h-10"
+                    disabled={fields.length >= MAX_HOLIDAYS}
+                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-600! px-3 text-xs font-bold text-white! shadow-[0_2px_6px_rgba(220,38,38,.25)] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <AddCircle className="w-6 h-6" />
-                  </Button>
+                    <Plus className="h-3.5 w-3.5" />
+                    Add day
+                  </button>
                 </div>
               </div>
 
@@ -511,7 +562,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                 return (
                   <div
                     key={field.id}
-                    className="flex flex-col gap-2 bg-white p-3 rounded-lg border border-ucass-primary-200"
+                    className="custom-day-entry flex flex-col gap-2 bg-neutral-50 p-3 rounded-lg shadow-md"
                   >
                     <div className="flex items-end gap-2 justify-between">
                       <div className="flex items-end gap-2 w-[calc(100%_-_2.5rem)]">
@@ -520,6 +571,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                             {...register(`settings.operational_hours.holidays.${index}.title`)}
                             placeholder="Title"
                             type="text"
+                            className="border-transparent! hover:border-transparent! focus:border-neutral-900!"
                             error={
                               (errors?.settings as any)?.operational_hours?.holidays?.[index]?.title
                                 ?.message
@@ -532,6 +584,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                             name={fromPath}
                             render={({ field }) => (
                               <CustomDatePicker
+                                className="border-transparent! hover:border-transparent! focus-visible:border-neutral-900! data-[state=open]:border-neutral-900!"
                                 placeholder="Select From"
                                 minDate={prevToDate ? moment(prevToDate).toDate() : new Date()}
                                 value={field.value ? moment(field.value).toDate() : null}
@@ -554,6 +607,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                             name={toPath}
                             render={({ field }) => (
                               <CustomDatePicker
+                                className="border-transparent! hover:border-transparent! focus-visible:border-neutral-900! data-[state=open]:border-neutral-900!"
                                 placeholder="Select To"
                                 minDate={
                                   currentFromDate ? moment(currentFromDate).toDate() : new Date()
@@ -572,14 +626,13 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                           />
                         </div>
                       </div>
-                      <Button
+                      <button
                         type="button"
-                        variant="outline"
                         onClick={() => remove(index)}
-                        className="text-red-500 text-lg font-bold w-10 h-10 border-red-500 hover:bg-red-500"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border! border-neutral-200! bg-white! text-neutral-500 outline-none! transition-colors hover:border-red-300! hover:bg-red-50! hover:text-red-600"
                       >
-                        <CloseIcon className="w-3 h-3" />
-                      </Button>
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
 
                     {!aiMode && (
@@ -599,14 +652,22 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
-          <div className="justify-end flex gap-2">
-            <Button type="button" variant={'transparent'} onClick={handleCancel}>
+        <DialogFooter className="border-t border-neutral-100 px-5 py-4">
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="inline-flex h-10 items-center justify-center rounded-lg border! border-neutral-200! bg-white! px-4 text-sm font-bold text-neutral-700 outline-none! transition-all duration-150 hover:-translate-y-0.5 hover:border-red-300! hover:bg-red-50! hover:text-red-700"
+            >
               Cancel
-            </Button>
-            <Button type="button" variant={'outline'} onClick={() => handleSubmit()}>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSubmit()}
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-black! px-4 text-sm font-bold text-white! shadow-[0_2px_6px_rgba(0,0,0,.25)]"
+            >
               Submit
-            </Button>
+            </button>
           </div>
         </DialogFooter>
       </DialogContent>

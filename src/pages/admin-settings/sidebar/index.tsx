@@ -29,18 +29,18 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
       title: 'Captain',
       type: 'accordion',
       value: 'captain',
-      icon: 'UserCircleIcon',
+      icon: 'SupportAgentLine',
       visible: true,
       enabled: true,
       children: [
         { title: 'Playground', icon: 'PlayCircle', path: '/admin-settings/captain/playground' },
         { title: 'Assistants', icon: 'AIChatIcon', path: '/admin-settings/captain/assistants' },
         { title: 'Documents', icon: 'DocumentAdd', path: '/admin-settings/captain/documents' },
-        { title: 'FAQs', icon: 'QuestionIcon', path: '/admin-settings/captain/faqs' },
+        { title: 'FAQs', icon: 'InfoIcon', path: '/admin-settings/captain/faqs' },
         { title: 'Scenarios', icon: 'PlayDottedCircle', path: '/admin-settings/captain/scenarios' },
         { title: 'Actions', icon: 'WebhookIcon', path: '/admin-settings/captain/actions' },
         { title: 'Inboxes', icon: 'InboxIcon', path: '/admin-settings/captain/inboxes' },
-        { title: 'Settings', icon: 'SettingsIcon', path: '/admin-settings/captain/settings' },
+        { title: 'Settings', icon: 'Tuning', path: '/admin-settings/captain/settings' },
       ],
     },
     {
@@ -58,14 +58,14 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
         {
           title: 'Company & Locations',
           path: '/admin-settings/company',
-          icon: 'CompayIcon',
+          icon: 'LocationIcon',
           enabled: true,
           visible: Boolean(features?.plan_features?.account_setting?.access?.SITE?.action?.view),
         },
         {
           title: 'Company Rules',
           path: COMPANY_RULES_PATH,
-          icon: 'SettingsIcon',
+          icon: 'DescriptionIcon',
           enabled: true,
           visible: Boolean(features?.plan_features?.account_setting?.access?.SITE?.action?.view),
         },
@@ -83,11 +83,11 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
       enabled: true,
       children: [
         { title: 'Profile', icon: 'ExtensionIcon', path: '/admin-settings/account/profile' },
-        { title: 'Preferences', icon: 'SettingIcon', path: '/admin-settings/account/preferences' },
+        { title: 'Preferences', icon: 'SettingsIcon', path: '/admin-settings/account/preferences' },
         { title: 'My Phone', icon: 'PhoneIcon', path: '/admin-settings/account/phone' },
         {
           title: 'Notifications',
-          icon: 'NotificationIcon',
+          icon: 'NotificationLine',
           path: '/admin-settings/account/notifications',
         },
         {
@@ -95,10 +95,10 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
           icon: 'GreetingIcon',
           path: '/admin-settings/account/greetings',
         },
-        { title: 'Media Files', icon: 'MediaIcon', path: '/admin-settings/account/media' },
+        { title: 'Media Files', icon: 'MediaFilesIcon', path: '/admin-settings/account/media' },
         {
           title: 'Security & Privacy',
-          icon: 'ShieldIcon',
+          icon: 'SecurityCheckLine',
           path: '/admin-settings/account/security',
         },
       ].filter(Boolean),
@@ -107,14 +107,14 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
       title: 'People',
       type: 'accordion',
       value: 'users',
-      icon: 'UserCircleIcon',
+      icon: 'UsersIcon',
       visible:
         IS_ADMIN || Boolean(features?.plan_features?.account_setting?.access?.USER?.action?.view),
       enabled: true,
       children: [
         {
           title: 'People',
-          icon: 'ExtensionIcon',
+          icon: 'UsersGroup',
           path: '/admin-settings/people',
         },
         {
@@ -122,7 +122,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
              for "what happens when I remove somebody" looks next to the people,
              not under access control. */
           title: 'Joining and leaving',
-          icon: 'UserCircleIcon',
+          icon: 'UserPlusLine',
           path: '/admin-settings/joining-and-leaving',
         },
         /* Access is one decision made in four steps, so the four screens are
@@ -149,7 +149,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
         {
           /* Step 3 — roles say what somebody may do. This says who to. */
           title: 'Admin scope',
-          icon: 'LockFilled',
+          icon: 'UserCheck',
           path: '/admin-settings/admin-scope',
           enabled: IS_ADMIN,
           visible: IS_ADMIN,
@@ -158,7 +158,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
           /* Step 4 — what a role should hold, as opposed to what one happens
              to hold, and what a brand-new person starts on. */
           title: 'Default permissions',
-          icon: 'RoleIcon',
+          icon: 'ChecksLineIcon',
           path: '/admin-settings/default-permissions',
           enabled: IS_ADMIN,
           visible: IS_ADMIN,
@@ -166,7 +166,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
         {
           /* The reference table. Every capability against every kind of person. */
           title: 'What each role can do',
-          icon: 'RoleIcon',
+          icon: 'AdministratorLine',
           path: '/admin-settings/capability-matrix',
           enabled: IS_ADMIN,
           visible: IS_ADMIN,
@@ -194,7 +194,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
         {
           title: 'Identities & addresses',
           path: '/admin-settings/numbers/identities',
-          icon: 'AllNumberIcon',
+          icon: 'TablerPinLine',
           extraActiveTab: ['addresses', 'verifications'],
         },
         {
@@ -207,7 +207,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
              number's, which is how an admin asks the question. */
           title: 'Numbers by line',
           path: '/admin-settings/numbers/by-line',
-          icon: 'AllNumberIcon',
+          icon: 'CompanyNumbersIcon',
         },
         {
           title: 'Unused numbers',
@@ -217,14 +217,14 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
         {
           title: 'Released numbers',
           path: '/admin-settings/numbers/released',
-          icon: 'HashIcon',
+          icon: 'ReleaseNumber',
           enabled: true,
           visible: Boolean(features?.plan_features?.virtual_numbers?.action?.view),
         },
         {
           title: 'Call Coverage',
           path: '/admin-settings/numbers/coverage',
-          icon: 'TickCircleIcon',
+          icon: 'GlobeIcon',
         },
       ].filter(Boolean),
     },
@@ -301,14 +301,14 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
         {
           title: 'Domain',
           path: '/admin-settings/knowledge/domain',
-          icon: 'GlobeIcon',
+          icon: 'WindowFrameLine',
           visible: false,
           enabled: Boolean(features?.plan_features?.ai?.IS_SHOW),
         },
         {
           title: 'Sessions',
           path: '/admin-settings/knowledge/ai-bot-session',
-          icon: 'AIChatIcon',
+          icon: 'TranscriptLineIcon',
           enabled: Boolean(features?.plan_features?.ai?.IS_SHOW),
           visible: Boolean(features?.plan_features?.ai?.IS_SHOW),
         },
@@ -316,7 +316,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
         {
           title: 'Settings',
           path: '/admin-settings/knowledge/ai-settings',
-          icon: 'SettingsIcon',
+          icon: 'SettingsLine',
           enabled: Boolean(features?.plan_features?.ai?.IS_SHOW),
           visible: Boolean(features?.plan_features?.ai?.IS_SHOW),
         },
@@ -339,7 +339,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
         { title: 'CRM', icon: 'CRMIcon', path: '/admin-settings/integration/crm' },
         {
           title: 'General Settings',
-          icon: 'SettingsIcon',
+          icon: 'ConnectIcon',
           path: '/admin-settings/integration/data-reporting/general-settings',
         },
         {
@@ -357,7 +357,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
     {
       key: 'admin-settings.social_media_channels',
       id: 'social_media_channels',
-      title: 'Social Media Channels',
+      title: 'SMC',
       path: '/admin-settings/social-media-channels',
       icon: 'ShareIcon',
       enabled: Boolean(features?.plan_features?.omni_channel?.IS_SHOW),
@@ -413,7 +413,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
           id: 'destinations',
           title: 'Destinations',
           path: '/admin-settings/calling-rates/destinations',
-          icon: 'CallOutgoing',
+          icon: 'PaperPinIcon',
         },
       ].filter(Boolean),
     },
@@ -465,7 +465,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
           id: '10DLCReseller',
           title: 'Reseller',
           path: '/admin-settings/compliance/brands/reseller',
-          icon: 'DepartmentIcon',
+          icon: 'Bag',
         },
       ].filter(Boolean),
     },
@@ -676,8 +676,10 @@ const Sidebar = () => {
           end
           className={({ isActive }) => `mcm-adminnav-all ${isActive ? 'on' : ''}`}
         >
-          <Icon name={'Grid' as IconType} className="h-4 w-4" />
-          All admin screens
+          <span className="mcm-adminnav-iconwrap">
+            <Icon name={'Grid' as IconType} className="h-4 w-4" />
+          </span>
+          <span className="mcm-adminnav-label">All admin screens</span>
         </NavLink>
         <div className="mcm-adminnav h-full min-h-0 divide-y divide-gray-200">
           {!searchedItems?.length ? (
@@ -686,6 +688,10 @@ const Sidebar = () => {
           {searchedItems?.map(
             ({ type, icon = '', path, title, children, value, enabled }, index: number) => {
               const isActive = value === activeItem;
+              /* People gets the black/red treatment matching its own pages
+                 (Directory > People); every other section keeps the platform's
+                 blue accent. */
+              const isPeopleArea = value === 'users';
               if (type === 'accordion') {
                 const visibleChildren = (children || [])?.filter((child: any) =>
                   canShowItem(child, IS_ADMIN),
@@ -701,21 +707,34 @@ const Sidebar = () => {
                     collapsible
                   >
                     <AccordionItem value={value} className="">
-                      <AccordionTrigger className="p-0 items-center" isActive={isActive}>
-                        <div
-                          className={`flex items-center w-full px-3 h-14 gap-2 cursor-pointer font-medium whitespace-nowrap ${isActive ? 'mcm-adminnav-section-active' : ''}`}
-                        >
-                          <Icon name={icon as IconType} className="w-6 h-6 p-0.5" />
-                          {title}
+                      <AccordionTrigger
+                        className="p-0 items-center"
+                        isActive={isActive}
+                        {...(isPeopleArea
+                          ? {
+                              activeClassName:
+                                '[&>button[data-state=open]]:bg-red-50 [&>button[data-state=open]]:text-red-600 [&>button[data-state=open]]:border-r-red-600 [&>button[data-state=open]]:border-r-2',
+                              activeIconClassName: 'text-red-600',
+                            }
+                          : {})}
+                      >
+                        <div className="flex items-center w-full px-3 h-14 gap-2 cursor-pointer font-medium whitespace-nowrap">
+                          <span className="mcm-adminnav-iconwrap">
+                            <Icon name={icon as IconType} className="w-6 h-6 p-0.5" />
+                          </span>
+                          <span className="mcm-adminnav-label">{title}</span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="border md:border-0  md:bg-ucass-primary-200/20 bg-white z-10 relative">
+                      <AccordionContent
+                        className={`border md:border-0 z-10 relative bg-white ${isPeopleArea ? 'md:bg-red-50/40' : 'md:bg-ucass-primary-200/20'}`}
+                      >
                         {visibleChildren?.map(
                           ({ title, path, icon, extraActiveTab, enabled }: any, index: number) => {
                             return (
                               <Tile
                                 key={index}
-                                {...{ title, path, icon, extraActiveTab, children, enabled }}
+                                {...{ title, path, icon, extraActiveTab, enabled }}
+                                nested
                               />
                             );
                           },
@@ -725,7 +744,7 @@ const Sidebar = () => {
                   </Accordion>
                 );
               } else {
-                return <Tile key={index} {...{ title, path, icon, children, enabled }} />;
+                return <Tile key={index} {...{ title, path, icon, enabled }} topLevel />;
               }
             },
           )}
@@ -737,28 +756,45 @@ const Sidebar = () => {
 
 export default Sidebar;
 
-const Tile = ({ title, path, icon, extraActiveTab, children, enabled }: any) => {
+const Tile = ({ title, path, icon, extraActiveTab, enabled, topLevel, nested }: any) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isEnabled = enabled !== false;
 
   const isActive =
     pathname === path || extraActiveTab?.some((segment: string) => pathname?.includes(segment));
-  const isChildrenExist = Boolean(children && children?.length);
   return (
     <div
-      className={`flex items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer ${isActive ? (isChildrenExist ? 'text-primary' : 'text-primary bg-ucass-primary-200/50 border-r-primary border-r-2') : 'text-gray-900/80'} ${isChildrenExist ? 'pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
+      className={`flex items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer ${isActive ? 'text-primary bg-ucass-primary-200/50 border-r-primary border-r-2' : 'text-gray-900/80'} ${nested ? 'pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
       {...getRoutePrefetchHandlers(path)}
       onClick={() => {
         if (!isEnabled || !path) return;
         navigate(path);
       }}
     >
-      <Icon name={icon as IconType} className="w-5 h-5 p-0.5" />
-      <p title={title} className="font-medium truncate text-sm">
+      <span className="mcm-adminnav-iconwrap">
+        <Icon name={icon as IconType} className="w-5 h-5 p-0.5" />
+      </span>
+      <p title={title} className="mcm-adminnav-label font-medium truncate text-sm">
         {title}
       </p>
-      {!isEnabled && <span className="text-xs">🔒</span>}
+      {!isEnabled && <span className="mcm-adminnav-label text-xs">🔒</span>}
+      {/* Every other top-level section is an accordion with a chevron; this
+          one has nothing to expand, but matching the affordance keeps the
+          row from looking unfinished next to its siblings. It stays pointed
+          down like every other row's chevron — the active-row background
+          and red text already carry the "you are here" signal, so rotating
+          this one sideways only made it look out of line with the rest.
+          `mr-3` matches the inset the shared AccordionTrigger's own chevron
+          gets — without it this one sat flush against the row's edge,
+          offset from every accordion row's chevron beside it. */}
+      {topLevel && (
+        <ChevronDown
+          className={`mcm-adminnav-chevron ml-auto mr-3 h-4 w-4 shrink-0 transition-transform duration-200 ${
+            isActive ? 'text-primary' : 'text-gray-400'
+          }`}
+        />
+      )}
     </div>
   );
 };

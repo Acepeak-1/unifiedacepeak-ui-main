@@ -142,7 +142,11 @@ apiClient.interceptors.response.use(
 
     }
 
-    if (error?.response?.status === 401 && !config?.allowUnauthorized) {
+    // Local dev only: `npm run dev` never signs a developer out on a 401, so a
+    // stale token during local work doesn't force a re-login. Production
+    // builds are unaffected — `import.meta.env.DEV` is statically `false`
+    // there and this branch is dead-code-eliminated.
+    if (!import.meta.env.DEV && error?.response?.status === 401 && !config?.allowUnauthorized) {
       if (typeof window !== 'undefined') {
         (window as any).isSessionTerminated = true;
       }

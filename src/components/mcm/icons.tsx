@@ -89,6 +89,19 @@ export const Ic = ({
     viewBox="0 0 24 24"
     style={size ? { width: size, height: size } : undefined}
     aria-hidden="true"
+    /* Presentation-attribute fallback for the .ic CSS rule (mcm-page.css),
+       which only applies under a `.mcm-page` ancestor — an icon rendered
+       inside a portal (a Radix dropdown/dialog, which mounts to
+       document.body) sits outside that ancestor and would otherwise render
+       with the SVG default fill (a solid black blob, or nothing at all for
+       stroke-only glyphs like `sliders`). A CSS rule with a real ancestor
+       selector still wins over these where `.mcm-page` is present, so this
+       changes nothing there. */
+    fill={fill ? 'currentColor' : 'none'}
+    stroke={fill ? 'none' : 'currentColor'}
+    strokeWidth={1.8}
+    strokeLinecap="round"
+    strokeLinejoin="round"
   >
     <use href={`#mcmp-${n}`} />
   </svg>

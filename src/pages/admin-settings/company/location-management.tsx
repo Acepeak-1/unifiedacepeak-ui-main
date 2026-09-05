@@ -38,16 +38,20 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
+  CalendarCog,
   CheckCircle2,
   Clock,
   Download,
   Globe2,
+  Info,
   Loader2,
+  Search,
   MapPin,
 } from 'lucide-react';
 
 import { AdminPage } from '@/pages/admin-settings/page-shell';
 import { SettingCard, SettingRow } from '@/components/mcm/setting-card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -362,34 +366,92 @@ const LocationManagement = () => {
 
   return (
     <AdminPage
-      section="Company"
-      title="Location management"
-      description="Every location your company works from, side by side — so you can compare them without opening each one."
+      className="location-management-page mcm-company-theme"
+      section={
+        <span
+          className="uppercase"
+          style={{
+            fontFamily: "'IBM Plex Mono', 'ui-monospace', 'SF Mono', Menlo, monospace",
+            fontWeight: 800,
+            fontStyle: 'normal',
+            fontSize: '12px',
+            lineHeight: '18px',
+            letterSpacing: '0.1em',
+            color: 'rgb(220, 38, 38)',
+          }}
+        >
+          Company
+        </span>
+      }
+      title={
+        <span className="flex items-center gap-1.5">
+          <span
+            className="italic"
+            style={{
+              fontFamily: "'Instrument Serif', Georgia, serif",
+              fontWeight: 400,
+              fontSize: '27px',
+              lineHeight: '33px',
+              color: 'rgb(23, 23, 23)',
+            }}
+          >
+            Location management
+          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-4 w-4 shrink-0 cursor-help text-gray-400" />
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              className="w-max max-w-[220px] [text-wrap:pretty] text-black [&_svg]:fill-[#fdf7f5]"
+              style={{
+                background: '#fdf7f5',
+                border: 'none',
+                color: '#000',
+                boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+              }}
+            >
+              Compare every location side by side, without opening each one.
+            </TooltipContent>
+          </Tooltip>
+        </span>
+      }
       actions={
-        <Button type="button" variant="outline" onClick={exportCsv} disabled={!rows.length}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={exportCsv}
+          disabled={!rows.length}
+          className="rounded-lg bg-white text-black border-black hover:bg-white"
+        >
           <Download className="h-3.5 w-3.5" />
           Export list
         </Button>
       }
       filters={
-        <div className="flex w-full flex-wrap items-center gap-2">
+        <>
           <div className="min-w-[220px] flex-1">
             <Input
               placeholder="Search locations"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              Icon={<Search className="h-4 w-4 text-gray-500" />}
+              IconPosition="left-0 pl-2 inset-y-0"
+              className="pl-9 border-transparent shadow-none hover:border-transparent"
             />
           </div>
-          <div className="min-w-[180px]">
+          <div className="min-w-[220px] flex-1">
             <CustomSelect
+              inputClass="loc-filter-select"
               placeholder="Country"
               options={countries.map((name) => ({ label: name, value: name }))}
               value={{ label: country, value: country }}
               handleChange={(option: any) => setCountry(option?.value || 'All')}
             />
           </div>
-          <div className="min-w-[200px]">
+          <div className="min-w-[220px] flex-1">
             <CustomSelect
+              inputClass="loc-filter-select"
               placeholder="Status"
               options={[
                 { label: 'All locations', value: 'all' },
@@ -408,59 +470,113 @@ const LocationManagement = () => {
               handleChange={(option: any) => setStatus((option?.value as StatusFilter) || 'all')}
             />
           </div>
-          <span className="ml-auto text-xs font-medium text-gray-500">
+          <span className="flex-1 text-center text-xs font-medium text-gray-500">
             {visible.length} of {rows.length}
           </span>
-        </div>
+        </>
       }
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-10 py-6">
         <SettingCard
-          title="What this table is telling you"
-          description="Two of these columns are worked out rather than stored, so it is worth knowing where the numbers come from."
+          title={
+            <span className="flex items-center gap-1.5">
+              What this table is telling you
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3.5 w-3.5 shrink-0 cursor-help text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="w-max max-w-[280px] [text-wrap:pretty] text-black [&_svg]:fill-[#fdf7f5]"
+                  style={{
+                    background: '#fdf7f5',
+                    border: 'none',
+                    color: '#000',
+                    boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+                  }}
+                >
+                  Two columns are worked out, not stored — worth knowing where the numbers come
+                  from.
+                </TooltipContent>
+              </Tooltip>
+            </span>
+          }
           icon={<Globe2 className="h-4 w-4" />}
           status="coming-soon"
           note={
-            <>
-              Coming soon: opening hours set per location. Until then, “Right now” applies your
-              company opening hours ({describeWeeklyHours(companyHours)}) and your company holidays,
-              read on each location&rsquo;s own clock. Individual queues, menus, people and numbers
-              each keep their own hours, and those are what actually answer a call — so a line at a
-              location shown as closed may still be taking calls.
-            </>
+            <span className="flex items-start gap-2">
+              <CalendarCog className="mt-0.5 h-4 w-4 shrink-0 text-[#d92b2b]" />
+              <span>
+                Per-location hours are coming soon. For now, &ldquo;Right now&rdquo; uses your
+                company hours — queues, menus and numbers keep their own, so a &ldquo;closed&rdquo;
+                location may still take calls.
+              </span>
+            </span>
           }
         >
-          <SettingRow
-            label="Right now"
-            description="Your company opening hours and holidays, judged on the location's timezone rather than yours. A location with no timezone is judged on your own clock, and is flagged as incomplete below."
-            control={
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700">
-                <Clock className="h-3.5 w-3.5 text-gray-400" />
-                {describeWeeklyHours(companyHours)}
-              </span>
-            }
-          />
-          <SettingRow
-            label="To complete"
-            description="Address, city, country and timezone are what a location needs before people and numbers can safely be put in it. Filter to “Needs attention” to see only the locations missing something."
-            control={
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700">
-                <AlertTriangle className="h-3.5 w-3.5 text-gray-400" />
-                {attentionCount} of {rows.length}
-              </span>
-            }
-          />
+          <div className="grid grid-cols-1 gap-3 py-2 sm:grid-cols-2">
+            <div className="rounded-lg border border-gray-400 bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md">
+              <div className="mb-1.5 flex items-start justify-between gap-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ucass-primary-200 text-primary">
+                  <Clock className="h-4 w-4" />
+                </div>
+                <span className="rounded-full border border-black bg-white px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-black">
+                  {describeWeeklyHours(companyHours)}
+                </span>
+              </div>
+              <h4 className="text-sm font-semibold text-gray-900">Right now</h4>
+              <p className="mt-1 text-xs text-gray-600">
+                Based on the location&rsquo;s timezone, not yours. No timezone set? It&rsquo;s
+                judged on your clock and flagged below.
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-400 bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md">
+              <div className="mb-1.5 flex items-start justify-between gap-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ucass-primary-200 text-primary">
+                  <AlertTriangle className="h-4 w-4" />
+                </div>
+                <span className="rounded-full border border-black bg-white px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-black">
+                  {attentionCount} of {rows.length}
+                </span>
+              </div>
+              <h4 className="text-sm font-semibold text-gray-900">To complete</h4>
+              <p className="mt-1 text-xs text-gray-600">
+                Needs address, city, country and timezone. Filter to &ldquo;Needs
+                attention&rdquo; to see what&rsquo;s missing.
+              </p>
+            </div>
+          </div>
         </SettingCard>
 
         {canEdit ? (
           <SettingCard
-            title="Change several locations at once"
-            description="Tick the locations in the table, then set the one thing that changes behaviour for everybody there."
+            title={
+              <span className="flex items-center gap-1.5">
+                Change several locations at once
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 shrink-0 cursor-help text-gray-400" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="w-max max-w-[220px] [text-wrap:pretty] text-black [&_svg]:fill-[#fdf7f5]"
+                    style={{
+                      background: '#fdf7f5',
+                      border: 'none',
+                      color: '#000',
+                      boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+                    }}
+                  >
+                    Tick locations, then set one thing that applies to all of them.
+                  </TooltipContent>
+                </Tooltip>
+              </span>
+            }
             icon={<Clock className="h-4 w-4" />}
           >
             <SettingRow
               label="Timezone"
-              description="Assigning somebody to a location fills in their working-hours timezone from it, so a branch with no timezone hands its people the account default. Only the zones belonging to the selected locations' countries are offered — picking one automatically would move a branch to the wrong clock in every country that has more than one."
+              description="Sets everyone's working-hours clock at that location — branches with no timezone use the account default."
             >
               <div className="flex flex-wrap items-end gap-3">
                 <div className="min-w-[260px]">
@@ -494,6 +610,9 @@ const LocationManagement = () => {
           </SettingCard>
         ) : null}
 
+        <h3 className="w-fit text-sm font-semibold text-gray-900 underline decoration-gray-400 underline-offset-4">
+          All locations
+        </h3>
         {/* No card of its own: `AdminPage` already puts its children inside the
             panel and the scrolling table wrapper. */}
         <div className="overflow-x-auto">

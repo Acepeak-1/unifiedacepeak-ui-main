@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
 import { Ic, McmIconSprite } from '@/components/mcm/icons';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 /**
  * The shape every Directory page takes.
@@ -15,30 +23,45 @@ import { Ic, McmIconSprite } from '@/components/mcm/icons';
 
 export const DirectoryPage = ({
   title,
+  titleClassName,
   description,
   note,
   actions,
   filters,
+  stats,
   children,
 }: {
-  title: string;
-  description: string;
+  /* ReactNode rather than plain string so a page can put an icon beside its
+     title (e.g. People) without every other Directory page having to. */
+  title: ReactNode;
+  /* Optional class on the <h1> itself, e.g. the shared serif heading look —
+     People sets its own via .ppl-red-theme instead. */
+  titleClassName?: string;
+  /* ReactNode, not just string, for the same reason as `title` above — a page
+     can pair a short summary with an info tooltip instead of one long line.
+     Optional so a page can fold its summary into the title row instead and
+     skip this line entirely. */
+  description?: ReactNode;
   /* An honest caveat about how far this screen really reaches, shown under the
      description. Optional, so every page that does not need one is unchanged. */
   note?: ReactNode;
   actions?: ReactNode;
   filters?: ReactNode;
+  /* A row of at-a-glance counts above the filter bar. Optional — only pages
+     that pass it get the band. */
+  stats?: ReactNode;
   children: ReactNode;
 }) => (
   <div className="page">
     <McmIconSprite />
     <div className="page-head">
       <div>
-        <h1>{title}</h1>
-        <p>{description}</p>
+        <h1 className={titleClassName}>{title}</h1>
+        {description ? <p>{description}</p> : null}
       </div>
       {actions}
     </div>
+    {stats ? <div className="kpis kpi-grid">{stats}</div> : null}
     {note ? <div className="page-caveat">{note}</div> : null}
     {filters ? <div className="tbar">{filters}</div> : null}
     <div className="panel-card">
@@ -47,32 +70,65 @@ export const DirectoryPage = ({
   </div>
 );
 
-/** A filter chip that wraps a native control, so the chip is the whole hit area. */
+/** One at-a-glance count for the `stats` band, e.g. "Total people: 12". */
+export const Kpi = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) => (
+  <div className="kpi-card">
+    <div className="kpi-card__label">{label}</div>
+    <div className="kpi-card__value-row">
+      <span className="kpi-card__value">{value}</span>
+    </div>
+  </div>
+);
+
+/** A filter chip whose dropdown is fully styleable (no native <select> popup,
+ * so a page can theme its hover colour instead of inheriting the OS's blue). */
 export const FilterChip = ({
   label,
   value,
   options,
   onChange,
+  tone = 'default',
 }: {
   label: string;
   value: string;
   options: string[];
   onChange: (value: string) => void;
+  /* 'red' swaps the dropdown's hover colour for pages themed in black/red
+     (e.g. People) instead of the platform's default accent. */
+  tone?: 'default' | 'red';
 }) => (
-  <label className="fchip">
-    {label}:
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      style={{ border: 0, background: 'transparent', fontWeight: 700, outline: 'none' }}
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <button type="button" className="fchip fchip-select">
+        {label}: <b>{value}</b>
+        <ChevronDown size={12} />
+      </button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent
+      align="start"
+      className={cn('min-w-[150px]', tone === 'red' && 'border-transparent')}
     >
       {options.map((option) => (
-        <option key={option} value={option}>
+        <DropdownMenuItem
+          key={option}
+          className={cn(
+            'cursor-pointer',
+            option === value && 'font-semibold',
+            tone === 'red' && 'focus:bg-[#fef2f2] focus:text-[#171717]',
+          )}
+          onSelect={() => onChange(option)}
+        >
           {option}
-        </option>
+        </DropdownMenuItem>
       ))}
-    </select>
-  </label>
+    </DropdownMenuContent>
+  </DropdownMenu>
 );
 
 export const SearchChip = ({

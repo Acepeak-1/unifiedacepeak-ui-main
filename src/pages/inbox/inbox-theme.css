@@ -7,24 +7,24 @@
 
 .mcm-inbox {
   /* --- surfaces / ink / lines --- */
-  --mcm-ground: #eef1f8;
+  --mcm-ground: #f5f5f5;
   --mcm-surface: #ffffff;
-  --mcm-surface-2: #f6f8fc;
-  --mcm-surface-3: #eaeef7;
+  --mcm-surface-2: #fafafa;
+  --mcm-surface-3: #eeeeee;
   --mcm-ink: #0d1526;
   --mcm-ink-2: #3d4a63;
   --mcm-ink-3: #6b7891;
   --mcm-ink-4: #93a0b8;
-  --mcm-line: #dfe5f0;
-  --mcm-line-2: #eaeef6;
+  --mcm-line: #e5e5e5;
+  --mcm-line-2: #efefef;
 
   /* --- accent ---
      Swap these four to var(--primary) etc. if the inbox should follow the
      white-label brand colour instead of the console blue. */
-  --mcm-accent: #2563eb;
-  --mcm-accent-ink: #1d4ed8;
-  --mcm-accent-wash: #e8efff;
-  --mcm-accent-edge: #c3d6ff;
+  --mcm-accent: #dc2626;
+  --mcm-accent-ink: #b91c1c;
+  --mcm-accent-wash: #fef2f2;
+  --mcm-accent-edge: #fecaca;
 
   --mcm-live: #0d9488;
   --mcm-live-wash: #dcf5f1;
@@ -52,21 +52,21 @@
 }
 
 .dark .mcm-inbox {
-  --mcm-ground: #0a0f1a;
-  --mcm-surface: #111827;
-  --mcm-surface-2: #161f31;
-  --mcm-surface-3: #1e293e;
+  --mcm-ground: #0a0a0a;
+  --mcm-surface: #171717;
+  --mcm-surface-2: #1f1f1f;
+  --mcm-surface-3: #262626;
   --mcm-ink: #eef2f9;
   --mcm-ink-2: #c3cddf;
   --mcm-ink-3: #93a1ba;
   --mcm-ink-4: #6b7a96;
-  --mcm-line: #26314a;
-  --mcm-line-2: #1c2537;
+  --mcm-line: #333333;
+  --mcm-line-2: #292929;
 
-  --mcm-accent: #5b8dff;
-  --mcm-accent-ink: #87aaff;
-  --mcm-accent-wash: #16223d;
-  --mcm-accent-edge: #2c3f68;
+  --mcm-accent: #f87171;
+  --mcm-accent-ink: #fca5a5;
+  --mcm-accent-wash: #3a1414;
+  --mcm-accent-edge: #7f1d1d;
 
   --mcm-live: #2dd4bf;
   --mcm-live-wash: #0f2f2c;

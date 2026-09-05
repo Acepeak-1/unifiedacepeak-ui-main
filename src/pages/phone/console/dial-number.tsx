@@ -13,6 +13,31 @@ import { Ic } from './icons';
  * every number in the console behaves the same wherever it appears — call list,
  * contact panel, call record header.
  */
+/**
+ * Names we already knew when the call was placed, keyed by the last 10 digits
+ * of the number. The SIP session only carries what the switch sends back — for
+ * an outbound call that is usually nothing — so the call screen would fall back
+ * to the bare number even though the list we dialled from showed a name.
+ */
+const dialLabels = new Map<string, string>();
+
+const labelKey = (value: unknown) => {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  return digits.length >= 7 ? digits.slice(-10) : digits;
+};
+
+export const rememberDialLabel = (number: unknown, label: unknown) => {
+  const key = labelKey(number);
+  const name = String(label ?? '').trim();
+  if (!key || !name || /^[+\d][\d\s()+-]*$/.test(name)) return;
+  dialLabels.set(key, name);
+};
+
+export const dialLabelFor = (number: unknown): string => {
+  const key = labelKey(number);
+  return (key && dialLabels.get(key)) || '';
+};
+
 export const useConsoleDialer = () => {
   const dialpad = useDialpad();
   const { defaultCallerIdOption } = useDialpadCallerIdOptions();

@@ -366,11 +366,11 @@ const Home = () => {
             </p>
           </div>
           <div className="hero-right">
-            <button className="btn ghost" onClick={() => navigate('/performance')}>
+            <button className="btn ghost soft-accent" onClick={() => navigate('/performance')}>
               <Ic n="trend" />
               Performance
             </button>
-            <button className="btn primary" onClick={() => navigate('/phone')}>
+            <button className="btn primary soft-accent" onClick={() => navigate('/phone')}>
               <Ic n="phone" />
               New call
             </button>

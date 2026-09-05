@@ -1,0 +1,175 @@
+/* .mcm-page sizes .page via flexbox and relies on it being a direct flex
+   child; this wrapper div sits between them, so without `display: contents`
+   .page can't shrink/scroll and instead gets clipped by .mcm-page's
+   `overflow: hidden`. See people-theme.css's .ppl-red-theme rule for the
+   full explanation — same fix, every Directory page wrapper needs it. */
+.loc-theme {
+  display: contents;
+}
+
+/* The shared .fchip search/filter pills turn their border/text --accent-ink
+   on hover, which defaults to blue since this page sets no accent override —
+   kept black here instead. */
+.mcm-page .loc-theme .fchip:hover {
+  border-color: var(--line);
+  color: #171717;
+}
+
+/* New/Update location dialog: same shape as the People/Groups pages' own
+   centred modals — content/fields inside NewSiteSteps are untouched, only
+   the container becomes a dialog instead of a side drawer. */
+.loc-create-theme {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* No colour change on hover or focus (i.e. click) for inputs or dropdowns —
+   the base Input/react-select components both turn the border the tenant's
+   accent colour, which read as a stray outline here. */
+.loc-create-theme input:hover,
+.loc-create-theme input:focus {
+  border-color: #d1d5db !important;
+  box-shadow: none !important;
+}
+@layer base {
+  .loc-create-theme .custom-react-select__control,
+  .loc-create-theme .custom-react-select__control:hover,
+  .loc-create-theme .custom-react-select__control--is-focused,
+  .loc-create-theme .custom-react-select__control--menu-is-open {
+    border-color: #d1d5db !important;
+  }
+  .loc-create-theme .custom-react-select__option--is-selected,
+  .loc-create-theme .custom-react-select__option:hover,
+  .loc-create-theme .custom-react-select__option--is-focused {
+    background-color: #f3f4f6 !important;
+    color: #171717 !important;
+  }
+}
+
+.loc-theme .btn.primary {
+  background: #171717;
+  color: #fff;
+}
+.loc-theme .btn.primary:hover {
+  background: #000;
+}
+
+/* Locations table skin: matches the .tbl/.tbl__* row spec used on the
+   analytics tables. */
+.loc-theme .tbl-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+}
+.loc-theme .tbl {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.loc-theme .tbl__head-row {
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+}
+.loc-theme .tbl__th {
+  background: #fafafa;
+  padding: 13px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #737373;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.loc-theme .tbl__th:first-child {
+  padding-left: 18px;
+}
+.loc-theme .tbl__th--left {
+  text-align: left;
+}
+.loc-theme .tbl__row {
+  background: #ffffff;
+  transition: background-color 0.15s ease;
+  height: 52.67px;
+}
+.loc-theme .tbl__row:hover {
+  background: #fafafa;
+}
+.loc-theme .tbl__td {
+  background: transparent;
+  padding: 8px 18px;
+  height: auto;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+.loc-theme .tbl__td--left {
+  text-align: left;
+}
+.loc-theme .tbl__name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25rem;
+  color: #020617;
+}
+.loc-theme .tbl__subtitle {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1rem;
+  color: #737373;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.loc-theme .tbl__value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #020617;
+}
+.loc-theme .tbl__value--muted {
+  font-weight: 400;
+  color: #334155;
+}
+
+/* Smaller text and tighter vertical rhythm throughout the form — the fields
+   themselves (NewSiteSteps/site-info) are untouched, only size/spacing. */
+.loc-create-theme h5 {
+  font-size: 13.5px;
+}
+.loc-create-theme label {
+  font-size: 12.5px;
+}
+.loc-create-theme input,
+.loc-create-theme .custom-react-select__control {
+  min-height: 34px !important;
+  height: 34px !important;
+  font-size: 12.5px;
+}
+.loc-create-theme .gap-1 {
+  gap: 4px;
+}
+.loc-create-theme .gap-3 {
+  gap: 8px;
+}
+.loc-create-theme .gap-4 {
+  gap: 10px;
+}
+.loc-create-theme .gap-5 {
+  gap: 12px;
+}
+.loc-create-theme .py-4,
+.loc-create-theme .sm\:py-5 {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}

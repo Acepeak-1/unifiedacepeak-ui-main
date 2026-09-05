@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 const CustomTooltip = ({
@@ -17,8 +18,20 @@ const CustomTooltip = ({
   /** Edge alignment along `side`; Radix defaults to 'center'. */
   align?: 'start' | 'center' | 'end';
 }) => {
+  const [open, setOpen] = useState(openOnMount);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!openOnMount) return;
+    timerRef.current = setTimeout(() => setOpen(false), openOnMountDuration);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <Tooltip>
+    <Tooltip {...(openOnMount ? { open, onOpenChange: setOpen } : {})}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent side={side} align={align} className={className} sideOffset={sideOffset}>
         {text}

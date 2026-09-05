@@ -134,7 +134,7 @@ const SPRITE = `<g id="mcmi-home"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-
 <g id="mcmi-filter"><path d="M3 4h18l-7 8v7l-4 2v-9z"/></g>
 <g id="mcmi-arrow-in"><path d="M20 4 9 15M9 15V8M9 15h7"/></g>
 <g id="mcmi-arrow-out"><path d="M4 20 15 9M15 9v7M15 9H8"/></g>
-<g id="mcmi-miss"><path d="M20 4 9 15M9 15V8M9 15h7"/></g>
+<g id="mcmi-miss"><path d="M13 11 5 19M5 19v-5M5 19h5"/><path d="M13 4l7 7M20 4l-7 7"/></g>
 <g id="mcmi-park"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9.5 17V8h3.2a2.7 2.7 0 0 1 0 5.4H9.5"/></g>
 <g id="mcmi-eye"><path d="M1.5 12S5 5.5 12 5.5 22.5 12 22.5 12 19 18.5 12 18.5 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></g>
 <g id="mcmi-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></g>

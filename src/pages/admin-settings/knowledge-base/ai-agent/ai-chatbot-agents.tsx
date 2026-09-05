@@ -2,7 +2,6 @@ import AlertConfirm from '@/components/custom/alert-confirm';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import TableManager from '@/components/custom/table-manager';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,22 +19,27 @@ import {
   updateAIAgent,
   updateAgentStatus,
 } from '@/services/api';
-import { Icon, IconName } from '@/assets/icons/icon';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Plus, Search, ChevronDown, Loader2 } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  ChevronDown,
+  Loader2,
+  MessageSquare,
+  MoreVertical,
+  PenLine,
+  Play,
+  Settings,
+  Trash2,
+  TrendingUp,
+} from 'lucide-react';
 import moment from 'moment';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PromptModal from '../ai-receptionist/update-prompt';
 import AgentAnalytics from './agent-analytics';
 import ChatAgentConfigureModal from './chat-agent-configure-modal';
-
-const StatCardLoader = () => (
-  <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] bg-white/70 backdrop-blur-[1px]">
-    <Loader2 className="h-5 w-5 animate-spin text-primary" />
-  </div>
-);
 
 const getNestedValue = (source: any, path: string) =>
   path.split('.').reduce((value, key) => value?.[key], source);
@@ -88,16 +92,10 @@ const normalizeSentiment = (value: any) => {
 };
 
 const sentimentBadgeClass = (sentiment: string) => {
-  if (sentiment === 'positive') return 'bg-emerald-100 text-emerald-700';
-  if (sentiment === 'negative') return 'bg-red-100 text-red-700';
-  if (sentiment === 'neutral') return 'bg-slate-100 text-slate-700';
-  return 'bg-gray-100 text-gray-500';
-};
-
-const sentimentEmoji = (sentiment: string) => {
-  if (sentiment === 'negative') return '☹️';
-  if (sentiment === 'neutral') return '😐';
-  return '😊';
+  if (sentiment === 'positive') return 'bg-green-50! text-green-700!';
+  if (sentiment === 'negative') return 'bg-red-50! text-red-600!';
+  if (sentiment === 'neutral') return 'bg-amber-50! text-amber-700!';
+  return 'bg-gray-100! text-gray-500!';
 };
 
 const sentimentScoreRows = [
@@ -466,10 +464,6 @@ function AiChatbotAgents() {
           ? rowSentiment.reduce((sum: number, agent: any) => sum + agent.score * agent.calls, 0) /
             rowSentimentCalls
           : null;
-    const sentimentLabel =
-      normalizeSentiment(agentMetricsResult?.sentiment_label) ||
-      sentimentLabelFromScore(averageSentiment);
-
     return [
       {
         label: 'Total agents',
@@ -478,29 +472,42 @@ function AiChatbotAgents() {
           totalAgentsCount && totalAgentsCount === liveAgentsCount
             ? 'All live'
             : `${liveAgentsCount.toLocaleString()} live`,
+        description: 'Chat agents on this account',
       },
       {
         label: `Conversations (${selectedDateFilterLabel})`,
         value: formatNumber(totalConversations),
         helper: '',
+        description: 'Inbound chats, this range',
       },
       {
         label: 'Resolution rate',
         value: formatPercent(averageResolution),
         helper: '',
+        description: 'Resolved without a handoff',
+        valueTone:
+          averageResolution === null
+            ? 'default'
+            : averageResolution < 50
+              ? 'critical'
+              : averageResolution < 80
+                ? 'warn'
+                : 'default',
       },
       {
         label: 'Avg confidence',
         value: formatPercent(averageConfidence),
         helper: '',
+        description: 'Model confidence per reply',
       },
       {
         label: 'Overall sentiment',
         value:
           sentimentCalls && averageSentiment !== null
-            ? `${sentimentEmoji(sentimentLabel)} ${Math.round(averageSentiment)}`
+            ? `${Math.round(averageSentiment)}`
             : 'Not analyzed',
         helper: '',
+        description: sentimentCalls ? `${sentimentCalls} chats analyzed` : 'No chats analyzed yet',
       },
     ];
   }, [
@@ -676,18 +683,21 @@ function AiChatbotAgents() {
           const live = isLiveAgent(agent);
 
           return (
-            <div className="flex w-full min-w-0 items-center gap-3">
+            <div className="group flex w-full min-w-0 items-center gap-3">
               <div className="relative shrink-0">
-                <CustomAvatar
-                  name={agentName}
-                  image={getAgentAvatarImage(agent)}
-                  size="34"
-                  showPresence={false}
-                  isActivityInfo={false}
-                />
+                <div className="rounded-full ring-2 ring-white ring-offset-1 ring-offset-transparent group-hover:ring-slate-100">
+                  <CustomAvatar
+                    name={agentName}
+                    image={getAgentAvatarImage(agent)}
+                    size="28"
+                    showPresence={false}
+                    isActivityInfo={false}
+                    textClass="text-[10px]"
+                  />
+                </div>
                 <span
-                  className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${
-                    live ? 'bg-emerald-500' : 'bg-slate-400'
+                  className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
+                    live ? 'bg-green-500' : 'bg-slate-400'
                   }`}
                 />
               </div>
@@ -695,7 +705,7 @@ function AiChatbotAgents() {
                 <button
                   type="button"
                   title={agentName}
-                  className="block max-w-full truncate text-left text-[14px] font-extrabold leading-5 text-slate-950 transition-colors hover:text-primary cursor-pointer"
+                  className="block max-w-full truncate text-left text-[13px] font-normal! leading-5 text-slate-950! transition-colors hover:text-slate-950! cursor-pointer"
                   onClick={(event) => {
                     event.stopPropagation();
                     openAgentDetails(agent);
@@ -703,8 +713,7 @@ function AiChatbotAgents() {
                 >
                   {agentName}
                 </button>
-                <div className="mt-0.5 flex min-w-0 items-start gap-1.5 text-[11px] leading-4 text-slate-500">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <div className="mt-0.5 flex min-w-0 items-start text-[11px] leading-4 text-slate-500">
                   <span className="line-clamp-2">{getAgentSubtitle(agent)}</span>
                 </div>
               </div>
@@ -715,6 +724,7 @@ function AiChatbotAgents() {
       {
         header: 'Status',
         accessorKey: 'status',
+        meta: { textAlign: 'center' },
         cell: ({ row }: any) => {
           const agent = row?.original;
           const live = isLiveAgent(agent);
@@ -722,9 +732,11 @@ function AiChatbotAgents() {
 
           if (isDeletedAgent(agent)) {
             return (
-              <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
-                Deleted
-              </span>
+              <div className="flex justify-center">
+                <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                  Deleted
+                </span>
+              </div>
             );
           }
 
@@ -735,75 +747,74 @@ function AiChatbotAgents() {
           };
 
           return (
+            <div className="flex justify-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className={`inline-flex h-7 min-w-[74px] items-center justify-center gap-1.5 rounded-full border px-2.5 text-[12px] font-extrabold cursor-pointer outline-none transition-colors duration-200 ${
+                  className={`inline-flex h-6 min-w-[64px] items-center justify-center gap-1 rounded-full border! px-1.5 text-[11px] font-extrabold cursor-pointer outline-none transition-colors duration-200 ${
                     live
-                      ? 'border-emerald-200 bg-emerald-100 text-emerald-800 hover:bg-emerald-100/80'
+                      ? 'border-green-200! bg-green-100! text-green-800! hover:bg-green-100/80!'
                       : draft
-                        ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-50/80'
-                        : 'border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-100/80'
+                        ? 'border-amber-200! bg-amber-50! text-amber-700! hover:bg-amber-50/80!'
+                        : 'border-slate-200! bg-slate-100! text-slate-600! hover:bg-slate-100/80!'
                   }`}
                 >
                   <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: live ? '#10b981' : draft ? '#f59e0b' : '#94a3b8' }}
+                    className={`h-2 w-2 rounded-full ${live ? 'bg-green-500' : draft ? 'bg-amber-500' : 'bg-slate-400'}`}
                   />
                   <span>{live ? 'Live' : draft ? 'Draft' : 'Paused'}</span>
-                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                  <ChevronDown className="h-3 w-3 opacity-60" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="w-[140px] bg-white border border-gray-200 shadow-lg rounded-xl p-1 z-50 animate-none"
+                className="w-[140px] bg-white border border-slate-200 shadow-lg rounded-xl p-1 z-50 animate-none"
               >
                 <DropdownMenuItem
                   onClick={() => handleStatusChange('live')}
-                  className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer rounded-lg hover:bg-gray-50 text-gray-900"
+                  className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer rounded-lg hover:bg-slate-50 text-slate-900"
                 >
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <span className="h-2 w-2 rounded-full bg-green-500" />
                   <span>Live</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleStatusChange('inactive')}
-                  className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer rounded-lg hover:bg-gray-50 text-gray-900"
+                  className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer rounded-lg hover:bg-slate-50 text-slate-900"
                 >
                   <span className="h-2 w-2 rounded-full bg-slate-400" />
                   <span>Paused</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           );
         },
       },
       {
-        header: () => (
-          <span>
-            Conversations
-            <span className="block">({selectedDateFilterLabel})</span>
-          </span>
-        ),
+        header: () => <span>Conversations ({selectedDateFilterLabel})</span>,
         accessorKey: 'conversations',
         cell: ({ row }: any) => (
-          <div className="text-[14px] font-extrabold text-slate-950">
+          <div className="text-center text-[12.5px] font-bold text-slate-950">
             {formatNumber(pickNumber(row?.original, metricPaths.conversations))}
           </div>
         ),
+        meta: { textAlign: 'center' },
       },
       {
         header: 'Resolution',
         accessorKey: 'resolution',
         cell: ({ row }: any) => (
-          <div className="text-[14px] font-extrabold text-slate-950">
+          <div className="text-center text-[12.5px] font-bold text-slate-950">
             {formatPercent(pickNumber(row?.original, metricPaths.resolution))}
           </div>
         ),
+        meta: { textAlign: 'center' },
       },
       {
         header: 'Sentiment',
         accessorKey: 'avg_sentiment',
+        meta: { textAlign: 'center' },
         cell: ({ row }: any) => {
           const data = row.original || {};
           const chats = Number(data.sentiment_calls || 0);
@@ -813,9 +824,6 @@ function AiChatbotAgents() {
           const label =
             normalizeSentiment(data.sentiment_label) || sentimentLabelFromScore(score) || 'neutral';
           const sentimentScoresData = data.sentiment_scores || {};
-          const positivePercent = sentimentScoreValue(sentimentScoresData, 'positive');
-          const neutralPercent = sentimentScoreValue(sentimentScoresData, 'neutral');
-          const negativePercent = sentimentScoreValue(sentimentScoresData, 'negative');
           const sentimentScores = sentimentScoreRows.map((item) => ({
             ...item,
             score: Math.round(sentimentScoreValue(sentimentScoresData, item.key)),
@@ -824,39 +832,23 @@ function AiChatbotAgents() {
 
           if (!chats || !score) {
             return (
-              <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-500">
-                Not analyzed
-              </span>
+              <div className="flex justify-center">
+                <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-500">
+                  Not analyzed
+                </span>
+              </div>
             );
           }
 
           return (
-            <div className="group relative flex w-[112px] flex-col gap-1.5">
+            <div className="group relative mx-auto flex w-fit flex-col items-center gap-1.5">
               <span
-                className={`inline-flex w-fit rounded-full px-2 py-0.5 text-[11px] font-extrabold capitalize ${sentimentBadgeClass(label)}`}
+                className={`inline-flex w-fit items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-semibold capitalize ${sentimentBadgeClass(label)}`}
               >
-                {sentimentEmoji(label)} {label} · {displayScore}
+                {label} · {displayScore}
               </span>
-              {hasScores ? (
-                <div className="relative h-1.5 w-[108px] overflow-hidden rounded-full bg-slate-200">
-                  <span
-                    className="absolute left-0 top-0 h-full bg-emerald-500"
-                    style={{ width: `${positivePercent}%` }}
-                  />
-                  <span
-                    className="absolute top-0 h-full bg-slate-300"
-                    style={{ left: `${positivePercent}%`, width: `${neutralPercent}%` }}
-                  />
-                  <span
-                    className="absolute right-0 top-0 h-full bg-red-500"
-                    style={{ width: `${negativePercent}%` }}
-                  />
-                </div>
-              ) : (
-                <div className="h-1.5 w-[108px] overflow-hidden rounded-full bg-slate-200" />
-              )}
               {hasScores && (
-                <div className="pointer-events-none absolute right-0 top-10 z-30 hidden w-[190px] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-xl group-hover:block">
+                <div className="pointer-events-none absolute right-0 top-9 z-30 hidden w-[190px] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-xl group-hover:block">
                   <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-slate-500">
                     Sentiment scores
                   </div>
@@ -886,10 +878,11 @@ function AiChatbotAgents() {
         header: 'Last updated',
         accessorKey: 'updatedAt',
         cell: ({ row }: any) => (
-          <span className="text-[14px] font-medium text-slate-700">
+          <div className="text-center text-[12.5px] text-slate-700">
             {getLastUpdated(row?.original)}
-          </span>
+          </div>
         ),
+        meta: { textAlign: 'center' },
       },
       {
         header: 'Actions',
@@ -897,63 +890,100 @@ function AiChatbotAgents() {
         cell: ({ row }: any) => {
           const agent = row?.original;
           const deleted = isDeletedAgent(agent);
-          const actions = [
-            {
-              icon: 'Play' as IconName,
-              onClick: () => handlePlaygroundClick(agent),
-              className: 'bg-green-100 text-green-900/80 hover:bg-green-500 hover:text-white',
-              tooltipText: 'Play',
-            },
+          const menuActions = [
             agentAccess?.edit && {
-              icon: 'SettingsIcon' as IconName,
+              key: 'configure',
+              icon: <Settings className="h-3.5 w-3.5" />,
               onClick: () => openWidgetConfigure(agent),
-              className: 'bg-primary/5 text-primary hover:bg-primary hover:text-white',
-              tooltipText: 'Configure',
+              label: 'Configure',
+              className: 'text-slate-700!',
+              iconBadgeClassName: 'bg-neutral-100 text-neutral-600 group-hover:bg-red-50 group-hover:text-red-600',
             },
             agentAccess?.edit && {
-              icon: 'EditStrokIcon' as IconName,
-              onClick: () => openConfigureAgent(agent),
-              className: 'bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white',
-              tooltipText: 'Edit agent',
-            },
-            agentAccess?.edit && {
-              icon: 'Chat' as IconName,
+              key: 'edit-prompt',
+              icon: <MessageSquare className="h-3.5 w-3.5" />,
               onClick: () => openPromptEditor(agent),
-              className: 'bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white',
-              tooltipText: 'Edit prompt',
+              label: 'Edit prompt',
+              className: 'text-slate-700!',
+              iconBadgeClassName: 'bg-neutral-100 text-neutral-600 group-hover:bg-red-50 group-hover:text-red-600',
+            },
+            agentAccess?.edit && {
+              key: 'edit-agent',
+              icon: <PenLine className="h-3.5 w-3.5" />,
+              onClick: () => openConfigureAgent(agent),
+              label: 'Edit agent',
+              className: 'text-slate-700!',
+              iconBadgeClassName: 'bg-neutral-100 text-neutral-600 group-hover:bg-red-50 group-hover:text-red-600',
             },
             agentAccess?.delete &&
               !deleted && {
-                icon: 'TrashBin' as IconName,
+                key: 'delete',
+                icon: <Trash2 className="h-3.5 w-3.5" />,
                 onClick: () => setDeleteAgent(agent),
-                className: 'bg-red-100 text-red-500 hover:bg-red-500 hover:text-white',
-                tooltipText: 'Delete',
+                label: 'Delete',
+                className: 'text-red-600!',
+                iconBadgeClassName: 'bg-red-50 text-red-600',
               },
           ].filter(Boolean) as Array<{
-            icon: IconName;
+            key: string;
+            icon: ReactNode;
             onClick: () => void;
+            label: string;
             className: string;
-            tooltipText: string;
+            iconBadgeClassName: string;
           }>;
 
-          if (!actions.length) return '---';
+          if (!menuActions.length) return '---';
 
           return (
-            <div className="flex w-full min-w-[146px] items-center justify-end gap-1">
-              {actions.map((action) => (
-                <CustomTooltip key={action.tooltipText} text={action.tooltipText} side="top">
+            <div className="flex w-full items-center justify-center gap-2">
+              <CustomTooltip text="Play" side="top">
+                <button
+                  type="button"
+                  className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full transition-colors bg-blue-50! text-blue-600! hover:bg-blue-600! hover:text-white!"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handlePlaygroundClick(agent);
+                  }}
+                >
+                  <Play className="h-3.5 w-3.5" />
+                </button>
+              </CustomTooltip>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className={`cursor-pointer flex h-[26px] w-[26px] items-center justify-center rounded-full ${action.className}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      action.onClick();
-                    }}
+                    aria-label="More actions"
+                    className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full transition-colors bg-neutral-100! text-neutral-500! hover:bg-neutral-200! hover:text-neutral-900!"
+                    onClick={(event) => event.stopPropagation()}
                   >
-                    <Icon name={action.icon} className="h-3.5 w-3.5" />
+                    <MoreVertical className="h-3.5 w-3.5" />
                   </button>
-                </CustomTooltip>
-              ))}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-[190px] rounded-2xl! border! border-red-100! bg-white p-1.5 shadow-lg z-50 animate-none"
+                >
+                  {menuActions.map((action) => (
+                    <DropdownMenuItem
+                      key={action.key}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        action.onClick();
+                      }}
+                      className={`group flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium hover:bg-red-50! ${action.className}`}
+                    >
+                      <span
+                        className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${action.iconBadgeClassName}`}
+                      >
+                        {action.icon}
+                      </span>
+                      <span>{action.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           );
         },
@@ -981,120 +1011,221 @@ function AiChatbotAgents() {
 
   return (
     <>
-      <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#f4f5f7]">
-        <div className="flex min-h-[64px] flex-col gap-3 border-b border-gray-200 bg-white px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-3 text-[18px] font-bold text-slate-950">
+      <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#eef1f8] text-neutral-900">
+        <div className="flex min-h-[72px] items-center justify-between border-b border-neutral-200 bg-white px-7">
+          <div className="flex items-center gap-3">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-red-50 p-1.5">
+              <span className="flex h-full w-full items-center justify-center rounded-xl border-2 border-red-200 bg-white text-red-600">
+                <MessageSquare className="h-5 w-5" strokeWidth={2.25} />
+              </span>
+            </span>
+            <div>
+              <div className="flex items-center gap-2 text-base font-medium text-neutral-500">
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin-settings/knowledge/ai-agent')}
+                  className="transition-colors hover:text-neutral-900"
+                >
+                  AI Agents
+                </button>
+                <span>/</span>
+                <span className="text-neutral-900">Chat Agents</span>
+              </div>
+              <p className="mt-0.5 text-xs font-normal text-neutral-400">
+                Agents that answer chats on your behalf, the knowledge they draw on, and how each
+                one is performing.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {agentAccess?.add && (
               <button
                 type="button"
-                onClick={() => navigate('/admin-settings/knowledge/ai-agent')}
-                className="font-medium text-slate-500 transition-colors hover:text-primary"
-              >
-                AI Agents
-              </button>
-              <span className="text-slate-400">/</span>
-              <span>AI Chatbot Agents</span>
-            </div>
-            <p className="mt-1 text-[13px] text-slate-500">
-              Agents that answer chats on your behalf, the knowledge they draw on, and how each one
-              is performing.
-            </p>
-          </div>
-
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
-            {agentAccess?.add && (
-              <Button
-                type="button"
-                variant="outline"
                 onClick={() => setView('analytics')}
-                className="h-9 gap-2 rounded-lg border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300"
+                className="inline-flex h-10 items-center gap-1.5 rounded-full border! border-neutral-200! bg-white! px-4 text-sm font-semibold text-neutral-700! shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-colors hover:border-red-200! hover:bg-red-50! hover:text-red-600!"
               >
-                <span className="text-base leading-none">📊</span>
-                Analytics
-              </Button>
+                <TrendingUp className="h-4 w-4 shrink-0" />
+                <span>Analytics</span>
+              </button>
             )}
             {agentAccess?.add && (
-              <Button
+              <button
                 type="button"
-                variant="primary"
                 onClick={() => navigate('/admin-settings/knowledge/create-agent')}
-                className="h-9 gap-2 rounded-lg px-4 text-sm font-semibold shadow-lg shadow-primary/20"
+                className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#DC2626]! px-[18px] text-sm font-semibold text-white! shadow-none transition-colors hover:bg-red-700!"
               >
-                <Plus className="h-4 w-4" />
-                Create New AI Chatbot Agent
-              </Button>
+                <Plus className="h-4 w-4 shrink-0" />
+                <span>Create New Chat Agent</span>
+              </button>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 border-b border-gray-200 bg-white px-6 py-5">
-          <div className="relative max-w-full flex-1 sm:max-w-[440px]">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(sanitizeAiSearchText(event.target.value, 50))}
-              placeholder="Search agents by name..."
-              maxLength={50}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-500 hover:border-gray-300 focus:border-primary"
+        <div className="flex min-h-0 flex-1 flex-col gap-7 overflow-auto bg-[#eef1f8] px-7 py-6">
+          <div>
+            <div className="mb-3 flex items-center gap-2.5">
+              <h2 className="text-[12.5px] font-semibold uppercase tracking-[0.05em] text-red-600">
+                Overview
+              </h2>
+              <span className="h-px flex-1 bg-neutral-200" />
+            </div>
+            <div className="relative grid grid-cols-1 rounded-[14px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)] sm:grid-cols-2 lg:grid-cols-5">
+              {(isStatsFetching || isMetricsFetching) && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] bg-white/70 backdrop-blur-[1px]">
+                  <Loader2 className="h-5 w-5 animate-spin text-neutral-600" />
+                </div>
+              )}
+              {stats.map((stat, index) => (
+                <div
+                  key={stat.label}
+                  className={`flex flex-col gap-1.5 p-4 ${
+                    index !== stats.length - 1 ? 'border-b border-slate-100 sm:border-b-0 sm:border-r' : ''
+                  }`}
+                >
+                  <span className="text-[11.5px] font-bold uppercase tracking-[0.06em] whitespace-nowrap text-neutral-700">
+                    {stat.label}
+                  </span>
+                  <span className="flex items-baseline gap-1.5">
+                    <span
+                      className={`text-[26px] font-bold leading-tight tracking-tight whitespace-nowrap ${
+                        stat.valueTone === 'critical'
+                          ? 'text-red-600'
+                          : stat.valueTone === 'warn'
+                            ? 'text-amber-600'
+                            : 'text-neutral-900'
+                      }`}
+                    >
+                      {stat.value}
+                    </span>
+                    {stat.helper && (
+                      <span className="whitespace-nowrap rounded-full bg-green-50 px-2 py-0.5 text-[10.5px] font-semibold text-green-700">
+                        {stat.helper}
+                      </span>
+                    )}
+                  </span>
+                  {stat.description && (
+                    <span className="text-xs text-neutral-400 whitespace-nowrap">{stat.description}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 pb-4">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-[12.5px] font-semibold uppercase tracking-[0.05em] text-red-600">
+                Chat Agents
+              </h2>
+              <span className="h-px flex-1 bg-neutral-200" />
+            </div>
+
+            <div id="chat-agents-table" className="chat-agents-table overflow-hidden rounded-[14px] border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
+            <style>{`
+              #chat-agents-table .custom-react-select__control {
+                border-radius: 9999px !important;
+                border-color: #e5e5e5 !important;
+              }
+              #chat-agents-table .custom-react-select__control.custom-react-select__control:hover,
+              #chat-agents-table .custom-react-select__control.custom-react-select__control--is-focused,
+              #chat-agents-table .custom-react-select__control.custom-react-select__control--menu-is-open {
+                border-color: #fca5a5 !important;
+              }
+              #chat-agents-table .custom-react-select__menu {
+                border-color: #fecaca !important;
+                border-radius: 12px !important;
+              }
+              #chat-agents-table .custom-react-select__option.custom-react-select__option--is-selected {
+                background-color: #dc2626 !important;
+              }
+              #chat-agents-table .custom-react-select__option.custom-react-select__option--is-focused {
+                background-color: #fef2f2 !important;
+                color: #111827 !important;
+              }
+            `}</style>
+            <TableManager
+              disablePerPageMenuPortal
+              columns={columns}
+              fetcherKey="getChatAgentList"
+              fetcherFn={getChatAgentList}
+              search={search}
+              extraParams={{ filters: tableFilters, date_filters: selectedDateFilters }}
+              select={selectTableAgents}
+              clientSideSearch={false}
+              isHeightSet={false}
+              hideFooterRefresh
+              recordsPosition="right"
+              centerPager
+              pagerAccentClassName="border-red-600! text-white! bg-red-600!"
+              customHeader={
+                <div className="flex flex-col gap-3 py-1 sm:flex-row sm:items-center">
+                  <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border! border-neutral-200! bg-white! pl-2 pr-3 shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-all focus-within:border-red-300! focus-within:shadow-[0_0_0_4px_rgba(220,38,38,.1)]! sm:max-w-[320px]">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+                      <Search className="h-3.5 w-3.5" />
+                    </span>
+                    <input
+                      value={search}
+                      onChange={(event) => setSearch(sanitizeAiSearchText(event.target.value, 50))}
+                      placeholder="Search agents by name..."
+                      maxLength={50}
+                      className="min-w-0 flex-1 border-none bg-transparent text-sm text-neutral-900 outline-none! placeholder:text-neutral-400"
+                    />
+                  </div>
+                  <div className="relative flex shrink-0 items-center gap-0.5 rounded-full border! border-neutral-200! bg-neutral-100! p-1 sm:ml-auto">
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-1 bottom-1 rounded-full bg-white! shadow-[0_1px_4px_rgba(17,17,17,.18)] border! border-neutral-200! transition-all duration-200 ease-out"
+                      style={{
+                        left: statusFilter === 'all' ? '4px' : '62px',
+                        width: statusFilter === 'all' ? '56px' : '76px',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter('all')}
+                      className={`relative z-10 flex h-8 w-[56px] shrink-0 items-center justify-center gap-1.5 rounded-full px-2 text-xs font-semibold transition-colors ${
+                        statusFilter === 'all'
+                          ? 'text-neutral-950!'
+                          : 'text-neutral-500! hover:text-red-600!'
+                      }`}
+                    >
+                      All
+                      <span
+                        className={statusFilter === 'all' ? 'text-neutral-500!' : 'text-neutral-400!'}
+                      >
+                        {totalAgentsCount}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter('live')}
+                      className={`relative z-10 flex h-8 w-[76px] shrink-0 items-center justify-center gap-1.5 rounded-full px-2 text-xs font-semibold transition-colors ${
+                        statusFilter === 'live'
+                          ? 'text-neutral-950!'
+                          : 'text-neutral-500! hover:text-red-600!'
+                      }`}
+                    >
+                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-neutral-900" />
+                      </span>
+                      Live
+                      <span
+                        className={statusFilter === 'live' ? 'text-neutral-500!' : 'text-neutral-400!'}
+                      >
+                        {liveAgentsCount}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              }
+              customClass="!rounded-none !border-0 !shadow-none [&_table]:table-fixed [&_table]:border-separate [&_table]:border-spacing-0 [&_thead]:bg-neutral-50! [&_th]:bg-transparent! [&_th]:overflow-hidden! [&_th]:truncate! [&_th]:whitespace-nowrap! [&_th]:px-[10px]! [&_th]:py-[13px]! [&_th]:text-[12px]! [&_th]:font-bold! [&_th]:uppercase! [&_th]:tracking-[0.04em]! [&_th]:text-neutral-500! [&_th:first-child]:px-[18px]! [&_td:first-child]:px-[18px]! [&_th:first-child]:min-w-[235px] [&_td:first-child]:min-w-[235px] [&_th:nth-child(2)]:w-[100px] [&_td:nth-child(2)]:w-[100px] [&_th:nth-child(2)]:text-center! [&_td:nth-child(2)]:text-center! [&_th:nth-child(3)]:w-[170px] [&_td:nth-child(3)]:w-[170px] [&_th:nth-child(3)]:text-center! [&_td:nth-child(3)]:text-center! [&_th:nth-child(4)]:w-[110px] [&_td:nth-child(4)]:w-[110px] [&_th:nth-child(4)]:text-center! [&_td:nth-child(4)]:text-center! [&_th:nth-child(5)]:w-[122px] [&_td:nth-child(5)]:w-[122px] [&_th:nth-child(5)]:text-center! [&_td:nth-child(5)]:text-center! [&_th:nth-child(6)]:w-[125px] [&_td:nth-child(6)]:w-[125px] [&_th:nth-child(6)]:text-center! [&_td:nth-child(6)]:text-center! [&_th:last-child]:w-[100px] [&_td:last-child]:w-[100px] [&_th:last-child]:text-center! [&_td]:bg-transparent! [&_td]:h-auto! [&_td]:min-h-0! [&_td]:px-[18px]! [&_td]:py-2! [&_td]:align-middle"
+              loaderTableClass="min-h-[320px]"
+              getRowClassName={() => 'bg-white! transition-colors hover:bg-neutral-50!'}
+              emptyTablePlaceholder="No chat agents found"
+              descriptionEmptyTable="Try a different search or create a new chat agent."
             />
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('all')}
-            className={`h-9 rounded-full border px-4 text-sm font-bold transition-colors ${
-              statusFilter === 'all'
-                ? 'border-primary bg-primary text-white'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-            }`}
-          >
-            All <span>{totalAgentsCount}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('live')}
-            className={`h-9 rounded-full border px-4 text-sm font-bold transition-colors ${
-              statusFilter === 'live'
-                ? 'border-primary bg-primary text-white'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-            }`}
-          >
-            Live <span>{liveAgentsCount}</span>
-          </button>
-        </div>
-
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto px-6 py-5 pb-2">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="relative min-h-[86px] rounded-[10px] border border-gray-200 bg-white px-4 py-3 shadow-sm transition-colors hover:border-primary"
-              >
-                {(isStatsFetching || isMetricsFetching) && <StatCardLoader />}
-                <p className="text-[11px] font-medium text-slate-500">{stat.label}</p>
-                <p className="mt-[3px] text-[22px] font-bold leading-7 text-slate-950">
-                  {stat.value}
-                </p>
-                {stat.helper ? (
-                  <p className="mt-0.5 text-[11px] font-medium text-emerald-500">{stat.helper}</p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-
-          <TableManager
-            columns={columns}
-            fetcherKey="getChatAgentList"
-            fetcherFn={getChatAgentList}
-            search={search}
-            extraParams={{ filters: tableFilters, date_filters: selectedDateFilters }}
-            select={selectTableAgents}
-            clientSideSearch={false}
-            customClass="shadow-sm [&_table]:table-fixed [&_thead]:bg-[#f8fafc] [&_th]:px-2 [&_th]:py-3 [&_th]:text-[11px] [&_th]:font-extrabold [&_th]:uppercase [&_th]:tracking-[0.04em] [&_th]:text-slate-500 [&_th:first-child]:w-[27%] [&_td:first-child]:w-[27%] [&_th:last-child]:w-[180px] [&_td]:h-[70px] [&_td]:px-2 [&_td]:py-2.5 [&_td:last-child]:w-[180px]"
-            loaderTableClass="min-h-[320px]"
-            getRowClassName={() => 'transition-colors hover:bg-gray-50/70'}
-            emptyTablePlaceholder="No chat agents found"
-            descriptionEmptyTable="Try a different search or create a new chat agent."
-          />
         </div>
       </section>
 

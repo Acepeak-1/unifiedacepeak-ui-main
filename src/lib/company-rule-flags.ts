@@ -93,19 +93,41 @@ const stripLegacyFlag = (path: string): string =>
   path.endsWith(`.${LEGACY_FLAG_KEY}`) ? path.slice(0, -(LEGACY_FLAG_KEY.length + 1)) : path;
 
 /* POLICY_FIELDS points at the flag; the flags live on the node that holds it, so the
-   node path is that with the trailing `.override` taken off. */
-export const RULE_NODE_PATHS = Object.fromEntries(
-  Object.entries(POLICY_FIELDS).map(([field, path]) => [field, stripLegacyFlag(path)]),
-) as Record<PolicyField, string>;
+   node path is that with the trailing `.override` taken off.
+ *
+ * Computed lazily rather than at module scope: this file and company-policy.ts import
+ * from each other (company-policy.ts reads readRuleFlags below), and reading
+ * POLICY_FIELDS here at module-evaluation time raced its own initialization depending
+ * on which side of the cycle loaded first — a `ReferenceError: Cannot access
+ * 'POLICY_FIELDS' before initialization` on every render. Deferring the read into a
+ * function means it only runs once the app actually calls ruleNodePath(), by which
+ * point both modules have finished loading. */
+let ruleNodePathsCache: Record<PolicyField, string> | null = null;
+const getRuleNodePaths = (): Record<PolicyField, string> => {
+  if (!ruleNodePathsCache) {
+    ruleNodePathsCache = Object.fromEntries(
+      Object.entries(POLICY_FIELDS).map(([field, path]) => [field, stripLegacyFlag(path)]),
+    ) as Record<PolicyField, string>;
+  }
+  return ruleNodePathsCache;
+};
 
-export const RULE_FIELDS = Object.keys(POLICY_FIELDS) as PolicyField[];
+let ruleFieldsCache: PolicyField[] | null = null;
+export const getRuleFields = (): PolicyField[] => {
+  if (!ruleFieldsCache) {
+    ruleFieldsCache = Object.keys(POLICY_FIELDS) as PolicyField[];
+  }
+  return ruleFieldsCache;
+};
 
 /* `hasOwnProperty` rather than `in`: a caller passing a raw path of "constructor" or
    "toString" would otherwise match Object.prototype and read the wrong node. */
-export const ruleNodePath = (field: RuleFieldRef): string =>
-  Object.prototype.hasOwnProperty.call(RULE_NODE_PATHS, field)
-    ? RULE_NODE_PATHS[field as PolicyField]
+export const ruleNodePath = (field: RuleFieldRef): string => {
+  const nodePaths = getRuleNodePaths();
+  return Object.prototype.hasOwnProperty.call(nodePaths, field)
+    ? nodePaths[field as PolicyField]
     : stripLegacyFlag(field);
+};
 
 /* WHAT AN OLD RECORD MEANS, derived from the two call sites rather than guessed.
  *
