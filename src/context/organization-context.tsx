@@ -188,10 +188,6 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     error,
   };
 
-  if (!stripePublishableKey) {
-    return <FullPageLoader />;
-  }
-
   if (isNoOrgPage) {
     return (
       <OrganizationContext.Provider value={{ ...value, isLoading: false }}>
@@ -208,6 +204,10 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
 
   if (error) {
     return <ServerMaintenance onRefresh={fetchMainSiteInfo} />;
+  }
+
+  if (!stripePublishableKey) {
+    return <FullPageLoader />;
   }
 
   return (
