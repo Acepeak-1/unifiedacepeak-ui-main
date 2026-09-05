@@ -303,7 +303,7 @@ const RegionalModal: FC<RegionalProps> = ({
             <Button variant={'transparent'} type="button" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button variant={'outline'} type="button" onClick={() => handleSubmit()}>
+            <Button variant={'dark'} type="button" onClick={() => handleSubmit()}>
               Submit
             </Button>
           </div>

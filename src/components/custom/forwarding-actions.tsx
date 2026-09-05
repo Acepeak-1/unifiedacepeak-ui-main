@@ -393,17 +393,22 @@ const ForwardingActions = ({
         </div>
 
         <div
-          className={`flex w-full sm:w-auto ${mainValueDivClass} ${mainValueJustifyClass} flex-col gap-1`}
+          className={`flex w-full sm:w-auto ${mainValueDivClass} ${mainValueJustifyClass} flex-col gap-1.5`}
         >
-          {valueLabel && watchForwardType?.value && watchForwardType?.value === 'VOICEMAIL' && (
+          {/* The label is its own row, matching the type column's label row
+              exactly (same element, same height) — so the row that follows on
+              both sides starts at the same Y: the type select on the left,
+              the radio row on the right. The value select then gets its own
+              row underneath, since there's nothing on the left to match it. */}
+          {valueLabel && watchForwardType?.value === 'VOICEMAIL' && (
             <div className="flex items-center justify-between">
               <Label>{valueLabel}</Label>
             </div>
           )}
-          <div className="w-full flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-4">
             {watchForwardType?.value === 'VOICEMAIL' && (
               <RadioGroup
-                className={`flex gap-4 items-center  min-h-10 mb-0 w-fit ${radioClass}  `}
+                className={`flex flex-nowrap gap-6 items-center min-h-10 mb-0 ${radioClass}  `}
                 value={String(watchIsPersonalVoicemail)}
                 onValueChange={(value) => {
                   if (value === 'true') {
@@ -426,41 +431,57 @@ const ForwardingActions = ({
                   }
                 }}
               >
-                <div className="flex flex-col w-full gap-2 whitespace-nowrap">
-                  {/* <Label className="mb-1">{typeLabel}</Label> */}
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem
-                      value="true"
-                      id={`${forwardState}-true`}
-                      className="cursor-pointer w-4 h-4 accent-blue-500"
-                    />
-                    <Label htmlFor={`${forwardState}-true`} className="cursor-pointer">
-                      My Voicemail
-                    </Label>
-                    <div className="flex items-center gap-1">
-                      <RadioGroupItem
-                        value="false"
-                        id={`${forwardState}-false`}
-                        className="cursor-pointer"
-                      />
-                      <Label htmlFor={`${forwardState}-false`} className="cursor-pointer">
-                        Another Voicemail
-                      </Label>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+                  <RadioGroupItem
+                    value="true"
+                    id={`${forwardState}-true`}
+                    className="cursor-pointer w-4 h-4 accent-red-500"
+                  />
+                  <Label htmlFor={`${forwardState}-true`} className="cursor-pointer">
+                    My Voicemail
+                  </Label>
+                </div>
+                <div className="flex items-center gap-1 shrink-0 whitespace-nowrap">
+                  <RadioGroupItem
+                    value="false"
+                    id={`${forwardState}-false`}
+                    className="cursor-pointer"
+                  />
+                  <Label htmlFor={`${forwardState}-false`} className="cursor-pointer">
+                    Another Voicemail
+                  </Label>
                 </div>
               </RadioGroup>
             )}
-            {watchForwardType?.value === 'VOICEMAIL' && watchIsPersonalVoicemail ? null : (
-              <div className={`flex gap-1 ${selectTwoWidth}`}>
-                {renderForwardValueOption()}
-                {watchForwardType?.value !== 'HANGUP' && errorResponse && (
-                  <div className={`flex justify-end`}>
-                    <ErrorTooltip text={errorResponse} extraClasses="bg-gray-800 text-white mb-1" />
+          </div>
+          <div className="w-full flex flex-wrap items-start gap-2">
+            {watchForwardType?.value === 'VOICEMAIL'
+              ? !watchIsPersonalVoicemail && (
+                  <div className={`flex gap-1 ${selectTwoWidth}`}>
+                    {renderForwardValueOption()}
+                    {errorResponse && (
+                      <div className={`flex justify-end`}>
+                        <ErrorTooltip
+                          text={errorResponse}
+                          extraClasses="bg-gray-800 text-white mb-1"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              : (
+                  <div className={`flex gap-1 ${selectTwoWidth}`}>
+                    {renderForwardValueOption()}
+                    {watchForwardType?.value !== 'HANGUP' && errorResponse && (
+                      <div className={`flex justify-end`}>
+                        <ErrorTooltip
+                          text={errorResponse}
+                          extraClasses="bg-gray-800 text-white mb-1"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
           </div>
         </div>
       </div>

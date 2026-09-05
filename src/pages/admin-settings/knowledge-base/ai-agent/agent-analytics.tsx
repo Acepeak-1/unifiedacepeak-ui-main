@@ -1072,8 +1072,8 @@ export default function AgentAnalytics({ onClose, agents = [] }: AgentAnalyticsP
         className="mx-auto flex-1 w-full max-w-[1600px] space-y-[14px] overflow-y-auto px-4 py-5 sm:px-7 sm:py-6"
       >
         {/* Theme alert header bar */}
-        <div className="mb-3 flex items-start gap-[9px] rounded-lg border border-blue-200 bg-blue-50 px-[13px] py-[11px] text-xs font-medium text-blue-700">
-          <Info className="mt-px h-[15px] w-[15px] shrink-0 text-blue-700" />
+        <div className="mb-3 flex items-start gap-[9px] rounded-lg border border-red-200 bg-red-50 px-[13px] py-[11px] text-xs font-medium text-red-700">
+          <Info className="mt-px h-[15px] w-[15px] shrink-0 text-red-700" />
           <span>
             Showing <strong>{formatDateRange(startDate, endDate)}</strong> · compared to previous{' '}
             {previousRange.days} {previousRange.days === 1 ? 'day' : 'days'} (
@@ -1083,14 +1083,14 @@ export default function AgentAnalytics({ onClose, agents = [] }: AgentAnalyticsP
         </div>
 
         {selectedRepId !== 'all' && selectedAgent ? (
-          <div className="mb-4 flex items-center gap-3 rounded-[10px] border border-blue-200 bg-blue-50 px-4 py-3">
+          <div className="mb-4 flex items-center gap-3 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3">
             <div
               className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-bold text-white"
               style={{ backgroundColor: selectedAgent.avatarBg }}
             >
               {selectedAgent.initials}
             </div>
-            <div className="min-w-0 flex-1 text-[13px] text-blue-700">
+            <div className="min-w-0 flex-1 text-[13px] text-red-700">
               <div className="truncate font-bold">Viewing report for {selectedAgent.name}</div>
               <div className="mt-0.5 text-xs opacity-80">
                 KPIs, charts and unanswered questions below reflect this agent only.
@@ -1101,7 +1101,7 @@ export default function AgentAnalytics({ onClose, agents = [] }: AgentAnalyticsP
               variant="outline"
               size="sm"
               onClick={() => setSelectedRepId('all')}
-              className="h-8 shrink-0 border-blue-200 bg-white px-3 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+              className="h-8 shrink-0 border-red-200 bg-white px-3 text-[11px] font-semibold text-red-700 hover:bg-red-50 hover:text-red-800"
             >
               Clear filter · view all agents
             </Button>

@@ -33,3 +33,6 @@ secrets-backup/
 
 # Live-managed by Claude Code; accumulates local command text incl. credentials
 .claude/settings.json
+
+# Local dev-server launch config (machine-specific ports)
+.claude/launch.json

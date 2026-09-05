@@ -81,7 +81,7 @@ const Tile = ({ title, path, icon, isAccordionTrigger = false }: any) => {
 
   return (
     <div
-      className={`flex items-center w-full px-3 h-14 gap-2 cursor-pointer ${isActive ? 'text-primary bg-ucass-primary-200/50 border-r-2 border-r-primary' : 'text-gray-900/80'}`}
+      className={`flex items-center w-full px-3 h-14 gap-2 cursor-pointer transition-colors duration-150 ${isActive ? 'text-primary bg-ucass-primary-200/50 border-r-2 border-r-primary' : 'text-gray-900/80 hover:bg-[#e3e3e3] hover:text-[#dc2626]'}`}
       onClick={handleClick}
     >
       <Icon name={icon as IconType} className="w-5 h-5 p-0.5" />

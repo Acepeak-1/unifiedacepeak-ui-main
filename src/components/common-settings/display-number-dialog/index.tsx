@@ -94,7 +94,7 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
         showCloseButton={false}
       >
         <div className="flex flex-col gap-1.5  text-900/80">
-          <div className="font-semibold truncate text-md flex items-center justify-between">
+          <div className="font-semibold truncate text-[18px] flex items-center justify-between">
             Display Number
             <div
               onClick={handleCancel}
@@ -109,14 +109,15 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
           <li className="py-4 first:pt-0 last:pb-0">
             <div className="flex gap-2 flex-col">
               <div className="flex flex-col gap-1">
-                <p className="font-semibold text-md text-gray-900">Incoming number</p>
-                <small className="text-gray-700 text-sm">
+                <p className="font-semibold text-[14px] text-gray-900">Incoming number</p>
+                <small className="text-gray-700 text-[12px]">
                   Show the number the caller is using to call you
                 </small>
               </div>
               <div className="w-full">
                 <CustomSelect
                   options={incomingNumberOptions}
+                  isSearchable={false}
                   value={{
                     label: displayNumber?.incoming?.label || '',
                     value: displayNumber?.incoming?.value?.toString() || '',
@@ -144,8 +145,8 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
             <li className="py-4 flex flex-col gap-4">
               <div className="flex gap-2 flex-col">
                 <div className="flex flex-col gap-1">
-                  <p className="font-semibold text-md text-gray-900">Masking</p>
-                  <p className="text-gray-800 text-sm">
+                  <p className="font-semibold text-[14px] text-gray-900">Masking</p>
+                  <p className="text-gray-800 text-[12px]">
                     {showMaskingInputDesc[maskingValue as Exclude<MaskingType, 'N'>] ??
                       'Invalid masking type'}
                   </p>
@@ -153,6 +154,7 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
                 <div className="w-full">
                   <CustomSelect
                     options={maskingOptions}
+                    isSearchable={false}
                     value={displayNumber?.masking?.type}
                     handleChange={(e) => {
                       setValue('settings.display_number.masking.type', e);
@@ -167,10 +169,19 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
                   const { onChange, ...rest } = register('settings.display_number.masking.value', {
                     required: 'Value is required',
                     validate: (value) => {
+                      const str = (value ?? '').toString();
                       if (maskingValue === 'S') {
                         const num = Number(value);
                         if (!num || num < 2 || num > 5) {
                           return 'Enter a number between 2 and 5';
+                        }
+                      } else if (maskingValue === 'R') {
+                        if (str.length < 3 || str.length > 15) {
+                          return 'Enter 3 to 15 characters';
+                        }
+                      } else if (maskingValue === 'P' || maskingValue === 'E') {
+                        if (str.length < 2 || str.length > 5) {
+                          return 'Enter 2 to 5 characters';
                         }
                       }
                       return true;
@@ -178,11 +189,34 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
                   });
                   return (
                     <Input
-                      type={maskingValue === 'S' ? 'number' : 'text'}
+                      type="text"
+                      inputMode={maskingValue === 'S' ? 'numeric' : 'text'}
                       placeholder="Enter value"
                       {...rest}
+                      /* Belt and braces for Strip: block the keystroke itself, rather than
+                         relying only on the onChange regex below to clean up after it. A
+                         stray keystroke (or a stale bundle) landing before the correction
+                         runs is how "8" or a letter was getting through. */
+                      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                        const isControlKey =
+                          e.key.length > 1 || e.ctrlKey || e.metaKey || e.altKey;
+                        if (isControlKey) return;
+                        if (maskingValue === 'S') {
+                          if (!['2', '3', '4', '5'].includes(e.key)) {
+                            e.preventDefault();
+                          }
+                          return;
+                        }
+                        const target = e.target as HTMLInputElement;
+                        const alreadyAtMax = target.value.length >= maxInputLength[maskingValue];
+                        const hasSelection = target.selectionStart !== target.selectionEnd;
+                        if (alreadyAtMax && !hasSelection) {
+                          e.preventDefault();
+                        }
+                      }}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         if (maskingValue === 'S') {
+                          // Covers paste and autofill, which onKeyDown above cannot see.
                           e.target.value = e.target.value.replace(/[^2-5]/g, '').slice(0, 1);
                         } else {
                           e.target.value = e.target.value.slice(0, maxInputLength[maskingValue]);
@@ -190,8 +224,6 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
                         onChange(e);
                       }}
                       error={(errors?.settings as any)?.display_number?.masking?.value?.message}
-                      min={maskingValue === 'S' ? 2 : 0}
-                      max={maskingValue === 'S' ? 5 : undefined}
                     />
                   );
                 })()}
@@ -231,7 +263,7 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
           {/* Final note */}
           <li className="pt-4">
             <div className="flex gap-2 justify-between items-center">
-              <Label className="text-sm">
+              <Label className="text-[12px]">
                 If number is blocked or unknown, show my number instead
               </Label>
 
@@ -253,7 +285,7 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
             <Button type="button" variant={'transparent'} onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="button" variant={'outline'} onClick={() => handleSubmit()}>
+            <Button type="button" variant={'dark'} onClick={() => handleSubmit()}>
               Submit
             </Button>
           </div>
