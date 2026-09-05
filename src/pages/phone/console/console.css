@@ -290,7 +290,7 @@
   font-size: 11px;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(150deg, #3b6fe0, #7c3aed);
+  background: #2f6bff;
   flex: none;
 }
 .mcm-console .body {
@@ -477,10 +477,10 @@
   display: block;
 }
 .mcm-console .phone-grid {
-  /* list is fixed, the stage takes the slack (it holds the softphone and the
-     call record), the panel is bounded so the transcript stays readable */
+  /* Two zones: a fixed call list and the dialer stage taking the rest.
+     The intelligence/Copilot panel was removed to keep the dialer the focus. */
   display: grid;
-  grid-template-columns: 320px minmax(420px, 1fr) minmax(400px, 460px);
+  grid-template-columns: 384px minmax(420px, 1fr);
   height: 100%;
   overflow: hidden;
 }
@@ -512,9 +512,11 @@
 }
 .mcm-console .col-title h2 {
   margin: 0;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 27px;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 .mcm-console .seg {
   display: flex;
@@ -562,20 +564,26 @@
 }
 .mcm-console .call-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   padding: 11px 14px;
   border-bottom: 1px solid var(--line-2);
   cursor: pointer;
   position: relative;
   text-align: left;
   width: 100%;
-  align-items: flex-start;
+  align-items: center;
 }
+/* On hover only the background changes; text stays its normal (black) colour. */
 .mcm-console .call-row:hover {
-  background: var(--surface-2);
+  background: #fff1f2;
 }
+.mcm-console .col.calls .call-row:hover .cr-name,
+.mcm-console .col.calls .call-row:hover .cr-name .dialnum-text {
+  color: #111111;
+}
+/* Selected row is neutral gray; red is reserved for hover. */
 .mcm-console .call-row.on {
-  background: var(--accent-wash);
+  background: var(--surface-3);
 }
 .mcm-console .call-row.on::before {
   content: '';
@@ -584,6 +592,13 @@
   top: 0;
   bottom: 0;
   width: 3px;
+  background: var(--ink-4);
+}
+/* Hovering the selected row still shows the red hover state. */
+.mcm-console .call-row.on:hover {
+  background: #fff1f2;
+}
+.mcm-console .call-row.on:hover::before {
   background: var(--accent);
 }
 .mcm-console .cr-av {
@@ -598,17 +613,85 @@
   color: var(--ink-2);
   background: var(--surface-3);
 }
+/* Distinct symbol per direction: inbound green, outbound blue, missed red. */
 .mcm-console .cr-av.in {
   background: var(--live-wash);
   color: var(--live);
 }
 .mcm-console .cr-av.out {
-  background: var(--accent-wash);
-  color: var(--accent-ink);
+  background: #e8efff;
+  color: #2563eb;
 }
 .mcm-console .cr-av.miss {
   background: var(--crit-wash);
   color: var(--crit);
+}
+/* Header search that expands from the icon. */
+.mcm-console .cr-search-inline {
+  height: 34px;
+  width: 190px;
+  max-width: 46vw;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid var(--accent-edge);
+  background: #fff;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  box-shadow: 0 1px 3px rgba(17, 17, 17, 0.06);
+}
+.mcm-console .cr-search-inline::placeholder {
+  color: var(--ink-4);
+}
+/* Date section header in the call list (Today / Yesterday / weekday / date). */
+.mcm-console .cr-section {
+  padding: 12px 14px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+/* Smartphone call-log row: plain avatar + name + direction/number/time line. */
+.mcm-console .cr-av-plain {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--surface-3);
+  color: var(--ink-4);
+}
+.mcm-console .cr-name-miss {
+  color: var(--crit);
+}
+.mcm-console .cr-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.mcm-console .cr-dir {
+  display: inline-flex;
+  flex: none;
+}
+.mcm-console .cr-dir.in {
+  color: #16a34a;
+}
+.mcm-console .cr-dir.out {
+  color: #2563eb;
+}
+.mcm-console .cr-dir.miss {
+  color: var(--crit);
+}
+.mcm-console .cr-dot {
+  color: var(--ink-4);
+}
+.mcm-console .cr-rec-ic {
+  color: var(--crit);
+  margin-left: 2px;
 }
 .mcm-console .cr-body {
   flex: 1;
@@ -632,6 +715,49 @@
   opacity: 1;
 }
 .mcm-console .cr-call:hover {
+  background: var(--live);
+  color: #fff;
+}
+/* Row hover actions: Call / Message / Add contact. */
+.mcm-console .cr-actions {
+  flex: none;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.mcm-console .call-row:hover .cr-actions,
+.mcm-console .call-row:focus-within .cr-actions {
+  opacity: 1;
+}
+.mcm-console .cr-act {
+  width: 30px;
+  height: 30px;
+  border-radius: 99px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+}
+.mcm-console .cr-act:hover {
+  background: var(--accent-wash);
+  border-color: var(--accent-edge);
+  color: var(--accent);
+}
+.mcm-console .cr-act.call {
+  color: var(--live);
+  background: var(--live-wash);
+  border-color: transparent;
+}
+.mcm-console .cr-act.call:hover {
   background: var(--live);
   color: #fff;
 }
@@ -719,11 +845,367 @@
 .mcm-console .card-pad {
   padding: 18px;
 }
+
+/* ---- Clean in-call card (avatar, timer, round control grid, hangup) ---- */
+.mcm-console .call-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 18px 22px 16px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+/* DTMF keypad as a bottom sheet that slides up over the card (mobile-style),
+   so opening it never changes the card size or shifts other elements. */
+.mcm-console .dtmf-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  background: #fff;
+  padding: 12px 20px 20px;
+  border-top: 1px solid var(--line);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -10px 26px rgba(17, 17, 17, 0.1);
+  transform: translateY(110%);
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+  z-index: 6;
+}
+.mcm-console .dtmf-sheet.open {
+  transform: translateY(0);
+}
+.mcm-console .dtmf-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-3);
+  margin-bottom: 10px;
+}
+.mcm-console .dtmf-close {
+  background: transparent;
+  border: 0;
+  color: var(--ink-3);
+  cursor: pointer;
+  display: inline-flex;
+}
+.mcm-console .dtmf-display {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--ink);
+  margin-bottom: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.mcm-console .dtmf-display-hint {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--ink-4);
+}
+.mcm-console .dtmf-close:hover {
+  color: var(--accent);
+}
+.mcm-console .call-av-lg {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+  background: #2f6bff;
+  box-shadow: 0 2px 6px rgba(17, 17, 17, 0.14);
+  margin-bottom: 4px;
+}
+.mcm-console .call-name-lg {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.mcm-console .call-name-lg .call-num-inline {
+  font-weight: 500;
+  color: var(--ink-3);
+  margin-left: 8px;
+}
+.mcm-console .call-timer-lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-2);
+  margin: 2px 0 20px;
+}
+.mcm-console .call-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 24px;
+  justify-items: center;
+  width: 100%;
+  max-width: 300px;
+  margin-bottom: 12px;
+}
+.mcm-console .call-ctl {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: color 0.15s;
+}
+.mcm-console .call-ctl .call-ctl-ic {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 6px rgba(17, 17, 17, 0.07);
+  color: var(--ink-2);
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+.mcm-console .call-ctl:hover .call-ctl-ic {
+  color: var(--accent);
+  border-color: var(--accent-edge);
+  background: var(--accent-wash);
+}
+.mcm-console .call-ctl:hover {
+  color: var(--accent);
+}
+.mcm-console .call-ctl.on .call-ctl-ic {
+  color: var(--accent);
+  border-color: var(--accent-edge);
+  background: var(--accent-wash);
+}
+/* Right-side slide-over for Notes / Transcript. */
+.mcm-console .call-sidepanel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 380px;
+  max-width: 88vw;
+  background: #fff;
+  border-left: 1px solid var(--line);
+  box-shadow: -12px 0 40px rgba(17, 17, 17, 0.14);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+.mcm-console .call-sidepanel.open {
+  transform: translateX(0);
+}
+.mcm-console .csp-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.mcm-console .csp-tab {
+  background: transparent;
+  border: 0;
+  padding: 4px 2px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.mcm-console .csp-tab.on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.mcm-console .csp-close {
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  color: var(--ink-3);
+  cursor: pointer;
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 2px;
+}
+.mcm-console .csp-close:hover {
+  color: var(--accent);
+}
+.mcm-console .csp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+.mcm-console .csp-empty {
+  text-align: center;
+  color: var(--ink-4);
+  font-size: 13px;
+  padding: 40px 0;
+}
+.mcm-console .csp-note {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 8px;
+  background: var(--surface-2);
+  white-space: pre-wrap;
+}
+.mcm-console .csp-turn {
+  margin-bottom: 12px;
+}
+.mcm-console .csp-turn-who {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  margin-bottom: 2px;
+}
+.mcm-console .csp-turn-text {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.mcm-console .csp-turn.agent .csp-turn-who {
+  color: var(--accent);
+}
+/* Floating tab to reopen the panel. */
+.mcm-console .csp-fab {
+  position: fixed;
+  top: 96px;
+  right: 0;
+  z-index: 59;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px 0 0 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-right: 0;
+  box-shadow: -4px 4px 14px rgba(17, 17, 17, 0.12);
+  color: var(--accent);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.mcm-console .csp-fab:hover {
+  background: var(--accent-wash);
+}
+.mcm-console .call-notes {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+  color: var(--ink);
+  background: var(--surface-2);
+}
+.mcm-console .call-notes:focus {
+  border-color: var(--accent-edge);
+}
+/* Center the lone last control (Transcript) in its own row. */
+.mcm-console .call-grid > :last-child {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+/* Red hangup pill — same shape as the dialer's call button. */
+.mcm-console .call-end-pill {
+  height: 52px;
+  padding: 0 34px;
+  border-radius: 999px;
+  background: #e50914;
+  color: #fff;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(17, 17, 17, 0.14);
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+.mcm-console .call-end-pill:hover {
+  background: #c20811;
+  transform: scale(1.03);
+}
+.mcm-console .call-end-pill:active {
+  transform: scale(0.98);
+}
+.mcm-console .call-hangup {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #e50914;
+  box-shadow: 0 2px 6px rgba(17, 17, 17, 0.14);
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+.mcm-console .call-hangup:hover {
+  transform: scale(1.06);
+  background: #c20811;
+}
+.mcm-console .call-hangup:active {
+  transform: scale(0.96);
+}
 .mcm-console .caller {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 18px 18px 16px;
+}
+/* Clean, centered caller header in the call stage (matches the reference). */
+.mcm-console .col.stage .caller {
+  flex-direction: column;
+  text-align: center;
+  gap: 6px;
+  padding: 26px 18px 10px;
+}
+.mcm-console .col.stage .caller-av {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  font-size: 30px;
+  margin-bottom: 8px;
+}
+.mcm-console .col.stage .caller-state {
+  align-items: center;
+}
+/* The resolve/enrichment info bar is hidden for the clean call layout. */
+.mcm-console .col.stage .popstrip {
+  display: none;
 }
 .mcm-console .caller-av {
   width: 56px;
@@ -735,7 +1217,7 @@
   font-size: 18px;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(150deg, #3b6fe0, #7c3aed);
+  background: #2f6bff;
 }
 .mcm-console .caller-name {
   font-size: 19px;
@@ -819,6 +1301,12 @@
 .mcm-console .popcell:last-child {
   border-right: 0;
 }
+/* Hover feedback for dropdown rows (e.g. the caller-id list). */
+.mcm-console .popcell:hover {
+  background: #fff1f2;
+  color: var(--accent-ink);
+  border-radius: 8px;
+}
 .mcm-console .popcell .k {
   font-size: 9.5px;
   font-weight: 700;
@@ -898,12 +1386,12 @@
   height: 17px;
 }
 .mcm-console .btn.primary {
-  background: var(--accent);
+  background: #111111;
   color: #fff;
   box-shadow: var(--shadow-sm);
 }
 .mcm-console .btn.primary:hover {
-  background: var(--accent-ink);
+  background: #000000;
 }
 .mcm-console .btn.answer {
   background: var(--live);
@@ -949,13 +1437,18 @@
 .mcm-console .keypad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 16px 18px;
+  justify-items: center;
+  padding: 6px 0;
 }
 .mcm-console .key {
-  height: 52px;
-  border-radius: var(--r);
-  background: var(--surface-2);
+  width: 62px;
+  height: 62px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff;
   border: 1px solid var(--line);
+  box-shadow: 0 2px 6px rgba(17, 17, 17, 0.08);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -967,21 +1460,54 @@
   border-color: var(--accent-edge);
 }
 .mcm-console .key:active {
-  transform: scale(0.96);
+  transform: scale(0.94);
 }
 .mcm-console .key b {
-  font-size: 19px;
-  font-weight: 600;
+  font-size: 21px;
+  font-weight: 700;
   letter-spacing: -0.02em;
+  color: #111;
 }
 .mcm-console .key i {
   font-size: 8.5px;
   font-style: normal;
   font-weight: 700;
+  color: #111111;
   letter-spacing: 0.12em;
-  color: var(--ink-4);
   margin-top: 3px;
   height: 9px;
+  transition: color 0.12s;
+}
+/* Letters go red only on hover. */
+.mcm-console .key:hover i {
+  color: var(--accent);
+}
+
+/* Consistent red hover for clickable controls on the calls page — text and
+   icons turn red. The solid primary/call button and the keypad keys keep their
+   own hover treatments. */
+.mcm-console .col.calls button:not(:disabled):not(.dialnum):hover,
+.mcm-console .col.calls button:not(:disabled):not(.dialnum):hover svg,
+.mcm-console .col.stage .btn.ghost:not(:disabled):hover,
+.mcm-console .col.stage .btn.ghost:not(:disabled):hover svg {
+  color: var(--accent);
+}
+
+/* Phone numbers in the call list are shown as plain text — no red hover, no
+   dashed underline, no dial icon on hover. */
+.mcm-console .col.calls .dialnum .dialnum-text {
+  border-bottom-color: transparent !important;
+}
+.mcm-console .col.calls .dialnum-ic {
+  display: none !important;
+}
+.mcm-console .col.calls .dialnum:hover .dialnum-text,
+.mcm-console .col.calls .dialnum:focus-visible .dialnum-text {
+  color: inherit;
+  border-bottom-color: transparent !important;
+}
+.mcm-console .col.stage .btn.ghost:not(:disabled):hover {
+  border-color: var(--accent-edge);
 }
 .mcm-console .dial-display {
   width: 100%;
@@ -1009,6 +1535,30 @@
   align-items: center;
   justify-content: center;
 }
+/* Boxed number input to match the reference dialer. */
+.mcm-console .dial-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 14px;
+}
+.mcm-console .dial-box .dial-cc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  color: var(--ink-3);
+  padding-right: 8px;
+  border-right: 1px solid var(--line);
+}
+.mcm-console .dial-box .dial-display {
+  font-size: 18px;
+  text-align: left;
+  padding: 8px 0;
+}
 .mcm-console .panel {
   display: flex;
   flex-direction: column;
@@ -1032,7 +1582,7 @@
   padding: 12px 11px 10px;
   font-size: 12.5px;
   font-weight: 700;
-  color: var(--ink-3);
+  color: #111111;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   white-space: nowrap;
@@ -1044,7 +1594,7 @@
   color: var(--ink);
 }
 .mcm-console .ptab.on {
-  color: var(--accent-ink);
+  color: #111111;
   border-bottom-color: var(--accent);
 }
 .mcm-console .ptab.ai-tab.on {
@@ -2830,6 +3380,20 @@
   min-height: 0;
 }
 
+/* Hide the scrollbar inside the calls panel — it read as a stray vertical
+   "sideline". Scrolling still works; the track/thumb just aren't painted. */
+.mcm-console .col.calls,
+.mcm-console .col.calls * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.mcm-console .col.calls::-webkit-scrollbar,
+.mcm-console .col.calls *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 /* live indicator on a row whose call is the one currently connected */
 .mcm-console .call-row.live-now::after {
   content: '';
@@ -2887,6 +3451,19 @@
 /* the stage scrolls its record view rather than clipping it */
 .mcm-console .col.stage .stage-inner {
   padding-bottom: 18px;
+  align-items: center;
+  justify-content: center;
+  transition: padding-right 0.25s ease;
+}
+/* When the Notes/Transcript slide-over is open, shift the call card left so it
+   centers in the space that's still visible beside the panel. */
+.mcm-console .col.stage.panel-open .stage-inner {
+  padding-right: 380px;
+}
+/* Compact, centered dialer card to match the reference. */
+.mcm-console .col.stage .stage-inner > .card {
+  width: 100%;
+  max-width: 380px;
 }
 
 /* a pane that hosts one of the app's own components edge-to-edge */
@@ -3694,4 +4271,768 @@
   margin-left: 0;
   color: var(--ink-3);
   font-weight: 600;
+}
+
+/* =====================================================================
+   CallRecord detail view — full-width contact-detail page matching the
+   reference: flush header + divider, compact one-row stats bar, and a
+   bordered Call History card. Intentionally last so these win over the
+   older scattered .record-head / .caller-av / .leg-* rules above.
+   ===================================================================== */
+
+/* full width, top-aligned, no outer card, no stage padding. */
+.mcm-console .col.stage .stage-inner:has(> .record-view) {
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 0;
+}
+.mcm-console .record-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  background: #fff;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* fill the full height of the stage so the page is tall, not just as tall
+     as its content. */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+/* the history card grows into the leftover height; its list scrolls inside. */
+.mcm-console .record-view > .record-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.mcm-console .record-view > .record-section > .rec-sec-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* ---- header ---- */
+.mcm-console .record-view .record-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.mcm-console .rec-back {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.mcm-console .rec-back:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+/* beat .col.stage .caller-av (90px) with a more specific selector */
+.mcm-console .col.stage .record-view .record-av {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #4b5563;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.mcm-console .record-id {
+  min-width: 0;
+  flex: 1;
+}
+.mcm-console .record-view .record-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mcm-console .record-view .record-sub {
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: #6b7280;
+}
+.mcm-console .record-head-acts {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mcm-console .rec-callback,
+.mcm-console .rec-message {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.mcm-console .rec-callback {
+  background: #2563eb;
+  color: #fff;
+}
+.mcm-console .rec-callback:hover {
+  background: #1d4ed8;
+}
+.mcm-console .rec-callback:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.mcm-console .rec-message {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #e5e7eb;
+}
+.mcm-console .rec-message:hover {
+  background: #e5e7eb;
+}
+
+/* ---- compact stats bar ---- */
+.mcm-console .record-statsbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 26px;
+  padding: 11px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.mcm-console .record-statsbar .rec-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+}
+.mcm-console .record-statsbar .rec-stat b {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #111827;
+}
+.mcm-console .rec-stat-lbl {
+  color: #6b7280;
+}
+.mcm-console .rec-stat-ic {
+  color: #9ca3af;
+}
+.mcm-console .rec-stat-ic.total {
+  color: #ef4444;
+}
+.mcm-console .rec-stat-ic.out {
+  color: #16a34a;
+}
+.mcm-console .rec-stat-ic.in {
+  color: #2563eb;
+}
+.mcm-console .rec-stat-ic.time {
+  color: #9ca3af;
+}
+
+/* ---- source tabs (Calls / Recordings / Voicemails) — plain underlined
+   text tabs to match the reference. ---- */
+.mcm-console .record-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 26px;
+  padding: 0 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.mcm-console .record-tab {
+  padding: 9px 2px;
+  margin-bottom: -1px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.mcm-console .record-tab:hover {
+  color: #111827;
+}
+.mcm-console .record-tab.on {
+  color: #111827;
+  font-weight: 600;
+  border-bottom-color: #111827;
+}
+
+/* ---- Call History card ---- */
+.mcm-console .record-view > .record-section {
+  margin: 10px 18px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+.mcm-console .rec-sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.mcm-console .rec-sec-head h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+.mcm-console .rec-filter {
+  position: relative;
+}
+.mcm-console .rec-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.mcm-console .rec-filter-btn:hover {
+  background: #f9fafb;
+}
+.mcm-console .rec-filter-btn svg:first-child {
+  color: #9ca3af;
+}
+.mcm-console .rec-filter-caret {
+  color: #9ca3af;
+}
+.mcm-console .rec-filter-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.mcm-console .rec-filter-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 41;
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(17, 17, 17, 0.12);
+  padding: 5px;
+}
+.mcm-console .rec-filter-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+}
+.mcm-console .rec-filter-item:hover {
+  background: #f3f4f6;
+}
+.mcm-console .rec-filter-item.on {
+  color: #111827;
+  font-weight: 600;
+}
+.mcm-console .rec-filter-item svg {
+  color: #2563eb;
+}
+
+.mcm-console .rec-sec-body {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---- one call row ---- */
+.mcm-console .rec-line {
+  display: flex;
+  flex-direction: column;
+  background: #f9fafb;
+  border: 1px solid #f0f1f3;
+  border-radius: 10px;
+}
+.mcm-console .rec-line-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+/* plain colored arrow — same presentation as the call list's .cr-dir, no
+   rounded square box. */
+.mcm-console .rec-line-ic {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  color: #6b7280;
+}
+.mcm-console .rec-line-ic.in {
+  color: #16a34a;
+}
+.mcm-console .rec-line-ic.out {
+  color: #2563eb;
+}
+.mcm-console .rec-line-ic.miss {
+  color: #ef4444;
+}
+.mcm-console .rec-line-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.mcm-console .rec-line-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+.mcm-console .rec-line-title.in {
+  color: #0f9d63;
+}
+.mcm-console .rec-line-title.out {
+  color: #2563eb;
+}
+.mcm-console .rec-line-title.miss {
+  color: #ef4444;
+}
+.mcm-console .rec-line-sub {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: #6b7280;
+}
+.mcm-console .rec-line-acts {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mcm-console .rec-act {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.mcm-console .rec-act:hover {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+.mcm-console .rec-act.on {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+.mcm-console .rec-act:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mcm-console .rec-act:disabled:hover {
+  background: #fff;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+.mcm-console .rec-line-when {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: 12.5px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+.mcm-console .rec-line-when > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.mcm-console .rec-line-when svg {
+  color: #9ca3af;
+}
+.mcm-console .rec-line .leg-audio {
+  padding: 0 14px 12px 62px;
+}
+.mcm-console .rec-line .leg-audio audio {
+  width: 100%;
+  height: 38px;
+}
+
+/* ---- empty state ---- */
+.mcm-console .rec-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 26px 0;
+  color: #9ca3af;
+}
+.mcm-console .rec-empty p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* ---- responsive ---- */
+@media (max-width: 720px) {
+  .mcm-console .record-view .record-head {
+    flex-wrap: wrap;
+  }
+  .mcm-console .record-head-acts {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .mcm-console .rec-line-inner {
+    flex-wrap: wrap;
+  }
+  .mcm-console .rec-line-when {
+    align-items: flex-start;
+    width: 100%;
+    padding-left: 48px;
+    flex-direction: row;
+    gap: 16px;
+  }
+}
+
+/* =====================================================================
+   Recording History — date groups, recording cards, waveform player.
+   ===================================================================== */
+.mcm-console .rec-group + .rec-group {
+  margin-top: 8px;
+}
+.mcm-console .rec-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #eef0f3;
+}
+.mcm-console .rec-group-lbl {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.mcm-console .rec-group-lbl b {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+.mcm-console .rec-group-lbl > span {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.mcm-console .rec-group-date {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* ---- recording card ---- */
+.mcm-console .rec-card {
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.mcm-console .rec-card.open {
+  border-color: #dbe4ff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.06);
+}
+.mcm-console .rec-card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+}
+.mcm-console .rec-card-title {
+  flex: 0 0 auto;
+  min-width: 150px;
+}
+.mcm-console .rec-card-who {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mcm-console .rec-card-who-ic {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.mcm-console .rec-card-who-txt {
+  min-width: 0;
+}
+.mcm-console .rec-card-num {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mcm-console .rec-card-name {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mcm-console .rec-card-acts {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mcm-console .rec-card-acts .rec-act.on {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+.mcm-console .rec-card-acts .rec-more {
+  font-size: 18px;
+  line-height: 1;
+  color: #6b7280;
+}
+.mcm-console .rec-card-acts .rec-more:hover {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #111827;
+}
+
+/* ---- waveform player ---- */
+.mcm-console .wave-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid #eef0f3;
+  background: #fbfcfe;
+}
+.mcm-console .wave-player > audio {
+  display: none;
+}
+.mcm-console .wave-play {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.mcm-console .wave-play:hover {
+  background: #1d4ed8;
+}
+.mcm-console .wave-mid {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.mcm-console .wave-bars {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  height: 40px;
+  cursor: pointer;
+}
+.mcm-console .wave-bar {
+  flex: 0 0 1px;
+  width: 1px;
+  border-radius: 0;
+  background: #d1d9e6;
+  transition: background 0.1s ease;
+}
+.mcm-console .wave-bar.on {
+  background: #2563eb;
+}
+.mcm-console .wave-cursor {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  align-self: center;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #2563eb;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.4);
+  pointer-events: none;
+}
+.mcm-console .wave-times {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: #9ca3af;
+}
+.mcm-console .wave-vol {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+}
+.mcm-console .wave-vol input[type='range'] {
+  width: 84px;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+.mcm-console .wave-rate {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mcm-console .wave-dl {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mcm-console .wave-dl:hover {
+  background: #f9fafb;
+}
+
+@media (max-width: 860px) {
+  .mcm-console .rec-card-row {
+    flex-wrap: wrap;
+  }
+  .mcm-console .rec-card-title {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .mcm-console .rec-card-who {
+    order: 3;
+    flex-basis: 100%;
+    padding-left: 44px;
+  }
+  .mcm-console .wave-player {
+    flex-wrap: wrap;
+  }
+  .mcm-console .wave-mid {
+    order: 5;
+    flex-basis: 100%;
+  }
+}
+
+/* ---- inline transcript (recording cards) ---- */
+.mcm-console .rec-transcript {
+  border-top: 1px solid #eef0f3;
+  background: #fbfcfe;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.mcm-console .rec-transcript-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6b7280;
+}
+.mcm-console .rec-transcript-head svg {
+  color: #9ca3af;
+}
+/* transcript as plain text — one line per turn, no container. Modifier
+   classes are prefixed (rt-) so they don't collide with the dialer's own
+   .caller block, which centres and stacks its content. */
+.mcm-console .rec-transcript .rec-turn {
+  display: block;
+  margin: 0;
+  padding: 2px 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: left;
+  color: #374151;
+}
+.mcm-console .rec-turn-time {
+  margin-right: 8px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+.mcm-console .rec-turn-who {
+  font-weight: 700;
+  color: #111827;
+}
+.mcm-console .rec-turn.rt-agent .rec-turn-who {
+  color: #1d4ed8;
+}
+.mcm-console .rec-turn.rt-caller .rec-turn-who {
+  color: #16a34a;
 }
