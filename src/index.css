@@ -447,8 +447,13 @@
     overflow: hidden !important;
   }
 
+  /* var(--select-control-border) is unset everywhere by default, so this
+     resolves to the same --primary as before on every existing page. See
+     the --select-option-*-bg/-fg comment further down for why a page-local
+     fallback variable is used here instead of touching --primary itself,
+     which borders/rings far beyond this one control rely on. */
   .custom-react-select__control:hover {
-    border-color: var(--primary) !important;
+    border-color: var(--select-control-border, var(--primary)) !important;
   }
 
   .react-select-error .custom-react-select__control {
@@ -719,10 +724,23 @@
     border-radius: 0.5rem !important;
   }
 
+  /* These --select-option-*-bg/-fg variables are unset everywhere by
+     default, so every rule below resolves to the same colours as before on
+     every existing page. A page can locally set them (e.g. on its own root
+     class) to recolour just hover or just the current selection for its own
+     dropdowns, without touching the app-wide --color-gray-100 / --primary
+     tokens those colours otherwise fall back to — which are both used far
+     more broadly than this menu. Hover and selected are deliberately
+     separate variables: an option can be hovered without being the current
+     value, and the two are allowed to read as different weights of
+     emphasis. Declared in this order (hover, then selected) because when an
+     option is both — the current value, freshly opened or landed on by
+     keyboard focus — the selected colour is meant to win; being later here
+     is what makes that the case. */
   .custom-react-select__option:hover,
   .custom-react-select__option--is-focused {
-    background-color: var(--color-gray-100) !important;
-    color: var(--color-black) !important;
+    background-color: var(--select-option-hover-bg, var(--color-gray-100)) !important;
+    color: var(--select-option-hover-fg, var(--color-black)) !important;
   }
 
   /* Selected: the brand's lightest pink band with red ink, the same pair the
