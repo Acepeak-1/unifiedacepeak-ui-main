@@ -494,7 +494,7 @@
   flex: 1;
   padding: 5px 8px;
   border-radius: 7px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink-3);
   white-space: nowrap;
@@ -971,9 +971,10 @@
 /* Right-side slide-over for Notes / Transcript. */
 .mcm-console .call-sidepanel {
   position: fixed;
-  top: 0;
+  /* clears the app header (pt-16 = 64px in auth-layout) */
+  top: 64px;
   right: 0;
-  height: 100vh;
+  height: calc(100vh - 64px);
   width: 380px;
   max-width: 88vw;
   background: #fff;
@@ -999,7 +1000,7 @@
   background: transparent;
   border: 0;
   padding: 4px 2px 12px;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink-3);
   cursor: pointer;
@@ -1064,7 +1065,9 @@
 /* Floating tab to reopen the panel. */
 .mcm-console .csp-fab {
   position: fixed;
-  top: 96px;
+  /* sits level with the Calls / Recordings / Voicemails tab row:
+     64 app header + 68 contact head + 44 stats bar + borders */
+  top: 177px;
   right: 0;
   z-index: 59;
   width: 42px;
@@ -1551,7 +1554,7 @@
 }
 .mcm-console .ptab {
   padding: 12px 11px 10px;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 700;
   color: #111111;
   border-bottom: 2px solid transparent;
@@ -4353,28 +4356,25 @@
   border: 1px solid transparent;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
-/* Neutral (white on light, dark on dark) so it sits with the Message button
-   rather than competing with the accent. */
-.mcm-console .rec-callback {
-  background: var(--surface);
-  color: var(--ink);
-  border-color: var(--line);
+/* Both read like the dialer's Call pill: black, white label, fully rounded. */
+.mcm-console .rec-callback,
+.mcm-console .rec-message {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: #111111;
+  color: #fff;
+  border-color: #111111;
+  box-shadow: var(--shadow-sm);
 }
-.mcm-console .rec-callback:hover {
-  background: var(--surface-3);
-  border-color: var(--ink-4);
+.mcm-console .rec-callback:hover,
+.mcm-console .rec-message:hover {
+  background: #000000;
+  border-color: #000000;
 }
 .mcm-console .rec-callback:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-.mcm-console .rec-message {
-  background: var(--surface-2);
-  color: var(--ink);
-  border-color: var(--line);
-}
-.mcm-console .rec-message:hover {
-  background: var(--line);
 }
 
 /* ---- compact stats bar ---- */
@@ -4464,7 +4464,7 @@
 }
 .mcm-console .rec-sec-head h4 {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #111827;
 }
@@ -4580,7 +4580,7 @@
   min-width: 0;
 }
 .mcm-console .rec-line-title {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #111827;
 }
@@ -4595,7 +4595,7 @@
 }
 .mcm-console .rec-line-sub {
   margin-top: 2px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: #6b7280;
 }
 .mcm-console .rec-line-acts {
@@ -4642,7 +4642,7 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: #6b7280;
   white-space: nowrap;
 }
@@ -4717,7 +4717,7 @@
   gap: 8px;
 }
 .mcm-console .rec-group-lbl b {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #111827;
 }
@@ -5001,14 +5001,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--ink-4);
+  color: var(--ink);
   cursor: pointer;
 }
 .mcm-console .rec-panel-tab svg {
   color: inherit;
 }
 .mcm-console .rec-panel-tab:hover {
-  color: var(--ink-3);
+  color: var(--accent);
 }
 .mcm-console .rec-panel-tab.on {
   color: var(--accent);
@@ -5123,10 +5123,129 @@
 .mcm-console .call-end-pill:not(:disabled):not([data-x]):hover,
 .mcm-console .call-hangup:not(:disabled):not([data-x]):hover,
 .mcm-console .scopebtn.on:not(:disabled):not([data-x]):hover,
-.mcm-console .rec-act.on:not(:disabled):not([data-x]):hover {
+.mcm-console .rec-act.on:not(:disabled):not([data-x]):hover,
+.mcm-console .rec-callback:not(:disabled):not([data-x]):hover,
+.mcm-console .rec-message:not(:disabled):not([data-x]):hover {
   color: #fff;
 }
 /* the row's call button keeps its green glow */
 .mcm-console .cr-act.call:not(:disabled):not([data-x]):hover {
   color: var(--live);
+}
+
+/* ---- left column / record view: line up the horizontal rules ---------
+   The two panes stack different rows (Phone title vs contact header +
+   stats bar), so their dividers used to sit at different heights and the
+   seam between the columns looked broken. Fixed row heights on both sides
+   make each rule continue straight across: 113px header, then a 40px tab
+   strip on both. */
+.mcm-console .col.calls .col-head {
+  padding: 0;
+  gap: 0;
+  border-bottom: 0;
+}
+.mcm-console .col.calls .col-title {
+  height: 113px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+.mcm-console .col.calls .panel-tabs {
+  height: 40px;
+  padding: 0 14px !important;
+  margin: 0 !important;
+  align-items: stretch;
+}
+.mcm-console .col.calls .panel-tabs .ptab {
+  height: 40px;
+  padding: 0 10px;
+  font-size: 14px;
+  align-items: center;
+}
+.mcm-console .col.calls .seg {
+  margin: 10px 14px;
+}
+.mcm-console .record-view .record-head {
+  height: 68px;
+  padding: 0 18px;
+}
+.mcm-console .record-view .record-statsbar {
+  height: 44px;
+  padding: 0 18px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.mcm-console .record-view .record-tabs {
+  height: 40px;
+  padding: 0 18px;
+  align-items: stretch;
+}
+.mcm-console .record-view .record-tab {
+  height: 40px;
+  padding: 0 2px;
+  display: inline-flex;
+  align-items: center;
+}
+@media (max-width: 1100px) {
+  /* narrow: the header wraps, so let the rows size to content again */
+  .mcm-console .col.calls .col-title,
+  .mcm-console .record-view .record-head,
+  .mcm-console .record-view .record-statsbar {
+    height: auto;
+    padding: 12px 14px;
+  }
+}
+
+/* The record view's tabs are the left column's .ptab, exactly: same size,
+   weight, colour and padding — only the active underline separates them. */
+.mcm-console .record-view .record-tab {
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111111;
+}
+.mcm-console .record-view .record-tab.on {
+  color: #111111;
+  font-weight: 700;
+  border-bottom-color: var(--accent);
+}
+
+/* Buttons rest in the normal ink colour (not grey) so the red hover reads as
+   the one state change. */
+.mcm-console .seg button,
+.mcm-console .cr-act,
+.mcm-console .rec-act,
+.mcm-console .rec-filter-btn,
+.mcm-console .csp-tab {
+  color: var(--ink);
+}
+
+/* note header: who the call was with, and when the note was written */
+.mcm-console .csp-note-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 11.5px;
+}
+.mcm-console .csp-note-who {
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mcm-console .csp-note-at {
+  flex: none;
+  color: var(--ink-4);
+}
+/* who the note being written is about */
+.mcm-console .csp-note-for {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
 }
