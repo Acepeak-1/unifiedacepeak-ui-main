@@ -208,7 +208,7 @@ const DialpadAiConversationOverview = ({
                           key={message.id}
                           className={`max-w-[88%] rounded-xl px-3 py-2 text-xs sm:text-sm ${
                             isBotMessage
-                              ? 'mr-auto bg-[#f5f8ff] text-[#2d4668]'
+                              ? 'mr-auto bg-slate-100 text-slate-700'
                               : 'ml-auto bg-ucass-active-bg text-[#1d3556]'
                           }`}
                         >

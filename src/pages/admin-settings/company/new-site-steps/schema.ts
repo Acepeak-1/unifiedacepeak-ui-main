@@ -82,6 +82,13 @@ export const upsertSiteSchema = yup.object().shape({
       yup
         .string()
         .max(15, 'Caller ID name must not exceed 15 characters')
+        /* Letters only. The `*` rather than `+` keeps an empty value legal —
+           the field is optional (see the note above), and a `+` here would turn
+           "left blank" into a validation error. Enforced in the schema as well
+           as in the input's onChange, because a paste, an autofill or a value
+           carried over from an older record never passes through the keystroke
+           filter. */
+        .matches(/^[A-Za-z]*$/, 'Use letters only — no numbers, spaces or symbols')
         .transform((value) => (value === '' ? undefined : value))
         .optional(),
     otherwise: (schema) => schema,

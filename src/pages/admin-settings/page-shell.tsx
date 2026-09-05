@@ -23,22 +23,26 @@ export const AdminPage = ({
   actions,
   filters,
   children,
+  className,
 }: {
   /** The area this screen belongs to, e.g. "Numbers". */
-  section?: string;
-  title: string;
-  description: string;
+  section?: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
   actions?: ReactNode;
   filters?: ReactNode;
   children: ReactNode;
+  /** Extra class on the root section, for a page that needs to override the
+      shared `.mcm-adminpage-*` look without changing it for every consumer. */
+  className?: string;
 }) => (
-  <section className="mcm-adminpage">
+  <section className={`mcm-adminpage${className ? ` ${className}` : ''}`}>
     <McmIconSprite />
     <div className="mcm-adminpage-head">
       <div className="mcm-adminpage-title">
         {section ? <div className="mcm-adminpage-eyebrow">{section}</div> : null}
         <h1>{title}</h1>
-        <p>{description}</p>
+        {description ? <p>{description}</p> : null}
       </div>
       {actions ? <div className="mcm-adminpage-actions">{actions}</div> : null}
     </div>

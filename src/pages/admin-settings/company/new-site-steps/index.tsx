@@ -10,6 +10,8 @@ import { upsertSite } from '@/services/api';
 import { getObjectLength, handleAlert } from '@/lib/utils';
 import Loader from '@/components/custom/loader';
 import { Button } from '@/components/ui/button';
+import { Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import SiteInfo from './site-info';
 import Summary from './summary';
 
@@ -32,24 +34,6 @@ const NewSiteSteps = ({ data = {}, handleClose }: any) => {
   const [currentStep, setCurrentStep] = useState(1);
   const queryClient = useQueryClient();
   const isEdit = Boolean(data?.uuid);
-
-  const StepContent = [
-    {
-      label: 'Step 1',
-      number: 1,
-      title: 'Company Info',
-    },
-    // {
-    //   label: 'Step 2',
-    //   number: 2,
-    //   title: 'Caller ID Name',
-    // },
-    {
-      label: 'Step 2',
-      number: 2,
-      title: 'Summary',
-    },
-  ];
 
   const formInstance = useForm<any>({
     defaultValues: createSiteFormInitialState,
@@ -185,7 +169,7 @@ const NewSiteSteps = ({ data = {}, handleClose }: any) => {
         {/* <div className=" w-full max-w-[940px] rounded-xl mx-auto  p-5 border border-gray-200 bg-white"> */}
         <div className="mx-auto mt-3 w-full max-w-[940px]">{stepLookUp[currentStep]}</div>
       </div>
-      <div className="flex flex-col-reverse gap-2 border-t border-gray-200 pt-3 sm:flex-row sm:justify-end sm:pt-4">
+      <div className="flex flex-col-reverse gap-2 border-t border-gray-200 pt-2 sm:flex-row sm:justify-end sm:pt-2">
         <Button
           onClick={() => {
             if (currentStep === 1) {
@@ -201,7 +185,12 @@ const NewSiteSteps = ({ data = {}, handleClose }: any) => {
           {currentStep === 1 ? 'Cancel' : 'Back'}
         </Button>
 
-        <Button variant={'primary'} disabled={isPending} type="submit" className="w-full sm:w-auto">
+        <Button
+          variant={'primary'}
+          disabled={isPending}
+          type="submit"
+          className="w-full bg-black border-black hover:bg-black/90 sm:w-auto"
+        >
           {isPending ? (
             <Loader variant="blue" size="sm" />
           ) : currentStep === 2 ? (

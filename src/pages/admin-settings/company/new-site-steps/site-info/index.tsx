@@ -15,8 +15,13 @@ const CALLER_ID_OPTIONS = [
 /* Stored, but not yet acted on. Nothing in the call path reads a location's
    caller ID — the number a person shows comes from their own record. Saying so
    is better than describing behaviour that does not happen. */
-const CALLER_ID_NOTE =
-  "Recorded against this location, but not applied to calls yet — a person's caller ID still comes from their own record until location-level caller ID is switched on.";
+const CALLER_ID_HELP: Record<string, string> = {
+  MAIN: 'Recorded here, not yet applied to calls.',
+  CUSTOM: 'Recorded here, not yet applied to calls.',
+  BLANK: 'Recorded here, not yet applied to calls.',
+};
+
+const CALLER_ID_NOTE = 'Callers currently see the number from your own record instead.';
 
 const SiteInfo = ({ formInstance }: any) => {
   const {
@@ -150,6 +155,10 @@ const SiteInfo = ({ formInstance }: any) => {
       <div className="flex flex-col gap-5 border-b border-gray-200 py-4 sm:py-5">
         <div className="flex flex-col gap-1">
           <h5 className="font-semibold text-gray-900 text-md">General Location Info</h5>
+          <p className="text-gray-500 text-sm">
+            E.g. <span className="font-medium">Mumbai Office</span> or{' '}
+            <span className="font-medium">London Branch</span> — not your company name.
+          </p>
         </div>
         <div className="flex w-full items-center gap-3">
           <div className="flex w-full gap-4">
@@ -312,7 +321,19 @@ const SiteInfo = ({ formInstance }: any) => {
                 {watchedCallerIdType === 'CUSTOM' && (
                   <Input
                     label="Name to show"
-                    {...register('caller_id_name')}
+                    /* Anything that is not a letter is dropped on the way in, so
+                       the field cannot hold a character the schema will later
+                       reject. Rewritten only when it actually differs, to avoid
+                       fighting the caret on every keystroke. */
+                    {...register('caller_id_name', {
+                      onChange: (event: any) => {
+                        const typed = event?.target?.value ?? '';
+                        const letters = typed.replace(/[^A-Za-z]/g, '');
+                        if (letters !== typed) {
+                          setValue('caller_id_name', letters, { shouldValidate: true });
+                        }
+                      },
+                    })}
                     error={errors?.caller_id_name?.message}
                     placeholder="Enter caller ID name"
                     maxLength={15}
@@ -323,8 +344,11 @@ const SiteInfo = ({ formInstance }: any) => {
             </div>
           </div>
 
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-2.5">
-            <p className="text-xs text-gray-700">{CALLER_ID_NOTE}</p>
+          <div className="rounded-md border border-gray-200 bg-gray-100 p-2.5">
+            <p className="text-xs text-gray-500">
+              {CALLER_ID_HELP[watchedCallerIdType] || CALLER_ID_HELP.MAIN}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">{CALLER_ID_NOTE}</p>
           </div>
         </div>
       </div>
