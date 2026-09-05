@@ -636,11 +636,11 @@ const Header = () => {
                 <div className="flex items-center">
                   <CustomTooltip text={'Add Funds'} side="bottom">
                     <div
-                      className="flex items-center gap-2 px-3 h-9 bg-gray-100 hover:bg-ucass-primary-200  rounded-lg cursor-pointer"
+                      className="flex items-center gap-2 px-3 h-9 bg-gray-100 hover:bg-[#FEE2E2]  rounded-lg cursor-pointer"
                       {...getHeaderRouteHandlers(addFundsRoute)}
                     >
-                      <Wallet className="w-5 h-5 text-primary group-hover:scale-110 transition-transform duration-300" />
-                      <span className="text-[14px] text-primary font-medium">
+                      <Wallet className="w-5 h-5 text-[#DC2626] group-hover:scale-110 transition-transform duration-300" />
+                      <span className="text-[14px] text-[#DC2626] font-medium">
                         {resolvedFundsDisplay}
                       </span>
                     </div>
@@ -663,11 +663,11 @@ const Header = () => {
                       isActivityInfo={false}
                       size="32"
                     />
-                    <div className="flex flex-col items-start text-left min-w-[120px]">
-                      <h4 className="text-[12px] font-bold text-gray-900 leading-tight">
+                    <div className="flex flex-col items-start text-left min-w-[120px] max-w-[160px]">
+                      <h4 className="w-full truncate text-[12px] font-bold text-gray-900 leading-tight">
                         {`Hi, ${user?.user_info?.first_name} ${user?.user_info?.last_name || ''}`}
                       </h4>
-                      <div className="text-[10px] text-gray-500 font-semibold uppercase tracking-widest">
+                      <div className="w-full truncate text-[10px] text-gray-500 font-semibold uppercase tracking-widest">
                         {role}
                       </div>
                     </div>

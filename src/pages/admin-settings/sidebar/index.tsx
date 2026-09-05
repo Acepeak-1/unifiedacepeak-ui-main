@@ -336,20 +336,20 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
          but this nav is two levels only — collapsing them to a single link left
          Zapier and Manage Webhook with no way in. */
       children: [
-        { title: 'CRM', icon: 'IntegrationIcon', path: '/admin-settings/integration/crm' },
+        { title: 'CRM', icon: 'CRMIcon', path: '/admin-settings/integration/crm' },
         {
           title: 'General Settings',
-          icon: 'SettingIcon',
+          icon: 'SettingsIcon',
           path: '/admin-settings/integration/data-reporting/general-settings',
         },
         {
           title: 'Zapier',
-          icon: 'IntegrationIcon',
+          icon: 'ZapierIcon',
           path: '/admin-settings/integration/data-reporting/zapier',
         },
         {
           title: 'Manage Webhook',
-          icon: 'AnalyticsIcon',
+          icon: 'WebhookIcon',
           path: '/admin-settings/integration/data-reporting/manage-webhook',
         },
       ],
@@ -702,7 +702,9 @@ const Sidebar = () => {
                   >
                     <AccordionItem value={value} className="">
                       <AccordionTrigger className="p-0 items-center" isActive={isActive}>
-                        <div className="flex items-center w-full px-3 h-14 gap-2 cursor-pointer font-medium whitespace-nowrap">
+                        <div
+                          className={`flex items-center w-full px-3 h-14 gap-2 cursor-pointer font-medium whitespace-nowrap ${isActive ? 'mcm-adminnav-section-active' : ''}`}
+                        >
                           <Icon name={icon as IconType} className="w-6 h-6 p-0.5" />
                           {title}
                         </div>

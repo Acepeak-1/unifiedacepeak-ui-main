@@ -18,7 +18,9 @@ interface ApiSearchResult {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const SearchIcon = () => (
+/* Exported so page-level search fields (Integration pages) can carry the
+   exact same glyph as the global search instead of a lookalike. */
+export const SearchIcon = () => (
   <svg
     width="15"
     height="15"
@@ -191,7 +193,7 @@ const GlobalSearch = () => {
   return (
     <div
       ref={containerRef}
-      className="global-search-root xs:w-[200px] sm:w-full lg:w-full lg:max-w-[320px] lg:min-w-[260px]"
+      className="global-search-root xs:w-[200px] sm:w-full lg:w-full lg:max-w-[320px] lg:min-w-[160px]"
     >
       <div className="global-search-input-wrapper ">
         <SearchIcon />

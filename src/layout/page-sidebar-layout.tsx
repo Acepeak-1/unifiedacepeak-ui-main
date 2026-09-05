@@ -56,7 +56,7 @@ const PageSidebarLayout = ({
                 ? 'border-r border-primary'
                 : 'border-r border-gray-200 ',
         collapsed
-          ? 'w-[0rem] min-w-[0rem]'
+          ? 'w-4 min-w-4 max-w-4'
           : isTab
             ? 'w-full min-w-0 lg:min-w-[19rem] lg:max-w-[19rem] xl:min-w-[22rem] xl:max-w-[22rem]'
             : title === 'Reports'
@@ -70,13 +70,21 @@ const PageSidebarLayout = ({
     >
       <button
         onClick={() => setCollapsed(!collapsed)}
+        style={{
+          borderWidth: 1,
+          borderStyle: 'solid',
+          borderColor: hovered ? '#FECACA' : '#E5E7EB',
+          backgroundColor: hovered ? '#FEE2E2' : '#FFFFFF',
+          color: hovered ? '#DC2626' : '#6B7280',
+          boxShadow: '0 1px 3px rgba(16,24,40,0.12)',
+        }}
         className={cn(
-          'absolute z-30 top-10 -right-3 transition-all ease-in-out duration-200 border border-gray-200 rounded-full p-0.5 cursor-pointer hidden',
+          'absolute z-30 top-10 transition-all ease-in-out duration-200 rounded-full p-0.5 cursor-pointer hidden',
+          collapsed ? 'left-[2px]' : '-right-3',
           isCampaignResponsiveTopbar ? 'lg:flex' : isAdminResponsiveTopbar ? 'lg:flex' : 'md:flex',
           collapsed || hovered
             ? 'opacity-100 pointer-events-auto'
             : 'opacity-0 pointer-events-none',
-          hovered ? 'bg-primary text-white' : 'bg-white text-gray-600',
         )}
       >
         <ChevronIcon

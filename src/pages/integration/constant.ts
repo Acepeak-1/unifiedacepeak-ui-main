@@ -7,7 +7,7 @@ import Pipedrive from '@/assets/images/Pipedrive.png';
 import Zoho from '@/assets/images/zoho.png';
 import Salesforce from '@/assets/images/Salesforce.png';
 import MondayLogo from '@/assets/images/MondayLogo.png';
-import Zendesk from '@/assets/images/Zendesk.jpg';
+import Zendesk from '@/assets/images/Zendesk.png';
 import Microsoft from '@/assets/images/Microsoft.png';
 import MsTeams from '@/assets/images/MsTeams.png';
 import * as yup from 'yup';
@@ -72,7 +72,7 @@ export const generalSettings = [
     icon: 'Refresh',
     title: 'Contacts 2-Way Sync',
     description:
-      'Contacts added and uploaded in UCAAS must synchronize in {crmName} and vice versa',
+      'Contacts added and uploaded in UCaaS must synchronize in {crmName} and vice versa',
   },
   // {
   //   id: 'notesLogging',
@@ -144,7 +144,7 @@ export const crmList: crmListProps[] = [
     label: 'hubspot-crm',
     image: Hubspot,
     alt: 'HubSpot',
-    description: 'Enable the flow of contact and activity.',
+    description: 'Connect HubSpot to sync your contacts and log call activity automatically.',
     comingSoon: false,
     id: 'HubSpot',
   },
@@ -162,7 +162,7 @@ export const crmList: crmListProps[] = [
     label: 'pipedrive-crm',
     image: Pipedrive,
     alt: 'Pipedrive',
-    description: 'Get your Pipedrive CRM and other insights.',
+    description: 'Connect Pipedrive to sync your contacts and get insights from every call.',
     comingSoon: false,
     id: 'Pipedrive',
   },
@@ -182,7 +182,7 @@ export const crmList: crmListProps[] = [
     image: Zendesk,
     alt: 'Zendesk',
     description:
-      'Integrate Zendesk to manage customer support tickets and communication seamlessly.',
+      'Integrate Zendesk to manage support tickets and customer communication.',
     comingSoon: true,
     id: 'Zendesk',
   },
@@ -192,7 +192,7 @@ export const crmList: crmListProps[] = [
     image: Microsoft,
     alt: 'Microsoft 365',
     description:
-      'Connect with Microsoft 365 to sync contacts and streamline your productivity workflows.',
+      'Connect Microsoft 365 to sync contacts and streamline productivity workflows.',
     comingSoon: true,
     id: 'Microsoft',
   },
@@ -202,7 +202,7 @@ export const crmList: crmListProps[] = [
     image: MsTeams,
     alt: 'MS Teams',
     description:
-      'Enhance collaboration by integrating MS Teams for unified communication and team management.',
+      'Enhance collaboration with MS Teams for unified communication and teamwork.',
     comingSoon: false,
     id: 'MS_TEAMS',
   },
@@ -212,7 +212,7 @@ export const crmList: crmListProps[] = [
     image: MondayLogo,
     alt: 'Monday',
     description:
-      'Integrate Monday.com to streamline your workflows and manage customer interactions efficiently.',
+      'Integrate Monday.com to manage workflows and customer interactions.',
     comingSoon: false,
     id: 'Monday',
   },
@@ -234,26 +234,26 @@ export const crmZapData: Record<
     title: 'Google Contacts',
     zaps: [
       {
-        label: 'Create contacts in Ucass added to Google Contacts',
-        subtitle: 'Ucaas → Google Contacts',
+        label: 'Create contacts in UCaaS added to Google Contacts',
+        subtitle: 'UCaaS → Google Contacts',
         icons: [McmLogo, GoogleContact],
         url: 'https://zapier.com/editor/313251219/draft/313251220/setup',
       },
       {
-        label: 'Create new contacts in Google Contacts added to Ucaas',
-        subtitle: 'Google Contacts → Ucaas',
+        label: 'Create new contacts in Google Contacts added to UCaaS',
+        subtitle: 'Google Contacts → UCaaS',
         icons: [GoogleContact, McmLogo],
         url: 'https://zapier.com/editor/313272431/draft/313272431/setup',
       },
       {
         label: 'Trigger SMS sending from new Google Contact',
-        subtitle: 'Google Contacts → Ucaas (Send SMS)',
+        subtitle: 'Google Contacts → UCaaS (Send SMS)',
         icons: [GoogleContact, McmLogo],
         url: 'https://zapier.com/editor/313251582/draft/313251583/setup',
       },
       // {
       //   label: 'Trigger MMS sending from new Google Contact',
-      //   subtitle: 'Google Contacts → Ucaas (Send MMS)',
+      //   subtitle: 'Google Contacts → UCaaS (Send MMS)',
       //   icons: [GoogleContact, McmLogo],
       // url: 'url',
       // },
@@ -263,26 +263,26 @@ export const crmZapData: Record<
     title: 'Google Sheets',
     zaps: [
       {
-        label: 'Create new contacts in Ucass added to Google Sheets',
-        subtitle: 'Ucaas → Google Sheets',
+        label: 'Create new contacts in UCaaS added to Google Sheets',
+        subtitle: 'UCaaS → Google Sheets',
         icons: [McmLogo, GoogleSheet],
         url: 'https://zapier.com/editor/313251890/draft/313251891/setup',
       },
       {
-        label: 'Create rows in Google Sheets for new contacts added to Ucaas',
-        subtitle: 'Google Sheets → Ucaas',
+        label: 'Create rows in Google Sheets for new contacts added to UCaaS',
+        subtitle: 'Google Sheets → UCaaS',
         icons: [GoogleSheet, McmLogo],
         url: 'https://zapier.com/editor/313273038/draft/313273039/setup',
       },
       {
         label: 'Trigger SMS sending from new Google Sheet row',
-        subtitle: 'Google Sheets → Ucaas (Send SMS)',
+        subtitle: 'Google Sheets → UCaaS (Send SMS)',
         icons: [GoogleSheet, McmLogo],
         url: 'https://zapier.com/editor/313251934/draft/313251935/setup',
       },
       // {
       //   label: 'Trigger MMS sending from new Google Sheet row',
-      //   subtitle: 'Google Sheets → Ucaas (Send MMS)',
+      //   subtitle: 'Google Sheets → UCaaS (Send MMS)',
       //   icons: [GoogleSheet, McmLogo],
       // url: 'url',
       // },
@@ -292,14 +292,14 @@ export const crmZapData: Record<
     title: 'Pipedrive',
     zaps: [
       {
-        label: 'Create contacts in Ucass added to Pipedrive',
-        subtitle: 'Ucaas → Pipedrive',
+        label: 'Create contacts in UCaaS added to Pipedrive',
+        subtitle: 'UCaaS → Pipedrive',
         icons: [McmLogo, Pipedrive],
         url: 'https://zapier.com/editor/313252061/draft/313252062/setup',
       },
       {
-        label: 'Create new contacts in Pipedrive added to Ucaas',
-        subtitle: 'Pipedrive → Ucaas',
+        label: 'Create new contacts in Pipedrive added to UCaaS',
+        subtitle: 'Pipedrive → UCaaS',
         icons: [Pipedrive, McmLogo],
         url: 'https://zapier.com/editor/313273430/draft/313273431/setup',
       },
@@ -321,14 +321,14 @@ export const crmZapData: Record<
     title: 'HubSpot',
     zaps: [
       {
-        label: 'Create contacts in Ucass added to HubSpot',
-        subtitle: 'Ucaas → HubSpot',
+        label: 'Create contacts in UCaaS added to HubSpot',
+        subtitle: 'UCaaS → HubSpot',
         icons: [McmLogo, Hubspot],
         url: 'https://zapier.com/editor/313252488/draft/313252489/setup',
       },
       {
-        label: 'Create new contacts in HubSpot added to Ucaas',
-        subtitle: 'HubSpot → Ucaas',
+        label: 'Create new contacts in HubSpot added to UCaaS',
+        subtitle: 'HubSpot → UCaaS',
         icons: [Hubspot, McmLogo],
         url: 'https://zapier.com/editor/313273732/draft/313273733/setup',
       },
@@ -358,6 +358,41 @@ export const crmTypes = [
   { label: 'Microsoft 365', value: 'MICROSOFT365' },
   { label: 'MS Teams', value: 'MSTEAMS' },
 ];
+/* What a webhook fires ON.
+ *
+ * The Add-webhook dialog was offering `crmTypes` — Google Sheets, HubSpot,
+ * Zendesk and the rest — which is the list of apps the CRM page connects to,
+ * not a list of events. The table it saves into shows types like
+ * "Call Completed" and "SMS Received", so the dialog was asking a different
+ * question from the one the screen answers. These are those events, grouped
+ * so a long list stays scannable. */
+export const webhookEventTypes = [
+  {
+    label: 'Calls',
+    options: [
+      { label: 'Call completed', value: 'call_completed' },
+      { label: 'Call missed', value: 'call_missed' },
+      { label: 'Voicemail left', value: 'voicemail_left' },
+      { label: 'Call recording ready', value: 'call_recording_ready' },
+    ],
+  },
+  {
+    label: 'Messaging',
+    options: [
+      { label: 'SMS received', value: 'sms_received' },
+      { label: 'SMS delivered', value: 'sms_delivered' },
+      { label: 'MMS received', value: 'mms_received' },
+    ],
+  },
+  {
+    label: 'Contacts',
+    options: [
+      { label: 'Contact created', value: 'contact_created' },
+      { label: 'Contact updated', value: 'contact_updated' },
+    ],
+  },
+];
+
 export const initialState = {
   type: null,
   path: '',
@@ -365,19 +400,45 @@ export const initialState = {
 export const validationSchema = yup.object().shape({
   type: yup
     .object({
-      label: yup.string().required('Type label is required'),
-      value: yup.string().required('Type is required'),
+      label: yup.string().required('Event label is required'),
+      value: yup.string().required('Choose the event this webhook fires on'),
     })
     .nullable()
-    .required('Type is required'),
-  path: yup.string().required('Path is required'),
+    .required('Choose the event this webhook fires on'),
+  /* A webhook path is a URL we will POST to. "Required" was the only rule,
+     so a typo like "hooks.zapier.com/..." (no scheme) or a bare word saved
+     happily and then silently never delivered. */
+  path: yup
+    .string()
+    .required('Endpoint URL is required')
+    .trim()
+    .matches(/^https?:\/\/.+/i, 'Must start with https:// (or http://)')
+    .test('is-url', 'That does not look like a valid URL', (value) => {
+      if (!value) return true;
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        return false;
+      }
+    }),
 });
 export interface editForm {
   isEdit: boolean;
   formData: any;
 }
 export interface ReportingDataProps {
-  items: { title: string; description: string; icon: string; id: string }[];
+  items: {
+    title: string;
+    description: string;
+    icon: string;
+    id: string;
+    /* Demo only — the API returns no status or sync time for Zapier apps
+       yet. Remove these two fields (and the stats row / status badges that
+       read them) once real values are available. */
+    status?: 'connected' | 'setup' | 'disconnected';
+    lastSync?: string;
+  }[];
 }
 export const reportingData: Record<string, ReportingDataProps> = {
   zapier: {
@@ -385,29 +446,37 @@ export const reportingData: Record<string, ReportingDataProps> = {
       {
         title: 'Google Contacts',
         id: 'google_contacts',
+        status: 'connected',
+        lastSync: '2 hours ago',
         description:
-          'Sync your Google Contacts with UCAAS to easily manage your customer list and enable seamless calling and messaging directly from your contact book.',
+          'Sync Google Contacts to call and message straight from your contact book.',
         icon: GoogleContact,
       },
       {
         title: 'Google Sheets',
         id: 'google_sheets',
+        status: 'disconnected',
+        lastSync: '',
         description:
-          'Import your contacts from Google Sheets into UCAAS and track all incoming and outgoing SMS with your customers.',
+          'Import contacts from Google Sheets and track incoming and outgoing SMS.',
         icon: GoogleSheet,
       },
       {
         title: 'Pipedrive',
         id: 'pipedrive',
+        status: 'connected',
+        lastSync: 'Yesterday',
         description:
-          'Sync your contacts and log SMS activity between Pipedrive and UCAAS for streamlined communication.',
+          'Sync contacts and log SMS activity between Pipedrive and the console.',
         icon: Pipedrive,
       },
       {
         title: 'HubSpot',
         id: 'hubSpot',
+        status: 'setup',
+        lastSync: '',
         description:
-          'Automatically import contacts and record SMS/MMS history in HubSpot with UCAAS integration.',
+          'Import contacts and record SMS/MMS history in HubSpot automatically.',
         icon: Hubspot,
       },
     ],

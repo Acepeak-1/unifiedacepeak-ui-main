@@ -84,6 +84,7 @@ function TableManager({
   customClass = '',
   descriptionEmptyTable = '',
   imageSize = 'min-w-44  max-w-44',
+  emptyImage = null,
   clientSideSearch = false,
   renderSubComponent,
 }: Readonly<{
@@ -127,6 +128,8 @@ function TableManager({
   customClass?: string;
   descriptionEmptyTable?: string;
   imageSize?: string;
+  /** Replaces the default not-found artwork in the empty state. */
+  emptyImage?: React.ReactNode;
   clientSideSearch?: boolean;
   renderSubComponent?: (rowOriginal: any) => React.ReactNode;
 }>) {
@@ -141,7 +144,10 @@ function TableManager({
     label: 25,
     value: 25,
   });
-  const debouncedSearch = useDebounce(search, 1000);
+  /* A second's wait is there to spare the API a request per keystroke. A
+     client-side search makes no request at all, so that second was only ever
+     a second of the table looking broken. */
+  const debouncedSearch = useDebounce(search, clientSideSearch ? 200 : 1000);
   const normalizedSearch = normalizeSearchText(debouncedSearch);
   const [paginationSearch, setPaginationSearch] = useState(normalizedSearch);
   const hasSearchChanged = normalizedSearch !== paginationSearch;
@@ -193,12 +199,21 @@ function TableManager({
 
     if (!clientSideSearch || !normalizedSearch) return rows;
 
+    /* Match what the table SHOWS, not what the record stores. A row whose
+       `type` is `call_completed` renders as "Call Completed", so searching
+       the words on screen found nothing while the underscored raw value —
+       which nobody can see — was the only thing that matched. Separators
+       collapse to spaces on both sides of the comparison. */
+    const loosen = (value: unknown) =>
+      String(value ?? '')
+        .toLowerCase()
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const needle = loosen(normalizedSearch);
+
     return rows.filter((row: any) =>
-      Object.values(row || {}).some((value) =>
-        String(value ?? '')
-          .toLowerCase()
-          .includes(normalizedSearch.toLowerCase()),
-      ),
+      Object.values(row || {}).some((value) => loosen(value).includes(needle)),
     );
   }, [tbldata, staticData, select, normalizedSearch, clientSideSearch, usesStaticData]);
 
@@ -432,7 +447,7 @@ function TableManager({
              need different words - and offering "add your first one" to somebody
              whose search simply missed would be actively unhelpful. */
           <div className="mx-auto flex h-[calc(100%_-_45px)] w-full flex-col items-center justify-center gap-2 py-5 text-center">
-            <img src={NotFound} alt="" className={imageSize} />
+            {emptyImage ?? <img src={NotFound} alt="" className={imageSize} />}
             {String(search || '').trim() ? (
               <>
                 <p className="text-md font-medium text-gray-900">
@@ -497,10 +512,24 @@ function TableManager({
                   <Label className="text-gray-900/80 sm:pr-3">per page</Label>
                 </div>
                 <Label className="text-gray-900/80 sm:pl-3">
-                  {tbldata?.data?.data?.result?.totalItems ||
-                    tbldata?.data?.data?.result?.total ||
-                    0}{' '}
-                  record(s)
+                  {(() => {
+                    /* The API total is only right when the table is showing
+                       exactly what the API returned. A `select` that filters
+                       or adds rows, or a client-side search, makes the server
+                       count disagree with what is on screen — "3 records"
+                       under five visible rows. Count what is rendered
+                       whenever the two can differ. */
+                    const rendered = table.getRowModel().rows.length;
+                    const serverTotal = Number(
+                      tbldata?.data?.data?.result?.totalItems ||
+                        tbldata?.data?.data?.result?.total ||
+                        0,
+                    );
+                    const trustServerTotal =
+                      serverTotal > 0 && !usesStaticData && !clientSideSearch && rendered >= pageSize;
+                    const n = trustServerTotal ? serverTotal : rendered;
+                    return `${n} ${n === 1 ? 'record' : 'records'}`;
+                  })()}
                 </Label>
               </div>
               <Button

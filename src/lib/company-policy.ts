@@ -25,22 +25,12 @@ import {
   type CompanyDefaultTemplate,
 } from '@/lib/company-defaults';
 import { readRuleFlags } from '@/lib/company-rule-flags';
+import { POLICY_FIELDS, type PolicyField } from '@/lib/company-policy-fields';
 
-/* The settings a company rule can be set on, and where the flag sits in the
-   stored record. Keys are the names callers use; paths are what the company page
-   writes. Anything absent from this map is not governed and stays editable. */
-export const POLICY_FIELDS = {
-  voicemail: 'voicemail_pin.override',
-  recording: 'recording.override',
-  transcription: 'transcription.override',
-  ai_call_monitoring: 'ai_call_monitoring.override',
-  display_number: 'display_number.override',
-  business_hours: 'operational_hours.override',
-  regional: 'operational_hours.regional.override',
-  role: 'role.override',
-} as const;
-
-export type PolicyField = keyof typeof POLICY_FIELDS;
+/* Declared in company-policy-fields.ts — see the note there for why. Re-exported
+   from here so the many `from '@/lib/company-policy'` imports keep working. */
+export { POLICY_FIELDS };
+export type { PolicyField };
 
 export interface CompanyPolicy {
   /* True once a company record exists and its flags are governing this page. */

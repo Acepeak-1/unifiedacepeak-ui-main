@@ -83,9 +83,19 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchMainSiteInfo = useCallback(async () => {
-    const domain = getDomain().includes('localhost')
-      ? 'https://qa.mycountrymobile.com'
-      : getDomain();
+    /* On localhost there is no tenant domain to read off the URL, so one has
+       to be named. This used to be hardcoded to qa.mycountrymobile.com, which
+       the API no longer has settings for — it answers "Website settings not
+       found", the fetch throws, and the app sits on a loader forever. It
+       takes the domain this build is for (VITE_APP_DOMAIN) instead, so a dev
+       server shows the same branding as the deployment it belongs to. */
+    const configuredDomain = (
+      (getEnv() as { VITE_APP_DOMAIN?: string }).VITE_APP_DOMAIN || ''
+    ).trim();
+    const localDomain = configuredDomain
+      ? `https://${configuredDomain.replace(/^https?:\/\//i, '').replace(/\/$/, '')}`
+      : 'https://qa.mycountrymobile.com';
+    const domain = getDomain().includes('localhost') ? localDomain : getDomain();
     // const domain = "https://mcm.mycountrymobile.com";
     try {
       setIsLoading(true);
@@ -208,8 +218,16 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     error,
   };
 
-  if (!stripePublishableKey) {
+  /* Loading and failure are checked first. This guard used to run ahead of
+     them, and since the key only arrives with the organisation, any failed
+     fetch left the app on a permanent spinner — the maintenance screen below,
+     with its retry, could never be reached. */
+  if (isLoading) {
     return <FullPageLoader />;
+  }
+
+  if (error) {
+    return <ServerMaintenance onRefresh={fetchMainSiteInfo} />;
   }
 
   if (isNoOrgPage) {
@@ -220,14 +238,6 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
         </Elements>
       </OrganizationContext.Provider>
     );
-  }
-
-  if (isLoading) {
-    return <FullPageLoader />;
-  }
-
-  if (error) {
-    return <ServerMaintenance onRefresh={fetchMainSiteInfo} />;
   }
 
   return (

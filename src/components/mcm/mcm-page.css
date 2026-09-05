@@ -38,10 +38,12 @@
   --line: #dfe5f0;
   --line-2: #eaeef6;
 
-  --accent: #2563eb;
-  --accent-ink: #1d4ed8;
-  --accent-wash: #e8efff;
-  --accent-edge: #c3d6ff;
+  --accent: #DC2626;
+  --accent-ink: #B91C1C;
+  --accent-2: #EF4444;
+  --accent-3: #F87171;
+  --accent-wash: #FEE2E2;
+  --accent-edge: #FECACA;
 
   /* AI gets its own hue on purpose: machine output must never be
      mistaken for system truth. Violet = "generated, verify me". */
@@ -84,10 +86,12 @@
   --ink-4: #6b7a96;
   --line: #26314a;
   --line-2: #1c2537;
-  --accent: #5b8dff;
-  --accent-ink: #87aaff;
-  --accent-wash: #16223d;
-  --accent-edge: #2c3f68;
+  --accent: #EF4444;
+  --accent-ink: #F87171;
+  --accent-2: #EF4444;
+  --accent-3: #F87171;
+  --accent-wash: #3D1616;
+  --accent-edge: #683030;
   --ai: #a97fff;
   --ai-ink: #c0a3ff;
   --ai-wash: #231a3d;
@@ -1129,7 +1133,7 @@
 
 .mcm-page .quickdial {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 8px;
 }
 .mcm-page .qd {
@@ -2534,14 +2538,27 @@
   background: var(--accent);
   border-color: transparent;
 }
+/* An 18px thumb in a 38x22 track left no room on either side: it sat flush
+   against the rim and, once on, looked like it was bulging out of the
+   track. 16px with a 3px inset on both ends travels cleanly instead —
+   38 - 2(border) - 2(3px inset) - 16 = 15px of travel. */
 .mcm-page [data-slot='switch'] [data-slot='switch-thumb'] {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  margin-left: 3px;
   background: #fff;
   box-shadow: 0 1px 2px rgb(13 21 38 / 0.25);
 }
+/* Override `translate`, not `transform`: Tailwind v4's translate-x-* sets the
+   standalone `translate` property, so a transform here stacked on top of it
+   and pushed the thumb clean out of the track. */
 .mcm-page [data-slot='switch'][data-state='checked'] [data-slot='switch-thumb'] {
-  transform: translateX(17px);
+  translate: 15px 0;
+  transform: none;
+}
+.mcm-page [data-slot='switch'][data-state='unchecked'] [data-slot='switch-thumb'] {
+  translate: 0 0;
+  transform: none;
 }
 
 /* 3. Radio dots were a hairline ring that all but vanished against the
@@ -3136,6 +3153,43 @@
   vertical-align: middle;
 }
 
+/* Integration pages carry their own header (`.mcm-intpage-head`) instead of
+   the shared AdminPage shell, so `.mcm-adminpage table` above never matches
+   them. Any table under an integration page gets the same reference
+   treatment directly. */
+/* Table header matching the Performance screen's (`.mcm-page th`): 9.5px /
+   800 / 0.09em tracking, uppercase, 9px 12px padding on a hairline. This
+   block previously followed a 13.5px written spec instead, which left an
+   Integration table's header noticeably heavier than the same header on
+   Performance — the console's tables should read as one system, so the
+   header that actually ships is the one to match. */
+/* `text-align: left` here is unlayered, so it BEATS Tailwind's `text-right`
+   utility (which lives in @layer utilities). A th marked text-right stayed
+   left-aligned while its td obeyed, so every right-aligned column had its
+   heading hanging off the wrong end. The utility is honoured explicitly
+   below rather than by removing this default. */
+.mcm-admin .mcm-intpage table th {
+  text-align: left;
+  /* 13.5px / 800 / 0.09em / 17px 16px — the `.mcm-page th` reference panel
+     the user pointed at on the Performance screen. Dark ink: the pale
+     --ink-4 in that panel is struck through in its own inspector; the
+     rendered header takes Tailwind's text-gray-900/80. */
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  padding: 17px 16px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  background: transparent;
+}
+.mcm-admin .mcm-intpage table td {
+  padding: 11px 12px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
 /* Search should not stretch the full width of a 1900px screen. */
 .mcm-admin .mcm-adminpage-bar > * {
   max-width: 380px;
@@ -3239,8 +3293,8 @@
 }
 .mcm-admin .mcm-adminnav .h-14:hover,
 .mcm-admin .mcm-adminnav .min-h-14:hover {
-  background: var(--surface-2);
-  color: var(--ink);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
 }
 
 /* Icons sized to the text, not to the row. */
@@ -3286,6 +3340,27 @@
 .mcm-admin .mcm-adminnav [data-slot='accordion-trigger'] p,
 .mcm-admin .mcm-adminnav .font-medium {
   font-weight: 600;
+}
+
+/* The section holding the current page: its label takes the same accent
+   treatment as the active area tab, so where-you-are reads at both levels.
+   Driven by the sidebar's own pathname-based `isActive`, not by whether the
+   section happens to be expanded — a `:has()` marker on the active child
+   only worked while its accordion was open, so landing on a page inside a
+   collapsed section (e.g. via direct link) showed no highlight at all. */
+.mcm-admin .mcm-adminnav .mcm-adminnav-section-active {
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+/* The wash belongs on the whole trigger rather than the inner row: the
+   chevron is rendered outside that row, so the highlight stopped short of
+   it and left a white gap at the end. */
+.mcm-admin .mcm-adminnav [data-slot='accordion-trigger']:has(.mcm-adminnav-section-active) {
+  background: var(--accent-wash);
+  border-radius: var(--r-sm);
+}
+.mcm-admin .mcm-adminnav [data-slot='accordion-trigger']:has(.mcm-adminnav-section-active) svg {
+  color: var(--accent-ink);
 }
 
 /* The sidebar's own title ("Admin Hub"). It sat at page-title scale, competing
@@ -3371,6 +3446,11 @@
    they stretched to the tallest in each grid row and their internals
    had no shared rhythm; this gives them one.
    ================================================================== */
+/* The page scrolls, not the card grid. When the grid owned the scrollbar it
+   was ~15px narrower than the head above it on Windows, so the head's three
+   cells sat progressively further right than the three card columns they are
+   meant to line up with — the search box overhung the last card by the width
+   of the scrollbar. One scroll container means both share a width. */
 .mcm-admin .mcm-intpage {
   display: flex;
   min-height: 0;
@@ -3378,30 +3458,46 @@
   flex-direction: column;
   width: 100%;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: var(--ground);
 }
 
 .mcm-admin .mcm-intpage-head {
   flex: none;
-  padding: 18px 22px 16px;
+  /* Sticky, because the page scrolls now: the title, filter and search stay
+     reachable instead of scrolling away with the cards. */
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  /* Tightened: the head carried more height than its two lines needed. */
+  padding: 12px 22px 12px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
 .mcm-admin .mcm-intpage-eyebrow {
   font-family: var(--mono, ui-monospace, monospace);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  /* 12px, per the size spec for the head: red eyebrow 12, black title 27. */
+  font-size: 12px;
+  /* Bold, in the brand red. */
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: #dc2626;
+  margin-bottom: 2px;
 }
+/* acepeak.com's own display type ("Instrument Serif", italic) for Integration
+   page titles, in the flat accent red — no gradient or shine, just the plain
+   colour, matching how the marketing site's headings are styled underneath
+   whatever glow effect sits behind them. */
 .mcm-admin .mcm-intpage-head h1 {
   margin: 3px 0 0;
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--ink);
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 27px;
+  letter-spacing: -0.01em;
+  color: #dc2626;
 }
 .mcm-admin .mcm-intpage-head p {
   margin: 4px 0 0;
@@ -3413,12 +3509,272 @@
 .mcm-admin .mcm-intgrid {
   min-height: 0;
   flex: 1;
-  overflow-y: auto;
   display: grid;
-  gap: 14px;
+  gap: 18px;
   padding: 18px 22px 26px;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* Three across by default. Four only on a genuinely wide monitor: with the
+     Admin sidebar taking ~250px, four columns on a 1280-class screen leaves
+     each card ~230px, which pushes every description to three lines and reads
+     cramped. Width has to be earned before adding a column. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-content: start;
+  /* Neutral grey ground. Not `--ground`: that token is blue-tinted
+     (#EEF1F8) and read as pale blue behind the cards. This is a true grey,
+     kept a shade off white so the cards still separate from it. */
+  background-color: #f0f1f2;
+}
+@media (min-width: 1500px) {
+  .mcm-admin .mcm-intgrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .mcm-admin .mcm-intgrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .mcm-admin .mcm-intgrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Non-grid integration pages (General Settings, Zapier) share the same
+   ground behind their content. */
+.mcm-admin .mcm-intbody {
+  flex: 1;
+  min-height: 0;
+  background-color: #f0f1f2;
+}
+
+/* Integration pages carry acepeak.com's black CTA (#171717, read off the
+   live site's "Contact Us" button) instead of the red primary — the red
+   stays for accents; actions sit in black like the marketing site. */
+.mcm-admin .mcm-intpage .btn.primary {
+  background: #171717;
+  color: #fff;
+  box-shadow: none;
+}
+.mcm-admin .mcm-intpage .btn.primary:hover {
+  background: #2e2e2e;
+}
+/* The plus glyph inherited an accent tint from the icon layer; on a black
+   button everything reads white. */
+.mcm-admin .mcm-intpage .btn.primary svg {
+  color: #fff;
+}
+
+/* ---- Manage Webhook ----
+   The table and its pager are the page's two panels; give them the same
+   16px card language as the integration cards so they sit on the pink
+   ground as deliberate surfaces rather than default boxes. */
+.mcm-admin .mcm-intbody > .table-scroll,
+.mcm-admin .mcm-intbody > .z-10 {
+  border-radius: 16px;
+  border-color: var(--line-2);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+/* The empty state carried a lot of vertical air for one line of text. */
+.mcm-admin .mcm-intbody .table-scroll img {
+  opacity: 0.85;
+}
+/* Its call to action is the page's primary next step. */
+.mcm-admin .mcm-intbody .btn.primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* The first-run mark: the webhook glyph on the brand wash, replacing the
+   generic "no results" artwork — this state is "nothing yet", not "search
+   came up empty". */
+.mcm-admin .mcm-wh-emptymark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 2px;
+  border-radius: 15px;
+  background: var(--accent-wash);
+  border: 1px solid var(--accent-edge);
+  color: var(--accent);
+}
+.mcm-admin .mcm-wh-emptymark svg {
+  width: 24px;
+  height: 24px;
+}
+/* The pager bar: console-quiet controls. Chevrons and refresh mute to ink-3,
+   warm to the accent on hover, and genuinely disappear when disabled — the
+   default kept disabled arrows on filled chips, which read as pressable. */
+.mcm-admin .mcm-intbody .z-10 label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-intbody .z-10 button {
+  color: var(--ink-3);
+  border-radius: 8px;
+  background: transparent;
+}
+.mcm-admin .mcm-intbody .z-10 button:hover:not(:disabled) {
+  color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+/* index.css paints every disabled control gray-100 with !important from
+   inside `@layer base` — and layered !important outranks unlayered, so the
+   exemption has to live in the same layer, where higher specificity wins. */
+@layer base {
+  .mcm-admin .mcm-intbody .z-10 button:disabled {
+    background-color: transparent !important;
+    opacity: 0.35 !important;
+    color: var(--ink-4) !important;
+  }
+}
+
+/* ---- General Settings ----
+   Its credentials block takes the intcard language (same border, radius and
+   resting shadow) without the hover lift — it is a panel, not a link. */
+.mcm-admin .mcm-gscard {
+  padding: 20px;
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+/* Key/secret rows: console field styling instead of a bare bordered box. */
+.mcm-admin .mcm-gsfield {
+  /* Tightened: 6px of padding around a 40px input made a 53px row to hold a
+     32px button and a line of text. */
+  padding: 3px 8px 3px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.mcm-admin .mcm-gsfield input {
+  /* Matches the height of the Copy/Show buttons beside it. The Input
+     component carries `min-h-10`, so height alone was ignored. */
+  height: 32px;
+  min-height: 32px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+}
+.mcm-admin .mcm-gsfield button {
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-gsfield button:hover {
+  color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+/* Clicking the read-only value fired the app-wide red focus outline inside
+   the already-styled box — a stray red line. The wrapper carries the focus
+   state instead. */
+.mcm-admin .mcm-gsfield input:focus,
+.mcm-admin .mcm-gsfield input:focus-visible {
+  outline: 0;
+  box-shadow: none;
+  border: 0;
+}
+.mcm-admin .mcm-gsfield:focus-within {
+  border-color: var(--accent-edge);
+  background: var(--surface);
+}
+
+/* ---- Connect in three steps ----
+   Each column carries its own rail: a numbered tile, a dotted run, and the
+   icon for that step, with the copy beneath. */
+/* Section heading. At 14px it sat a half-point above the 13.5px step titles
+   beneath it, so the two levels read as the same rank. */
+.mcm-admin .mcm-gssteps-title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.mcm-admin .mcm-gssteps-sub {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-4);
+}
+.mcm-admin .mcm-gssteps-row {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 820px) {
+  .mcm-admin .mcm-gssteps-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+}
+.mcm-admin .mcm-gsstep-rail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.mcm-admin .mcm-gsstep-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: #171717;
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.mcm-admin .mcm-gsstep-dots {
+  flex: 1;
+  height: 0;
+  border-top: 2px dotted var(--line);
+}
+.mcm-admin .mcm-gsstep-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--accent);
+}
+.mcm-admin .mcm-gsstep-ico svg {
+  width: 16px;
+  height: 16px;
+}
+.mcm-admin .mcm-gsstep-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.mcm-admin .mcm-gsstep p {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* Security note: quiet amber, the console's "careful" colour. */
+.mcm-admin .mcm-gsnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  background: #fffbeb;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #92400e;
 }
 
 /* Equal-height cards with the action pinned to the bottom, so a two-line
@@ -3428,43 +3784,101 @@
   flex-direction: column;
   gap: 14px;
   height: 100%;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
+  padding: 22px 20px 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
   background: var(--surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition:
-    border-color 0.12s ease,
-    box-shadow 0.12s ease;
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
+/* Hover: the border and the lift, no coloured glow. The red drop-shadow
+   bled a soft gradient onto the ground under every card and read as a
+   graphic effect rather than a hover state. */
 .mcm-admin .mcm-intcard:hover {
   border-color: var(--accent-edge);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px -6px rgba(15, 23, 42, 0.18);
+  transform: translateY(-2px);
 }
 
-/* The logo tile. */
+/* The logo tile. Kept as a tile rather than letting marks float free: the
+   logos vary wildly in aspect ratio, and a fixed frame is what keeps a row
+   of them optically aligned. Enlarged, with the frame quietened to a hairline
+   so the mark itself carries the card. */
 .mcm-admin .mcm-intcard .h-16.w-16 {
   height: 46px;
   width: 46px;
-  padding: 8px;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
+  padding: 7px;
+  border-radius: 12px;
+  background: var(--surface);
   border: 1px solid var(--line-2);
+  box-shadow: none;
+  transition: transform 0.15s ease;
+}
+.mcm-admin .mcm-intcard:hover .h-16.w-16 {
+  transform: scale(1.05);
 }
 .mcm-admin .mcm-intcard .h-16.w-16 img {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
 }
 
 .mcm-admin .mcm-intcard h3,
 .mcm-admin .mcm-intcard .text-primary {
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
 .mcm-admin .mcm-intcard p {
   font-size: 12.5px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--ink-3);
+  /* Default (greedy) wrapping on purpose: it fills the first line and leaves
+     the remainder short, so every card gets the same shape. `balance` evens
+     the two lines instead, which — with these word lengths — produced a short
+     first line over a full second one on some cards (Monday) and the reverse
+     on others, i.e. the mismatch it was meant to solve. */
+  text-wrap: normal;
+}
+
+/* The card's action, styled as a footer: a hairline separates it from the
+   copy, "Connect" carries the accent, and the chevron nudges on hover the
+   way the marketing site's arrows do. */
+.mcm-admin .mcm-intcard .mcm-intcard-cta {
+  width: 100%;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-2);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  /* The "Coming soon" pill is taller than the plain Connect text, which left
+     that row of cards 5px taller than the rest. */
+  min-height: 42px;
+}
+.mcm-admin .mcm-intcard .mcm-intcard-cta svg {
+  transition: transform 0.15s ease;
+}
+.mcm-admin .mcm-intcard:hover .mcm-intcard-cta svg {
+  transform: translateX(3px);
+}
+/* Not yet available: a quiet badge, not a call to action. */
+.mcm-admin .mcm-intcard .mcm-intcard-cta.is-soon {
+  cursor: default;
+  color: var(--ink-4);
+}
+.mcm-admin .mcm-intcard .mcm-intcard-cta.is-soon span {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
 }
 
 /* Connect / Coming soon sits on the floor of the card. */
@@ -3472,13 +3886,131 @@
   margin-top: auto;
 }
 
-/* Integration heads that also carry actions. */
+/* Integration heads that also carry actions. The search/action group sits
+   on the same flex row as the h1 (see the CRM page markup) — beside the
+   heading, not floating in the head's empty right half. */
 .mcm-admin .mcm-intpage-head-row {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
   gap: 14px;
+}
+
+/* The head's search field: same box/radius/type as the top bar's global
+   search, but carrying the brand red the way acepeak.com's active nav chip
+   does — a light red wash with a red edge, deepening on focus. A solid red
+   fill was ruled out: a red-filled input reads as a validation error. */
+.mcm-admin .mcm-intpage-search input {
+  height: 38px;
+  /* The shared Input carries min-h-10 (40px); without this it wins. */
+  min-height: 38px;
+  border-radius: 8px;
+  /* Neutral at rest. A pink outline on an idle search box read as a
+     permanent highlight — the field is not doing anything yet. */
+  border: 1px solid var(--line);
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
+}
+/* react-select renders its own hidden search input inside the control. The
+   rule above is written for a real search box, so it was giving that input a
+   38px height and a white background — a 2.4px-wide, full-height white sliver
+   pinned to the control's left edge, which reads as a stray stripe in front
+   of the flag. It is a measuring element, not a field: it gets no box. */
+.mcm-admin .mcm-intpage-search input.custom-react-select__input {
+  height: auto;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+/* react-select stacks the selected value and its search input in the SAME
+   grid cell, both starting at the cell's left edge. The input is 2.4px wide
+   and keeps a dark text caret, so once the control has focus that caret
+   blinks on top of the selected country's flag — the "stripe".
+
+   Hidden only while a value is on show. The moment you type, react-select
+   drops the single-value element, `:has()` stops matching, and the caret
+   comes back where it is actually useful. */
+.mcm-admin .mcm-intpage-search
+  [class*='__value-container']:has([class*='__single-value'])
+  input {
+  caret-color: transparent;
+}
+/* A select in the search slot sits on the same 38px as the search inputs
+   and the segmented filter beside it. react-select's control floats at
+   40px otherwise, so the row carried two heights and the picker's centre
+   sat 3px below the filter's. */
+/* The 40px comes from index.css's `@layer base` rule on
+   `.custom-react-select__control` — `height: 2.5rem !important`. For
+   !important declarations LAYERED beats UNLAYERED, so an override out here
+   loses no matter what; it has to sit in the same layer and win on
+   specificity instead. */
+@layer base {
+  .mcm-admin .mcm-intpage-search .custom-react-select__control {
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+}
+.mcm-admin .mcm-intpage-search input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+/* Focus is the border going accent — no 3px accent-wash ring. That halo was
+   the soft pink gradient bleeding out of every search box on these pages;
+   same call as the card hovers, which lost their red glow for the same
+   reason.
+
+   The Input component ships `focus:border-primary hover:border-primary`
+   (see components/ui/input.tsx) — `--primary` is the TENANT colour, so on a
+   blue-branded tenant the box turned blue on focus regardless of what this
+   rule said. `:focus-within` on the wrapper raises specificity above those
+   utilities, and hover is claimed too so the two states agree. */
+.mcm-admin .mcm-intpage-search input:focus,
+.mcm-admin .mcm-intpage-search input:focus-visible,
+.mcm-admin .mcm-intpage-search:focus-within input {
+  outline: 0;
+  background: #ffffff;
+  border-color: #dc2626;
+  box-shadow: none;
+}
+.mcm-admin .mcm-intpage-search input:hover:not(:focus) {
+  border-color: var(--accent-edge);
+}
+.mcm-admin .mcm-intpage-search svg {
+  color: var(--accent);
+}
+/* The icon is the global search's own 15px glyph (shared component) —
+   no sizing here so it renders identically to the nav's. */
+
+/* Info badge beside the page title: the page description folded away behind
+   a hover. White "i" on translucent black, per spec. */
+.mcm-admin .mcm-intpage-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-family: Georgia, serif;
+  font-size: 11.5px;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  user-select: none;
+  transition: background 0.15s;
+}
+.mcm-admin .mcm-intpage-info:hover {
+  background: rgba(0, 0, 0, 0.65);
 }
 
 /* ==================================================================
@@ -4210,7 +4742,6 @@
   background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
-
 /* ============================================================
    Queues table (Performance › Queues).
 
@@ -4487,3 +5018,1448 @@
 .mcm-page .kpis-flat .kpi.alert {
   background: var(--surface);
 }
+
+/* ==================================================================
+   Integration brand spec (from design):
+     button bg #171717 / text #FFFFFF · icon #DC2626
+     list item background #FEF2F2 · headline #DC2626
+   Applied last so it settles the values wherever earlier rules in this
+   file set something different.
+   ================================================================== */
+
+/* Headlines in near-black; red is left to the icons and accents. */
+.mcm-admin .mcm-intpage .mcm-intpage-head h1 {
+  color: #171717;
+}
+.mcm-admin .mcm-intpage .mcm-intcard h4,
+.mcm-admin .mcm-intpage .mcm-intcard h3,
+.mcm-admin .mcm-intpage .mcm-intcard .text-primary,
+.mcm-admin .mcm-intpage .mcm-intcard .mcm-intcard-cta {
+  color: #171717;
+}
+/* The chevron stays the accent colour (icon spec). */
+.mcm-admin .mcm-intpage .mcm-intcard-cta svg {
+  color: #dc2626;
+}
+
+/* List items. #FEF2F2 is a tint and needs a light backdrop to read as one:
+   filling the cards with it on the pink page ground removed the contrast
+   between card and page and the grid turned into one flat pink field. The
+   cards stay white so they read as surfaces, and the spec tint carries the
+   hover state — where it actually communicates something. In the Zapier
+   dialog, which sits on white, the rows take the tint directly. */
+.mcm-admin .mcm-intpage .mcm-intcard {
+  background: var(--surface);
+  /* Neutral hairline again now the ground is grey — the warm border only
+     existed to sit against the pink wash. */
+  border-color: var(--line-2);
+}
+/* Hover keeps the white surface: filling with #FEF2F2 made the card darker
+   than the page ground behind it, so the hovered card read as sunken and
+   washed out. The red edge and lift carry the state instead. */
+.mcm-admin .mcm-intpage .mcm-intcard:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px -6px rgba(15, 23, 42, 0.18);
+}
+
+/* Icons: brand red everywhere except inside a black button, where the
+   glyph has to stay legible on the dark fill. */
+.mcm-admin .mcm-intpage .mcm-intcard svg,
+.mcm-admin .mcm-intpage .mcm-intcard-cta svg,
+.mcm-admin .mcm-intpage .mcm-intpage-search svg {
+  color: #dc2626;
+}
+.mcm-admin .mcm-intpage .btn.primary,
+.mcm-admin .mcm-intpage button.btn.primary {
+  background: #171717;
+  color: #ffffff;
+}
+.mcm-admin .mcm-intpage .btn.primary svg {
+  color: #ffffff;
+}
+
+/* ---- Manage Webhook: table cells ----
+   Rendering for rows that arrive once the list has a data source. */
+.mcm-admin .mcm-intpage .mcm-wh-type {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.mcm-admin .mcm-intpage .mcm-wh-path {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 420px;
+}
+.mcm-admin .mcm-intpage .mcm-wh-path > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.mcm-admin .mcm-intpage .mcm-wh-path button,
+.mcm-admin .mcm-intpage .mcm-wh-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.mcm-admin .mcm-intpage .mcm-wh-path button:hover,
+.mcm-admin .mcm-intpage .mcm-wh-actions button:hover {
+  color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+.mcm-admin .mcm-intpage .mcm-wh-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* Icon badge beside each credentials section on General Settings. */
+.mcm-admin .mcm-gsicon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid var(--accent-edge);
+  color: var(--accent);
+}
+.mcm-admin .mcm-gsicon svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Each tile is a card you can press: real border, resting shadow and a lift
+   on hover — as a bare label with a coloured edge it did not read as
+   interactive at all. */
+.mcm-admin .mcm-intstat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+.mcm-admin .mcm-intstat:hover {
+  border-color: var(--ink-4);
+  box-shadow: 0 6px 16px -10px rgba(15, 23, 42, 0.35);
+  transform: translateY(-1px);
+}
+/* The selected filter — near-black, matching the console's active states. */
+/* Selected: a solid dark ring so the active filter is unmistakable. */
+.mcm-admin .mcm-intstat.is-active {
+  border-color: #171717;
+  box-shadow: 0 0 0 1px #171717;
+}
+
+.mcm-admin .mcm-intstat.ok {
+  border-left-color: #16a34a;
+}
+.mcm-admin .mcm-intstat.warn {
+  border-left-color: #d97706;
+}
+.mcm-admin .mcm-intstat.off {
+  border-left-color: var(--ink-4);
+}
+
+/* Status line inside a card. */
+.mcm-admin .mcm-intcard-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mcm-admin .mcm-intstatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.mcm-admin .mcm-intstatus i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ink-4);
+}
+.mcm-admin .mcm-intstatus.connected {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+.mcm-admin .mcm-intstatus.connected i {
+  background: #16a34a;
+}
+.mcm-admin .mcm-intstatus.setup {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #b45309;
+}
+.mcm-admin .mcm-intstatus.setup i {
+  background: #d97706;
+}
+.mcm-admin .mcm-intcard-sync {
+  font-size: 11.5px;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+
+/* ---- Segmented filter ----
+   An explicit control: the summary tiles report numbers, this switches the
+   view. Tiles carrying the filter themselves never read as pressable. */
+.mcm-admin .mcm-segmented {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.mcm-admin .mcm-segmented button,
+.mcm-admin .mcm-segmented > a {
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+}
+.mcm-admin .mcm-segmented button:hover,
+.mcm-admin .mcm-segmented > a:hover {
+  color: #171717;
+}
+/* How many sit behind each filter, so an empty tab is visible before you
+   click it. Quiet by default; it takes the tab's own colour when active. */
+.mcm-admin .mcm-segmented button em,
+.mcm-admin .mcm-segmented > a em {
+  margin-left: 6px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-4);
+}
+.mcm-admin .mcm-segmented button.is-active em,
+.mcm-admin .mcm-segmented > a.is-active em {
+  color: var(--accent-ink);
+}
+.mcm-admin .mcm-segmented button.is-active,
+.mcm-admin .mcm-segmented > a.is-active {
+  background: var(--surface);
+  color: #171717;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+/* One scroll region on Integration pages. TableManager's wrapper carries its
+   own `overflow:auto`, which produced a scrollbar inside the table box while
+   the content area had another. The wrapper keeps horizontal scrolling for
+   wide tables; vertical scrolling belongs to the page body. */
+.mcm-admin .mcm-intbody .table-scroll {
+  /* Both axes: per spec, overflow-y:visible next to overflow-x:auto
+     computes back to auto, so the inner scrollbar survived. The body
+     scrolls in both directions instead. */
+  overflow: visible !important;
+  max-height: none;
+  height: auto !important;
+}
+.mcm-admin .mcm-intbody {
+  overflow: auto;
+}
+
+/* Status pill sits tight under the card title. */
+.mcm-admin .mcm-intcard .mcm-intstatus {
+  margin-top: 4px;
+}
+
+/* Segmented control sitting inside a page head, next to the title: it
+   stretches across the space between the title and the search rather than
+   leaving a gap there, and its options share that width evenly. */
+/* The head sits on the card grid's columns: title over the first, filter
+   over the second, search over the third and flush with the grid's right
+   edge. Same 18px gutter and same padding as `.mcm-intgrid`, so the two
+   line up by construction rather than by a hand-tuned margin. */
+/* Only the SEARCH box needs to land on a specific card column (the third —
+   see below); the title never needed a whole card-width column to itself,
+   and giving it one left a long dead stretch before the filter tabs started.
+   Title and filter now share the first two tracks as one packed flex group,
+   so the filter follows the title with a normal gap; search keeps the third
+   track alone, which is what pins its edges to card 3. */
+.mcm-admin .mcm-intpage-headrow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: center;
+}
+/* `display: contents` dissolves the wrapper so title and filter become grid
+   items themselves: title on column 1, filter CENTRED on column 2 — the
+   middle of the page — per the request that the filter sit centred on every
+   screen that has one. The wrapper stays in the markup so the flex fallback
+   below 1100px still has something to lay out. */
+.mcm-admin .mcm-intpage-headleft {
+  display: contents;
+}
+/* Outbound Rates carries five tabs and, unlike CRM/Zapier, has no card grid
+   under it for the picker to line up with — so its middle track is sized to
+   the filter rather than to a third of the row, and the picker takes a fixed
+   width at the end. */
+.mcm-admin .mcm-intpage-headrow:has(.mcm-ratepicker) {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 22rem);
+}
+
+.mcm-admin .mcm-intpage-headrow .mcm-segmented {
+  grid-column: 2;
+  justify-self: center;
+  /* The base .mcm-segmented rule says `align-self: flex-start`, which in
+     this grid row pinned the filter to the row's TOP while the title and
+     picker centred — the ~3px sag the review flagged. */
+  align-self: center;
+}
+/* Flex heads (Manage Webhook, Social Media Channels) have no grid columns;
+   auto margins centre the filter in the space the title and the search
+   leave over. In the grid heads above this is harmless — justify-self
+   already places the item. */
+.mcm-admin .mcm-intpage-head .mcm-segmented {
+  margin-left: auto;
+  margin-right: auto;
+  /* Base .mcm-segmented says `align-self: flex-start`; in every head row it
+     hung the filter from the row's top while the title and search centred.
+     Head-scoped so standalone segmented controls elsewhere keep their own
+     alignment. */
+  align-self: center;
+}
+/* Nudged a little left of true centre, per review — dead centre read as
+   belonging to the picker on the right rather than sitting between the
+   title and it. A transform, so the grid/flex placement above still owns
+   the layout and this is only an optical shift. Wide screens only; below
+   1100px the head wraps and the nudge would just misalign it. */
+@media (min-width: 1100px) {
+  .mcm-admin .mcm-intpage-head .mcm-segmented {
+    transform: translateX(-3.5rem);
+  }
+  /* Outbound Rates only: its middle track is sized to the filter rather than
+     to a third of the row, so the same -3.5rem nudge lands the filter much
+     further left than it does on the card pages. A smaller shift here. */
+  .mcm-admin .mcm-intpage-headrow:has(.mcm-ratepicker) .mcm-segmented {
+    transform: translateX(-1rem);
+  }
+}
+/* No scrolling inside the filter. A control with five short tabs that hides
+   two of them behind a scroll nobody can see is worse than a control that
+   takes the width it needs — the head has the room (580px between the title
+   and the picker at 1440), it was the one-third grid track that did not. */
+.mcm-admin .mcm-intpage-headleft > .mcm-segmented {
+  min-width: 0;
+  max-width: none;
+  overflow: visible;
+}
+.mcm-admin .mcm-intpage-headleft > .mcm-segmented button,
+.mcm-admin .mcm-intpage-headleft > .mcm-segmented a {
+  padding: 6px 10px;
+}
+@media (max-width: 1240px) {
+  .mcm-admin .mcm-intpage-headleft > .mcm-segmented button {
+    padding: 6px 7px;
+    font-size: 12px;
+  }
+}
+/* Fills the third track on its own, so BOTH its edges sit on the grid: left
+   edge on the card 2/3 gap, right edge on the grid's own right edge. */
+.mcm-admin .mcm-intpage-headrow > .mcm-intpage-search {
+  grid-column: 3;
+  width: 100%;
+}
+/* Below three columns the head has no columns to sit on, so it wraps. */
+@media (max-width: 1100px) {
+  .mcm-admin .mcm-intpage-headrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+  }
+  .mcm-admin .mcm-intpage-headleft {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    gap: 16px;
+  }
+  .mcm-admin .mcm-intpage-headrow > .mcm-intpage-search {
+    width: 18rem;
+    max-width: 100%;
+  }
+}
+
+/* Every card on General Settings carries a section heading of the same
+   rank — App Credentials, API Key, Client Secret and the steps panel. */
+.mcm-admin .mcm-gscard .text-md {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+/* The wrapper's radius cannot clip while its overflow is visible (needed so
+   the page scrolls instead of the table), so the corner cells carry the
+   rounding themselves. */
+.mcm-admin .mcm-intbody .table-scroll thead tr:first-child th:first-child {
+  border-top-left-radius: 16px;
+}
+.mcm-admin .mcm-intbody .table-scroll thead tr:first-child th:last-child {
+  border-top-right-radius: 16px;
+}
+.mcm-admin .mcm-intbody .table-scroll tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 16px;
+}
+.mcm-admin .mcm-intbody .table-scroll tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 16px;
+}
+.mcm-admin .mcm-intbody .table-scroll tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* The two credential panels share a row: they are peers, and stacking them
+   pushed the connect steps below the fold. */
+/* The two credentials are peers shown side by side, so they stretch to a
+   common height and their input rows sit on one line. With `align-items:
+   start` a description that wrapped to two lines pushed its own field down
+   and the two cards stopped lining up. */
+.mcm-admin .mcm-gsgrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+.mcm-admin .mcm-gsgrid > .mcm-gscard {
+  display: flex;
+  flex-direction: column;
+}
+/* Whatever the description does, the field is on the floor of the card. */
+.mcm-admin .mcm-gsgrid > .mcm-gscard > .mcm-gsfield {
+  margin-top: auto;
+}
+@media (max-width: 900px) {
+  .mcm-admin .mcm-gsgrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Social Media Channels ----
+   One shared tile (see channel-card.tsx) rather than four hand-built copies. */
+/* Each channel component wraps its card in a plain <div>, so the card's
+   height:100% had nothing definite to resolve against and cards in the same
+   row came out different heights. The wrapper stretches instead. */
+.mcm-admin .mcm-chgrid > * {
+  display: flex;
+  min-width: 0;
+}
+.mcm-admin .mcm-chgrid > * > .mcm-chcard {
+  flex: 1;
+}
+
+.mcm-admin .mcm-chcard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 20px;
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+/* Hover: the border and the lift, no coloured glow — matching the CRM and
+   Zapier cards. The red drop-shadow bled a soft gradient onto the ground
+   under every card and read as a graphic effect rather than a hover state. */
+.mcm-admin .mcm-chcard:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px -6px rgba(15, 23, 42, 0.18);
+  transform: translateY(-2px);
+}
+.mcm-admin .mcm-chcard-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mcm-admin .mcm-chcard-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+}
+.mcm-admin .mcm-chcard-head h4 {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  /* --ink, not pure black: four cards of #171717 headings plus black CTAs
+     made the grid read heavy. */
+  color: var(--ink);
+}
+/* Clamped to two lines and held at two lines' height, so the account row and
+   the capability tags start at the same y on every card in the row — a
+   one-line description used to shunt everything below it up. */
+.mcm-admin .mcm-chcard-desc {
+  margin: 0;
+  min-height: 39px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Actions sit on the card floor, separated by a hairline. */
+.mcm-admin .mcm-chcard-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-2);
+}
+
+.mcm-admin .mcm-chcard-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-4);
+}
+
+/* The card action reads as a link with a nudging chevron, matching the
+   Integration cards. Four solid black buttons in a row turned the grid into
+   a wall of dark blocks. */
+.mcm-admin .mcm-chcard-connect {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mcm-admin .mcm-chcard-connect svg {
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+.mcm-admin .mcm-chcard:hover .mcm-chcard-connect svg {
+  transform: translateX(3px);
+}
+/* The status badge sits at the end of the title row. */
+.mcm-admin .mcm-chcard-head .mcm-intstatus {
+  flex: none;
+}
+/* Neutral, not red: an account handle is a fact about the channel, and in
+   accent wash it read as a warning sitting beside a green status. */
+.mcm-admin .mcm-chcard-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.mcm-admin .mcm-chcard-account svg {
+  color: var(--ink-4);
+}
+.mcm-admin .mcm-chcard-account svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+/* Row menu on a connected channel card. */
+.mcm-admin .mcm-chcard-menu {
+  flex: none;
+  border: 0;
+  background: none;
+  color: var(--ink-4);
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 2px;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.mcm-admin .mcm-chcard-menu:hover {
+  color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
+/* Pre-connect card: description plus what the channel will carry, so the
+   space below the text is doing something. */
+.mcm-admin .mcm-chcard-intro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mcm-admin .mcm-chcard-caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mcm-admin .mcm-chcard-caps li {
+  padding: 3px 9px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+/* A live channel switch takes the brand red, per the console's colour spec —
+   the same accent the page's headline and icons use. The green "Active"
+   badge beside it carries the running/paused meaning; the switch is the
+   control, not a second status light. */
+/* Must target the track only. The thumb carries data-state too, so an
+   unqualified [data-state='checked'] painted it as well and the knob
+   vanished into the track. */
+.mcm-admin .mcm-chcard-switch [data-slot='switch'][data-state='checked'] {
+  background-color: #dc2626 !important;
+}
+.mcm-admin .mcm-chcard-switch [data-slot='switch-thumb'] {
+  background-color: #fff !important;
+}
+/* Just the switch now: the status text to its left already reads
+   Active/Paused, so the On/Off label was the same word twice and the pill
+   around it was chrome for a control that needs none. */
+.mcm-admin .mcm-chcard-switch {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+/* ── Channel card states ──────────────────────────────────────────────────
+   The paused state and the loading skeleton (see channel-card.tsx). */
+
+/* Paused: still connected, but nothing is arriving. One word in the footer
+   said so and the card otherwise looked identical to a live one, so which
+   channels were actually running took reading rather than glancing. */
+.mcm-admin .mcm-chcard.is-paused {
+  background: var(--surface-2);
+}
+.mcm-admin .mcm-chcard.is-paused .mcm-chcard-logo,
+.mcm-admin .mcm-chcard.is-paused .mcm-chcard-account {
+  opacity: 0.55;
+}
+.mcm-admin .mcm-chcard.is-paused .mcm-chcard-head h4 {
+  color: var(--ink-3);
+}
+
+/* Loading skeleton — same skeleton as the card it replaces, so nothing
+   moves when the channel list lands. */
+.mcm-admin .mcm-chcard.is-skeleton .mcm-chcard-logo {
+  background: var(--surface-2);
+}
+.mcm-admin .mcm-skel {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eef1f6 25%, #e3e8f0 37%, #eef1f6 63%);
+  background-size: 400% 100%;
+  animation: mcm-skel-shimmer 1.3s ease infinite;
+}
+.mcm-admin .mcm-skel-title {
+  width: 55%;
+  height: 14px;
+}
+.mcm-admin .mcm-skel-line {
+  width: 100%;
+  height: 11px;
+}
+.mcm-admin .mcm-skel-line.is-short {
+  width: 70%;
+}
+.mcm-admin .mcm-skel-pill {
+  width: 84px;
+  height: 22px;
+  border-radius: 999px;
+}
+@keyframes mcm-skel-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mcm-admin .mcm-skel {
+    animation: none;
+  }
+}
+
+/* Brand-coloured logo tiles. The channel marks are currentColor line icons,
+   so all four rendered as identical black glyphs and the only way to tell
+   the cards apart at a glance was the wordmark. Each tile takes its own
+   platform colour over a light wash of the same hue. Telegram already ships
+   a coloured mark, so it gets the wash only. */
+.mcm-admin .mcm-chcard-logo.is-facebook {
+  background: #eff4ff;
+  color: #1877f2;
+}
+.mcm-admin .mcm-chcard-logo.is-instagram {
+  background: #fdf2f7;
+  color: #dd2a7b;
+}
+.mcm-admin .mcm-chcard-logo.is-whatsapp {
+  background: #ecfdf3;
+  /* Not WhatsApp's #25D366: at 24px on a pale wash that reads as a
+     highlighter stroke. Their darker brand green holds the shape. */
+  color: #1fa855;
+}
+.mcm-admin .mcm-chcard-logo.is-telegram {
+  background: #eff8ff;
+}
+
+/* No account yet: same row, same height, stated rather than left blank —
+   otherwise a connected card and a fresh one had different shapes. */
+.mcm-admin .mcm-chcard-account.is-empty {
+  border-style: dashed;
+  background: transparent;
+  color: var(--ink-4);
+  font-family: inherit;
+  font-weight: 600;
+}
+
+/* ── SMS / Calling Rates ──────────────────────────────────────────────────
+   The lookup toolbar and the price cards on Outbound Rates. The screen used
+   to centre a two-thirds-width white card holding two dropdowns, then stack
+   passport-sized flags above the prices — the flag was the biggest thing on
+   a card whose only job is to state a price. */
+
+/* One row per price, in the same table styling as Destinations
+   (`.mcm-admin .mcm-intpage table`). Cards read fine at four rows, but a
+   country with more rate tiers (several mobile bands, a handful of
+   toll-free ranges) is exactly the case a table scans faster than a wall
+   of tiles — and it is the format its sibling screen already uses. */
+.mcm-admin .mcm-intpage table td {
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.mcm-admin .mcm-intpage table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Which of the three products this row's price is for. Outbound is the
+   screen's subject and takes the accent; the other two stay quiet so a
+   table of mixed rows is still scannable. */
+.mcm-admin .mcm-ratecard-kind {
+  display: inline-block;
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-ratecard-kind.is-outbound {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+.mcm-admin .mcm-ratetbl-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Category markers, one per row. In brand red they made a column of five
+   alarm-coloured glyphs beside a column of five neutral ones, and none of
+   them was reporting a problem. */
+.mcm-admin .mcm-ratetbl-category svg {
+  color: var(--ink-4);
+}
+
+/* Countdown beside a revealed credential (see general-settings). Quiet — it
+   is a note about what the field is about to do, not a control. */
+.mcm-admin .mcm-gscount {
+  flex: none;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Info-icon tooltip (the "i" beside every Integration/Social/Rates page
+   title). The stock tooltip is a black chip meant for a one-word label; a
+   sentence of explanatory copy on black read as an alert, not a hint.
+   Light neutral instead, closer to a system tip than a warning. */
+.mcm-tooltip-info[data-slot='tooltip-content'] {
+  background: #e3e3e3;
+  color: #000;
+  border: none;
+  box-shadow: 0 6px 20px rgba(17, 17, 17, 0.18);
+  /* One measure for every info tip. The base tooltip is `w-fit` with
+     `text-wrap: balance`, which is right for a two-word label and wrong for
+     a sentence: the browser shrinks the box until the lines are of equal
+     length, so each page's tip came out a different width — 304px here,
+     narrower there, and none of them a deliberate size. A fixed 18rem holds
+     roughly 45 characters a line, which is a comfortable reading measure,
+     and `pretty` keeps the last line from being a single orphaned word. */
+  width: 18rem;
+  max-width: 18rem;
+  text-wrap: pretty;
+  /* Folded in from the six call sites, so a tip cannot be styled one way on
+     one page and another way elsewhere. */
+  white-space: normal;
+  text-align: left;
+  line-height: 1.45;
+  padding: 8px 11px;
+}
+.mcm-tooltip-info svg {
+  fill: #e3e3e3;
+}
+
+/* Header band for the hand-rolled Outbound Rates table, matching the one
+   TableManager renders on Manage Webhook and Performance. */
+.mcm-admin .mcm-ratetbl-head {
+  background: var(--surface-2);
+}
+
+/* ── Outbound Rates table ─────────────────────────────────────────────────
+   Destination stated once above the table, prices below it. */
+
+/* Price and its unit are one figure, so they sit on one baseline with the
+   unit subordinate — it is a qualifier, not a second number. */
+.mcm-admin .mcm-ratetbl-rate {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.mcm-admin .mcm-ratetbl-rate strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.mcm-admin .mcm-ratetbl-rate span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-4);
+}
+
+/* The two columns whose headings are not self-explanatory, explained once
+   under the table rather than in a tooltip on each. */
+/* A tinted panel rather than loose grey text under the table: it explains
+   two column headings, so it should read as part of the table's furniture,
+   not as a stray caption someone forgot to delete. */
+/* Neutral, not accent-washed. This panel explains two column headings — it
+   is the least urgent thing on the page, and in pink across the full width
+   it was the loudest. Red is left to mean something. */
+.mcm-admin .mcm-ratetbl-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  /* Full width, like any notice bar. Shrink-wrapping it to its text only
+     moved the empty space outside the panel, where it read as a hole in the
+     layout rather than as trailing space in a bar. */
+  width: 100%;
+  margin: 14px 0 0;
+  padding: 11px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+/* No measure cap. These notes are one sentence; capping them at 78ch made
+   the text wrap into two short lines inside a full-width bar, which is what
+   read as empty space on the right. Uncapped, the sentence uses the bar. */
+.mcm-admin .mcm-ratetbl-note > p {
+  margin: 0;
+}
+.mcm-admin .mcm-ratetbl-note strong {
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.mcm-admin .mcm-ratetbl-note-icon {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+  color: var(--ink-4);
+}
+
+/* A cell that carries the carrier's wording and its plain-English reading. */
+.mcm-admin .mcm-ratetbl-stack {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+.mcm-admin .mcm-ratetbl-stack small {
+  font-size: 10.5px;
+  color: var(--ink-4);
+}
+
+/* ── Small screens: let the document scroll ───────────────────────────────
+   The console is built as a fixed-height app shell — `html { overflow:
+   hidden }` in index.css, `.mcm-page { height: 100%; overflow: hidden }`,
+   and each screen scrolling inside its own box. That works while the
+   sidebar sits beside the content.
+
+   Below `lg` the sidebar stacks ON TOP of the content instead, and on a
+   375x812 phone it takes 343px of the 748px available. The content pane is
+   left with 405px, its scrolling body with 177px — a letterbox you cannot
+   read a table in — and because the document itself is `overflow: hidden`,
+   there is nothing to scroll to reach the rest. The page looks stuck.
+
+   Below that breakpoint the nested scroll boxes are unwound and the page
+   scrolls the way a document normally does. These rules are unlayered, so
+   they beat the `@layer base` html rule they are undoing. */
+@media (max-width: 1023px) {
+  html,
+  body {
+    overflow: auto;
+    height: auto;
+  }
+
+  /* Percentage heights resolve against `auto` above, so the h-full wrappers
+     between body and the page stop clamping on their own. */
+  .mcm-page {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .mcm-admin .mcm-intpage,
+  .mcm-admin .mcm-adminpage {
+    height: auto;
+    overflow: visible;
+  }
+
+  .mcm-admin .mcm-intbody,
+  .mcm-admin .mcm-intgrid,
+  .mcm-admin .mcm-adminpage-body {
+    overflow: visible;
+    max-height: none;
+  }
+
+  /* Sticky headers stick to the viewport once the document is the scroller,
+     which puts them underneath the fixed app header. They are only worth
+     having when there is a tall internal scroll box to keep labelled. */
+  .mcm-admin .mcm-intpage-head,
+  .mcm-admin .mcm-ratetbl-head,
+  .mcm-admin .mcm-intbody thead {
+    position: static;
+  }
+}
+
+/* The destination picker sits in the head's third column, where the
+   Integration screens put their search box. It is the page's one input, so
+   it gets that slot rather than a strip of its own under the head. */
+.mcm-admin .mcm-ratepicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mcm-admin .mcm-ratepicker > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.mcm-admin .mcm-ratepicker-loading {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.mcm-admin .mcm-intpage table th.text-right {
+  text-align: right;
+}
+.mcm-admin .mcm-intpage table th.text-center {
+  text-align: center;
+}
+
+/* ── Outbound Rates: column structure ─────────────────────────────────────
+   Every column starts on the same vertical rail as its heading.
+
+   The table previously right-aligned Rate, Connection fee and Effective
+   from while Type, Connects to and Billed in stayed left. Right-aligning a
+   money column is a fine convention on its own, but here it put the end of
+   "$0.0186/min" hard against the start of "60 / 60 sec" with nothing
+   between them, and left every heading sitting at the opposite end from the
+   next column's values. There was no continuous vertical line anywhere in
+   the middle of the table for the eye to follow.
+
+   All six columns are left-aligned on fixed widths instead. The figures are
+   short enough that right-alignment buys nothing, and `tabular-nums` keeps
+   the digits themselves in line down the column. */
+.mcm-admin .mcm-ratetbl th,
+.mcm-admin .mcm-ratetbl td {
+  text-align: left;
+}
+/* Proportional, not fixed. With px widths the last column absorbed every
+   spare pixel — 424px of column for an 80px date, which is the empty band
+   down the right of the table. Percentages share the slack across all six,
+   so each column gets room in proportion to what it holds and the table
+   ends where the panel ends. */
+.mcm-admin .mcm-ratetbl {
+  table-layout: fixed;
+}
+.mcm-admin .mcm-ratetbl th:nth-child(1),
+.mcm-admin .mcm-ratetbl td:nth-child(1) {
+  width: 13%;
+}
+.mcm-admin .mcm-ratetbl th:nth-child(2),
+.mcm-admin .mcm-ratetbl td:nth-child(2) {
+  width: 19%;
+}
+.mcm-admin .mcm-ratetbl th:nth-child(3),
+.mcm-admin .mcm-ratetbl td:nth-child(3) {
+  width: 15%;
+}
+.mcm-admin .mcm-ratetbl th:nth-child(4),
+.mcm-admin .mcm-ratetbl td:nth-child(4) {
+  width: 17%;
+}
+.mcm-admin .mcm-ratetbl th:nth-child(5),
+.mcm-admin .mcm-ratetbl td:nth-child(5) {
+  width: 18%;
+}
+.mcm-admin .mcm-ratetbl th:nth-child(6),
+.mcm-admin .mcm-ratetbl td:nth-child(6) {
+  width: 18%;
+}
+
+/* Money and dates line up digit-for-digit down their column. */
+.mcm-admin .mcm-ratetbl td:nth-child(3),
+.mcm-admin .mcm-ratetbl td:nth-child(5),
+.mcm-admin .mcm-ratetbl td:nth-child(6) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* react-select's internal input must never look like a field — including on
+   focus. The generic `.mcm-intpage-search input:focus` rule painted it with
+   a white background, accent border and a 3px focus ring; that input is
+   2.4px wide and sits on top of the selected flag, so CLICKING the control
+   lit a vertical stripe over the flag. The earlier exclusion block ran
+   before the :focus rule and tied it on specificity, so the focus state won
+   on source order — this one is declared last so it cannot. */
+.mcm-admin .mcm-intpage-search input.custom-react-select__input,
+.mcm-admin .mcm-intpage-search input.custom-react-select__input:focus {
+  height: auto;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: 0;
+}
+
+/* Dialog copy: the one line that says what the dialog does, and the hint
+   under a field that needs a format explaining. */
+.mcm-modal-lede {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #6b7891;
+}
+.mcm-modal-hint {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #93a0b8;
+}
+
+/* ── Destinations ─────────────────────────────────────────────────────────
+   Progress strip and price table. Shares the head, the table header band and
+   the note callout with Outbound Rates beside it. */
+/* One line, and it stays one line: the sentence gives up width before the
+   buttons wrap under it. */
+.mcm-admin .mcm-destbar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 22px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.mcm-admin .mcm-destbar-progress {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-destbar .btn {
+  flex: none;
+}
+.mcm-admin .mcm-destbar-export svg {
+  color: var(--accent);
+}
+.mcm-admin .mcm-desttbl-flag {
+  margin-right: 8px;
+}
+/* The per-row action reads as a link, not a button — it is one of 250 and a
+   row of buttons would be louder than the prices they sit beside. */
+.mcm-admin .mcm-desttbl-load {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.mcm-admin .mcm-desttbl-load:hover {
+  text-decoration: underline;
+}
+/* Same rails as the rates table: left-aligned columns on fixed proportions,
+   digits in tabular figures. */
+.mcm-admin .mcm-desttbl th,
+.mcm-admin .mcm-desttbl td {
+  text-align: left;
+}
+.mcm-admin .mcm-desttbl {
+  table-layout: fixed;
+}
+/* Seven columns now MMS has its own. The four price columns share one width
+   so the figures sit on even rails; Destination takes the slack. */
+.mcm-admin .mcm-desttbl th:nth-child(1),
+.mcm-admin .mcm-desttbl td:nth-child(1) {
+  width: 24%;
+}
+.mcm-admin .mcm-desttbl th:nth-child(2),
+.mcm-admin .mcm-desttbl td:nth-child(2) {
+  width: 11%;
+}
+.mcm-admin .mcm-desttbl th:nth-child(3),
+.mcm-admin .mcm-desttbl td:nth-child(3),
+.mcm-admin .mcm-desttbl th:nth-child(4),
+.mcm-admin .mcm-desttbl td:nth-child(4),
+.mcm-admin .mcm-desttbl th:nth-child(5),
+.mcm-admin .mcm-desttbl td:nth-child(5),
+.mcm-admin .mcm-desttbl th:nth-child(6),
+.mcm-admin .mcm-desttbl td:nth-child(6) {
+  width: 13%;
+}
+.mcm-admin .mcm-desttbl th:nth-child(7),
+.mcm-admin .mcm-desttbl td:nth-child(7) {
+  width: 13%;
+}
+
+/* Destinations: the list extends on request instead of scrolling 250 rows. */
+/* The card a table sits in: hairline border, rounded corners, and it clips
+   the header band and the last row's corners to them. Shared by both
+   SMS/Calling Rates tables so they read as the same component. */
+.mcm-admin .mcm-tablecard {
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+}
+/* Bottom-right of the card, on its own hairline — the control belongs to the
+   table, so it sits inside it rather than floating on the page below. */
+.mcm-admin .mcm-destmore {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+/* Styled after the ajoxi country-code table's control the user referenced:
+   a white card-like button carrying a bold action and a muted count in
+   brackets, sat on the card's own footer rail. */
+.mcm-admin .mcm-destmore .btn {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+.mcm-admin .mcm-destmore .btn:hover {
+  border-color: var(--accent-edge);
+  box-shadow: 0 4px 12px -6px rgba(15, 23, 42, 0.18);
+}
+.mcm-admin .mcm-destmore .btn span {
+  margin-left: 6px;
+  font-weight: 500;
+  color: var(--ink-4);
+}
+
+/* Row separators inside a table card, and the last row left clean so its
+   line does not double up with the card's own bottom edge. */
+.mcm-admin .mcm-tablecard table td {
+  border-bottom: 1px solid var(--line-2);
+}
+.mcm-admin .mcm-tablecard table tbody tr:last-child td {
+  border-bottom: 0;
+}
+/* The header band is the card's top edge, so it carries the rounding. The
+   card clips with overflow:hidden, but a sticky thead escapes that clip —
+   it has to round itself. */
+.mcm-admin .mcm-tablecard thead tr:first-child th:first-child {
+  border-top-left-radius: calc(var(--r) - 1px);
+}
+.mcm-admin .mcm-tablecard thead tr:first-child th:last-child {
+  border-top-right-radius: calc(var(--r) - 1px);
+}
+
+/* ══ Shared table design — AI Tools spec ═══════════════════════════════════
+   From the senior's aitoolstable.css (AI Receptionists / Chat Agents /
+   Sessions), applied to every table on these pages so they match that
+   reference: Manage Webhook, Outbound Rates, Destinations, and the three
+   Identities & addresses tabs.
+
+   Declared last, so it supersedes the earlier `.mcm-intpage table` block
+   above (which followed the Performance screen's header instead).
+
+   ONE deliberate deviation, noted for review: the spec pads `th` 13px 10px
+   with 18px on the first cell only, and `td` 8px 18px. That works in the
+   reference because its middle columns are centre-aligned, so the 8px
+   difference never shows. Our columns are left-aligned — following it
+   literally would sit every heading 8px left of its own column's values.
+   Horizontal padding is 18px on both here; every other value is the spec's. */
+
+.mcm-admin .mcm-intpage table thead tr {
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+}
+.mcm-admin .mcm-intpage table th {
+  background: transparent;
+  padding: 13px 18px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #737373;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mcm-admin .mcm-intpage table tbody tr {
+  background: #ffffff;
+  height: 52.67px;
+  transition: background-color 0.15s ease;
+}
+.mcm-admin .mcm-intpage table tbody tr:hover {
+  background: #fafafa;
+}
+.mcm-admin .mcm-intpage table td {
+  background: transparent;
+  padding: 8px 18px;
+  height: auto;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+/* The card supplies the bottom edge, so the last row does not draw its own. */
+.mcm-admin .mcm-tablecard table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Header band on the hand-rolled tables comes from the same neutral-50. */
+.mcm-admin .mcm-ratetbl-head {
+  background: #fafafa;
+}
+
+/* Status pills, per the spec's .tbl__pill family — used by the webhook and
+   verification status cells. */
+.mcm-admin .mcm-intpage .mcm-intstatus {
+  display: inline-flex;
+  height: 24px;
+  min-width: 64px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.mcm-admin .mcm-intpage .mcm-intstatus i {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: currentColor;
+}
+.mcm-admin .mcm-intpage .mcm-intstatus.connected {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+.mcm-admin .mcm-intpage .mcm-intstatus.setup {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #d97706;
+}
+.mcm-admin .mcm-intpage .mcm-intstatus:not(.connected):not(.setup) {
+  background: #f5f5f5;
+  border-color: #e5e5e5;
+  color: #737373;
+}
+
+/* ── Destinations: what stays put while you scroll ────────────────────────
+   The page head and the progress strip were pinned, so scrolling a 250-row
+   list kept two bars of chrome on screen and moved the column headings —
+   the one thing worth keeping — straight out of view. Reversed: the head
+   and strip scroll away, and the table's own header is what stays.
+
+   `position: static` on the head, and the body stops being its own scroll
+   container so the whole page scrolls as one. The card's `overflow: hidden`
+   has to go too: an ancestor with hidden overflow is a scroll container, and
+   a sticky thead inside one has nothing to stick to. The corners are rounded
+   on the header and footer cells instead, which is why those rules exist. */
+.mcm-admin .mcm-intpage.is-stickytable .mcm-intpage-head,
+.mcm-admin .mcm-intpage.is-stickytable .mcm-destbar {
+  position: static;
+}
+.mcm-admin .mcm-intpage.is-stickytable .mcm-intbody {
+  overflow: visible;
+}
+.mcm-admin .mcm-intpage.is-stickytable .mcm-tablecard {
+  overflow: visible;
+}
+.mcm-admin .mcm-intpage.is-stickytable .scroller {
+  overflow-x: visible;
+}
+/* The header band is the card's top edge, so it carries that rounding and
+   an opaque background — it now scrolls over rows rather than being clipped
+   by the card. */
+.mcm-admin .mcm-intpage.is-stickytable .mcm-ratetbl-head th {
+  background: #fafafa;
+}
+/* Footer keeps the card's bottom corners now that the card cannot clip. */
+.mcm-admin .mcm-intpage.is-stickytable .mcm-destmore {
+  border-bottom-left-radius: calc(var(--r) - 1px);
+  border-bottom-right-radius: calc(var(--r) - 1px);
+}
+
+/* Amber variant of the table note, for content that is genuinely a warning
+   (Numbers by line: these routes drop calls) rather than an explanation. */
+.mcm-admin .mcm-ratetbl-note.is-warn {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.mcm-admin .mcm-ratetbl-note.is-warn .mcm-ratetbl-note-icon {
+  color: #d97706;
+}
+
+/* ── Call coverage: the strip above the table ─────────────────────────────
+   Two controls that were pulling against each other: a bare browser checkbox
+   on the left, and a red-bordered pill on the right shouting a count that is
+   a fact, not an alert. */
+
+/* The gaps filter reads as a toggle, and shows it is on. */
+.mcm-admin .mcm-destbar label.fchip {
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.mcm-admin .mcm-destbar label.fchip:has(input:checked) {
+  border-color: var(--accent-edge);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+.mcm-admin .mcm-destbar label.fchip input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* The count states how many rows are below; it is a summary, not a warning,
+   so it stops wearing an alert's red border. `.bad` keeps its meaning on the
+   number itself. */
+.mcm-admin .mcm-destbar span.fchip {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-destbar span.fchip .num {
+  font-weight: 800;
+  color: var(--ink);
+}
+.mcm-admin .mcm-destbar span.fchip.bad .num {
+  color: var(--accent-ink);
+}
+

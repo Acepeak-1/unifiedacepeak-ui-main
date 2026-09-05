@@ -363,7 +363,7 @@
   }
 
   .custom-react-select__control:hover {
-    border-color: var(--primary) !important;
+    border-color: #fecaca !important;
   }
 
   .react-select-error .custom-react-select__control {
@@ -481,7 +481,7 @@
       0 10px 15px -3px rgba(0, 0, 0, 0.1),
       0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
     border-style: solid !important;
-    border-color: var(--primary) !important;
+    border-color: #fecaca !important;
     padding: 0.25rem !important;
   }
 
@@ -575,9 +575,12 @@
     display: none !important;
   }
 
+  /* Brand red rather than the tenant primary: these controls (and their
+     portalled menus) render outside any page scope, and the console runs on
+     the accent, not the tenant colour. */
   .custom-react-select__control--is-focused,
   .custom-react-select__control--menu-is-open {
-    border-color: var(--primary) !important;
+    border-color: #dc2626 !important;
   }
 
   .custom-react-select__menu {
@@ -610,12 +613,15 @@
 
   .custom-react-select__option:hover,
   .custom-react-select__option--is-focused {
-    background-color: var(--color-gray-100) !important;
+    background-color: #fee2e2 !important;
     color: var(--color-black) !important;
   }
 
+  /* Brand red rather than var(--primary): select menus portal to <body>,
+     outside any page scope, and the tenant primary is not the accent the
+     console runs on. */
   .custom-react-select__option--is-selected {
-    background-color: var(--primary) !important;
+    background-color: #dc2626 !important;
     color: var(--color-white) !important;
   }
 
@@ -1572,8 +1578,8 @@
 .mcm-areanav-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 20px;
+  gap: 6px;
+  padding: 9px 13px;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -1590,25 +1596,43 @@
 }
 
 .mcm-areanav-btn:hover {
-  color: #0f172a;
-  background: #f8fafc;
+  color: #dc2626;
+  background: color-mix(in oklab, #dc2626 8%, transparent);
 }
 
 .mcm-areanav-btn.is-active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-  background: color-mix(in oklab, var(--primary) 10%, transparent);
+  color: #dc2626;
+  border-bottom-color: #dc2626;
+  background: color-mix(in oklab, #dc2626 10%, transparent);
   border-radius: 8px 8px 0 0;
 }
 
-/* Below the widest breakpoint the labels go and the icons carry it. */
-@media (max-width: 1279px) {
-  .mcm-areanav-btn span {
+/* Space runs out left-to-right in priority order: the tab labels ("Home",
+   "Directory"...) are what tells you where you are, so they're the last
+   thing to give. Before that, drop what nobody reads twice — the console's
+   own name next to its logo — which alone used to buy back enough room
+   that tab labels stayed on at ordinary laptop widths (1280-1366px) instead
+   of vanishing into icons the moment the wallet + profile chip needed room. */
+@media (max-width: 1500px) {
+  /* Doubled class beats the later base `.mcm-brand-text { display: flex }`
+     without relying on rule order. */
+  .mcm-brand-text.mcm-brand-text {
     display: none;
   }
-  /* icon-only at this width, so the tint needs to sit evenly around it */
+  /* And the tabs tighten up — labels stay, padding gives. */
   .mcm-areanav-btn {
-    padding: 9px 13px;
+    padding: 9px 10px;
+    gap: 5px;
+  }
+}
+
+/* Last resort — below this the trims above no longer add up (measured: at
+   ~1100px the header is ~170px short even with the brand text gone and tab
+   padding tightened), so the rail goes icon-only. 1269 keeps every common
+   100%-zoom laptop width (1280, 1366, 1536) in full-label mode. */
+@media (max-width: 1269px) {
+  .mcm-areanav-btn span {
+    display: none;
   }
 }
 
@@ -1923,5 +1947,29 @@
     grid-column: 2;
     justify-self: start;
     margin-top: 8px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   react-select chrome: brand accent instead of the tenant primary.
+   These controls portal to <body>, so page-scoped rules cannot reach
+   them. Two later `!important` rules (the gray control border and the
+   menu border) share single-class specificity with the focus rule and
+   win on order, so the exemption is doubled-class and lives in the
+   same layer, last: for !important, layered rules outrank unlayered.
+   ------------------------------------------------------------------ */
+@layer base {
+  .custom-react-select__menu.custom-react-select__menu {
+    border-color: #fecaca !important;
+  }
+}
+
+/* A focus ring for react-select. It has to sit in the same cascade layer as
+   the base control rules: for !important declarations layered styles outrank
+   unlayered ones, so an unlayered override loses to `box-shadow: none`. */
+@layer base {
+  .mcm-selectring:focus-within .custom-react-select__control {
+    box-shadow: 0 0 0 2px #fee2e2 !important;
+    border-color: #dc2626 !important;
   }
 }

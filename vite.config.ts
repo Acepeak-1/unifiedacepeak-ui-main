@@ -16,7 +16,11 @@ const enableCrossOriginIsolation = process.env.VITE_CROSS_ORIGIN_ISOLATION === '
 // metadata request failed and the app rendered the maintenance screen. On a
 // local checkout fall back to the project root and read the .env there.
 const SERVER_ENV_DIR = '/etc/mycountrymobile-web';
-const envDir = fs.existsSync(SERVER_ENV_DIR) ? SERVER_ENV_DIR : undefined;
+// The server env dir is a Linux deploy-server path; on Windows '/etc/...'
+// resolves to C:\etc\... and a stray folder there (e.g. from a local mock
+// setup) would silently override the project's own .env.
+const envDir =
+  process.platform !== 'win32' && fs.existsSync(SERVER_ENV_DIR) ? SERVER_ENV_DIR : undefined;
 
 export default defineConfig({
   envDir,
