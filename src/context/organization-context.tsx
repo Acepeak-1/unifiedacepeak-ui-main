@@ -84,7 +84,7 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchMainSiteInfo = useCallback(async () => {
     const domain = getDomain().includes('localhost')
-      ? 'https://qa.mycountrymobile.com'
+      ? 'https://ucaas.acepeak.com'
       : getDomain();
     // const domain = "https://mcm.mycountrymobile.com";
     try {
@@ -208,10 +208,6 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     error,
   };
 
-  if (!stripePublishableKey) {
-    return <FullPageLoader />;
-  }
-
   if (isNoOrgPage) {
     return (
       <OrganizationContext.Provider value={{ ...value, isLoading: false }}>
@@ -228,6 +224,17 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
 
   if (error) {
     return <ServerMaintenance onRefresh={fetchMainSiteInfo} />;
+  }
+
+  /* Only reachable once the fetch has actually succeeded (isLoading and
+     error are both cleared above) but the response carried no Stripe key —
+     e.g. a template still loading its billing config. Checking this before
+     isLoading/error meant a *failed* fetch left mainSiteInfo (and so this
+     key) permanently empty, so the app fell through to this branch forever
+     instead of ever reaching the error branch below it — the loading
+     spinner never cleared no matter how the request finished. */
+  if (!stripePublishableKey) {
+    return <FullPageLoader />;
   }
 
   return (

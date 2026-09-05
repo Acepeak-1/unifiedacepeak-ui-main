@@ -129,7 +129,16 @@
   min-height: 0;
   overflow: hidden;
 }
-.mcm-page button {
+/* Excludes Radix's Switch root, which also renders as a <button>: its own
+   authored classes give it a real border and background (a track pill whose
+   colour is the whole point of a toggle), sized so the thumb's checked-state
+   translate lands exactly at the inner edge of that border. This reset's
+   border:0/background:none stripped both, which left the border-dependent
+   thumb math translating 1px further than the now-borderless track actually
+   had room for — reading as the knob sitting outside the track once switched
+   on. Every other button (icon buttons, chevrons, dropdown triggers, ...)
+   still gets the reset. */
+.mcm-page button:not([data-slot='switch']) {
   font: inherit;
   color: inherit;
   border: 0;
@@ -2534,14 +2543,36 @@
   background: var(--accent);
   border-color: transparent;
 }
+/* The Radix/Tailwind base component positions this thumb with its own
+   `data-[state=...]:translate-x-*` utilities. In Tailwind v4 those compile
+   to the standalone CSS `translate` property, not `transform` — and
+   `translate` and `transform` are separate properties that both apply to
+   the final position (the individual translate/rotate/scale properties
+   render first, `transform` on top of that), so they ADD rather than one
+   overriding the other. The previous version of this rule set `transform:
+   translateX(...)`, which stacked on top of Tailwind's own `translate:
+   calc(100% - 2px)` for the checked state instead of replacing it — e.g.
+   for an 18px-wide thumb that's Tailwind's own 16px plus this rule's 18px,
+   34px of travel inside a track with only 36px of interior width, well
+   past the right edge. Setting `translate` here instead overrides the
+   same property Tailwind sets, via ordinary cascade (this selector is
+   already more specific), so only one offset ever applies.
+   Track interior (38px track, 1px border each side) is 36×20. An 18px
+   thumb centered in the 20px interior height already sits with a 1px
+   margin top and bottom via the track's own `items-center`, untouched
+   here. Horizontally it's given a 2px margin from the track's straight
+   edge in both states, so a round thumb clears the rounded track's curve
+   in both states — unchecked at 2px from the left, checked at 2px from
+   the right (that inner width is 36px, so 36 - 2 - 18 = 16px of travel). */
 .mcm-page [data-slot='switch'] [data-slot='switch-thumb'] {
   width: 18px;
   height: 18px;
   background: #fff;
   box-shadow: 0 1px 2px rgb(13 21 38 / 0.25);
+  translate: 2px 0;
 }
 .mcm-page [data-slot='switch'][data-state='checked'] [data-slot='switch-thumb'] {
-  transform: translateX(17px);
+  translate: 16px 0;
 }
 
 /* 3. Radio dots were a hairline ring that all but vanished against the
@@ -3821,6 +3852,35 @@
   line-height: 1.5;
   font-weight: 600;
   color: var(--ink);
+}
+
+/* Compact callers (My Phone) read the label and its outcome as one sentence
+   instead of a caption over a headline — "When someone calls you now — All
+   calls go to your voicemail." on one line where it fits, wrapping onto its
+   own line only once it doesn't. */
+.mcm-callsummary.inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 6px;
+  row-gap: 2px;
+}
+.mcm-callsummary.inline .mcm-callsummary-l {
+  flex: none;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 11.5px;
+}
+.mcm-callsummary-sep {
+  flex: none;
+  color: var(--ink-4);
+}
+.mcm-callsummary.inline p {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: normal;
 }
 
 .mcm-rule-rank {

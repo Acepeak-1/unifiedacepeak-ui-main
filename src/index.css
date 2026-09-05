@@ -1,3 +1,12 @@
+/* MCM Unified Console typeface pair. Plus Jakarta Sans for UI, IBM Plex
+   Mono for anything numeric — durations, counts, timestamps — so digits
+   stay tabular and stop jittering as they tick. Must stay the first
+   statement in this file: @import 'tailwindcss' and the local file imports
+   below expand into real CSS content at build time, and an @import placed
+   after content that has already resolved into rules is invalid per the
+   CSS spec — the build was silently dropping this one because of it. */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
 /* Loaded once here rather than from each page. Every rule in it is scoped to
@@ -5,11 +14,6 @@
    means a shared class like .mcm-stickyfoot works wherever it is applied
    instead of only on the 31 files that happened to import the stylesheet. */
 @import './components/mcm/mcm-page.css';
-
-/* MCM Unified Console typeface pair. Plus Jakarta Sans for UI, IBM Plex
-   Mono for anything numeric — durations, counts, timestamps — so digits
-   stay tabular and stop jittering as they tick. */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @theme {
   --color-ucass-gray: oklch(0.9612 0 0);
@@ -362,8 +366,13 @@
     overflow: hidden !important;
   }
 
+  /* var(--select-control-border) is unset everywhere by default, so this
+     resolves to the same --primary as before on every existing page. See
+     the --select-option-*-bg/-fg comment further down for why a page-local
+     fallback variable is used here instead of touching --primary itself,
+     which borders/rings far beyond this one control rely on. */
   .custom-react-select__control:hover {
-    border-color: var(--primary) !important;
+    border-color: var(--select-control-border, var(--primary)) !important;
   }
 
   .react-select-error .custom-react-select__control {
@@ -577,7 +586,7 @@
 
   .custom-react-select__control--is-focused,
   .custom-react-select__control--menu-is-open {
-    border-color: var(--primary) !important;
+    border-color: var(--select-control-border, var(--primary)) !important;
   }
 
   .custom-react-select__menu {
@@ -608,15 +617,28 @@
     border-radius: 0.5rem !important;
   }
 
+  /* These --select-option-*-bg/-fg variables are unset everywhere by
+     default, so every rule below resolves to the same colours as before on
+     every existing page. A page can locally set them (e.g. on its own root
+     class) to recolour just hover or just the current selection for its own
+     dropdowns, without touching the app-wide --color-gray-100 / --primary
+     tokens those colours otherwise fall back to — which are both used far
+     more broadly than this menu. Hover and selected are deliberately
+     separate variables: an option can be hovered without being the current
+     value, and the two are allowed to read as different weights of
+     emphasis. Declared in this order (hover, then selected) because when an
+     option is both — the current value, freshly opened or landed on by
+     keyboard focus — the selected colour is meant to win; being later here
+     is what makes that the case. */
   .custom-react-select__option:hover,
   .custom-react-select__option--is-focused {
-    background-color: var(--color-gray-100) !important;
-    color: var(--color-black) !important;
+    background-color: var(--select-option-hover-bg, var(--color-gray-100)) !important;
+    color: var(--select-option-hover-fg, var(--color-black)) !important;
   }
 
   .custom-react-select__option--is-selected {
-    background-color: var(--primary) !important;
-    color: var(--color-white) !important;
+    background-color: var(--select-option-active-bg, var(--primary)) !important;
+    color: var(--select-option-active-fg, var(--color-white)) !important;
   }
 
   .custom-react-select__indicator,
