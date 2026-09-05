@@ -686,6 +686,10 @@ const Sidebar = () => {
           {searchedItems?.map(
             ({ type, icon = '', path, title, children, value, enabled }, index: number) => {
               const isActive = value === activeItem;
+              /* People gets the black/red treatment matching its own pages
+                 (Directory > People); every other section keeps the platform's
+                 blue accent. */
+              const isPeopleArea = value === 'users';
               if (type === 'accordion') {
                 const visibleChildren = (children || [])?.filter((child: any) =>
                   canShowItem(child, IS_ADMIN),
@@ -701,18 +705,31 @@ const Sidebar = () => {
                     collapsible
                   >
                     <AccordionItem value={value} className="">
-                      <AccordionTrigger className="p-0 items-center" isActive={isActive}>
+                      <AccordionTrigger
+                        className="p-0 items-center"
+                        isActive={isActive}
+                        {...(isPeopleArea
+                          ? {
+                              activeClassName:
+                                '[&>button[data-state=open]]:bg-red-50 [&>button[data-state=open]]:text-red-600 [&>button[data-state=open]]:border-r-red-600 [&>button[data-state=open]]:border-r-2',
+                              activeIconClassName: 'text-red-600',
+                            }
+                          : {})}
+                      >
                         <div className="flex items-center w-full px-3 h-14 gap-2 cursor-pointer font-medium whitespace-nowrap">
                           <Icon name={icon as IconType} className="w-6 h-6 p-0.5" />
                           {title}
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="border md:border-0  md:bg-ucass-primary-200/20 bg-white z-10 relative">
+                      <AccordionContent
+                        className={`border md:border-0 z-10 relative bg-white ${isPeopleArea ? 'md:bg-red-50/40' : 'md:bg-ucass-primary-200/20'}`}
+                      >
                         {visibleChildren?.map(
                           ({ title, path, icon, extraActiveTab, enabled }: any, index: number) => {
                             return (
                               <Tile
                                 key={index}
+                                tone={isPeopleArea ? 'red' : 'default'}
                                 {...{ title, path, icon, extraActiveTab, children, enabled }}
                               />
                             );
@@ -735,7 +752,7 @@ const Sidebar = () => {
 
 export default Sidebar;
 
-const Tile = ({ title, path, icon, extraActiveTab, children, enabled }: any) => {
+const Tile = ({ title, path, icon, extraActiveTab, children, enabled, tone = 'default' }: any) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isEnabled = enabled !== false;
@@ -743,9 +760,17 @@ const Tile = ({ title, path, icon, extraActiveTab, children, enabled }: any) => 
   const isActive =
     pathname === path || extraActiveTab?.some((segment: string) => pathname?.includes(segment));
   const isChildrenExist = Boolean(children && children?.length);
+  const activeClass =
+    tone === 'red'
+      ? isChildrenExist
+        ? 'text-red-600'
+        : 'text-red-600 bg-red-50 border-r-red-600 border-r-2'
+      : isChildrenExist
+        ? 'text-primary'
+        : 'text-primary bg-ucass-primary-200/50 border-r-primary border-r-2';
   return (
     <div
-      className={`flex items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer ${isActive ? (isChildrenExist ? 'text-primary' : 'text-primary bg-ucass-primary-200/50 border-r-primary border-r-2') : 'text-gray-900/80'} ${isChildrenExist ? 'pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
+      className={`flex items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer ${isActive ? activeClass : 'text-gray-900/80'} ${isChildrenExist ? 'pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
       {...getRoutePrefetchHandlers(path)}
       onClick={() => {
         if (!isEnabled || !path) return;

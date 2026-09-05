@@ -99,7 +99,7 @@ export const getDomainNameFromLocation = () => {
   if (typeof window === 'undefined') return '';
 
   const host = window.location.hostname.includes('localhost')
-    ? 'qa.mycountrymobile.com'
+    ? 'ucaas.acepeak.com'
     : window.location.hostname;
 
   return getDomain(host, { allowPrivateDomains: true }) || host;

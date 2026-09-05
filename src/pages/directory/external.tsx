@@ -11,6 +11,15 @@ import { Ic } from '@/components/mcm/icons';
 import { DirectoryDrawer, DirectoryPage, EmptyRow, FilterChip, SearchChip } from './page-shell';
 import { useDirectoryFavourites } from './use-directory-favourites';
 import { useContactLabels } from './use-contact-labels';
+import { InfoIcon, MoreVertical } from 'lucide-react';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import './external-theme.css';
 
 /**
  * Directory ▸ External — people outside the organisation.
@@ -59,6 +68,47 @@ const tagOf = (row: Contact) => {
   return { label: 'Standard', cls: 'tag neu' };
 };
 
+/* Sample contacts so the page has enough rows to look populated. Ids are
+   prefixed 'dummy-' and never sent to the API — remove this block once real
+   contacts fill the list out. */
+const DUMMY_CONTACT_ROWS: Contact[] = [
+  {
+    _id: 'dummy-contact-1',
+    name: { first: 'Alex', last: 'Thompson' },
+    contact: { phone: '+14155550132', email: 'alex.thompson@northwind.example' },
+    profile: { company: 'Northwind Traders' },
+    title: 'Procurement Lead',
+    social: { whatsapp: '+14155550132' },
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    _id: 'dummy-contact-2',
+    name: { first: 'Maria', last: 'Gonzalez' },
+    contact: { phone: '+442079460958', email: 'maria.gonzalez@bluepeak.example' },
+    profile: { company: 'Bluepeak Logistics' },
+    title: 'Account Manager',
+    is_vip: true,
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    _id: 'dummy-contact-3',
+    name: { first: 'David', last: 'Okafor' },
+    contact: { phone: '+15145550110', email: 'david.okafor@harborline.example' },
+    profile: { company: 'Harborline Freight' },
+    title: 'Operations Director',
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    _id: 'dummy-contact-4',
+    name: { first: 'Sofia', last: 'Rossi' },
+    contact: { phone: '+390212345678', email: 'sofia.rossi@lumenpartners.example' },
+    profile: { company: 'Lumen Partners' },
+    title: 'Vendor Relations',
+    is_dnc: true,
+    updatedAt: new Date().toISOString(),
+  },
+];
+
 const External = () => {
   const navigate = useNavigate();
   const { dial } = useConsoleDialer();
@@ -71,13 +121,14 @@ const External = () => {
   const [newLabel, setNewLabel] = useState('');
   const labels = useContactLabels();
 
-  const { data: rows = [], isPending } = useQuery({
+  const { data: apiRows = [], isPending } = useQuery({
     /* create-new-contact invalidates ['getContactList']; sharing that prefix is
        what makes a new or edited contact show up here. */
     queryKey: ['getContactList', 'directoryExternal'],
     queryFn: () => getContactList({ page: 1, limit: 200 }),
     select: (res: any) => res?.data?.data?.result?.rows || [],
   });
+  const rows = useMemo(() => [...apiRows, ...DUMMY_CONTACT_ROWS], [apiRows]);
 
   /* Labels live in this browser, so a contact deleted on another device would
      otherwise leave its labels in the filter list for ever. Cleared against
@@ -138,14 +189,31 @@ const External = () => {
     navigate(`/inbox?formState=contact&number=${encodeURIComponent(phone || '')}`);
 
   return (
-    <>
+    <div className="ext-theme">
       <DirectoryPage
-        title="External Contacts"
-        description="People outside the organisation — who they work for, how to reach them, and every channel you can use."
+        titleClassName="dir-serif-heading"
+        title={
+          <span className="flex items-center gap-2">
+            External Contacts
+            <CustomTooltip
+              text={
+                <>
+                  People outside the organisation — who they work for,
+                  <br />
+                  how to reach them, and every channel you can use.
+                </>
+              }
+              side="top"
+              className="!bg-gray-300 !text-black whitespace-normal text-left"
+            >
+              <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+            </CustomTooltip>
+          </span>
+        }
         actions={
-          <button type="button" className="btn primary" onClick={() => navigate('/contact')}>
+          <button type="button" className="btn primary ext-black-btn" onClick={() => navigate('/contact')}>
             <Ic n="plus" />
-            New contact
+            Contact
           </button>
         }
         filters={
@@ -155,12 +223,14 @@ const External = () => {
               value={tag}
               options={['All', 'VIP', 'DNC', 'Blocked', 'Standard']}
               onChange={setTag}
+              tone="red"
             />
             <FilterChip
               label="Label"
               value={label}
               options={['All', ...labels.index.map((entry) => entry.label)]}
               onChange={setLabel}
+              tone="red"
             />
             <SearchChip
               value={search}
@@ -173,19 +243,31 @@ const External = () => {
           </>
         }
       >
-        <table>
+        <table className="tbl">
+          <colgroup>
+            <col style={{ width: '15%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '15%' }} />
+            <col style={{ width: '7%' }} />
+            <col style={{ width: '7%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '6%' }} />
+          </colgroup>
           <thead>
-            <tr>
-              <th>Contact</th>
-              <th>Organisation</th>
-              <th>Role</th>
-              <th>Phone</th>
-              <th>Email</th>
-              <th>Groups</th>
-              <th>Labels</th>
-              <th>Tag</th>
-              <th>Updated</th>
-              <th>Contact via</th>
+            <tr className="tbl__head-row">
+              <th className="tbl__th tbl__th--left">Contact</th>
+              <th className="tbl__th tbl__th--left">Organisation</th>
+              <th className="tbl__th tbl__th--left">Role</th>
+              <th className="tbl__th tbl__th--left">Phone</th>
+              <th className="tbl__th tbl__th--left">Email</th>
+              <th className="tbl__th tbl__th--left">Groups</th>
+              <th className="tbl__th tbl__th--left">Labels</th>
+              <th className="tbl__th tbl__th--left">Tag</th>
+              <th className="tbl__th tbl__th--left">Updated</th>
+              <th className="tbl__th tbl__th--center" aria-label="Actions" />
             </tr>
           </thead>
           <tbody>
@@ -212,40 +294,41 @@ const External = () => {
                 return (
                   <tr
                     key={row?._id || phone}
+                    className="tbl__row"
                     onClick={() => setOpen(row)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <td>
-                      <span className="flex items-center gap-2.5">
+                    <td className="tbl__td tbl__td--left">
+                      <span className="tbl__agent">
                         <CustomAvatar
                           name={name}
                           image={row?.profile?.contactPic}
                           type="contact"
                           size="30"
                         />
-                        <span style={{ minWidth: 0 }}>
-                          <span style={{ fontWeight: 700, display: 'block' }}>{name}</span>
+                        <span className="tbl__agent-meta">
+                          <span className="tbl__name">{name}</span>
                           {row?.contact?.webpage ? (
-                            <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>
-                              {row.contact.webpage}
-                            </span>
+                            <span className="tbl__subtitle">{row.contact.webpage}</span>
                           ) : null}
                         </span>
                       </span>
                     </td>
                     {/* The contact form writes company into `profile`; the
                         top-level key is only a fallback on some responses. */}
-                    <td>
+                    <td className="tbl__td tbl__td--left tbl__value--muted">
                       {row?.profile?.company || row?.company || (
                         <span style={{ color: 'var(--ink-4)' }}>—</span>
                       )}
                     </td>
-                    <td>{row?.title || <span style={{ color: 'var(--ink-4)' }}>—</span>}</td>
-                    <td className="num">{phone || '—'}</td>
-                    <td>
+                    <td className="tbl__td tbl__td--left tbl__value--muted">
+                      {row?.title || <span style={{ color: 'var(--ink-4)' }}>—</span>}
+                    </td>
+                    <td className="tbl__td tbl__td--left num tbl__value">{phone || '—'}</td>
+                    <td className="tbl__td tbl__td--left tbl__value--muted">
                       {row?.contact?.email || <span style={{ color: 'var(--ink-4)' }}>—</span>}
                     </td>
-                    <td>
+                    <td className="tbl__td tbl__td--left tbl__value--muted">
                       {groups.length ? (
                         groups.join(', ')
                       ) : (
@@ -254,7 +337,7 @@ const External = () => {
                     </td>
                     {/* The label matching the search leads, so a contact found
                         by one of six labels shows the reason it was found. */}
-                    <td>
+                    <td className="tbl__td tbl__td--left">
                       {labels.labelsOf(row?._id).length ? (
                         <span className="flex flex-wrap items-center gap-1">
                           {labels
@@ -275,10 +358,10 @@ const External = () => {
                         <span style={{ color: 'var(--ink-4)' }}>—</span>
                       )}
                     </td>
-                    <td>
+                    <td className="tbl__td tbl__td--left">
                       <span className={badge.cls}>{badge.label}</span>
                     </td>
-                    <td className="num">
+                    <td className="tbl__td tbl__td--left num tbl__value--muted">
                       {updated && moment(updated).isValid() ? (
                         moment(updated).format('DD MMM YYYY')
                       ) : (
@@ -289,74 +372,65 @@ const External = () => {
                         capture prevented it ever reaching these buttons, so
                         none of the actions fired. Here the button handles the
                         click first, then the row is stopped from opening. */}
-                    <td onClick={(event) => event.stopPropagation()}>
-                      <span className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`Call ${name}`}
-                          aria-label={`Call ${name}`}
-                          disabled={!phone}
-                          onClick={() => phone && dial(phone)}
-                        >
-                          <Ic n="phone" size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`Send an SMS to ${name}`}
-                          aria-label={`Send an SMS to ${name}`}
-                          disabled={!phone}
-                          onClick={() => sendSms(phone)}
-                        >
-                          <Ic n="chat" size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          className="mini"
-                          title={
-                            whatsappNumberOf(row)
-                              ? `WhatsApp ${name}`
-                              : `${name} has no WhatsApp number`
-                          }
-                          aria-label={`WhatsApp ${name}`}
-                          disabled={!whatsappNumberOf(row)}
-                          onClick={() => setWhatsappTo(whatsappNumberOf(row))}
-                        >
-                          <Ic n="send" size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`${name}'s activity`}
-                          aria-label={`${name}'s activity`}
-                          onClick={() =>
-                            navigate(`/contact-activity?contactId=${row?._id}`, {
-                              state: { key: 'phone', value: phone },
-                            })
-                          }
-                        >
-                          <Ic n="clock" size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          className={`mini${isFavourite('contact', row?._id) ? ' mcm-fav-on' : ''}`}
-                          title={
-                            isFavourite('contact', row?._id)
-                              ? `Remove ${name} from favourites`
-                              : `Add ${name} to favourites`
-                          }
-                          aria-label={
-                            isFavourite('contact', row?._id)
-                              ? `Remove ${name} from favourites`
-                              : `Add ${name} to favourites`
-                          }
-                          aria-pressed={isFavourite('contact', row?._id)}
-                          onClick={() => toggleFavourite('contact', row?._id)}
-                        >
-                          <Ic n="star" size={12} fill={isFavourite('contact', row?._id)} />
-                        </button>
-                      </span>
+                    <td className="tbl__td tbl__td--center" onClick={(event) => event.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="mini"
+                            title={`Actions for ${name}`}
+                            aria-label={`Actions for ${name}`}
+                          >
+                            <MoreVertical size={14} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="border-transparent">
+                          <DropdownMenuItem
+                            className="ppl-row-menu-item"
+                            disabled={!phone}
+                            onSelect={() => phone && dial(phone)}
+                          >
+                            <Ic n="phone" size={14} />
+                            Call
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="ppl-row-menu-item"
+                            disabled={!phone}
+                            onSelect={() => sendSms(phone)}
+                          >
+                            <Ic n="chat" size={14} />
+                            Message
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="ppl-row-menu-item"
+                            disabled={!whatsappNumberOf(row)}
+                            onSelect={() => setWhatsappTo(whatsappNumberOf(row))}
+                          >
+                            <Ic n="send" size={14} />
+                            WhatsApp
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="ppl-row-menu-item"
+                            onSelect={() =>
+                              navigate(`/contact-activity?contactId=${row?._id}`, {
+                                state: { key: 'phone', value: phone },
+                              })
+                            }
+                          >
+                            <Ic n="clock" size={14} />
+                            Activity
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="ppl-row-menu-item"
+                            onSelect={() => toggleFavourite('contact', row?._id)}
+                          >
+                            <Ic n="star" size={14} fill={isFavourite('contact', row?._id)} />
+                            {isFavourite('contact', row?._id)
+                              ? 'Remove from favourites'
+                              : 'Add to favourites'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 );
@@ -600,7 +674,7 @@ const External = () => {
           }
         />
       ) : null}
-    </>
+    </div>
   );
 };
 

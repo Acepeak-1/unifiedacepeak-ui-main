@@ -84,7 +84,7 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchMainSiteInfo = useCallback(async () => {
     const domain = getDomain().includes('localhost')
-      ? 'https://qa.mycountrymobile.com'
+      ? 'https://ucaas.acepeak.com'
       : getDomain();
     // const domain = "https://mcm.mycountrymobile.com";
     try {

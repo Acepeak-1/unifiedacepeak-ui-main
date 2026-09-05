@@ -23,6 +23,15 @@ import {
   tagRequest,
 } from '@/lib/contact-blocking';
 import { DirectoryPage, EmptyRow, SearchChip } from './page-shell';
+import { InfoIcon } from 'lucide-react';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import CustomSelect from '@/components/custom/custom-select';
+import './blocked-theme.css';
+
+const LINE_OPTIONS = [
+  { label: 'My line', value: 'personal' },
+  { label: 'A shared line', value: 'shared' },
+];
 
 /**
  * Directory ▸ Blocked — the numbers you have stopped hearing from.
@@ -109,9 +118,29 @@ const Blocked = () => {
     });
 
   return (
+    <div className="blk-theme">
     <DirectoryPage
-      title="Blocked Numbers"
-      description="Everyone you have stopped hearing from, and one place to block someone new."
+      titleClassName="dir-serif-heading"
+      title={
+        <span className="flex items-center gap-2">
+          Blocked Numbers
+          <CustomTooltip
+            text={
+              <>
+                Everyone you have stopped hearing from,
+                <br />
+                and one place to block
+                <br />
+                someone new.
+              </>
+            }
+            side="top"
+            className="!bg-gray-300 !text-black whitespace-normal text-left"
+          >
+            <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+          </CustomTooltip>
+        </span>
+      }
       filters={
         <>
           <SearchChip value={search} onChange={setSearch} placeholder="Search blocked numbers" />
@@ -125,7 +154,6 @@ const Blocked = () => {
         <SettingCard
           title="Block a number"
           description="Blocking covers calls, faxes and messages from that number."
-          icon={<Ic n="shield" size={16} />}
           status="coming-soon"
           note={
             <>
@@ -157,18 +185,16 @@ const Blocked = () => {
             label="What to stop"
             description="Blocking calls blocks faxes too — they arrive over the same line."
             control={
-              <select
-                className="mcm-field"
-                value={scope}
-                onChange={(event) => setScope(event.target.value as BlockScope)}
-                aria-label="What to stop"
-              >
-                {(Object.keys(SCOPE_LABELS) as BlockScope[]).map((key) => (
-                  <option key={key} value={key}>
-                    {SCOPE_LABELS[key]}
-                  </option>
-                ))}
-              </select>
+              <CustomSelect
+                options={(Object.keys(SCOPE_LABELS) as BlockScope[]).map((key) => ({
+                  label: SCOPE_LABELS[key],
+                  value: key,
+                }))}
+                value={{ label: SCOPE_LABELS[scope], value: scope }}
+                handleChange={(option: any) => setScope(option.value as BlockScope)}
+                isClearable={false}
+                menuPortalTarget={false}
+              />
             }
             status={scope === DEFAULT_BLOCK_CHOICE.scope ? undefined : 'coming-soon'}
           />
@@ -177,18 +203,16 @@ const Blocked = () => {
             label="What the caller gets"
             description={TREATMENT_DESCRIPTIONS[treatment]}
             control={
-              <select
-                className="mcm-field"
-                value={treatment}
-                onChange={(event) => setTreatment(event.target.value as BlockTreatment)}
-                aria-label="What the caller gets"
-              >
-                {(Object.keys(TREATMENT_LABELS) as BlockTreatment[]).map((key) => (
-                  <option key={key} value={key}>
-                    {TREATMENT_LABELS[key]}
-                  </option>
-                ))}
-              </select>
+              <CustomSelect
+                options={(Object.keys(TREATMENT_LABELS) as BlockTreatment[]).map((key) => ({
+                  label: TREATMENT_LABELS[key],
+                  value: key,
+                }))}
+                value={{ label: TREATMENT_LABELS[treatment], value: treatment }}
+                handleChange={(option: any) => setTreatment(option.value as BlockTreatment)}
+                isClearable={false}
+                menuPortalTarget={false}
+              />
             }
             status={treatment === DEFAULT_BLOCK_CHOICE.treatment ? undefined : 'coming-soon'}
           />
@@ -197,15 +221,13 @@ const Blocked = () => {
             label="Whose line"
             description="A block on your own line stops that caller reaching you. A shared line has to be blocked for everyone who answers it."
             control={
-              <select
-                className="mcm-field"
-                value={line}
-                onChange={(event) => setLine(event.target.value as BlockLine)}
-                aria-label="Whose line"
-              >
-                <option value="personal">My line</option>
-                <option value="shared">A shared line</option>
-              </select>
+              <CustomSelect
+                options={LINE_OPTIONS}
+                value={LINE_OPTIONS.find((option) => option.value === line) || null}
+                handleChange={(option: any) => setLine(option.value as BlockLine)}
+                isClearable={false}
+                menuPortalTarget={false}
+              />
             }
             status={line === DEFAULT_BLOCK_CHOICE.line ? undefined : 'coming-soon'}
           />
@@ -326,6 +348,7 @@ const Blocked = () => {
         </tbody>
       </table>
     </DirectoryPage>
+    </div>
   );
 };
 
