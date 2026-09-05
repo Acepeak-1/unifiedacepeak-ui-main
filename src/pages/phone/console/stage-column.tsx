@@ -8,8 +8,6 @@ import {
   parsePhoneNumberFromString,
   type CountryCode,
 } from 'libphonenumber-js';
-import DialpadMaxiTabDispositions from '@/components/dialpad/components/dialpad-maxi-tab-dispositions';
-import DialpadEndedScreen from '@/components/dialpad/components/dialpad-ended-screen';
 import DialpadAddUserList from '@/components/dialpad/components/dialpad-add-user-list';
 import DialpadMergeList from '@/components/dialpad/components/dialpad-merge-list';
 import DialpadConferenceMembersList from '@/components/dialpad/components/dialpad-conference-members-list';
@@ -521,10 +519,13 @@ const StageColumn = ({
     ringingTimerRef.current = window.setTimeout(() => setForcedRinging(false), 60000);
   };
 
+  /* End call — the only way off the call screen: hangs up (if still up) and
+     clears the session, which drops the stage back to the dialer. */
   const stopRinging = () => {
     setForcedRinging(false);
     if (ringingTimerRef.current) window.clearTimeout(ringingTimerRef.current);
     if (session) dialpad.endCall(session.id);
+    onEndWrapup();
   };
 
   const pressKey = (key: string) => {
@@ -1360,8 +1361,10 @@ const StageColumn = ({
     );
   }
 
-  /* ----------------------------------------------------- dialing / incoming ---- */
-  if (state === 'dialing' || state === 'incoming' || forcedRinging) {
+  /* ------------------------------------------------------------ in a call ---- */
+  /* One screen for the whole call — ringing, connected and ended all render
+     this same card, so nothing shifts under the user mid-call. */
+  if (state !== 'idle' || forcedRinging) {
     const callerName = contactDisplayName(session) || 'Unknown';
     const shownNumber = session?.remoteNumber || ringingNumber;
     return (
@@ -1377,9 +1380,25 @@ const StageColumn = ({
                 {shownNumber}
               </div>
             ) : null}
-            <span className="state-pill ringing pulsing" style={{ margin: '6px 0 12px' }}>
-              {state === 'incoming' ? 'Incoming' : 'Ringing'}
+            <span
+              className={`state-pill ${
+                state === 'active' ? 'live' : state === 'wrapup' ? 'wrap' : 'ringing pulsing'
+              }`}
+              style={{ margin: '6px 0 12px' }}
+            >
+              {state === 'active'
+                ? 'Connected'
+                : state === 'wrapup'
+                  ? 'Wrap-up'
+                  : state === 'incoming'
+                    ? 'Incoming'
+                    : 'Ringing'}
             </span>
+            {state === 'active' || state === 'wrapup' ? (
+              <div className="num" style={{ marginBottom: 10, fontSize: 18, fontWeight: 700 }}>
+                {mmss(secs)}
+              </div>
+            ) : null}
 
             {state === 'incoming' ? (
               <div style={{ display: 'flex', justifyContent: 'center', gap: 40, paddingTop: 2 }}>
@@ -1423,53 +1442,6 @@ const StageColumn = ({
           </div>
         </div>
         {sidePanelEl}
-      </div>
-    );
-  }
-
-  /* -------------------------------------------------------------- wrap-up ---- */
-  if (state === 'wrapup') {
-    return (
-      <div className="col stage">
-        <div className="stage-inner">
-          <CallerBlock session={session} state={state} secs={secs} />
-          <div
-            className="card card-pad"
-            style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
-          >
-            <div className="sect-title">
-              <Ic n="check" size={13} /> Disposition &amp; wrap-up
-            </div>
-            {/* The platform's own wrap-up panel: it owns the queue/campaign
-                disposition payloads, the wrap-up timer and going back to
-                Available. Reused rather than reimplemented so the console
-                writes exactly what the rest of the app writes. */}
-            <DialpadMaxiTabDispositions activeSession={session} />
-          </div>
-
-          <div className="card card-pad console-embed-panel">
-            <div className="sect-title" style={{ marginBottom: 8 }}>
-              <Ic n="cal" size={13} /> After the call
-            </div>
-            {/* schedule callback (createEventAndTask), session summary and call
-                again — the platform's own ended screen, payloads unchanged */}
-            <DialpadEndedScreen
-              session={session}
-              onAddNotes={() => undefined}
-              onCallAgain={() => session?.remoteNumber && placeCall(session.remoteNumber)}
-              onClose={onEndWrapup}
-            />
-          </div>
-          <button
-            type="button"
-            className="btn ghost"
-            style={{ width: '100%' }}
-            onClick={onEndWrapup}
-          >
-            <Ic n="x" />
-            Close wrap-up
-          </button>
-        </div>
       </div>
     );
   }

@@ -13,84 +13,49 @@
      - @keyframes are prefixed `mcmc-`.
    ============================================================ */
 
+/* The console draws its palette from the app's own design tokens (the
+   --mcm-* set in index.css, which flips with the app's `.dark` class) so the
+   phone page and the rest of the app stay in step. The accent follows
+   --primary, which the shell sets from the tenant's primary_color. */
 .mcm-console {
-  --ground: #f5f5f5;
-  --surface: #ffffff;
-  --surface-2: #fafafa;
-  --surface-3: #eeeeee;
-  --ink: #0d1526;
-  --ink-2: #3d4a63;
-  --ink-3: #6b7891;
-  --ink-4: #93a0b8;
-  --line: #e5e5e5;
-  --line-2: #efefef;
+  --ground: var(--mcm-ground);
+  --surface: var(--mcm-surface);
+  --surface-2: var(--mcm-surface-2);
+  --surface-3: var(--mcm-surface-3);
+  --ink: var(--mcm-ink);
+  --ink-2: var(--mcm-ink-2);
+  --ink-3: var(--mcm-ink-3);
+  --ink-4: var(--mcm-ink-4);
+  --line: var(--mcm-line);
+  --line-2: var(--mcm-line-2);
 
-  --accent: #dc2626;
-  --accent-ink: #b91c1c;
-  --accent-wash: #fef2f2;
-  --accent-edge: #fecaca;
+  --accent: var(--primary, var(--mcm-accent));
+  --accent-ink: var(--mcm-accent-ink);
+  --accent-wash: var(--mcm-accent-wash);
+  --accent-edge: var(--mcm-accent-edge);
 
-  /* AI gets its own hue on purpose: machine output must never be
-     mistaken for system truth. Violet = "generated, verify me". */
-  --ai: #7c3aed;
-  --ai-ink: #6428d4;
-  --ai-wash: #f2ecff;
-  --ai-edge: #ddccff;
+  --ai: var(--mcm-ai);
+  --ai-ink: var(--mcm-ai-ink);
+  --ai-wash: var(--mcm-ai-wash);
+  --ai-edge: var(--mcm-ai-edge);
 
-  --live: #0d9488;
-  --live-wash: #dcf5f1;
-  --warn: #c2670a;
-  --warn-wash: #fdf0dc;
-  --crit: #d32f2f;
-  --crit-wash: #fde9e9;
-  --hold: #0e7490;
-  --hold-wash: #dcf1f7;
+  --live: var(--mcm-live);
+  --live-wash: var(--mcm-live-wash);
+  --warn: var(--mcm-warn);
+  --warn-wash: var(--mcm-warn-wash);
+  --crit: var(--mcm-crit);
+  --crit-wash: var(--mcm-crit-wash);
+  --hold: var(--mcm-hold);
+  --hold-wash: var(--mcm-hold-wash);
 
-  --shadow-sm: 0 1px 2px rgba(13, 21, 38, 0.06), 0 1px 1px rgba(13, 21, 38, 0.04);
-  --shadow: 0 4px 14px rgba(13, 21, 38, 0.07), 0 1px 3px rgba(13, 21, 38, 0.05);
-  --shadow-lg: 0 18px 44px rgba(13, 21, 38, 0.14), 0 3px 10px rgba(13, 21, 38, 0.07);
-  --r: 12px;
-  --r-sm: 8px;
-  --r-lg: 18px;
-  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  /* 'Twemoji Country Flags' is what renders flag emoji as flags rather than
-     the bare letter pair ('IN', 'US'). The app's body stack includes it for
-     exactly that reason; the console defined its own stack and dropped it,
-     so the dialler's country flag showed as text. */
-  --sans:
-    'Plus Jakarta Sans', 'Twemoji Country Flags', ui-sans-serif, system-ui, -apple-system,
-    'Segoe UI', sans-serif;
-}
-.dark .mcm-console {
-  --ground: #0a0a0a;
-  --surface: #171717;
-  --surface-2: #1f1f1f;
-  --surface-3: #262626;
-  --ink: #eef2f9;
-  --ink-2: #c3cddf;
-  --ink-3: #93a1ba;
-  --ink-4: #6b7a96;
-  --line: #333333;
-  --line-2: #292929;
-  --accent: #f87171;
-  --accent-ink: #fca5a5;
-  --accent-wash: #3a1414;
-  --accent-edge: #7f1d1d;
-  --ai: #a97fff;
-  --ai-ink: #c0a3ff;
-  --ai-wash: #231a3d;
-  --ai-edge: #3c2d66;
-  --live: #2dd4bf;
-  --live-wash: #0f2f2c;
-  --warn: #f0a24b;
-  --warn-wash: #33240f;
-  --crit: #f87171;
-  --crit-wash: #361618;
-  --hold: #38bdf8;
-  --hold-wash: #0d2a3a;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.6);
+  --shadow-sm: var(--mcm-shadow-sm);
+  --shadow: var(--mcm-shadow);
+  --shadow-lg: var(--mcm-shadow-lg);
+  --r: var(--mcm-r);
+  --r-sm: var(--mcm-r-sm);
+  --r-lg: var(--mcm-r-lg);
+  --mono: var(--mcm-mono);
+  --sans: var(--mcm-sans);
 }
 .mcm-console * {
   box-sizing: border-box;
@@ -620,7 +585,7 @@
 }
 .mcm-console .cr-av.out {
   background: #e8efff;
-  color: #2563eb;
+  color: var(--accent);
 }
 .mcm-console .cr-av.miss {
   background: var(--crit-wash);
@@ -681,7 +646,7 @@
   color: #16a34a;
 }
 .mcm-console .cr-dir.out {
-  color: #2563eb;
+  color: var(--accent);
 }
 .mcm-console .cr-dir.miss {
   color: var(--crit);
@@ -757,9 +722,15 @@
   background: var(--live-wash);
   border-color: transparent;
 }
+/* Hover glows the phone glyph itself rather than filling the circle. */
 .mcm-console .cr-act.call:hover {
-  background: var(--live);
-  color: #fff;
+  background: var(--live-wash);
+  color: var(--live);
+}
+.mcm-console .cr-act.call:hover svg {
+  fill: var(--live);
+  stroke: var(--live);
+  filter: drop-shadow(0 0 5px var(--live));
 }
 .mcm-console .cr-top {
   display: flex;
@@ -3394,18 +3365,6 @@
   display: none;
 }
 
-/* live indicator on a row whose call is the one currently connected */
-.mcm-console .call-row.live-now::after {
-  content: '';
-  position: absolute;
-  right: 12px;
-  top: 14px;
-  width: 7px;
-  height: 7px;
-  border-radius: 99px;
-  background: var(--live);
-  box-shadow: 0 0 0 3px var(--live-wash);
-}
 @media (max-width: 900px) {
   .mcm-console {
     overflow: auto;
@@ -4394,24 +4353,28 @@
   border: 1px solid transparent;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
+/* Neutral (white on light, dark on dark) so it sits with the Message button
+   rather than competing with the accent. */
 .mcm-console .rec-callback {
-  background: #2563eb;
-  color: #fff;
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
 }
 .mcm-console .rec-callback:hover {
-  background: #1d4ed8;
+  background: var(--surface-3);
+  border-color: var(--ink-4);
 }
 .mcm-console .rec-callback:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 .mcm-console .rec-message {
-  background: #f3f4f6;
-  color: #111827;
-  border-color: #e5e7eb;
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--line);
 }
 .mcm-console .rec-message:hover {
-  background: #e5e7eb;
+  background: var(--line);
 }
 
 /* ---- compact stats bar ---- */
@@ -4448,7 +4411,7 @@
   color: #16a34a;
 }
 .mcm-console .rec-stat-ic.in {
-  color: #2563eb;
+  color: var(--accent);
 }
 .mcm-console .rec-stat-ic.time {
   color: #9ca3af;
@@ -4569,7 +4532,7 @@
   font-weight: 600;
 }
 .mcm-console .rec-filter-item svg {
-  color: #2563eb;
+  color: var(--accent);
 }
 
 .mcm-console .rec-sec-body {
@@ -4607,7 +4570,7 @@
   color: #16a34a;
 }
 .mcm-console .rec-line-ic.out {
-  color: #2563eb;
+  color: var(--accent);
 }
 .mcm-console .rec-line-ic.miss {
   color: #ef4444;
@@ -4625,7 +4588,7 @@
   color: #0f9d63;
 }
 .mcm-console .rec-line-title.out {
-  color: #2563eb;
+  color: var(--accent);
 }
 .mcm-console .rec-line-title.miss {
   color: #ef4444;
@@ -4660,8 +4623,8 @@
   color: #fff;
 }
 .mcm-console .rec-act.on {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 .mcm-console .rec-act:disabled {
@@ -4785,8 +4748,11 @@
   padding: 8px 12px;
 }
 .mcm-console .rec-card-title {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-width: 150px;
+}
+.mcm-console .rec-card-row > .rec-line-when {
+  margin-left: auto;
 }
 .mcm-console .rec-card-who {
   flex: 1 1 auto;
@@ -4831,8 +4797,8 @@
   gap: 6px;
 }
 .mcm-console .rec-card-acts .rec-act.on {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 .mcm-console .rec-card-acts .rec-more {
@@ -4863,17 +4829,25 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: none;
-  background: #2563eb;
+  border: 1px solid transparent;
+  background: var(--accent);
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
+/* Hover: the button and its edge glow red, nothing moves. */
 .mcm-console .wave-play:hover {
-  background: #1d4ed8;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  box-shadow:
+    0 0 0 3px var(--accent-wash),
+    0 0 10px 2px var(--accent);
 }
 .mcm-console .wave-mid {
   flex: 1 1 auto;
@@ -4896,7 +4870,7 @@
   transition: background 0.1s ease;
 }
 .mcm-console .wave-bar.on {
-  background: #2563eb;
+  background: var(--accent);
 }
 .mcm-console .wave-cursor {
   position: absolute;
@@ -4909,7 +4883,7 @@
   top: 50%;
   transform: translateY(-50%);
   border-radius: 50%;
-  background: #2563eb;
+  background: var(--accent);
   border: 2px solid #fff;
   box-shadow: 0 1px 3px rgba(37, 99, 235, 0.4);
   pointer-events: none;
@@ -4930,17 +4904,17 @@
 }
 .mcm-console .wave-vol input[type='range'] {
   width: 84px;
-  accent-color: #2563eb;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 .mcm-console .wave-rate {
   flex: 0 0 auto;
   height: 32px;
   padding: 0 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
-  color: #374151;
+  background: var(--surface);
+  color: var(--ink-2);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -4949,19 +4923,18 @@
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 32px;
   height: 32px;
-  padding: 0 12px;
-  border: 1px solid #e5e7eb;
+  padding: 0;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
-  color: #374151;
-  font-size: 12.5px;
-  font-weight: 600;
+  background: var(--surface);
+  color: var(--ink-2);
   cursor: pointer;
 }
 .mcm-console .wave-dl:hover {
-  background: #f9fafb;
+  background: var(--surface-2);
 }
 
 @media (max-width: 860px) {
@@ -4988,26 +4961,85 @@
 
 /* ---- inline transcript (recording cards) ---- */
 .mcm-console .rec-transcript {
-  border-top: 1px solid #eef0f3;
-  background: #fbfcfe;
-  padding: 8px 12px;
+  border-top: 1px solid var(--line-2);
+  background: var(--surface-2);
+  padding: 10px 12px;
   display: flex;
-  flex-direction: column;
-  gap: 0;
+  align-items: stretch;
+  gap: 12px;
+}
+/* Transcript and Summary read as their own cards, matching the recording /
+   voicemail cards in the same list. */
+.mcm-console .rec-transcript-col,
+.mcm-console .rec-summary-col {
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.mcm-console .rec-transcript-col {
+  flex: 1 1 0;
+}
+/* Transcript / Summary switch at the top of the open panel. */
+.mcm-console .rec-panel-tabs {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line-2);
+}
+.mcm-console .rec-panel-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 6px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-4);
+  cursor: pointer;
+}
+.mcm-console .rec-panel-tab svg {
+  color: inherit;
+}
+.mcm-console .rec-panel-tab:hover {
+  color: var(--ink-3);
+}
+.mcm-console .rec-panel-tab.on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.mcm-console .rec-summary-list {
+  margin: 0;
+  padding: 0 0 0 16px;
+  list-style: disc;
+}
+.mcm-console .rec-summary-list li {
+  margin: 0;
+  padding: 2px 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--ink-2);
 }
 .mcm-console .rec-transcript-head {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 2px;
+  margin-bottom: 6px;
   font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: #6b7280;
+  color: var(--ink-3);
 }
 .mcm-console .rec-transcript-head svg {
-  color: #9ca3af;
+  color: var(--ink-4);
 }
 /* transcript as plain text — one line per turn, no container. Modifier
    classes are prefixed (rt-) so they don't collide with the dialer's own
@@ -5019,20 +5051,82 @@
   font-size: 12.5px;
   line-height: 1.5;
   text-align: left;
-  color: #374151;
+  color: var(--ink-2);
 }
 .mcm-console .rec-turn-time {
   margin-right: 8px;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--ink-4);
 }
 .mcm-console .rec-turn-who {
   font-weight: 700;
-  color: #111827;
+  color: var(--ink);
 }
 .mcm-console .rec-turn.rt-agent .rec-turn-who {
-  color: #1d4ed8;
+  color: var(--accent-ink);
 }
 .mcm-console .rec-turn.rt-caller .rec-turn-who {
-  color: #16a34a;
+  color: var(--live);
+}
+
+/* ---- hover feedback for the buttons that had none -------------------
+   Everything clickable on the phone page should answer the pointer the way
+   the Calls / Recordings / Voicemails tabs do. */
+.mcm-console .seg button {
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.mcm-console .seg button:hover:not(.on) {
+  background: var(--surface);
+  color: var(--ink);
+}
+.mcm-console .scopebtn {
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.mcm-console .scopebtn:hover:not(.on) {
+  border-color: var(--ai-edge);
+  background: var(--ai-wash);
+  color: var(--ai-ink);
+}
+.mcm-console .wave-rate {
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.mcm-console .wave-rate:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-4);
+}
+.mcm-console .btn.answer:hover {
+  filter: brightness(0.94);
+}
+
+/* Every button on the page answers the pointer the same way: its label turns
+   the accent red on hover and goes back to normal on leave. Buttons that are
+   already a solid colour block (white label on a filled pill) are left alone —
+   red-on-red would be unreadable. */
+/* The extra :not() clauses are there for specificity: several buttons define
+   their own :hover colour (.record-tab, .rec-panel-tab, .cr-act …), and the
+   rule has to outrank those to be the single hover behaviour on the page. */
+.mcm-console button:not(:disabled):not([data-keep-hover]):hover {
+  color: var(--accent);
+}
+.mcm-console button.primary:not(:disabled):not([data-x]):hover,
+.mcm-console button.danger:not(:disabled):not([data-x]):hover,
+.mcm-console button.answer:not(:disabled):not([data-x]):hover,
+.mcm-console button.ai:not(:disabled):not([data-x]):hover,
+.mcm-console .wave-play:not(:disabled):not([data-x]):hover,
+.mcm-console .call-end-pill:not(:disabled):not([data-x]):hover,
+.mcm-console .call-hangup:not(:disabled):not([data-x]):hover,
+.mcm-console .scopebtn.on:not(:disabled):not([data-x]):hover,
+.mcm-console .rec-act.on:not(:disabled):not([data-x]):hover {
+  color: #fff;
+}
+/* the row's call button keeps its green glow */
+.mcm-console .cr-act.call:not(:disabled):not([data-x]):hover {
+  color: var(--live);
 }

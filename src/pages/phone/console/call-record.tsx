@@ -50,6 +50,9 @@ export type RecordLeg = {
   /* Inline transcript turns (used by demo rows; real rows open the side
      panel via onOpenTranscript instead). */
   transcript?: TranscriptTurn[];
+  /* Call summary bullets shown beside the transcript. When absent one is
+     derived from the transcript turns. */
+  summary?: string[];
 };
 
 type TranscriptTurn = {
@@ -67,6 +70,24 @@ const DEMO_TRANSCRIPT: TranscriptTurn[] = [
   { who: 'caller', speaker: 'Caller', time: '00:37', text: 'Oh great, that’s a relief. Thank you for the quick help!' },
   { who: 'agent', speaker: 'Agent', time: '00:42', text: 'You’re welcome. Is there anything else I can help you with?' },
 ];
+
+const DEMO_SUMMARY = [
+  'Caller reported that order 48213-A had not arrived yet.',
+  'Agent looked up the order and confirmed it shipped the previous day.',
+  'Delivery is expected today; caller was satisfied and no follow-up is needed.',
+];
+
+/* Fallback summary when the call has no stored one: open with the caller's
+   first turn and close with the agent's last, which is what a short call
+   usually boils down to. */
+const deriveSummary = (turns: TranscriptTurn[]): string[] => {
+  const firstCaller = turns.find((t) => t.who === 'caller');
+  const lastAgent = [...turns].reverse().find((t) => t.who === 'agent');
+  return [
+    firstCaller ? `Caller: ${firstCaller.text}` : '',
+    lastAgent ? `Agent: ${lastAgent.text}` : '',
+  ].filter(Boolean);
+};
 
 /* --- Demo/sample data so Calls, Recordings and Voicemails all show content
    even when the real call has no stored media. Mirrors the demo rows used in
@@ -125,6 +146,7 @@ const DEMO_RECORDINGS: RecordLeg[] = [
     recordingUrl: SAMPLE_AUDIO[0],
     audioUrl: SAMPLE_AUDIO[0],
     transcript: DEMO_TRANSCRIPT,
+    summary: DEMO_SUMMARY,
   }),
   demoLeg({
     id: 'demo-rec-2',
@@ -135,6 +157,7 @@ const DEMO_RECORDINGS: RecordLeg[] = [
     recordingUrl: SAMPLE_AUDIO[1],
     audioUrl: SAMPLE_AUDIO[1],
     transcript: DEMO_TRANSCRIPT,
+    summary: DEMO_SUMMARY,
   }),
   demoLeg({
     id: 'demo-rec-3',
@@ -145,6 +168,7 @@ const DEMO_RECORDINGS: RecordLeg[] = [
     recordingUrl: SAMPLE_AUDIO[2],
     audioUrl: SAMPLE_AUDIO[2],
     transcript: DEMO_TRANSCRIPT,
+    summary: DEMO_SUMMARY,
   }),
 ];
 
@@ -157,6 +181,8 @@ const DEMO_VOICEMAILS: RecordLeg[] = [
     viaDid: '+1 (415) 555-0132',
     raw: { voicemail_file_url: 'demo-voicemail-1.mp3' },
     audioUrl: SAMPLE_AUDIO[2],
+    transcript: DEMO_TRANSCRIPT,
+    summary: DEMO_SUMMARY,
   }),
   demoLeg({
     id: 'demo-vm-2',
@@ -166,6 +192,8 @@ const DEMO_VOICEMAILS: RecordLeg[] = [
     viaDid: '+1 (415) 555-0132',
     raw: { voicemail_file_url: 'demo-voicemail-2.mp3' },
     audioUrl: SAMPLE_AUDIO[3],
+    transcript: DEMO_TRANSCRIPT,
+    summary: DEMO_SUMMARY,
   }),
 ];
 
@@ -280,8 +308,14 @@ const WaveformPlayer = ({ src, onDownload }: { src: string; onDownload?: () => v
         <option value={1.5}>1.5x</option>
         <option value={2}>2x</option>
       </select>
-      <button type="button" className="wave-dl" onClick={onDownload}>
-        <Ic n="dl" size={14} /> Download
+      <button
+        type="button"
+        className="wave-dl"
+        title="Download recording"
+        aria-label="Download recording"
+        onClick={onDownload}
+      >
+        <Ic n="dl" size={14} />
       </button>
     </div>
   );
@@ -337,6 +371,9 @@ const CallRecord = ({
   const [filterOpen, setFilterOpen] = useState(false);
   const [tab, setTab] = useState<'calls' | 'recordings' | 'voicemails'>('calls');
   const [transcriptId, setTranscriptId] = useState<string | null>(null);
+  /* Which view the open transcript panel is showing — the Transcript and
+     Summary buttons flip between the two in the same space. */
+  const [panelView, setPanelView] = useState<'transcript' | 'summary'>('transcript');
 
   const companyUuid = String(user?.company_info?.uuid || '').trim();
   const reportsActionAccess = features?.plan_features?.reports?.action;
@@ -609,19 +646,6 @@ const CallRecord = ({
                               </div>
                             ) : null}
                           </div>
-                          <div className="rec-card-who">
-                            <span className="rec-card-who-ic">
-                              <Ic n="user" size={14} />
-                            </span>
-                            <div className="rec-card-who-txt">
-                              <div className="rec-card-num num">
-                                <DialNumber number={row.number} />
-                              </div>
-                              {row.name && !isNumberLike(row.name) ? (
-                                <div className="rec-card-name">{row.name}</div>
-                              ) : null}
-                            </div>
-                          </div>
                           <div className="rec-line-when">
                             <span>
                               <Ic n="cal" size={13} /> {dateLabel(leg)}
@@ -641,19 +665,10 @@ const CallRecord = ({
                                     ? 'Hide player'
                                     : 'Play recording'
                               }
-                              disabled={!canPlayRec}
+                              disabled={!canPlayRec || !src}
                               onClick={() => setPlayingId(open ? null : leg.id)}
                             >
                               <Ic n={open ? 'pause' : 'play'} size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              className="rec-act"
-                              title="Download recording"
-                              disabled={downloading[leg.id]}
-                              onClick={doDownload}
-                            >
-                              <Ic n="dl" size={14} />
                             </button>
                             {leg.transcript?.length || (leg.transcriptUrl && canTranscribe) ? (
                               <button
@@ -662,7 +677,10 @@ const CallRecord = ({
                                 title="Transcript"
                                 onClick={() => {
                                   if (leg.transcript?.length) {
-                                    setTranscriptId(transcriptId === leg.id ? null : leg.id);
+                                    const showing =
+                                      transcriptId === leg.id && panelView === 'transcript';
+                                    setPanelView('transcript');
+                                    setTranscriptId(showing ? null : leg.id);
                                   } else {
                                     onOpenTranscript(leg.raw);
                                   }
@@ -676,16 +694,205 @@ const CallRecord = ({
                         {open && src ? <WaveformPlayer src={src} onDownload={doDownload} /> : null}
                         {transcriptId === leg.id && leg.transcript?.length ? (
                           <div className="rec-transcript">
-                            <div className="rec-transcript-head">
-                              <Ic n="book" size={14} /> Transcript
+                            <div className="rec-transcript-col">
+                              {/* Transcript / Summary switch, in the panel head */}
+                              <div className="rec-panel-tabs" role="tablist">
+                                <button
+                                  type="button"
+                                  role="tab"
+                                  aria-selected={panelView === 'transcript'}
+                                  className={`rec-panel-tab ${panelView === 'transcript' ? 'on' : ''}`}
+                                  onClick={() => setPanelView('transcript')}
+                                >
+                                  <Ic n="book" size={14} /> Transcript
+                                </button>
+                                <button
+                                  type="button"
+                                  role="tab"
+                                  aria-selected={panelView === 'summary'}
+                                  className={`rec-panel-tab ${panelView === 'summary' ? 'on' : ''}`}
+                                  onClick={() => setPanelView('summary')}
+                                >
+                                  <Ic n="list" size={14} /> Summary
+                                </button>
+                              </div>
+                              {panelView === 'transcript' ? (
+                                leg.transcript.map((t, ti) => (
+                                  <p className={`rec-turn rt-${t.who}`} key={ti}>
+                                    <span className="rec-turn-time num">{t.time}</span>
+                                    <span className="rec-turn-who">{t.speaker}:</span>{' '}
+                                    {t.text}
+                                  </p>
+                                ))
+                              ) : (
+                                <ul className="rec-summary-list">
+                                  {(leg.summary?.length
+                                    ? leg.summary
+                                    : deriveSummary(leg.transcript)
+                                  ).map((s, si) => (
+                                    <li key={si}>{s}</li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
-                            {leg.transcript.map((t, ti) => (
-                              <p className={`rec-turn rt-${t.who}`} key={ti}>
-                                <span className="rec-turn-time num">{t.time}</span>
-                                <span className="rec-turn-who">{t.speaker}:</span>{' '}
-                                {t.text}
-                              </p>
-                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))
+            ) : tab === 'voicemails' ? (
+              /* Voicemails use the same card layout as recordings: grouped by
+                 day, waveform player, transcript / summary panel. */
+              groupByDay(shown).map((g) => (
+                <div className="rec-group" key={g.key}>
+                  <div className="rec-group-head">
+                    <span className="rec-group-lbl">
+                      <b>{g.label}</b>
+                      <span>
+                        {g.items.length} voicemail{g.items.length > 1 ? 's' : ''}
+                      </span>
+                    </span>
+                    <span className="rec-group-date">{g.date}</span>
+                  </div>
+                  {g.items.map((leg) => {
+                    const vmFile = String((leg.raw as any)?.voicemail_file_url ?? '').trim();
+                    const src =
+                      leg.audioUrl ||
+                      (vmFile && companyUuid
+                        ? `${MEDIA_URL}/${companyUuid}/recording/${vmFile}`
+                        : '');
+                    const open = playingId === leg.id;
+                    const canPlayRec = leg.demo || canListen;
+                    const doDownload = () =>
+                      handleDownloadFile({
+                        fileUrl: src,
+                        name: `${row.name || row.number}-${leg.when}`,
+                        setLoading: (value: any) =>
+                          setDownloading((prev) => ({
+                            ...prev,
+                            [leg.id]:
+                              typeof value === 'function' ? value(prev[leg.id]) : value,
+                          })),
+                      });
+                    return (
+                      <div className={`rec-card ${open ? 'open' : ''}`} key={leg.id}>
+                        <div className="rec-card-row">
+                          <span
+                            className={`rec-line-ic ${leg.direction === 'miss' ? 'miss' : leg.direction}`}
+                          >
+                            <Ic
+                              n={
+                                leg.direction === 'out'
+                                  ? 'arrow-out'
+                                  : leg.direction === 'miss'
+                                    ? 'x'
+                                    : 'arrow-in'
+                              }
+                              size={15}
+                            />
+                          </span>
+                          <div className="rec-card-title">
+                            <div
+                              className={`rec-line-title ${leg.direction === 'miss' ? 'miss' : leg.direction}`}
+                            >
+                              {dirTitle(leg.direction)}
+                            </div>
+                            {leg.viaDid ? (
+                              <div className="rec-line-sub">
+                                Via DID: <span className="num">{leg.viaDid}</span>
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="rec-line-when">
+                            <span>
+                              <Ic n="cal" size={13} /> {dateLabel(leg)}
+                            </span>
+                            <span>
+                              <Ic n="clock" size={13} /> <span className="num">{leg.duration}</span>
+                            </span>
+                          </div>
+                          <div className="rec-card-acts">
+                            <button
+                              type="button"
+                              className={`rec-act ${open ? 'on' : ''}`}
+                              title={
+                                !canPlayRec
+                                  ? 'Your plan does not allow listening'
+                                  : open
+                                    ? 'Hide player'
+                                    : 'Play voicemail'
+                              }
+                              disabled={!canPlayRec || !src}
+                              onClick={() => setPlayingId(open ? null : leg.id)}
+                            >
+                              <Ic n={open ? 'pause' : 'play'} size={14} />
+                            </button>
+                            {leg.transcript?.length || (leg.transcriptUrl && canTranscribe) ? (
+                              <button
+                                type="button"
+                                className={`rec-act ${transcriptId === leg.id ? 'on' : ''}`}
+                                title="Transcript"
+                                onClick={() => {
+                                  if (leg.transcript?.length) {
+                                    const showing =
+                                      transcriptId === leg.id && panelView === 'transcript';
+                                    setPanelView('transcript');
+                                    setTranscriptId(showing ? null : leg.id);
+                                  } else {
+                                    onOpenTranscript(leg.raw);
+                                  }
+                                }}
+                              >
+                                <Ic n="book" size={14} />
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                        {open && src ? <WaveformPlayer src={src} onDownload={doDownload} /> : null}
+                        {transcriptId === leg.id && leg.transcript?.length ? (
+                          <div className="rec-transcript">
+                            <div className="rec-transcript-col">
+                              <div className="rec-panel-tabs" role="tablist">
+                                <button
+                                  type="button"
+                                  role="tab"
+                                  aria-selected={panelView === 'transcript'}
+                                  className={`rec-panel-tab ${panelView === 'transcript' ? 'on' : ''}`}
+                                  onClick={() => setPanelView('transcript')}
+                                >
+                                  <Ic n="book" size={14} /> Transcript
+                                </button>
+                                <button
+                                  type="button"
+                                  role="tab"
+                                  aria-selected={panelView === 'summary'}
+                                  className={`rec-panel-tab ${panelView === 'summary' ? 'on' : ''}`}
+                                  onClick={() => setPanelView('summary')}
+                                >
+                                  <Ic n="list" size={14} /> Summary
+                                </button>
+                              </div>
+                              {panelView === 'transcript' ? (
+                                leg.transcript.map((t, ti) => (
+                                  <p className={`rec-turn rt-${t.who}`} key={ti}>
+                                    <span className="rec-turn-time num">{t.time}</span>
+                                    <span className="rec-turn-who">{t.speaker}:</span>{' '}
+                                    {t.text}
+                                  </p>
+                                ))
+                              ) : (
+                                <ul className="rec-summary-list">
+                                  {(leg.summary?.length
+                                    ? leg.summary
+                                    : deriveSummary(leg.transcript)
+                                  ).map((s, si) => (
+                                    <li key={si}>{s}</li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
                           </div>
                         ) : null}
                       </div>

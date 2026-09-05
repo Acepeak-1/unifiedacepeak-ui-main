@@ -572,8 +572,6 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
         ) : (
           <>
             {listRows.map((row, index) => {
-              const isLive =
-                !!liveNumber && !!row.number && row.number.endsWith(liveNumber.slice(-7));
               const label = sectionLabel(row.raw);
               const showHeader = index === 0 || sectionLabel(listRows[index - 1].raw) !== label;
               return (
@@ -582,7 +580,7 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
                   <div
                   role="button"
                   tabIndex={0}
-                  className={`call-row ${selectedId === row.id ? 'on' : ''} ${isLive ? 'live-now' : ''}`}
+                  className={`call-row ${selectedId === row.id ? 'on' : ''}`}
                   onClick={() => onSelect(row)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -630,7 +628,6 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
                       {row.hasRecording ? (
                         <Ic n="rec" size={11} className="cr-rec-ic" />
                       ) : null}
-                      {isLive ? <span className="tag pos">Live</span> : null}
                     </div>
                   </div>
                   {row.number ? (
