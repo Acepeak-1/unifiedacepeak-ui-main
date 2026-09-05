@@ -227,6 +227,33 @@
   font-weight: 800;
   letter-spacing: -0.035em;
 }
+/* Opt-in serif title, e.g. Directory's Groups/Roles/Locations/External/
+   Blocked pages and their create dialogs — only applied where a page passes
+   this class explicitly, so it never touches the default heading above. */
+.dir-serif-heading {
+  font-family: 'Instrument Serif', Georgia, 'Times New Roman', Times, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 27px;
+  line-height: 41px;
+  letter-spacing: normal;
+  color: #171717;
+}
+/* .mcm-page .page-head h1 (above) sets its own font-size/weight/letter-
+   spacing with higher specificity (2 classes + an element) than the plain
+   .dir-serif-heading class alone, so it was winning there — this repeats
+   the same three properties at matching specificity to actually override it. */
+.mcm-page .page-head h1.dir-serif-heading {
+  font-size: 27px;
+  font-weight: 400;
+  letter-spacing: normal;
+  /* The base rule's 41px line-height (1.5x the font size) is fine inside a
+     dialog title, but in the page header row it made the box tall enough to
+     push up into the fixed top nav bar, hiding most of the title behind it.
+     A page heading only needs enough line-height to clear the italic
+     serif's own ascent/descent, not 1.5x. */
+  line-height: 1.3;
+}
 .mcm-page .page-head p {
   margin: 3px 0 0;
   font-size: 13px;
@@ -5009,6 +5036,13 @@
 }
 .mcm-setcard-ht {
   min-width: 0;
+  /* Without this, .mcm-setcard-h's `justify-content: space-between` treats
+     the icon and this block as the only two flex children whenever a card
+     passes no `aside` — pushing the title/description to the far right
+     instead of leaving it next to the icon. Growing to fill the row makes
+     the icon+title read as one left-aligned group either way, and still
+     leaves an aside (when one is passed) pushed to the true right edge. */
+  flex: 1;
 }
 .mcm-setcard-h h3 {
   margin: 0;

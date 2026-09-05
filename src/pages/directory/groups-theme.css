@@ -1,0 +1,169 @@
+/* Groups page — scoped to .grp-theme so it only touches this page. */
+.grp-canvas {
+  background: #f3f4f6;
+}
+
+/* .mcm-page sizes .page via flexbox and relies on it being a direct flex
+   child; this wrapper div sits between them, so without `display: contents`
+   .page can't shrink/scroll and instead gets clipped by .mcm-page's
+   `overflow: hidden`. See people-theme.css's .ppl-red-theme rule for the
+   full explanation — same fix, every Directory page wrapper needs it. */
+.grp-theme {
+  display: contents;
+}
+
+/* The shared .fchip search pill turns its border/text --accent-ink on hover,
+   which defaults to blue since this page sets no accent override — kept
+   black here instead. */
+.mcm-page .grp-theme .fchip:hover {
+  border-color: var(--line);
+  color: #171717;
+}
+
+/* Groups table skin: matches the .tbl/.tbl__* row spec used on the analytics
+   tables (avatar+name cell, uppercase header, muted secondary values). */
+.grp-theme .tbl-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+}
+.grp-theme .tbl {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.grp-theme .tbl__head-row {
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+}
+.grp-theme .tbl__th {
+  background: #fafafa;
+  padding: 13px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #737373;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.grp-theme .tbl__th:first-child {
+  padding-left: 18px;
+}
+.grp-theme .tbl__th--left {
+  text-align: left;
+}
+.grp-theme .tbl__row {
+  background: #ffffff;
+  transition: background-color 0.15s ease;
+  height: 52.67px;
+}
+.grp-theme .tbl__row:hover {
+  background: #fafafa;
+}
+.grp-theme .tbl__td {
+  background: transparent;
+  padding: 8px 18px;
+  height: auto;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+.grp-theme .tbl__td--left {
+  text-align: left;
+}
+.grp-theme .tbl__agent {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+.grp-theme .tbl__name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25rem;
+  color: #020617;
+}
+.grp-theme .tbl__value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #020617;
+}
+.grp-theme .tbl__value--muted {
+  font-weight: 400;
+  color: #334155;
+}
+
+.grp-theme .btn.primary {
+  background: #171717;
+  color: #fff;
+}
+.grp-theme .btn.primary:hover {
+  background: #000;
+}
+
+/* Create-group dialog: same shape as the People page's own centred modal
+   (see .ppl-invite-theme) — content/fields inside NewDepartment are
+   untouched, only the container becomes a dialog instead of a side drawer. */
+.grp-create-theme {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Tighter vertical rhythm so the form fits with less scrolling — the fields
+   themselves inside NewDepartment/DepartmentInfo are untouched, only the
+   surrounding spacing shrinks. */
+.grp-create-theme .gap-3 {
+  gap: 8px;
+}
+.grp-create-theme .gap-4 {
+  gap: 10px;
+}
+.grp-create-theme label {
+  font-size: 12.5px;
+}
+.grp-create-theme input,
+.grp-create-theme .custom-react-select__control {
+  min-height: 34px !important;
+  height: 34px !important;
+  font-size: 12.5px;
+}
+
+/* No colour change on hover or focus (i.e. click) for inputs or the location
+   dropdown — the base Input/react-select components both turn the border
+   the tenant's accent colour, which read as a stray outline here. */
+.grp-create-theme input:hover,
+.grp-create-theme input:focus {
+  border-color: #d1d5db !important;
+  box-shadow: none !important;
+}
+@layer base {
+  .grp-create-theme .custom-react-select__control,
+  .grp-create-theme .custom-react-select__control:hover,
+  .grp-create-theme .custom-react-select__control--is-focused,
+  .grp-create-theme .custom-react-select__control--menu-is-open {
+    border-color: #d1d5db !important;
+  }
+  /* The dropdown's currently-selected option (e.g. the Location list) — was
+     a solid black bar via the platform's accent colour. */
+  .grp-create-theme .custom-react-select__option--is-selected {
+    background-color: #f3f4f6 !important;
+    color: #171717 !important;
+  }
+  .grp-create-theme .custom-react-select__option:hover,
+  .grp-create-theme .custom-react-select__option--is-focused {
+    background-color: #f3f4f6 !important;
+    color: #171717 !important;
+  }
+}
+

@@ -688,6 +688,10 @@ const Sidebar = () => {
           {searchedItems?.map(
             ({ type, icon = '', path, title, children, value, enabled }, index: number) => {
               const isActive = value === activeItem;
+              /* People gets the black/red treatment matching its own pages
+                 (Directory > People); every other section keeps the platform's
+                 blue accent. */
+              const isPeopleArea = value === 'users';
               if (type === 'accordion') {
                 const visibleChildren = (children || [])?.filter((child: any) =>
                   canShowItem(child, IS_ADMIN),
@@ -703,7 +707,17 @@ const Sidebar = () => {
                     collapsible
                   >
                     <AccordionItem value={value} className="">
-                      <AccordionTrigger className="p-0 items-center" isActive={isActive}>
+                      <AccordionTrigger
+                        className="p-0 items-center"
+                        isActive={isActive}
+                        {...(isPeopleArea
+                          ? {
+                              activeClassName:
+                                '[&>button[data-state=open]]:bg-red-50 [&>button[data-state=open]]:text-red-600 [&>button[data-state=open]]:border-r-red-600 [&>button[data-state=open]]:border-r-2',
+                              activeIconClassName: 'text-red-600',
+                            }
+                          : {})}
+                      >
                         <div className="flex items-center w-full px-3 h-14 gap-2 cursor-pointer font-medium whitespace-nowrap">
                           <span className="mcm-adminnav-iconwrap">
                             <Icon name={icon as IconType} className="w-6 h-6 p-0.5" />
@@ -711,7 +725,9 @@ const Sidebar = () => {
                           <span className="mcm-adminnav-label">{title}</span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="border md:border-0  md:bg-ucass-primary-200/20 bg-white z-10 relative">
+                      <AccordionContent
+                        className={`border md:border-0 z-10 relative bg-white ${isPeopleArea ? 'md:bg-red-50/40' : 'md:bg-ucass-primary-200/20'}`}
+                      >
                         {visibleChildren?.map(
                           ({ title, path, icon, extraActiveTab, enabled }: any, index: number) => {
                             return (

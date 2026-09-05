@@ -3,7 +3,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { formInitialState } from '../../constants';
 import AddUserInfo from './add-user-info';
 import SetupOption from './setup-options';
-import Stepper from '@/components/custom/stepper';
+import { Ic } from '@/components/mcm/icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addMember } from '@/services/api';
 import Loader from '@/components/custom/loader';
@@ -23,9 +23,10 @@ import { handleAlert } from '@/lib/utils';
 
 interface AddUsersProps {
   setDrawerState: (state: boolean) => void;
+  onReset?: () => void;
 }
 
-const AddUsers: FC<AddUsersProps> = ({ setDrawerState }) => {
+const AddUsers: FC<AddUsersProps> = ({ setDrawerState, onReset }) => {
   const { data: dataGetMyPlanDetails } = useGetMyPlanDetails();
   const { refetch: refetchUserApi } = useUser();
 
@@ -99,6 +100,11 @@ const AddUsers: FC<AddUsersProps> = ({ setDrawerState }) => {
     setPaymentCalculation(null);
     queryClient.invalidateQueries(['fetchUsersList'], { exact: true });
     queryClient.invalidateQueries(['getMyPlanDetails'], { exact: true });
+    /* Directory > People reads a differently-keyed query ('directoryPeople')
+       than the shared USER_QUERY_KEYS.directoryAll invalidated below, so a
+       newly added user never showed up there without also invalidating it
+       directly. */
+    queryClient.invalidateQueries({ queryKey: ['directoryPeople'] });
     invalidateGlobalUsersDirectory(queryClient);
 
     refetchUserApi();
@@ -287,14 +293,37 @@ const AddUsers: FC<AddUsersProps> = ({ setDrawerState }) => {
     <>
       <FormProvider {...formInstance}>
         <div className="mcm-page mcm-invite w-full h-full min-h-0 overflow-hidden flex flex-col justify-between">
-          <Stepper steps={StepContent} currentStep={currentStep} mobileHorizontal />
+          <nav className="flex flex-wrap items-center justify-center gap-1 border-b border-gray-200 bg-white py-1 pl-3 pr-44">
+            {StepContent.map((step, index) => (
+              <span key={step.number} className="flex shrink-0 items-center gap-1">
+                {index > 0 && <Ic n="chev" size={14} className="text-gray-300" />}
+                <button
+                  type="button"
+                  onClick={() => step.number < currentStep && setCurrentStep(step.number)}
+                  className={
+                    currentStep === step.number
+                      ? 'text-sm font-medium text-gray-900 whitespace-nowrap'
+                      : 'text-sm font-normal text-gray-400 whitespace-nowrap'
+                  }
+                >
+                  {step.title}
+                </button>
+              </span>
+            ))}
+          </nav>
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="h-full min-h-0 w-full flex flex-1 flex-col justify-between gap-4 overflow-hidden"
           >
             <div className="min-h-0 flex-1 overflow-y-auto">{stepLookUp?.[currentStep]}</div>
-            <div className="mt-2 shrink-0 border-t border-gray-200 bg-white pt-4 lg:mt-0 lg:border-t-0 lg:bg-transparent lg:pt-0">
-              <div className="flex min-w-max flex-nowrap justify-start gap-2 overflow-x-auto overflow-y-hidden sm:justify-end lg:min-w-0 lg:justify-end lg:overflow-visible">
+            <div className="mt-1 flex shrink-0 items-center gap-2 border-t border-gray-200 bg-white pt-2 lg:mt-0 lg:border-t-0 lg:bg-transparent lg:pt-0">
+              {onReset ? (
+                <button type="button" className="ppl-invite-reset-btn" onClick={onReset}>
+                  <Ic n="refresh" size={13} />
+                  Reset
+                </button>
+              ) : null}
+              <div className="ml-auto flex min-w-max flex-nowrap justify-end gap-2 overflow-x-auto overflow-y-hidden lg:min-w-0 lg:overflow-visible">
                 <button
                   onClick={() => {
                     if (currentStep === 1) {

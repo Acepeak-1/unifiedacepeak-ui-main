@@ -1,7 +1,5 @@
-import ErrorTooltip from '@/components/custom/error-tooltip';
 import CustomSelect from '@/components/custom/custom-select';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { City, State } from 'country-state-city';
 import { useEffect, useMemo, useRef } from 'react';
 import countryList from '@/lib/countries.json';
@@ -164,7 +162,7 @@ const SiteInfo = ({ formInstance }: any) => {
         </div>
         <div className="flex w-full items-center gap-3">
           <div className="flex w-full gap-4">
-            <div className="relative flex w-full gap-1">
+            <div className="relative flex w-full max-w-xs gap-1">
               <Input
                 label="Location Name"
                 {...register('name')}
@@ -180,23 +178,16 @@ const SiteInfo = ({ formInstance }: any) => {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <h5 className="font-semibold text-gray-900 text-md">Physical Address</h5>
-          <p className="text-gray-500 text-sm">Enter the geographical address for this site.</p>
         </div>
         <div className="flex flex-col gap-5 sm:gap-6">
           <div className="flex w-full items-center gap-3">
             <div className="relative flex w-full gap-1">
-              <div className="flex w-full flex-col gap-1.5">
-                <div className="flex items-center justify-between gap-1">
-                  <Label>Street Address</Label>
-                  {errors?.address?.message && <ErrorTooltip text={errors?.address?.message} />}
-                </div>
-                <textarea
-                  placeholder="Enter address"
-                  {...register('address')}
-                  rows={3}
-                  className={`border w-full ${errors?.address?.message ? 'border-red-500' : 'border-gray-300'} rounded-xl text-sm resize-none p-3 hover:border-primary focus:border-primary focus-visible:border-primary focus-visible:outline-none text-gray-700`}
-                />
-              </div>
+              <Input
+                placeholder="Enter address"
+                {...register('address')}
+                error={errors?.address?.message}
+                className="w-full"
+              />
             </div>
           </div>
 
