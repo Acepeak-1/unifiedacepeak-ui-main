@@ -123,7 +123,7 @@ const Sidebar = () => {
                 >
                   <AccordionItem value={value} className="">
                     <AccordionTrigger className="items-center p-0" isActive={isActive}>
-                      <div className="flex min-h-14 w-full items-center gap-2 px-3 py-3 text-sm font-medium">
+                      <div className="flex min-h-14 w-full items-center gap-2 px-3 py-3 text-sm font-medium transition-colors duration-150 hover:bg-[#e3e3e3] hover:text-[#dc2626]">
                         <Icon name={icon as IconType} className="h-6 w-6 p-0.5" />
                         {title}
                       </div>
@@ -198,7 +198,7 @@ const Tile = ({
 
   return (
     <div
-      className={`flex min-h-14 w-full items-center gap-2 px-3 py-3 cursor-pointer ${isActive ? (isChildrenExist ? 'text-primary' : 'border-r-2 border-r-primary bg-ucass-primary-200/50 text-primary') : 'text-gray-900/80'} ${child ? 'border-t border-gray-200 pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
+      className={`flex min-h-14 w-full items-center gap-2 px-3 py-3 cursor-pointer transition-colors duration-150 ${isActive ? (isChildrenExist ? 'text-primary' : 'border-r-2 border-r-primary bg-ucass-primary-200/50 text-primary') : 'text-gray-900/80 hover:bg-[#e3e3e3] hover:text-[#dc2626]'} ${child ? 'border-t border-gray-200 pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
       {...getRoutePrefetchHandlers(path)}
       onClick={handleClick}
     >

@@ -158,7 +158,7 @@ const Tile = ({ title, path, icon, isAccordionTrigger = false, enabled }: any) =
 
   return (
     <div
-      className={`flex h-10 min-w-max items-center gap-2 rounded-lg border border-transparent px-3 cursor-pointer md:h-14 md:w-full md:min-w-0 md:rounded-none md:border-0 ${isActive ? 'text-primary bg-ucass-primary-200/50 border-primary md:border-r-2 md:border-r-primary' : 'text-gray-900/80 hover:bg-gray-50'} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
+      className={`flex h-10 min-w-max items-center gap-2 rounded-lg border border-transparent px-3 cursor-pointer transition-colors duration-150 md:h-14 md:w-full md:min-w-0 md:rounded-none md:border-0 ${isActive ? 'text-primary bg-ucass-primary-200/50 border-primary md:border-r-2 md:border-r-primary' : 'text-gray-900/80 hover:bg-[#e3e3e3] hover:text-[#dc2626]'} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
       {...getRoutePrefetchHandlers(path)}
       onClick={handleClick}
     >

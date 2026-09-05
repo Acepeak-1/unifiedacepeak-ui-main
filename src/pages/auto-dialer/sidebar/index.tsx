@@ -129,7 +129,7 @@ const CampaignSidebar: FC = () => {
                 >
                   <AccordionItem value={value} className="">
                     <AccordionTrigger className="p-0 items-center" isActive={isActive}>
-                      <div className="flex h-12 min-w-max items-center gap-2 px-3 font-medium lg:h-14 lg:w-full lg:min-w-0">
+                      <div className="flex h-12 min-w-max items-center gap-2 px-3 font-medium transition-colors duration-150 hover:bg-[#e3e3e3] hover:text-[#dc2626] lg:h-14 lg:w-full lg:min-w-0">
                         <Icon name={icon as IconType} className="w-6 h-6 p-0.5" />
                         {label}
                       </div>
@@ -164,12 +164,12 @@ const Tile = ({ label, path, icon, children, extraPaths = [], enabled }: any) =>
   const isChildrenExist = Boolean(children && children?.length);
   return (
     <div
-      className={`flex h-12 min-w-max items-center gap-2 px-3 cursor-pointer lg:h-14 lg:w-full lg:min-w-0 ${
+      className={`flex h-12 min-w-max items-center gap-2 px-3 cursor-pointer transition-colors duration-150 lg:h-14 lg:w-full lg:min-w-0 ${
         isActive
           ? isChildrenExist
             ? 'text-primary'
             : 'text-primary bg-ucass-primary-200/50 border-b-2 border-b-primary lg:border-b-0 lg:border-r-2 lg:border-r-primary'
-          : 'text-gray-900/80'
+          : 'text-gray-900/80 hover:bg-[#e3e3e3] hover:text-[#dc2626]'
       } ${isChildrenExist ? 'pl-10 lg:pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
       {...getRoutePrefetchHandlers(path)}
       onClick={() => {

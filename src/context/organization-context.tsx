@@ -83,13 +83,9 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchMainSiteInfo = useCallback(async () => {
-    /* The API resolves the tenant from Origin/Referer (see the dev proxy in
-       vite.config.ts), not from this field — but it still validates it, and a
-       stale domain here (qa.mycountrymobile.com) gets rejected with 422. Match
-       the same tenant domain the proxy presents, so local dev asks for the
-       tenant it's actually about to be answered as. */
+    const configuredDomain = (getEnv() as { VITE_APP_DOMAIN?: string }).VITE_APP_DOMAIN;
     const domain = getDomain().includes('localhost')
-      ? `https://${getEnv().VITE_APP_DOMAIN || 'ucaas.acepeak.com'}`
+      ? `https://${configuredDomain || 'ucaas.acepeak.com'}`
       : getDomain();
     try {
       setIsLoading(true);
@@ -117,31 +113,11 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     document.title = '';
     fetchMainSiteInfo();
   }, [fetchMainSiteInfo]);
-  // Apply mainSiteInfo colors to CSS variables: --primary, --color-ucass-primary-200, --color-ucass-active
-  useEffect(() => {
-    if (!mainSiteInfo || typeof document === 'undefined') return;
-    const root = document.documentElement;
-    const primary = mainSiteInfo.primary_color;
-    const secondary = mainSiteInfo.secondary_color;
-    const activeSidebar = mainSiteInfo.active_sidebar_color;
-    const activeSidebarbg = mainSiteInfo.active_sidebar_bg_color;
-    const loginBgColor = mainSiteInfo.login_page_bg_color;
-    if (typeof primary === 'string' && primary) {
-      root.style.setProperty('--primary', primary);
-    }
-    if (typeof secondary === 'string' && secondary) {
-      root.style.setProperty('--color-ucass-primary-200', secondary);
-    }
-    if (typeof activeSidebar === 'string' && activeSidebar) {
-      root.style.setProperty('--color-ucass-active', activeSidebar);
-    }
-    if (typeof activeSidebarbg === 'string' && activeSidebarbg) {
-      root.style.setProperty('--color-ucass-active-bg', activeSidebarbg);
-    }
-    if (typeof loginBgColor === 'string' && loginBgColor) {
-      root.style.setProperty('--color-ucass-login-bg', loginBgColor);
-    }
-  }, [mainSiteInfo]);
+  // Per-org white-label color override — disabled. This build is locked to the
+  // Acepeak red/neutral brand (index.css fallbacks), so a backend org record's
+  // own primary/secondary/sidebar/login-bg colors (e.g. MCM's blue on the qa
+  // domain) must not overwrite it at runtime. Re-enable by restoring the
+  // setProperty calls here if per-tenant color white-labeling is needed again.
 
   // Apply organization branding to the document and social-sharing metadata.
   useEffect(() => {
@@ -230,9 +206,6 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     return <ServerMaintenance onRefresh={fetchMainSiteInfo} />;
   }
 
-  /* Only reached once the org fetch has actually succeeded, so a missing key
-     here means the response genuinely had none — not that the fetch is still
-     in flight or failed, both of which are handled above. */
   if (!stripePublishableKey) {
     return <FullPageLoader />;
   }

@@ -124,7 +124,7 @@ const Locations = () => {
         description="The sites your organisation operates from — address, timezone and who works there."
         actions={
           canAdd ? (
-            <button type="button" className="btn primary" onClick={() => setCreating(true)}>
+            <button type="button" className="btn primary soft-accent" onClick={() => setCreating(true)}>
               <Ic n="plus" />
               New location
             </button>
