@@ -85,7 +85,7 @@ const CommonGreetingNotification: FC<IGREETINGPROPS> = ({
           {visibleMediaOptions.map(({ name, label, icon, iconClass, disabled }) => (
             <div key={name} className="flex flex-col gap-4 w-full py-2 first:pt-0 last:pb-0">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center flex-wrap gap-1">
+                <div className="flex items-center flex-wrap gap-1 min-w-0">
                   <Icon name={icon} className={iconClass} />
                   <p className="text-gray-900 text-sm font-medium">{`Do you want to add "${capitalizeFirstLetter(label)} message" ?`}</p>
                 </div>

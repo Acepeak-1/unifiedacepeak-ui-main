@@ -80,6 +80,12 @@ function TableManager({
   filterRef,
   handleFilterSelect = defaultHandleFilterSelect,
   customClass = '',
+  tableWrapClassName = 'overflow-auto table-scroll rounded-xl border border-gray-200 bg-white',
+  tableClassName = 'w-full text-xs xxl:text-sm text-gray-700 h-full',
+  theadClassName = 'bg-gray-50 text-gray-90/80 sticky top-0 left-0 z-10',
+  headerRowClassName = '',
+  getHeaderCellClassName,
+  getCellClassName,
   descriptionEmptyTable = '',
   emptyIcon = null,
   imageSize = 'min-w-44  max-w-44',
@@ -125,6 +131,25 @@ function TableManager({
   filterRef?: any;
   handleFilterSelect?: any;
   customClass?: string;
+  /** Full override of the outer scroll-wrapper's classes (defaults to the
+      current rounded/bordered card look) — for a table that needs to sit
+      flush inside its own page card instead of drawing a second one. */
+  tableWrapClassName?: string;
+  /** Full override of the `<table>` element's own classes. */
+  tableClassName?: string;
+  /** Full override of `<thead>`'s classes. */
+  theadClassName?: string;
+  /** Classes for the header `<tr>` — empty by default since the header
+      background currently lives on `<thead>` instead. */
+  headerRowClassName?: string;
+  /** Full override of a header `<th>`'s classes, given its resolved text
+      alignment ('left' | 'center' | 'right'). Falls back to the current
+      hardcoded template when omitted, so every existing table is
+      unaffected. */
+  getHeaderCellClassName?: (textAlign: string) => string;
+  /** Full override of a body `<td>`'s classes, given the cell instance.
+      Falls back to the current hardcoded template when omitted. */
+  getCellClassName?: (cell: any) => string;
   descriptionEmptyTable?: string;
   imageSize?: string;
   emptyIcon?: React.ReactNode;
@@ -343,7 +368,7 @@ function TableManager({
       )}
       <div
         ref={tableScrollRef}
-        className={`overflow-auto table-scroll rounded-xl border border-gray-200 bg-white ${customClass}`}
+        className={`${tableWrapClassName} ${customClass}`}
         style={
           isHeightSet && showPagination ? { height: tableMaxHeight || `${tableHeight}px` } : {}
         }
@@ -358,10 +383,10 @@ function TableManager({
           />
         )}
 
-        <Table className="w-full text-xs xxl:text-sm text-gray-700 h-full ">
-          <TableHeader className="bg-gray-50 text-gray-90/80 sticky top-0 left-0 z-10">
+        <Table className={tableClassName}>
+          <TableHeader className={theadClassName}>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className={headerRowClassName}>
                 {hasSubRows && (
                   <TableHead
                     className={`px-2 xl:px-4 py-2 font-semibold border-b  bborder-gray-200 last-of-type:border-r-0 text-gray-900/80`}
@@ -374,7 +399,11 @@ function TableManager({
                   return (
                     <TableHead
                       key={`${header.id}_${headerIndex}`}
-                      className={`px-2 xl:px-4 py-2 font-semibold text-${textAlign ?? 'left'} border-b  border-gray-200 last-of-type:border-r-0 text-gray-900/80`}
+                      className={
+                        getHeaderCellClassName
+                          ? getHeaderCellClassName(textAlign ?? 'left')
+                          : `px-2 xl:px-4 py-2 font-semibold text-${textAlign ?? 'left'} border-b  border-gray-200 last-of-type:border-r-0 text-gray-900/80`
+                      }
                     >
                       {header.isPlaceholder
                         ? null
@@ -417,6 +446,7 @@ function TableManager({
                       makeSubRowPayload={makeSubRowPayload}
                       columns={columns}
                       getRowClassName={getRowClassName}
+                      getCellClassName={getCellClassName}
                       showMoreData={showMoreData}
                       renderSubComponent={renderSubComponent}
                     />
@@ -597,7 +627,7 @@ function TableManager({
         return (
         // sticky left-0 bottom-2
         <div className="z-10 flex w-full flex-col gap-2 rounded-xl border border-gray-200 bg-white px-2 py-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2 font-semibold sm:gap-3">
               <div className="flex flex-wrap items-center gap-3 sm:divide-x sm:divide-gray-200">
                 {perPageSelect}

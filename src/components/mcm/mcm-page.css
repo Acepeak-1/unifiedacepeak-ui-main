@@ -2878,6 +2878,20 @@
   font-weight: 500;
 }
 
+/* Call Handling's own larger reading of this pill — taller padding, a
+   softer border, and room for its bigger icon chip. A modifier rather than
+   a change to the base rule, since the Admin Hub overview page's own
+   search bar (the base `.mcm-adminhome-search` size) isn't part of this
+   ask. */
+.mcm-adminhome-search--lg {
+  padding: 7px 16px;
+  min-width: 260px;
+  border-color: var(--line-2);
+}
+.mcm-adminhome-search--lg input {
+  font-size: 14px;
+}
+
 .mcm-adminhome-tabs {
   position: relative;
   flex: none;
@@ -4354,6 +4368,15 @@
 .mcm-admin section[data-rail-collapsed='true'] .mcm-adminnav-all.on .mcm-adminnav-iconwrap {
   background: #e3e3e3 !important;
   color: var(--ink) !important;
+}
+/* A group's own icon when its section is open — leaf tiles get the grey
+   chip above once you're on their page, but a group's icon otherwise never
+   showed anything was expanded underneath it in the rail. */
+.mcm-admin
+  section[data-rail-collapsed='true']
+  [data-slot='accordion-trigger'][data-state='open']
+  .mcm-adminnav-iconwrap {
+  color: #dc2626 !important;
 }
 
 /* ==================================================================

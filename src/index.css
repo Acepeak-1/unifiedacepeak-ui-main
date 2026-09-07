@@ -12,6 +12,17 @@
    means a shared class like .mcm-stickyfoot works wherever it is applied
    instead of only on the 31 files that happened to import the stylesheet. */
 @import './components/mcm/mcm-page.css';
+/* Same reasoning, same fix: pulled in through the root stylesheet rather
+   than a plain `import '...css'` inside the Call Handling component file.
+   A component-level CSS import is a separate module in Vite's graph and
+   isn't guaranteed to land after Tailwind's own `@layer utilities` in the
+   final cascade — which is exactly what was happening here: Tailwind's
+   `px-2`/`h-10`/etc. on the shared `<TableHead>` kept winning over this
+   file's `.tbl__th` no matter what the values said, because of *where*
+   the rules ended up, not what they contained. Routing it through here
+   puts it in the same PostCSS-processed bundle as Tailwind and mcm-page.css,
+   in the same reliable position that already makes mcm-page.css win. */
+@import './components/mcm/ai-tools-table.css';
 
 @theme {
   --color-ucass-gray: oklch(0.9612 0 0);
@@ -1678,6 +1689,74 @@
   .ten-dlc-brand-drawer .ten-dlc-brand-footer-btn {
     width: auto;
     flex: 0 0 auto;
+  }
+}
+
+/* Call Handling Template, desktop only (below 1024px the rules in the
+   media query above already turn these into small scrollable pills,
+   which is the right call on a narrow screen) — the underlined-tab look
+   `UpsertCallForwarding` uses everywhere else reads as one more list of
+   options rather than progress through a form, so this step reads instead
+   as a breadcrumb ("Settings & Permissions › Call Handling › Media"):
+   plain text, a `›` between steps, current step dark and bold, the rest
+   quieter grey. Scoped through the same `call-handling-template-*` hooks
+   the component already exposes for `isUpsertTemplate`, so Numbers' own
+   Set Forwarding flow (the same shared component, without that flag) never
+   sees this. */
+@media (min-width: 1025px) {
+  .call-handling-template-tabs-list {
+    justify-content: center;
+    gap: 0.375rem;
+    border: none;
+    background: transparent;
+  }
+
+  .call-handling-template-tab-trigger {
+    position: relative;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-gray-400);
+  }
+
+  .call-handling-template-tab-trigger[data-state='active'] {
+    color: var(--color-gray-900) !important;
+    font-weight: 700;
+  }
+
+  .call-handling-template-tab-trigger:not(:first-child) {
+    margin-left: 0.75rem;
+    padding-left: 0.75rem !important;
+  }
+
+  .call-handling-template-tab-trigger:not(:first-child)::before {
+    content: '\203A';
+    position: absolute;
+    left: -0.125rem;
+    font-weight: 400;
+    color: var(--color-gray-300);
+  }
+
+  /* The footer (Cancel/Prev/Next/Submit) is a normal child of the same
+     form that also holds the scrollable step content, inside the modal's
+     own scrolling wrapper — with enough rows in a step, that pushed the
+     footer down past the modal's visible height instead of leaving it
+     reachable, and once scrolled to it sat flush against the dim backdrop
+     with nothing marking it as still part of the dialog. Sticking it to
+     the bottom of that same scroll container keeps it always in view
+     without needing to restructure the shared form itself. */
+  .call-handling-template-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: var(--color-white);
+    border-top: 1px solid var(--color-gray-100);
+    padding-top: 0.75rem;
+    padding-bottom: 0.25rem;
+    margin-top: 0.5rem;
   }
 }
 
