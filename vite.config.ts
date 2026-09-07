@@ -68,7 +68,7 @@ export default defineConfig({
     // the local .env for this to be used.
     proxy: {
       '/api': {
-        target: 'https://api2.mycountrymobile.com',
+        target: 'https://api2.acepeak.com',
         changeOrigin: true,
         // The API resolves which tenant ("website settings") a request belongs
         // to from Origin/Referer, not from the path or anything the app sends.
