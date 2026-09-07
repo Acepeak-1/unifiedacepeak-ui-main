@@ -1,4 +1,4 @@
-import { CloseIcon, SearchLine } from '@/assets/icons';
+import { SearchLine } from '@/assets/icons';
 import { Icon } from '@/assets/icons/icon';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import CustomSelect from '@/components/custom/custom-select';
@@ -6,7 +6,7 @@ import NumberWithFlag from '@/components/custom/number-with-flag';
 import TableManager from '@/components/custom/table-manager';
 import { invalidateNumberLists } from '@/lib/number-list-cache';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -16,6 +16,7 @@ import { handleAlert } from '@/lib/utils';
 import { allNumbersList, assignDIDNumber, getUserList } from '@/services/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { Hash } from 'lucide-react';
 import { FC, useState } from 'react';
 
 interface IAssignDID {
@@ -156,17 +157,20 @@ const AssignDIDNumber: FC<IAsiignDIDProps> = ({ modalState, setModalState, selec
   return (
     <Dialog open={modalState} onOpenChange={(val) => setModalState(val)}>
       <DialogContent className="min-w-3/5 w-fit p-3" showCloseButton={false}>
-        <div className="flex flex-col gap-1.5  text-900/80">
-          <div className="font-semibold truncate text-md flex items-center justify-between">
+        <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
+          <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
+            <Hash className="h-4 w-4 text-black" />
             Assign Number
-            <div
-              onClick={() => setModalState(false)}
-              className="cursor-pointer ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
-            >
-              <CloseIcon className="w-3 h-3" />
-            </div>
-          </div>
-        </div>
+          </DialogTitle>
+          <button
+            type="button"
+            onClick={() => setModalState(false)}
+            aria-label="Close"
+            className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+          >
+            <Icon name="CloseIcon" className="h-4 w-4" />
+          </button>
+        </DialogHeader>
         <div className="flex flex-col gap-4 mt-2">
           <div className="flex justify-between  gap-2 items-end">
             <div className="flex flex-col  gap-1">

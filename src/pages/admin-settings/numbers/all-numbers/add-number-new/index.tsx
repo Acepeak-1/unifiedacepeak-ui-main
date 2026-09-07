@@ -25,6 +25,7 @@ import { GETSCHEMA, initialState, packageName } from '../constants';
 import CreateNewAddress from '../../identities-and-address-page-layout/addresses/create-new-address';
 import Loader from '@/components/custom/loader';
 import { toast } from 'react-toastify';
+import { ArrowRight } from 'lucide-react';
 
 const AddNumber = ({ handleClose }: any) => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -310,6 +311,25 @@ const AddNumber = ({ handleClose }: any) => {
     [currentStep, isValid, needsRegistration, trigger],
   );
 
+  /* Whether a number needs registration is only known once its group/prefix
+     is picked, which changes the step count from 2 to 4 (or back) out from
+     under a `currentStep` that was already sitting on the old last step. A
+     mismatched currentStep quietly satisfies neither "show Next" nor "show
+     Pay" condition below, so both buttons vanish. Selecting a specific DID
+     number doesn't move currentStep itself, but it's the moment this
+     mismatch becomes visible, since the number list only appears once a
+     group is chosen. */
+  useEffect(() => {
+    if (currentStep > steps.length) {
+      setCurrentStep(steps.length);
+    }
+  }, [steps.length, currentStep]);
+
+  /* >= rather than === so a currentStep that briefly overshoots steps.length
+     (before the clamp above runs) still reads as "last step" instead of
+     matching neither the Next nor the Pay condition and hiding both. */
+  const isLastStep = currentStep >= steps.length;
+
   const stepLookUp: any = useMemo(
     () =>
       needsRegistration
@@ -560,10 +580,10 @@ const AddNumber = ({ handleClose }: any) => {
           onSubmit={handleSubmit(onSubmit, onInvalid)}
           className="flex min-h-0 w-full flex-1 flex-col justify-between gap-3"
         >
-          <div className="min-h-0 flex-1 overflow-y-auto pr-0.5 sm:pr-1">
+          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pr-0.5 sm:pr-1">
             {stepLookUp?.[currentStep]}
           </div>
-          <div className="flex flex-nowrap items-center justify-between gap-2 border-t border-gray-200 pt-3 sm:justify-end sm:pt-4">
+          <div className="relative z-10 flex flex-none flex-nowrap items-center justify-between gap-2 border-t border-gray-200 bg-white pt-3 sm:justify-end sm:pt-4">
             <Button
               onClick={() => {
                 if (currentStep === 1) {
@@ -572,24 +592,32 @@ const AddNumber = ({ handleClose }: any) => {
                   setCurrentStep((prev) => prev - 1);
                 }
               }}
-              variant="transparent"
+              variant="outline"
               type="button"
-              className="min-w-0 flex-1 px-3 sm:flex-none"
+              className="min-w-0 flex-1 rounded-full border-gray-300 bg-white px-5 text-black hover:bg-gray-100 hover:text-black sm:flex-none"
             >
               {currentStep === 1 ? 'Close' : 'Back'}
             </Button>
             <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
-              {currentStep !== steps?.length && (
+              {/* `needsRegistration` (set once a DID group is picked) flips
+                  steps.length between 2 and 4, and currentStep doesn't move
+                  when that happens — so the old `currentStep !== steps.length`
+                  / `currentStep === steps.length` pair could both land false
+                  for the same render and hide Next AND Pay together. A single
+                  "am I on/past the last step" check can't fall between both
+                  conditions the way two separate equality checks could. */}
+              {!isLastStep && (
                 <Button
                   variant="outline"
                   type="submit"
                   disabled={isLoading}
-                  className="min-w-0 flex-1 px-3 sm:flex-none"
+                  className="min-w-0 flex-1 rounded-full border-black bg-black px-5 text-white hover:bg-gray-800 hover:text-white sm:flex-none"
                 >
                   {isLoading && <Loader variant="blue" />}Next
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
-              {currentStep === steps?.length && (
+              {isLastStep && (
                 <Button
                   variant="outline"
                   className="min-w-0 flex-1 rounded-full border-black bg-black px-3 text-white hover:bg-gray-800 hover:text-white sm:min-w-32 sm:flex-none"

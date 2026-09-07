@@ -25,6 +25,7 @@ import {
 } from '@/lib/utils';
 import { extractFileNameFromUrl, monthsArray, typeArray } from '../constants';
 import Loader from '@/components/custom/loader';
+import { CustomDatePicker } from '@/components/custom/custom-datepicker';
 
 const CreateIdentity = ({ formInstance, className, rowData }: any) => {
   const { isEdit = false, formData = {} } = rowData || {};
@@ -66,6 +67,9 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
     watchSupportingDoc,
     watchMainNumberType,
     watchLocation,
+    watchDay,
+    watchMonth,
+    watchYear,
   ] = watch([
     'type',
     'proofs',
@@ -74,6 +78,9 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
     'supporting_documents',
     'numberType',
     'location',
+    'day',
+    'month',
+    'year',
   ]);
   const { data: identityData = [], isFetching: isIdentityProofLoading } = useQuery({
     queryKey: ['getSingleIdentityList', isEdit, formData?.uuid ?? null],
@@ -262,7 +269,7 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
         className,
       )}
     >
-      <div className="w-full flex gap-4">
+      <div className="w-full flex flex-col gap-4">
         <div className="w-full h-full flex flex-col gap-4">
           <div className="w-full flex flex-col gap-4">
             <div className="flex w-full gap-1 relative">
@@ -487,76 +494,33 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
               </div>
 
               <div className="flex flex-col gap-1.5 w-full">
-                <div className="flex items-center justify-between">
-                  <Label>Birth date</Label>
-                  <div className="flex items-start">
-                    {(errors?.day?.message || errors?.month?.message || errors?.year?.message) && (
-                      <ErrorTooltip
-                        text={
-                          errors?.day?.message || errors?.month?.message || errors?.year?.message
-                        }
-                      />
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2 w-full">
-                  <div className="w-full max-w-12">
-                    <Controller
-                      name="day"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          {...field}
-                          type="number"
-                          placeholder="dd"
-                          value={field.value}
-                          className={`min-w-12 ${
-                            errors?.day?.message
-                              ? 'border-red-500 focus:ring-0 focus:border-red-500 hover:border-red-500'
-                              : ''
-                          }`}
-                          maxLength={2}
-                        />
-                      )}
-                    />
-                  </div>
-                  <div className="w-full">
-                    <Controller
-                      name="month"
-                      control={control}
-                      render={({ field }) => (
-                        <CustomSelect
-                          {...field}
-                          options={monthsArray}
-                          value={field.value}
-                          handleChange={field.onChange}
-                          className={errors?.month?.message ? 'react-select-error' : ''}
-                          placeholder="Select Month"
-                        />
-                      )}
-                    />
-                  </div>
-                  <div className="w-full max-w-20">
-                    <Controller
-                      name="year"
-                      control={control}
-                      render={({ field }) => (
-                        <Input
-                          {...field}
-                          type="number"
-                          placeholder="yyyy"
-                          value={field.value}
-                          maxLength={4}
-                          className={`min-w-14 ${
-                            errors?.year?.message
-                              ? 'border-red-500 focus:ring-0 focus:border-red-500 hover:border-red-500'
-                              : ''
-                          }`}
-                        />
-                      )}
-                    />
-                  </div>
-                </div>
+                <CustomDatePicker
+                  label="Birth date"
+                  placeholder="Select birth date"
+                  error={errors?.day?.message || errors?.month?.message || errors?.year?.message}
+                  value={
+                    watchDay && watchMonth?.value && watchYear
+                      ? new Date(
+                          Number(watchYear),
+                          Number(watchMonth.value) - 1,
+                          Number(watchDay),
+                        )
+                      : null
+                  }
+                  onChange={(date) => {
+                    if (!date) return;
+                    const monthValue = String(date.getMonth() + 1).padStart(2, '0');
+                    setValue('day', String(date.getDate()).padStart(2, '0'), {
+                      shouldValidate: true,
+                    });
+                    setValue(
+                      'month',
+                      monthsArray.find((item) => item.value === monthValue) || null,
+                      { shouldValidate: true },
+                    );
+                    setValue('year', String(date.getFullYear()), { shouldValidate: true });
+                  }}
+                />
               </div>
             </div>
             <div className="flex flex-col gap-1.5 w-full">
@@ -661,7 +625,7 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
                         className={`flex content-center cursor-pointer items-center border min-w-36 rounded-lg h-10 px-4 py-2 gap-2 ${
                           errors?.proofs?.[index]?.file?.message
                             ? 'text-red-500 border-red-500 hover:text-red-500'
-                            : 'text-primary border-primary hover:bg-primary hover:text-white'
+                            : 'text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-900'
                         }`}
                         htmlFor={`file-${index}`}
                       >
@@ -679,8 +643,8 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
                         </p>
                       </Label>
                       <Button
-                        className="hover:bg-red-500 bg-transparent hover:text-white text-red-500"
-                        variant="destructive"
+                        className="hover:bg-gray-100 bg-transparent hover:text-gray-900 text-gray-700 border-gray-300"
+                        variant="outline"
                         onClick={() => {
                           remove(index);
                           setFileNames((prev) => {
@@ -706,7 +670,7 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
             )}
             <div className="w-full flex">
               <Button
-                className="max-w-[140px]"
+                className="max-w-[140px] border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 type="button"
                 variant={'outline'}
                 onClick={() => {
@@ -829,7 +793,7 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
                     </div>
                     <div className="flex gap-2 justify-end">
                       <Label
-                        className={`flex content-center cursor-pointer items-center border min-w-36 rounded-lg h-10 px-4 py-2 gap-2 ${errors?.supporting_documents?.[index]?.file?.message ? 'text-red-500 border-red-500 hover:text-red-500' : 'text-primary border-primary hover:bg-primary hover:text-white'}`}
+                        className={`flex content-center cursor-pointer items-center border min-w-36 rounded-lg h-10 px-4 py-2 gap-2 ${errors?.supporting_documents?.[index]?.file?.message ? 'text-red-500 border-red-500 hover:text-red-500' : 'text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-900'}`}
                         htmlFor={`supportingFile-${index}`}
                       >
                         <input
@@ -846,8 +810,8 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
                         </p>
                       </Label>
                       <Button
-                        className="hover:bg-red-500 bg-transparent hover:text-white text-red-500"
-                        variant={'destructive'}
+                        className="hover:bg-gray-100 bg-transparent hover:text-gray-900 text-gray-700 border-gray-300"
+                        variant={'outline'}
                         onClick={() => {
                           removeSupportingDoc(index);
                           setSupportingDocumentFileNames((prev) => {
@@ -873,7 +837,7 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
             )}
             <div className="w-full flex">
               <Button
-                className="max-w-[140px]"
+                className="max-w-[140px] border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 type="button"
                 variant={'outline'}
                 onClick={() => {
@@ -894,7 +858,7 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
             </div>
           )}
         </div>
-        <div className="w-full h-full border-l border-gray-200 pl-4 flex gap-4">
+        <div className="w-full border-t border-gray-200 pt-4 flex gap-4">
           <div className="w-full flex flex-col gap-3">
             <h3 className="text-shadow-gray-900 flex items-center gap-1.5 font-medium">
               Requirements
