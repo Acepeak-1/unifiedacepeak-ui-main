@@ -1,4 +1,3 @@
-import { Icon } from '@/assets/icons/icon';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import NumberWithFlag from '@/components/custom/number-with-flag';
@@ -12,6 +11,14 @@ import { ColumnDef } from '@tanstack/react-table';
 import { FC, useRef, useState } from 'react';
 import AgentDetailsModal from '@/pages/auto-dialer/campaign/modal/agent-details-modal';
 import { useNavigate } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Activity, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import './leads-table.css';
 
 export interface ILead {
   _id: string;
@@ -269,49 +276,79 @@ const AllLeadsList: FC<any> = ({
       header: 'Action',
       accessorKey: 'action',
       cell: ({ row }) => {
+        /* The three actions moved behind one ⋯ menu. Each keeps the exact
+           handler and permission gate it had as a standalone button, and the
+           menu is only rendered when at least one of them is allowed. */
+        const actions = [
+          !isEditDeleteOnly && {
+            key: 'activity',
+            Icon: Activity,
+            label: 'View activity',
+            run: () =>
+              navigate(`/contact-activity?contactId=${row?.original?._id}&isLeadList=true`),
+          },
+          leadsAccess?.edit && {
+            key: 'edit',
+            Icon: Pencil,
+            label: 'Edit',
+            run: () =>
+              setDrawerState({
+                addContact: true,
+                updateContacts: false,
+                selectedContact: row.original,
+                leadsActivity: false,
+              }),
+          },
+          leadsAccess?.delete && {
+            key: 'delete',
+            Icon: Trash2,
+            label: 'Delete',
+            danger: true,
+            run: () => setShowDeleteConfirmation(row.original),
+          },
+        ].filter(Boolean) as Array<{
+          key: string;
+          Icon: typeof Pencil;
+          label: string;
+          danger?: boolean;
+          run: () => void;
+        }>;
+
+        if (!actions.length) return null;
+
         return (
-          <span className="flex gap-2 items-center">
-            {!isEditDeleteOnly && (
-              <span
-                onClick={() =>
-                  navigate(`/contact-activity?contactId=${row?.original?._id}&isLeadList=true`)
-                }
-                className="cursor-pointer flex items-center justify-center rounded-full w-8 h-8 bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white"
-              >
-                <Icon name="ActivityIcon" className="w-5 h-5" />
-              </span>
-            )}
-            {leadsAccess?.edit && (
-              <span
-                onClick={() =>
-                  setDrawerState({
-                    addContact: true,
-                    updateContacts: false,
-                    selectedContact: row.original,
-                    leadsActivity: false,
-                  })
-                }
-                className="cursor-pointer flex items-center justify-center rounded-full w-8 h-8 bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white"
-              >
-                <Icon name="EditStrokIcon" className="w-5 h-5" />
-              </span>
-            )}
-            {leadsAccess?.delete && (
-              <span
-                onClick={() => setShowDeleteConfirmation(row.original)}
-                className="cursor-pointer flex items-center justify-center rounded-full w-8 h-8 bg-red-100 text-red-500 hover:bg-primary hover:text-white"
-              >
-                <Icon name="TrashBin" className="w-5 h-5" />
-              </span>
-            )}
-          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="leads-dots" aria-label="Row actions">
+                <MoreHorizontal size={17} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              side="bottom"
+              sideOffset={6}
+              collisionPadding={12}
+              className="leads-menu w-44"
+            >
+              {actions.map((item) => (
+                <DropdownMenuItem
+                  key={item.key}
+                  variant={item.danger ? 'destructive' : 'default'}
+                  onSelect={item.run}
+                >
+                  <item.Icon size={16} />
+                  {item.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     },
   ];
 
   return (
-    <div className="w-full p-3 flex flex-col gap-2">
+    <div className="leads-table w-full p-3 flex flex-col gap-2">
       <TableManager
         {...{
           tableRef,

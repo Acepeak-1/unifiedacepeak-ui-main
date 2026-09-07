@@ -374,4 +374,9 @@ export type IconType =
   | 'BoxBrandsIcon'
   | 'AIBrainIcon'
   | 'GlobeIcon'
-  | 'Disc';
+  | 'Disc'
+  | 'HeadsetLineIcon'
+  | 'BuildingLineIcon'
+  | 'UsersOutlineIcon'
+  | 'BrainCircuitLineIcon'
+  | 'PlugLineIcon';

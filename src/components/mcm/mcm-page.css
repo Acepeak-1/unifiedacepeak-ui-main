@@ -3010,6 +3010,20 @@
   font-weight: 500;
 }
 
+/* Call Handling's own larger reading of this pill — taller padding, a
+   softer border, and room for its bigger icon chip. A modifier rather than
+   a change to the base rule, since the Admin Hub overview page's own
+   search bar (the base `.mcm-adminhome-search` size) isn't part of this
+   ask. */
+.mcm-adminhome-search--lg {
+  padding: 7px 16px;
+  min-width: 260px;
+  border-color: var(--line-2);
+}
+.mcm-adminhome-search--lg input {
+  font-size: 14px;
+}
+
 .mcm-adminhome-tabs {
   position: relative;
   flex: none;
@@ -3319,48 +3333,34 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border: 1px solid transparent;
+  border: 1px solid var(--line);
   border-radius: 16px;
   overflow: hidden;
   color: inherit;
   text-decoration: none;
+  background: var(--surface);
   transition:
     background-color 0.12s,
     border-color 0.12s,
-    box-shadow 0.12s;
-}
-.mcm-adminareas-tile::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--accent);
+    box-shadow 0.12s,
+    transform 0.12s;
 }
 .mcm-adminareas-tile:hover {
-  background: var(--surface-2);
-  border-color: var(--accent-edge);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+  border-color: #dc2626;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
+  transform: translateY(-1px);
 }
-/* Plain icon, no tinted chip behind it — the coloured rail on the tile
-   itself already carries the colour. These are solid-fill glyphs, not
-   stroke-based, so there's no CSS "weight" to turn down — Numbers, My
-   Account and Phone System happen to be drawn as thin outline shapes, the
-   rest as bulkier solid ones. Dropping everything except those three to a
-   lighter ink tone is the closest CSS gets to matching that thin look
-   without redrawing the other icons' paths. */
 .mcm-adminareas-tile-iconwrap {
   flex: none;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   color: #171717;
 }
 .mcm-adminareas-tile-iconwrap svg {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
 }
 .mcm-adminareas-tile-body {
   min-width: 0;
@@ -3369,7 +3369,7 @@
 }
 .mcm-adminareas-tile-title {
   font-size: 13.5px;
-  font-weight: 800;
+  font-weight: 500;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4437,6 +4437,16 @@
   opacity: 0;
   margin-left: 0 !important;
   margin-right: 0 !important;
+  /* Squeezed to 0 width, the label's text (still `white-space: normal`,
+     needed for the two-line wrap when expanded — see the comment above)
+     wrapped onto a new line per word instead of just going invisible,
+     growing the label many lines tall. Invisible via opacity, but its
+     height still counted, inflating that row — worse the longer the
+     label ("All admin screens" wrapped to ~3 lines vs. a short group
+     name's one), which is why only some rows looked misaligned. Forcing
+     one line here, only while collapsed, removes the height without
+     touching the expanded-state wrap this rule's comment protects. */
+  white-space: nowrap !important;
 }
 /* The real accordion chevron (rendered by the shared AccordionTrigger, not
    this file's own markup) gets the same fade-and-shrink treatment, plus its
@@ -4637,6 +4647,15 @@
 .mcm-admin section[data-rail-collapsed='true'] .mcm-adminnav-all.on .mcm-adminnav-iconwrap {
   background: #e3e3e3 !important;
   color: var(--ink) !important;
+}
+/* A group's own icon when its section is open — leaf tiles get the grey
+   chip above once you're on their page, but a group's icon otherwise never
+   showed anything was expanded underneath it in the rail. */
+.mcm-admin
+  section[data-rail-collapsed='true']
+  [data-slot='accordion-trigger'][data-state='open']
+  .mcm-adminnav-iconwrap {
+  color: #dc2626 !important;
 }
 
 /* ==================================================================
