@@ -27,7 +27,7 @@
 .mcm-page {
   /* Hover edge for the portrait stat cards (Performance). */
   --stat-hover-line: #e9adc3;
-  --ground: #f5f5f5;
+  --ground: #efefef;
   --surface: #ffffff;
   --surface-2: #fafafa;
   --surface-3: #eeeeee;
@@ -743,6 +743,14 @@
   gap: 7px;
   flex-wrap: wrap;
   margin-bottom: 14px;
+}
+/* Search/filters row, when it renders inside .panel-card (DirectoryPage) —
+   the whole card reads as one unit, search through table, instead of the
+   search bar sitting as a separate block above a second white card. */
+.mcm-page .tbar-in-card {
+  margin-bottom: 0;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
 }
 .mcm-page .fchip {
   display: inline-flex;
@@ -2876,7 +2884,7 @@
   --surface: #ffffff;
   --surface-2: #fafafa;
   --surface-3: #eeeeee;
-  --ground: #f5f5f5;
+  --ground: #efefef;
   --line: #e5e5e5;
   --line-2: #efefef;
   --ink: #0d1526;

@@ -123,7 +123,7 @@ const People = () => {
   const navigate = useNavigate();
   const { dial } = useConsoleDialer();
   const { startVideoCall, isStarting } = useInstantMeeting();
-  const { rows: apiRows, isLoading } = usePeopleRows();
+  const { rows: apiRows, isLoading, refetch: refetchRoster } = usePeopleRows();
   const rows = useMemo(() => [...apiRows, ...DUMMY_PEOPLE_ROWS], [apiRows]);
 
   const { user } = useUser();
@@ -340,7 +340,7 @@ const People = () => {
             {canInvite ? (
               <button
                 type="button"
-                className="btn primary soft-accent"
+                className="btn primary"
                 onClick={() => setInviting(true)}
               >
                 <Ic n="plus" />
@@ -352,6 +352,15 @@ const People = () => {
         filters={
           <>
             <SearchChip value={search} onChange={setSearch} placeholder="Search people" />
+            <button
+              type="button"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+              title="Refresh"
+              aria-label="Refresh the roster"
+              onClick={() => refetchRoster()}
+            >
+              <Ic n="refresh" size={15} />
+            </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="fchip fchip-select">

@@ -102,7 +102,7 @@ const DepartmentInfo = ({
                   {!isEdit && (
                     <Button
                       type="button"
-                      className="h-10 w-10 shrink-0"
+                      className="grp-ext-refresh-btn h-10 w-10 shrink-0"
                       variant={'outline'}
                       onClick={() => generateNewExtension()}
                     >

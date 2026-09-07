@@ -1,6 +1,12 @@
 /* Groups page — scoped to .grp-theme so it only touches this page. */
 .grp-canvas {
-  background: #f3f4f6;
+  background: #efefef;
+}
+
+/* shadcn's DialogContent uses `bg-background`, which is the app-wide ground
+   colour (#eef1f8) now — this dialog wants plain white instead. */
+.grp-create-dialog {
+  background: #fff;
 }
 
 /* .mcm-page sizes .page via flexbox and relies on it being a direct flex
@@ -118,6 +124,30 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+/* Next — solid black at rest, not just on hover. new-department/index.tsx is
+   shared with the platform's own department screen, so this only touches
+   the button here, inside the Create Group dialog. */
+.grp-create-theme .grp-next-btn {
+  background: #171717 !important;
+  border-color: #171717 !important;
+  color: #fff !important;
+}
+.grp-create-theme .grp-next-btn:hover {
+  background: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+}
+
+/* Extension refresh icon — solid black at rest, same as at rest on hover
+   (no colour change either way). department-info.tsx is shared with the
+   platform's own department screen, so this only touches the icon here. */
+.grp-create-theme .grp-ext-refresh-btn,
+.grp-create-theme .grp-ext-refresh-btn:hover {
+  background: #171717 !important;
+  border-color: #171717 !important;
+  color: #fff !important;
 }
 
 /* Tighter vertical rhythm so the form fits with less scrolling — the fields
