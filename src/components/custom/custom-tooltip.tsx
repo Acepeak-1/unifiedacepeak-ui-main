@@ -8,6 +8,8 @@ const CustomTooltip = ({
   className = '',
   sideOffset,
   align,
+  openOnMount = false,
+  openOnMountDuration = 1600,
 }: {
   text: string | React.ReactNode;
   children: React.ReactNode;
@@ -17,6 +19,13 @@ const CustomTooltip = ({
   sideOffset?: number;
   /** Edge alignment along `side`; Radix defaults to 'center'. */
   align?: 'start' | 'center' | 'end';
+  /** Shows the tooltip once, unprompted, right after mount — so a hover
+      affordance that isn't obviously interactive (an info icon, say) gets
+      noticed once instead of relying on someone finding it by accident. It
+      hands control back to normal hover/focus behaviour once the timer
+      fires, rather than staying open or locking hover out. */
+  openOnMount?: boolean;
+  openOnMountDuration?: number;
 }) => {
   const [open, setOpen] = useState(openOnMount);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
