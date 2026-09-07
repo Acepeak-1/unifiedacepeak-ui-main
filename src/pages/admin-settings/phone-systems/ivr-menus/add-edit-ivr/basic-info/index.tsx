@@ -58,7 +58,7 @@ const IvrBasicInfo = ({ initialData, onRestorePrevious, restoreRequested }: any)
       )}
 
       {restoreRequested && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
           <p className="text-xs text-gray-700">
             <span className="font-semibold text-gray-900">Showing the previous version.</span>{' '}
             Nothing has been changed yet - look through the tabs, then press Save to put this back,

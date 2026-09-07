@@ -1,5 +1,7 @@
 import { Icon } from '@/assets/icons/icon';
 import '@/components/mcm/mcm-page.css';
+import './contact-create-theme.css';
+import './contact-tbl-theme.css';
 import { Button } from '@/components/ui/button';
 import { handleAlert, normalizeSearchText } from '@/lib/utils';
 import { deleteContact, deleteLeadGroup, getContactList, syncContacts } from '@/services/api';
@@ -14,6 +16,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FC, useState } from 'react';
 import AlertConfirm from '@/components/custom/alert-confirm.tsx';
 import SideDrawer from '@/components/custom/side-drawer.tsx';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import AllNewContactsList from './all-contacts-list/index.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import { SearchLine } from '@/assets/icons/index.tsx';
@@ -423,7 +426,7 @@ const NewContact: FC = () => {
 
             {/* Content area */}
 
-            <div className="flex w-full min-h-0 flex-1 flex-col gap-2">
+            <div className="contact-tbl-theme flex w-full min-h-0 flex-1 flex-col gap-2">
               {(() => {
                 switch (tabName) {
                   case CONTACT_TABS_CONST.CONTACT_LIST:
@@ -517,28 +520,29 @@ const NewContact: FC = () => {
 
       {/* Add / Edit Contact Drawer */}
       {canAddContact && drawerState?.addContact && (
-        <SideDrawer
-          width="min(500px, 94vw)"
-          isHeader
-          isOpen={drawerState?.addContact}
-          title={
-            drawerState?.selectedContact
-              ? `Update Contact (${drawerState?.selectedContact?.name?.first || ''} ${drawerState?.selectedContact?.name?.last || ''})`
-              : 'Add Contact'
-          }
-          handleClose={() => setDrawerState((prev) => ({ ...prev, addContact: false }))}
-          content={
-            <CreateContactNew
-              contactData={drawerState?.selectedContact}
-              isDisable={false}
-              setIsDisable={() => void 0}
-              setDrawerState={() => void 0}
-              keepFormDataAfterSave
-              isLead={false}
-              handleClose={() => setDrawerState((prev) => ({ ...prev, addContact: false }))}
-            />
-          }
-        />
+        <Dialog
+          open={drawerState?.addContact}
+          onOpenChange={(val) => !val && setDrawerState((prev) => ({ ...prev, addContact: false }))}
+        >
+          <DialogContent className="flex w-[92vw] max-w-[640px] max-h-[85vh] flex-col gap-0 overflow-hidden p-0">
+            <DialogTitle className="dir-serif-heading px-5 py-4 text-gray-900">
+              {drawerState?.selectedContact
+                ? `Update Contact (${drawerState?.selectedContact?.name?.first || ''} ${drawerState?.selectedContact?.name?.last || ''})`
+                : 'Add Contact'}
+            </DialogTitle>
+            <div className="contact-create-theme flex min-h-0 flex-1 flex-col px-5 pb-5">
+              <CreateContactNew
+                contactData={drawerState?.selectedContact}
+                isDisable={false}
+                setIsDisable={() => void 0}
+                setDrawerState={() => void 0}
+                keepFormDataAfterSave
+                isLead={false}
+                handleClose={() => setDrawerState((prev) => ({ ...prev, addContact: false }))}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {notesOpen && (

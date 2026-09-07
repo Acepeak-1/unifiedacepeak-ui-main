@@ -1,0 +1,43 @@
+/* Contact view / Contact Group tables — both render through the shared
+   TableManager / LeadsGroupList components (used across many other pages),
+   so this only re-skins them here via the data-slot hooks those shadcn
+   Table primitives already expose, scoped to .contact-tbl-theme. Nothing in
+   TableManager/LeadsGroupList itself changes, so every other consumer keeps
+   its current look. Content (columns, values, actions) is untouched. */
+.contact-tbl-theme [data-slot='table'] {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.contact-tbl-theme [data-slot='table-header'] tr {
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+}
+.contact-tbl-theme [data-slot='table-head'] {
+  background: #fafafa;
+  padding: 13px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #737373;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.contact-tbl-theme [data-slot='table-row'] {
+  background: #ffffff;
+  transition: background-color 0.15s ease;
+}
+.contact-tbl-theme [data-slot='table-row']:hover {
+  background: #fafafa;
+}
+.contact-tbl-theme [data-slot='table-cell'] {
+  background: transparent;
+  padding: 8px 18px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

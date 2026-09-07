@@ -419,7 +419,7 @@ const ForwardActionAll: React.FC<ForwardActionProps> = ({
                     <RadioGroupItem
                       value="true"
                       id={`${forwardType}-my-voicemail`}
-                      className="cursor-pointer w-4 h-4 accent-blue-500"
+                      className="cursor-pointer w-4 h-4 accent-red-500"
                     />
                     <Label htmlFor={`${forwardType}-my-voicemail`} className="cursor-pointer">
                       My Voicemail
@@ -427,7 +427,7 @@ const ForwardActionAll: React.FC<ForwardActionProps> = ({
                     <RadioGroupItem
                       value="false"
                       id={`${forwardType}-another-voicemail`}
-                      className="cursor-pointer w-4 h-4 accent-blue-500"
+                      className="cursor-pointer w-4 h-4 accent-red-500"
                     />
                     <Label htmlFor={`${forwardType}-another-voicemail`} className="cursor-pointer">
                       Another Voicemail

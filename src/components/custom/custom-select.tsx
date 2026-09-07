@@ -24,6 +24,11 @@ interface CustomSelectType {
   menuPortalTarget?: HTMLElement | null | boolean;
   onMenuScrollToBottom?: () => void;
   onInputChange?: (value: string) => void;
+  /* react-select is searchable by default. Fine for long lists, wrong for a
+     handful of fixed options — typing there just filters down to "No
+     options" instead of picking one, so callers with a short, closed list
+     (e.g. Yes/No, a masking type) should pass `false`. */
+  isSearchable?: boolean;
 }
 
 const SELECT_PAGE_SIZE = 25;
@@ -81,6 +86,7 @@ const CustomSelect = ({
   menuPortalTarget,
   onMenuScrollToBottom,
   onInputChange,
+  isSearchable = true,
 }: CustomSelectType & { label?: any }) => {
   const normalizedOptions = useMemo(
     () =>
@@ -311,6 +317,7 @@ const CustomSelect = ({
         <Select
           isDisabled={isDisabled}
           isLoading={isLoading}
+          isSearchable={isSearchable}
           isMulti={isMulti}
           closeMenuOnSelect={!isMulti}
           classNamePrefix={classNamePrefix}

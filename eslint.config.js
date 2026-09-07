@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'connect-web/**'] },
+  { ignores: ['dist', 'node_modules', 'connect-web/**', 'backend-patches/**'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],

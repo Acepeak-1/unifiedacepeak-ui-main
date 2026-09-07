@@ -143,7 +143,7 @@ const AutomaticCallRecordingModal: FC<ModalProps> = ({
             <Button type="button" variant={'transparent'} onClick={handlecancel}>
               Cancel
             </Button>
-            <Button type="button" variant={'outline'} onClick={() => setModalState(false)}>
+            <Button type="button" variant={'dark'} onClick={() => setModalState(false)}>
               Submit
             </Button>
           </div>

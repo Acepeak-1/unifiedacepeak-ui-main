@@ -4,16 +4,9 @@ import DialpadTranscriptManager from '@/components/dialpad/components/dialpad-tr
 import { ConsoleIconSprite } from './icons';
 import CallListColumn, { type ConsoleCallRow, type ConsoleLogSource } from './call-list-column';
 import StageColumn from './stage-column';
-import PanelColumn from './panel-column';
 import { useConsoleCall } from './use-console-call';
 import { useCallLogRefresh } from './use-call-log-refresh';
-import {
-  checklistState,
-  contactDisplayName,
-  scoreSentiment,
-  talkRatio,
-  toConsoleTurns,
-} from './copilot-adapter';
+import { checklistState, contactDisplayName, toConsoleTurns } from './copilot-adapter';
 import './console.css';
 
 /**
@@ -38,12 +31,6 @@ const PhoneConsole = () => {
   useCallLogRefresh();
   const [selectedCall, setSelectedCall] = useState<ConsoleCallRow | null>(null);
   const [logSource, setLogSource] = useState<ConsoleLogSource>('call');
-  // a request from the stage to open a specific panel tab (transcript for a leg)
-  const [panelRequest, setPanelRequest] = useState<{
-    tab: 'transcript';
-    leg: any;
-    at: number;
-  } | null>(null);
 
   const agentName =
     `${user?.user_info?.first_name || ''} ${user?.user_info?.last_name || ''}`.trim() || 'You';
@@ -54,8 +41,6 @@ const PhoneConsole = () => {
   );
 
   const spoken = useMemo(() => turns.filter((t) => !t.isSummary), [turns]);
-  const sentiment = useMemo(() => scoreSentiment(spoken), [spoken]);
-  const talk = useMemo(() => talkRatio(spoken), [spoken]);
   const checklist = useMemo(() => checklistState(spoken), [spoken]);
 
   return (
@@ -72,13 +57,11 @@ const PhoneConsole = () => {
           selectedId={selectedCall?.id || null}
           onSelect={(row) => {
             setSelectedCall(row);
-            setPanelRequest(null);
           }}
           source={logSource}
           onSourceChange={(next) => {
             setLogSource(next);
             setSelectedCall(null);
-            setPanelRequest(null);
           }}
           liveNumber={session?.remoteNumber}
         />
@@ -92,18 +75,16 @@ const PhoneConsole = () => {
           onEndWrapup={endWrapup}
           selectedCall={selectedCall}
           onBackToDialer={() => setSelectedCall(null)}
-          onOpenTranscript={(leg) => setPanelRequest({ tab: 'transcript', leg, at: Date.now() })}
-        />
-        <PanelColumn
-          state={state}
-          session={session}
-          turns={turns}
-          sentiment={sentiment}
-          talk={talk}
-          checklist={checklist}
-          selectedNumber={selectedCall?.number}
-          selectedCall={selectedCall}
-          panelRequest={panelRequest}
+          onOpenTranscript={() => {}}
+          /* Recordings / Voicemails in the left column open the matching
+             history on the contact, not the generic call list. */
+          recordTab={
+            logSource === 'recording'
+              ? 'recordings'
+              : logSource === 'voicemail'
+                ? 'voicemails'
+                : 'calls'
+          }
         />
       </div>
     </div>

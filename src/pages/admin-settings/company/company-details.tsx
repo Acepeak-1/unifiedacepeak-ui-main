@@ -1,8 +1,8 @@
 /* The panel that opens when an admin clicks a location.
  *
  * It used to print nine stored fields as label/value pairs, which told an admin
- * what had been typed in but nothing about whether the location worked. established systems
- * and other established systems both answer a different question first — is this location ready,
+ * what had been typed in but nothing about whether the location worked. Dialpad
+ * and Genesys both answer a different question first — is this location ready,
  * who is in it, and what does it govern — and only then show the address.
  *
  * Caller ID is spelled out rather than shown as a code — `caller_id_type` is
@@ -14,16 +14,23 @@
 import { useMemo } from 'react';
 import {
   AlertTriangle,
+  Building2,
   CheckCircle2,
   Clock,
+  Crown,
+  Globe,
   Hash,
-  MapPin,
+  Map,
+  MapPinIcon,
   PhoneOutgoing,
   Users,
 } from 'lucide-react';
+import { Icon } from '@/assets/icons/icon';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSiteHeadcount } from '@/hooks/use-site-headcount';
 import { useLocationNumbers } from '@/hooks/use-location-numbers';
 import { evaluateLocation, PLATFORM_LOCATION_GAPS } from '@/lib/location-readiness';
+import LocationFacts from './location-facts';
 
 /* Recorded against the location, but not yet read by anything that places a
    call. Describing the intended behaviour as though it happened would be the
@@ -37,16 +44,16 @@ const CALLER_ID_EXPLAINED: Record<string, { title: string; detail: string }> = {
 const CALLER_ID_NOT_LIVE =
   'Not applied to calls yet. What a person shows when calling out comes from their own record, under Users.';
 
-const Row = ({ label, value }: { label: string; value?: string }) => (
-  <div className="flex items-start justify-between gap-3 py-1.5">
-    <span className="text-sm text-gray-500 shrink-0">{label}</span>
-    <span className="text-sm font-medium text-gray-900 text-right break-words">
-      {value?.trim() ? value : '—'}
-    </span>
-  </div>
-);
-
-const CompanyDetails = ({ data = {} }: any) => {
+const CompanyDetails = ({
+  data = {},
+  isTrial = false,
+  canEdit = false,
+  canDelete = false,
+  isSettingMain = false,
+  onMakeMain,
+  onEdit,
+  onDelete,
+}: any) => {
   const {
     uuid = '',
     name = '',
@@ -75,13 +82,76 @@ const CompanyDetails = ({ data = {} }: any) => {
 
   return (
     <div className="flex h-full w-full flex-col gap-3 overflow-y-auto pt-2 pr-1">
-      <div className="flex flex-wrap items-center gap-2">
-        <h5 className="text-md font-semibold text-gray-900">{name || 'Location'}</h5>
-        {isMainLocation && (
-          <span className="rounded-sm bg-ucass-primary-200 px-2 py-0.5 text-xs font-semibold text-primary">
-            Main location
-          </span>
-        )}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
+            <Icon name="CompayIcon" className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h5 className="text-md font-semibold text-gray-900">{name || 'Location'}</h5>
+              {isMainLocation && (
+                <span className="rounded-sm bg-ucass-primary-200 px-2 py-1 text-xs font-semibold capitalize text-primary">
+                  Main location
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500">
+              Location ID: {data?.site_id || data?.id || uuid || '---'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {!isTrial && canEdit && !isMainLocation && onMakeMain && (
+            <button
+              type="button"
+              disabled={isSettingMain}
+              title="Make this the main location"
+              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-primary/30 bg-ucass-primary-200/60 px-3 py-1.5 text-xs font-semibold text-primary ring-1 ring-primary/10 hover:bg-primary hover:text-white hover:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={onMakeMain}
+            >
+              <Crown className="h-3.5 w-3.5" fill="currentColor" />
+              Make main
+            </button>
+          )}
+          {!isTrial && canEdit && onEdit && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Edit ${name || 'site'}`}
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-gray-500 hover:bg-primary hover:text-white"
+                  onClick={onEdit}
+                >
+                  <Icon name="EditStrokIcon" className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="rounded-full bg-black/70">Edit</TooltipContent>
+            </Tooltip>
+          )}
+          {canDelete && onDelete && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  disabled={isMainLocation}
+                  aria-label={`Delete ${name || 'site'}`}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                    isMainLocation
+                      ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-300'
+                      : 'cursor-pointer border-red-100 bg-red-100 text-red-500 hover:bg-red-500 hover:text-white'
+                  }`}
+                  onClick={onDelete}
+                >
+                  <Icon name="TrashBin" className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="rounded-full bg-black/70">
+                {isMainLocation ? 'The main location cannot be deleted' : 'Delete'}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </div>
 
       {/* Whether this location is usable comes before what is stored in it. */}
@@ -171,19 +241,57 @@ const CompanyDetails = ({ data = {} }: any) => {
         )}
       </div>
 
-      <div className="rounded-xl border border-gray-200 p-3">
-        <div className="mb-1 flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-primary" />
-          <h6 className="text-sm font-semibold text-gray-900">Address</h6>
-        </div>
-        <div className="divide-y divide-gray-100">
-          <Row label="Street" value={address} />
-          <Row label="City" value={city} />
-          <Row label="State / region" value={state} />
-          <Row label="Country" value={country} />
-          <Row label="Postal code" value={postal_code} />
+      <div className="rounded-xl border border-primary/20 bg-ucass-primary-200/40 px-4 py-3">
+        <div className="flex items-start gap-2">
+          <MapPinIcon className="h-4 w-4 text-black" />
+          <div>
+            <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+              Primary Address
+            </p>
+            <p className="text-sm font-medium text-gray-700">{address?.trim() ? address : '—'}</p>
+          </div>
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="space-y-1">
+          <p className="flex items-center gap-1 border-b border-gray-300 pb-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+            <Globe className="h-3 w-3" />
+            Country
+          </p>
+          <p className="text-sm font-semibold text-gray-700">{country?.trim() ? country : '—'}</p>
+        </div>
+        <div className="space-y-1">
+          <p className="flex items-center gap-1 border-b border-gray-300 pb-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+            <Map className="h-3 w-3" />
+            State
+          </p>
+          <p className="text-sm font-semibold text-gray-700">{state?.trim() ? state : '—'}</p>
+        </div>
+        <div className="space-y-1">
+          <p className="flex items-center gap-1 border-b border-gray-300 pb-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+            <Building2 className="h-3 w-3" />
+            City
+          </p>
+          <p className="text-sm font-semibold text-gray-700">{city?.trim() ? city : '—'}</p>
+        </div>
+        <div className="space-y-1">
+          <p className="flex items-center gap-1 border-b border-gray-300 pb-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+            <Hash className="h-3 w-3" />
+            Postal Code
+          </p>
+          <p className="text-sm font-semibold text-gray-700">
+            {postal_code?.trim() ? postal_code : '—'}
+          </p>
+        </div>
+        <div className="space-y-1">
+          <p className="flex items-center gap-1 border-b border-gray-300 pb-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+            <Clock className="h-3 w-3" />
+            Timezone
+          </p>
+          <p className="text-sm font-semibold text-gray-700">{timezone?.trim() ? timezone : '—'}</p>
+        </div>
+      </div>
+      <LocationFacts site={data} />
 
       <div className="rounded-xl border border-gray-200 p-3">
         <div className="mb-1 flex items-center gap-2">
@@ -212,7 +320,7 @@ const CompanyDetails = ({ data = {} }: any) => {
         <p className="mt-2 text-xs text-gray-500">{CALLER_ID_NOT_LIVE}</p>
       </div>
 
-      {/* Named plainly so an admin comparing this against another system knows the
+      {/* Named plainly so an admin comparing this to Dialpad or Genesys knows the
           setting is absent from the product, not hidden somewhere they missed. */}
       <div className="rounded-xl border border-dashed border-gray-300 p-3">
         <h6 className="text-sm font-semibold text-gray-900">Not available yet</h6>

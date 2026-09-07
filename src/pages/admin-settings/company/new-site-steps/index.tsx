@@ -3,11 +3,15 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { upsertSiteSchema } from './schema';
-import Stepper from '@/components/custom/stepper';
+import { Ic } from '@/components/mcm/icons';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import { InfoIcon } from 'lucide-react';
 import { upsertSite } from '@/services/api';
 import { getObjectLength, handleAlert } from '@/lib/utils';
 import Loader from '@/components/custom/loader';
 import { Button } from '@/components/ui/button';
+import { Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import SiteInfo from './site-info';
 import Summary from './summary';
 
@@ -30,24 +34,6 @@ const NewSiteSteps = ({ data = {}, handleClose }: any) => {
   const [currentStep, setCurrentStep] = useState(1);
   const queryClient = useQueryClient();
   const isEdit = Boolean(data?.uuid);
-
-  const StepContent = [
-    {
-      label: 'Step 1',
-      number: 1,
-      title: 'Company Info',
-    },
-    // {
-    //   label: 'Step 2',
-    //   number: 2,
-    //   title: 'Caller ID Name',
-    // },
-    {
-      label: 'Step 2',
-      number: 2,
-      title: 'Summary',
-    },
-  ];
 
   const formInstance = useForm<any>({
     defaultValues: createSiteFormInitialState,
@@ -139,28 +125,51 @@ const NewSiteSteps = ({ data = {}, handleClose }: any) => {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="flex h-full min-h-0 flex-col justify-between gap-4 pt-3 sm:pt-4"
+      className="flex h-full min-h-0 flex-col justify-between gap-4 pt-1"
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
-        <div className="mx-auto flex w-full max-w-[940px] flex-col items-center rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
-          <h3 className="mb-2 text-center text-base font-semibold text-gray-900 sm:text-lg">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
+        <div className="mb-1.5 flex items-center gap-2">
+          <h3 className="font-mono text-[12px] font-extrabold uppercase leading-[18px] text-red-600">
             {isEdit ? 'Edit Site' : 'Create New Site'}
           </h3>
-          <p className="text-center text-sm leading-6 text-gray-500">
-            Use this feature to add different office locations or branch sites for your company.
-            This allows you to group users by their specific location (e.g., London, Dubai, or
-            Singapore) while keeping everything under one central billing account.
-          </p>
-          <Stepper
-            steps={StepContent}
-            currentStep={currentStep}
-            customClass="bg-transparent! p-0! pt-4 sm:pt-5 w-full"
-          />
+          <CustomTooltip
+            text={
+              <>
+                Add different office locations or branch sites
+                <br />
+                for your company — group users by location
+                <br />
+                (e.g., London, Dubai) under one billing account.
+              </>
+            }
+            side="top"
+            className="!bg-gray-300 !text-black whitespace-normal text-left"
+          >
+            <InfoIcon className="w-3.5 h-3.5 text-gray-500 cursor-pointer" />
+          </CustomTooltip>
         </div>
+        <nav className="flex flex-wrap items-center justify-center gap-1 border-b border-gray-200 pb-3">
+          {StepContent.map((step, index) => (
+            <span key={step.number} className="flex shrink-0 items-center gap-1">
+              {index > 0 && <Ic n="chev" size={14} className="text-gray-300" />}
+              <button
+                type="button"
+                onClick={() => step.number < currentStep && setCurrentStep(step.number)}
+                className={
+                  currentStep === step.number
+                    ? 'text-sm font-medium text-gray-900 whitespace-nowrap'
+                    : 'text-sm font-normal text-gray-400 whitespace-nowrap'
+                }
+              >
+                {step.title}
+              </button>
+            </span>
+          ))}
+        </nav>
         {/* <div className=" w-full max-w-[940px] rounded-xl mx-auto  p-5 border border-gray-200 bg-white"> */}
-        <div className="mx-auto w-full max-w-[940px]">{stepLookUp[currentStep]}</div>
+        <div className="mx-auto mt-3 w-full max-w-[940px]">{stepLookUp[currentStep]}</div>
       </div>
-      <div className="flex flex-col-reverse gap-2 border-t border-gray-200 pt-3 sm:flex-row sm:justify-end sm:pt-4">
+      <div className="flex flex-col-reverse gap-2 border-t border-gray-200 pt-2 sm:flex-row sm:justify-end sm:pt-2">
         <Button
           onClick={() => {
             if (currentStep === 1) {
@@ -176,7 +185,12 @@ const NewSiteSteps = ({ data = {}, handleClose }: any) => {
           {currentStep === 1 ? 'Cancel' : 'Back'}
         </Button>
 
-        <Button variant={'primary'} disabled={isPending} type="submit" className="w-full sm:w-auto">
+        <Button
+          variant={'primary'}
+          disabled={isPending}
+          type="submit"
+          className="w-full bg-black border-black hover:bg-black/90 sm:w-auto"
+        >
           {isPending ? (
             <Loader variant="blue" size="sm" />
           ) : currentStep === 2 ? (

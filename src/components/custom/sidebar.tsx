@@ -219,7 +219,7 @@ const Sidebar = () => {
 
       <section
         id="mobile-sidebar-nav"
-        className={`fixed left-0 top-16 z-20 h-[calc(100vh-4rem)] w-20 border-r border-gray-200 bg-white transition-transform duration-200 ${
+        className={`fixed left-0 top-16 z-20 h-[calc(100vh-4rem)] w-20 border-r border-gray-200 dark:border-[#333333] bg-white dark:bg-[#171717] transition-transform duration-200 ${
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
@@ -229,7 +229,11 @@ const Sidebar = () => {
             them. */}
         <div className="flex h-full min-h-0 flex-col items-center">
           {/* The brand moved into the top bar, so the rail is nav only. */}
-          <div className="rail-scroll flex h-full min-h-0 flex-col justify-between gap-1 overflow-y-auto px-2 w-full pt-4 pb-3">
+          <div
+            className={`rail-scroll flex h-full min-h-0 flex-col gap-1 overflow-y-auto px-2 w-full pt-4 pb-3 ${
+              visibleBottomNavList?.length ? 'justify-between' : 'justify-start'
+            }`}
+          >
             <div className="flex flex-col gap-1.5 items-center">
               {visibleNavList?.map((navItem: any, index: number) => {
                 const { id, link, icon, name, enabled, viewKey, sep } = navItem;
@@ -243,7 +247,7 @@ const Sidebar = () => {
                 return (
                   <Fragment key={`${id}${index}`}>
                     {sep ? (
-                      <span aria-hidden className="my-1 h-px w-8 shrink-0 bg-gray-200" />
+                      <span aria-hidden className="my-1 h-px w-8 shrink-0 bg-gray-200 dark:bg-[#333333]" />
                     ) : null}
                     <NavLink
                       to={isEnabled ? link || '#' : '#'}
@@ -262,54 +266,55 @@ const Sidebar = () => {
                            whole rail lights up. A view item is lit by
                            `activeLink`, which checks the view, and nothing else. */
                         const lit = viewKey ? activeLink : activeLink || isActive;
-                        return `min-h-13 w-16 flex items-center justify-center rounded-lg relative py-1.5 ${
-                          lit ? 'bg-ucass-active-bg text-ucass-active' : 'bg-transparent'
-                        } hover:bg-ucass-active-bg hover:text-ucass-active ${
-                          !isEnabled ? 'text-gray-400' : 'text-gray-700'
-                        } ${!isEnabled ? 'cursor-not-allowed' : ''}`;
+                        return `group relative flex min-h-14 w-[68px] flex-col items-center justify-center gap-1.5 rounded-xl py-2 transition-colors duration-150 ${
+                          !isEnabled
+                            ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
+                            : lit
+                              ? 'text-ucass-active'
+                              : 'text-gray-500 dark:text-gray-400 hover:text-ucass-active'
+                        }`;
                       }}
-                      // className={({ isActive }) =>
-                      //   `h-14 w-17 flex items-center justify-center rounded-lg hover:bg-ucass-primary-200 relative ${
-                      //     activeLink || isActive
-                      //       ? 'bg-ucass-primary-200 text-primary hover:text-primary'
-                      //       : 'bg-white text-gray-700'
-                      //   } hover:${activeLink || isActive ? 'text-gray-700 bg-primary' : 'text-primary'}`
-                      // }
                     >
-                      <div
-                        className={`flex flex-col items-center justify-center gap-1 ${
-                          !isEnabled ? 'opacity-60' : ''
-                        }`}
-                      >
-                        <Icon
-                          name={`${icon}` as IconType}
-                          className="h-[1.15rem] w-[1.15rem] relative"
-                        />
-                        {/* Two-word labels ("External Contacts") stack rather
-                            than truncate — the tile is 64px wide, so one line
-                            would cut them off mid-word. */}
-                        <small className="mcm-rail-label">{name}</small>
-                      </div>
-                      {isEnabled && navItem?.name === 'Chat' && totalUnreadCount > 0 && (
-                        <span className="bg-primary absolute text-white font-normal me-2  rounded-full -top-[2px] left-[20px] px-1  border-white border-2 text-xs  min-w-5 min-h-5 flex items-center justify-center ">
-                          {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                        </span>
-                      )}
-                      {/* {isEnabled && navItem?.name === 'Agent Chat' && aiChatUnreadCount > 0 && (
-                          <span className="bg-primary absolute text-white font-normal me-2  rounded-full -top-[2px] left-[20px] px-1  border-white border-2 text-xs  min-w-5 min-h-5 flex items-center justify-center ">
-                            {aiChatUnreadCount > 9 ? '9+' : aiChatUnreadCount} */}
-                      {isEnabled && navItem?.name === 'Agent Chat' && pendingAiChatCount > 0 && (
-                        <span className="bg-primary absolute text-white font-normal me-2  rounded-full -top-[2px] left-[20px] px-1  border-white border-2 text-xs  min-w-5 min-h-5 flex items-center justify-center ">
-                          {pendingAiChatCount > 9 ? '9+' : pendingAiChatCount}
-                        </span>
-                      )}
-                      {!isEnabled && (
-                        <span
-                          className={`absolute top-1 right-1 text-xs ${!isEnabled ? 'opacity-60' : ''}`}
-                        >
-                          🔒
-                        </span>
-                      )}
+                      {({ isActive }) => {
+                        const lit = viewKey ? activeLink : activeLink || isActive;
+                        return (
+                          <>
+                            <span
+                              className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] transition-all duration-150 ${
+                                lit
+                                  ? 'bg-[#e3e3e3]'
+                                  : isEnabled
+                                    ? 'bg-transparent group-hover:scale-105 group-hover:bg-[#e3e3e3]'
+                                    : 'bg-transparent'
+                              }`}
+                            >
+                              <Icon
+                                name={`${icon}` as IconType}
+                                className="h-[1.15rem] w-[1.15rem] relative"
+                              />
+                            </span>
+                            {/* Two-word labels ("External Contacts") stack rather
+                                than truncate — the tile is 68px wide, so one line
+                                would cut them off mid-word. */}
+                            <small className={`mcm-rail-label ${lit ? 'font-semibold' : 'font-medium'}`}>
+                              {name}
+                            </small>
+                            {isEnabled && navItem?.name === 'Chat' && totalUnreadCount > 0 && (
+                              <span className="bg-primary absolute text-white font-normal me-2  rounded-full top-0 right-3 px-1  border-white border-2 text-xs  min-w-5 min-h-5 flex items-center justify-center ">
+                                {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                              </span>
+                            )}
+                            {isEnabled && navItem?.name === 'Agent Chat' && pendingAiChatCount > 0 && (
+                              <span className="bg-primary absolute text-white font-normal me-2  rounded-full top-0 right-3 px-1  border-white border-2 text-xs  min-w-5 min-h-5 flex items-center justify-center ">
+                                {pendingAiChatCount > 9 ? '9+' : pendingAiChatCount}
+                              </span>
+                            )}
+                            {!isEnabled && (
+                              <span className="absolute top-1 right-3 text-xs opacity-60">🔒</span>
+                            )}
+                          </>
+                        );
+                      }}
                     </NavLink>
                   </Fragment>
                 );
@@ -327,10 +332,10 @@ const Sidebar = () => {
                     {...getRoutePrefetchHandlers(link)}
                     onClick={(e) => handleSidebarLinkClick(e, link)}
                     className={({ isActive }) =>
-                      `h-14 w-17 flex items-center justify-center rounded-lg hover:bg-ucass-primary-200  ${
+                      `h-14 w-17 flex items-center justify-center rounded-lg transition-colors duration-150 hover:bg-ucass-primary-200  ${
                         link && isActive
                           ? 'bg-ucass-primary-200 text-primary hover:text-primary'
-                          : 'bg-white text-gray-700'
+                          : 'bg-white dark:bg-[#171717] text-gray-700 dark:text-gray-300'
                       } hover:${link && isActive ? 'text-gray-700 bg-primary' : 'text-primary'}`
                     }
                   >

@@ -49,7 +49,7 @@ const SetupOption = ({
         </div>
       ) : (
         <RadioGroup
-          className="gap-4"
+          className="gap-3.5 text-[13px]"
           value={passwordType}
           onValueChange={(value) => {
             setTypeOfPassword(value);
@@ -58,7 +58,7 @@ const SetupOption = ({
         >
           <div className="flex items-center gap-3">
             <RadioGroupItem value="common" id="password-common" className="cursor-pointer" />
-            <Label htmlFor="password-common" className="cursor-pointer">
+            <Label htmlFor="password-common" className="cursor-pointer text-[13px] font-normal">
               Give Common Password
             </Label>
           </div>
@@ -70,9 +70,11 @@ const SetupOption = ({
                   type="password"
                   label="Password"
                   placeholder="Password"
+                  className="pr-9 text-[13px]"
                   {...register(`password`)}
                   error={errors?.password?.message}
                   showEye={true}
+                  IconPosition="right-0 inset-y-0 pr-3"
                 />
               </div>
               <div className="flex flex-col gap-1.5 w-full">
@@ -80,9 +82,11 @@ const SetupOption = ({
                   type="password"
                   label="Confirm Password"
                   placeholder="Confirm Password"
+                  className="pr-9 text-[13px]"
                   {...register(`confirm_password`)}
                   error={errors?.confirm_password?.message}
                   showEye={true}
+                  IconPosition="right-0 inset-y-0 pr-3"
                 />
               </div>
             </div>
@@ -93,7 +97,7 @@ const SetupOption = ({
               id="password-individual"
               className="cursor-pointer"
             />
-            <Label htmlFor="password-individual" className="cursor-pointer">
+            <Label htmlFor="password-individual" className="cursor-pointer text-[13px] font-normal">
               Individual Password
             </Label>
           </div>
@@ -103,13 +107,20 @@ const SetupOption = ({
               {watchUsers?.map((field: typeof userInitialState, index: number) => {
                 return (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" key={index}>
-                    <Input label={index === 0 && 'User'} value={field?.first_name} disabled />
+                    <Input
+                      label={index === 0 && 'User'}
+                      value={field?.first_name}
+                      disabled
+                      className="text-[13px]"
+                    />
 
                     <Input
                       showEye={true}
                       label={index === 0 && 'Password'}
                       placeholder="Password"
                       type="password"
+                      className="pr-9 text-[13px]"
+                      IconPosition="right-0 inset-y-0 pr-3"
                       {...register(`users.${index}.password`)}
                       error={errors?.users?.[index]?.password?.message}
                     />
@@ -118,6 +129,8 @@ const SetupOption = ({
                       label={index === 0 && 'Confirm Password'}
                       placeholder="Confirm Password"
                       type="password"
+                      className="pr-9 text-[13px]"
+                      IconPosition="right-0 inset-y-0 pr-3"
                       {...register(`users.${index}.confirm_password`)}
                       error={errors?.users?.[index]?.confirm_password?.message}
                     />
@@ -128,7 +141,7 @@ const SetupOption = ({
           )}
           <div className="flex items-center gap-3">
             <RadioGroupItem value="email" id="password-email" className="cursor-pointer" />
-            <Label htmlFor="password-email" className="cursor-pointer">
+            <Label htmlFor="password-email" className="cursor-pointer text-[13px] font-normal">
               Send via Email
             </Label>
           </div>

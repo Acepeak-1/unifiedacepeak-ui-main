@@ -115,25 +115,25 @@ const DialpadCallerId = ({
           onClick={onToggle}
           className={`w-full rounded-2xl border bg-white p-1.5 text-left shadow-sm transition max-[380px]:p-[5px] sm:p-2 md:p-[6px] xl:p-2.5 ${
             isOpen
-              ? 'border-[#8ec0ff] ring-2 ring-[#8ec0ff]/40'
+              ? 'border-[#dc2626] ring-2 ring-[#dc2626]/40'
               : 'border-[#e4e9f2] hover:border-[#cad6ea]'
           }`}
         >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white shadow-[0_4px_9px_rgba(15,106,231,0.35)] max-[380px]:h-7 max-[380px]:w-7 sm:h-7 sm:w-7 lg:h-7 lg:w-7 xl:w-10 xl:h-10">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white shadow-[0_4px_9px_rgba(220,38,38,0.35)] max-[380px]:h-7 max-[380px]:w-7 sm:h-7 sm:w-7 lg:h-7 lg:w-7 xl:w-10 xl:h-10">
                 <Phone className="h-3.5 w-3.5 max-[380px]:h-2.5 max-[380px]:w-2.5 sm:h-3.5 sm:w-3.5 xl:w-4 xl:h-4" />
               </span>
               <div className="leading-none">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#73839c] max-[380px]:text-[8.5px] sm:text-[11px] md:text-[11px]">
                   {selectedOption.label} - {normalizeCountry(selectedOption.country)}
                 </p>
-                <p className="mt-0.5 truncate text-[13px] font-semibold tracking-tight text-[#1d5fd9] max-[380px]:text-[10px] sm:mt-1 sm:text-[12px] md:text-[14px] lg:text-[14px] xl:text-[18px]">
+                <p className="mt-0.5 truncate text-[13px] font-semibold tracking-tight text-[#dc2626] max-[380px]:text-[10px] sm:mt-1 sm:text-[12px] md:text-[14px] lg:text-[14px] xl:text-[18px]">
                   <NumberWithFlag number={selectedOption.number} />
                 </p>
               </div>
             </div>
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#edf3ff] text-primary max-[380px]:h-5 max-[380px]:w-5 sm:h-7 sm:w-7">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#fef2f2] text-primary max-[380px]:h-5 max-[380px]:w-5 sm:h-7 sm:w-7">
               {isOpen ? (
                 <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               ) : (
@@ -171,12 +171,12 @@ const DialpadCallerId = ({
                   key={option.id}
                   onClick={() => handleSelectCallerId(option)}
                   className={`flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left transition max-[380px]:gap-1.5 max-[380px]:px-2.5 max-[380px]:py-2 sm:gap-2.5 sm:px-4 sm:py-3 ${
-                    isSelected ? 'bg-[#f1f6ff]' : 'hover:bg-[#f8fafe]'
+                    isSelected ? 'bg-[#fef2f2]' : 'hover:bg-[#f8fafe]'
                   } ${index !== options.length - 1 ? 'border-b border-[#edf1f8]' : ''}`}
                 >
                   <div className="min-w-0 flex-1">
                     <p
-                      className={`truncate text-[13px] font-semibold max-[380px]:text-xs sm:text-sm ${isSelected ? 'text-[#1166e8]' : 'text-[#1c2940]'}`}
+                      className={`truncate text-[13px] font-semibold max-[380px]:text-xs sm:text-sm ${isSelected ? 'text-[#dc2626]' : 'text-[#1c2940]'}`}
                     >
                       {option.label}
                     </p>
@@ -188,7 +188,7 @@ const DialpadCallerId = ({
                     </p>
                   </div>
                   <span
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${isSelected ? 'bg-[#1672f5]' : 'bg-transparent'}`}
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${isSelected ? 'bg-[#dc2626]' : 'bg-transparent'}`}
                   />
                 </button>
                 </Fragment>

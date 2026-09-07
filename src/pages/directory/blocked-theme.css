@@ -1,0 +1,70 @@
+/* .mcm-page sizes .page via flexbox and relies on it being a direct flex
+   child; this wrapper div sits between them, so without `display: contents`
+   .page can't shrink/scroll and instead gets clipped by .mcm-page's
+   `overflow: hidden` — this is why the page wouldn't scroll and the title
+   read as cut off. See people-theme.css's .ppl-red-theme rule for the full
+   explanation — same fix, every Directory page wrapper needs it. */
+.blk-theme {
+  display: contents;
+}
+
+/* The shared .fchip search pill turns its border/text --accent-ink on hover,
+   which defaults to blue since this page sets no accent override — kept
+   black here instead. */
+.mcm-page .blk-theme .fchip:hover {
+  border-color: var(--line);
+  color: #171717;
+}
+
+/* Blocked Numbers page — the "block someone new" form's Number input still
+   uses the shared .mcm-field; no colour at rest, on hover, or on focus. */
+.blk-theme .mcm-field {
+  outline: none;
+}
+.blk-theme .mcm-field:hover,
+.blk-theme .mcm-field:focus,
+.blk-theme .mcm-field:focus-visible {
+  outline: none;
+  border-color: var(--line);
+}
+
+/* "What to stop" / "What the caller gets" / "Whose line" were native
+   <select> elements — their open dropdown list is drawn by the OS, so its
+   highlighted-row colour could not be reliably recoloured from CSS across
+   browsers. Swapped for the app's own CustomSelect (react-select), which is
+   fully styleable: no colour on the closed control at rest, hover, or open,
+   and no blue highlight on hover/selected options in the list. */
+@layer base {
+  .blk-theme .custom-react-select__control,
+  .blk-theme .custom-react-select__control:hover,
+  .blk-theme .custom-react-select__control--is-focused,
+  .blk-theme .custom-react-select__control--menu-is-open {
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+  /* The open list's own box — was picking up a default black focus outline
+     now that this is a styleable div-based menu instead of a native <select>
+     popup, which read as a second colour alongside the option fill below. */
+  .blk-theme .custom-react-select__menu {
+    border: 1px solid #d1d5db !important;
+    outline: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+  .blk-theme .custom-react-select__option {
+    outline: none !important;
+  }
+  /* Only the row actually under the pointer/keyboard gets coloured. Also
+     colouring the row matching the current value meant two rows could be
+     tinted at once whenever they differed — that read as "two colours"
+     even though both used this same red. */
+  .blk-theme .custom-react-select__option--is-selected {
+    background-color: transparent !important;
+    color: #171717 !important;
+  }
+  .blk-theme .custom-react-select__option:hover,
+  .blk-theme .custom-react-select__option--is-focused {
+    background-color: #fde2e2 !important;
+    color: #171717 !important;
+  }
+}
