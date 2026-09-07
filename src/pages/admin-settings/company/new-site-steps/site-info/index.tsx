@@ -1,7 +1,5 @@
-import ErrorTooltip from '@/components/custom/error-tooltip';
 import CustomSelect from '@/components/custom/custom-select';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { City, State } from 'country-state-city';
 import { useEffect, useMemo, useRef } from 'react';
 import countryList from '@/lib/countries.json';
@@ -18,13 +16,12 @@ const CALLER_ID_OPTIONS = [
    caller ID — the number a person shows comes from their own record. Saying so
    is better than describing behaviour that does not happen. */
 const CALLER_ID_HELP: Record<string, string> = {
-  MAIN: 'Recorded against this location. Not applied to calls yet — see the note below.',
-  CUSTOM: 'Recorded against this location. Not applied to calls yet — see the note below.',
-  BLANK: 'Recorded against this location. Not applied to calls yet — see the note below.',
+  MAIN: 'Recorded here, not yet applied to calls.',
+  CUSTOM: 'Recorded here, not yet applied to calls.',
+  BLANK: 'Recorded here, not yet applied to calls.',
 };
 
-const CALLER_ID_NOTE =
-  'What a person shows when calling out is currently taken from their own record, not from their location. This setting is saved for when location-level caller ID is switched on.';
+const CALLER_ID_NOTE = 'Callers currently see the number from your own record instead.';
 
 const SiteInfo = ({ formInstance }: any) => {
   const {
@@ -159,14 +156,13 @@ const SiteInfo = ({ formInstance }: any) => {
         <div className="flex flex-col gap-1">
           <h5 className="font-semibold text-gray-900 text-md">General Location Info</h5>
           <p className="text-gray-500 text-sm">
-            The name of this place — <span className="font-medium">Mumbai Office</span>,{' '}
-            <span className="font-medium">London Branch</span>. Not your company name, which is
-            shown at the top of Company &amp; Locations.
+            E.g. <span className="font-medium">Mumbai Office</span> or{' '}
+            <span className="font-medium">London Branch</span> — not your company name.
           </p>
         </div>
         <div className="flex w-full items-center gap-3">
           <div className="flex w-full gap-4">
-            <div className="relative flex w-full gap-1">
+            <div className="relative flex w-full max-w-xs gap-1">
               <Input
                 label="Location Name"
                 {...register('name')}
@@ -182,23 +178,16 @@ const SiteInfo = ({ formInstance }: any) => {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <h5 className="font-semibold text-gray-900 text-md">Physical Address</h5>
-          <p className="text-gray-500 text-sm">Enter the geographical address for this site.</p>
         </div>
         <div className="flex flex-col gap-5 sm:gap-6">
           <div className="flex w-full items-center gap-3">
             <div className="relative flex w-full gap-1">
-              <div className="flex w-full flex-col gap-1.5">
-                <div className="flex items-center justify-between gap-1">
-                  <Label>Street Address</Label>
-                  {errors?.address?.message && <ErrorTooltip text={errors?.address?.message} />}
-                </div>
-                <textarea
-                  placeholder="Enter address"
-                  {...register('address')}
-                  rows={3}
-                  className={`border w-full ${errors?.address?.message ? 'border-red-500' : 'border-gray-300'} rounded-xl text-sm resize-none p-3 hover:border-primary focus:border-primary focus-visible:border-primary focus-visible:outline-none text-gray-700`}
-                />
-              </div>
+              <Input
+                placeholder="Enter address"
+                {...register('address')}
+                error={errors?.address?.message}
+                className="w-full"
+              />
             </div>
           </div>
 
@@ -355,8 +344,8 @@ const SiteInfo = ({ formInstance }: any) => {
             </div>
           </div>
 
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-2.5">
-            <p className="text-xs text-gray-700">
+          <div className="rounded-md border border-gray-200 bg-gray-100 p-2.5">
+            <p className="text-xs text-gray-500">
               {CALLER_ID_HELP[watchedCallerIdType] || CALLER_ID_HELP.MAIN}
             </p>
             <p className="mt-1 text-xs text-gray-500">{CALLER_ID_NOTE}</p>

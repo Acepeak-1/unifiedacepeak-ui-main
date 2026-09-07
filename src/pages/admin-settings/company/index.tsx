@@ -14,10 +14,31 @@ import { upsertSite, siteList as fetchSiteList } from '@/services/api';
 import { handleAlert } from '@/lib/utils';
 import { SearchLine } from '@/assets/icons';
 import SideDrawer from '@/components/custom/side-drawer';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '@/assets/icons/icon';
 import { useCompanyFeatures } from '@/hooks/rbac';
-import { Briefcase, MapPin, MapPinIcon } from 'lucide-react';
+import {
+  Briefcase,
+  Building2,
+  Clock,
+  Crown,
+  Globe,
+  Hash,
+  Info,
+  Map,
+  MapPin,
+  MapPinIcon,
+  MoreVertical,
+  Settings,
+} from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useDebounce from '@/hooks/use-debounce';
 import Loader from '@/components/custom/loader';
 import { useUser } from '@/hooks/use-user';
@@ -174,17 +195,58 @@ const CompanyInfo = () => {
   };
 
   return (
-    <section className="mcm-company-theme flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-200/15">
-      <div className="flex min-h-[65px] flex-col justify-center border-b border-gray-200 bg-white px-4 py-3">
-        <p className="text-gray-900 font-semibold text-lg">Company &amp; Locations</p>
-        <p className="text-gray-500 text-xs">
-          Your company record and every place it operates from — address, timezone and the people
-          who work there.
-        </p>
+    <section className="mcm-company-theme flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-100">
+      <div className="flex min-h-[65px] flex-row items-center justify-start gap-2 border-b border-gray-200 bg-white px-4 py-3">
+        <div className="flex flex-col">
+          <p
+            className="uppercase"
+            style={{
+              fontFamily: "'IBM Plex Mono', 'ui-monospace', 'SF Mono', Menlo, monospace",
+              fontWeight: 800,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '18px',
+              letterSpacing: '0.1em',
+              color: 'rgb(220, 38, 38)',
+            }}
+          >
+            Company
+          </p>
+          <div className="flex items-center gap-1.5">
+            <p
+              className="italic text-[27px] leading-[33px]"
+              style={{
+                fontFamily: "'Instrument Serif', Georgia, serif",
+                fontWeight: 400,
+                color: 'rgb(23, 23, 23)',
+              }}
+            >
+              Company &amp; Locations
+            </p>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 shrink-0 text-gray-400" />
+              </TooltipTrigger>
+              <TooltipContent
+            side="right"
+            className="w-max max-w-[360px] text-black [&_svg]:fill-[#fdf7f5]"
+            style={{
+              background: '#fdf7f5',
+              border: 'none',
+              color: '#000',
+              boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+            }}
+          >
+              Your company record and every place it operates from — address, timezone and the
+              people who work there.
+            </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
       </div>
       {!canViewSites ? (
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 pt-3 sm:px-4">
-          <div className="mx-auto flex w-full max-w-[1040px] min-h-0 flex-col gap-4">
+          <div className="flex w-full min-h-0 flex-col gap-4">
             <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-8 text-center">
               <p className="text-sm font-semibold text-gray-900">
                 You do not have permission to view sites
@@ -194,7 +256,7 @@ const CompanyInfo = () => {
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 pt-3 sm:px-4">
-          <div className="mx-auto flex w-full max-w-[1040px] min-h-0 flex-col gap-4">
+          <div className="flex w-full min-h-0 flex-col gap-4">
             {/* Organisation before locations — the order established systems
                 use, and the order the platform's own data follows: a location
                 belongs to a company. */}
@@ -217,57 +279,52 @@ const CompanyInfo = () => {
             <div className="rounded-lg border border-gray-200 bg-white p-3">
               <p className="text-sm font-semibold text-gray-900">What a location decides</p>
               <p className="mt-1 text-xs text-gray-600">
-                Add a location for each place your company works from — London, Dubai, Singapore —
-                all under one billing account. For everyone assigned to it, the location sets:
+                Each location — London, Dubai, Singapore, all under one billing account — sets its
+                own opening hours by timezone, the caller ID shown on outbound calls, and the
+                address on record for local numbers and regulatory checks.
               </p>
-              <ul className="mt-2 grid gap-1.5 sm:grid-cols-3">
-                <li className="text-xs text-gray-700">
-                  <span className="font-semibold text-gray-900">The clock.</span> Opening and
-                  closing times are read in the location&rsquo;s timezone.
-                </li>
-                <li className="text-xs text-gray-700">
-                  <span className="font-semibold text-gray-900">The number shown.</span> What people
-                  here display when they call out.
-                </li>
-                <li className="text-xs text-gray-700">
-                  <span className="font-semibold text-gray-900">The address on record.</span> Used
-                  when buying local numbers and for regulatory checks.
-                </li>
-              </ul>
             </div>
             <div id="setup-locations" className="flex items-center gap-3 rounded-xl">
               <p className="flex items-center gap-2 text-base font-semibold capitalize tracking-wide text-gray-900">
-                <Briefcase className="h-4.5 w-4.5 text-primary" />
+                <Briefcase className="h-4.5 w-4.5 text-black" />
                 Default location
               </p>
             </div>
             {defaultSite ? (
-              <div className="rounded-xl border-t-3 border-primary bg-white shadow-sm">
-                <div className="flex gap-3 p-4">
-                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
-                    <Icon name="CompayIcon" className="h-5 w-5" />
-                    <span className="absolute bottom-0 -right-1 h-3 w-3 rounded-full border border-white bg-green-500" />
-                  </div>
-                  <div className="flex flex-1 flex-col">
-                    <div className="flex flex-wrap items-start gap-3 border-b border-gray-200 pb-4">
-                      <div className="flex min-w-[220px] flex-1 flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          className="cursor-pointer text-left text-sm font-semibold text-primary"
-                          onClick={() => handleViewSite(defaultSite)}
-                        >
-                          {defaultSite?.name || '---'}
-                        </button>
-                        <span className="rounded-sm bg-ucass-primary-200 px-2 py-1 text-xs font-semibold capitalize text-primary">
-                          Main location
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
+              <div className="rounded-xl bg-white shadow-md ring-2 ring-primary/25 ring-offset-2 ring-offset-gray-100">
+                <div className="p-4">
+                  <div className="flex gap-3">
+                    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
+                      <Icon name="CompayIcon" className="h-5 w-5" />
+                      <span className="absolute bottom-0 -right-1 h-3 w-3 rounded-full border border-white bg-green-500" />
+                    </div>
+                    <div className="flex flex-1 flex-wrap items-start gap-3 border-b border-gray-200 pb-4">
+                      <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            className="cursor-pointer text-left text-sm font-semibold text-primary"
+                            onClick={() => handleViewSite(defaultSite)}
+                          >
+                            {defaultSite?.name || '---'}
+                          </button>
+                          <span className="rounded-sm bg-ucass-primary-200 px-2 py-1 text-xs font-semibold capitalize text-primary">
+                            Main location
+                          </span>
+                        </div>
                         <p className="text-xs text-gray-500">
                           Location ID:{' '}
                           {defaultSite?.site_id || defaultSite?.id || defaultSite?.uuid || '---'}
                         </p>
-                        {!isTrial && canEditSites && (
+                      </div>
+                      <div className="flex flex-1 items-center justify-end gap-1.5 pr-4 text-right">
+                        <MapPinIcon className="h-4 w-4 shrink-0 text-black" />
+                        <p className="text-sm font-semibold text-gray-900 underline decoration-gray-300 underline-offset-2">
+                          {defaultSite?.address || '---'}
+                        </p>
+                      </div>
+                      {!isTrial && canEditSites && (
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
                             aria-label="Edit the default location"
@@ -277,66 +334,58 @@ const CompanyInfo = () => {
                           >
                             <Icon name="EditStrokIcon" className="h-4 w-4" />
                           </button>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                      <div className="flex items-start gap-2">
-                        <MapPinIcon className="h-4 w-4 text-primary" />
-                        <div>
-                          <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
-                            Primary Address
-                          </p>
-                          <p className="text-sm font-medium text-gray-700">
-                            {defaultSite?.address || '---'}
-                          </p>
                         </div>
-                      </div>
+                      )}
                     </div>
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                      <div className="space-y-1">
-                        <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                      <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md">
+                        <p className="flex items-center gap-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                          <Globe className="h-3 w-3" />
                           Country
                         </p>
                         <p className="text-sm font-semibold text-gray-700">
                           {defaultSite?.country || '---'}
                         </p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                      <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md">
+                        <p className="flex items-center gap-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                          <Map className="h-3 w-3" />
                           State
                         </p>
                         <p className="text-sm font-semibold text-gray-700">
                           {defaultSite?.state || '---'}
                         </p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                      <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md">
+                        <p className="flex items-center gap-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                          <Building2 className="h-3 w-3" />
                           City
                         </p>
                         <p className="text-sm font-semibold text-gray-700">
                           {defaultSite?.city || '---'}
                         </p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                      <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md">
+                        <p className="flex items-center gap-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                          <Hash className="h-3 w-3" />
                           Postal Code
                         </p>
                         <p className="text-sm font-semibold text-gray-700">
                           {defaultSite?.postal_code || '---'}
                         </p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                      <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md">
+                        <p className="flex items-center gap-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                          <Clock className="h-3 w-3" />
                           Timezone
                         </p>
                         <p className="text-sm font-semibold text-gray-700">
                           {defaultSite?.timezone || '---'}
                         </p>
                       </div>
-                    </div>
-                    <LocationFacts site={defaultSite} />
                   </div>
+                  <LocationFacts site={defaultSite} />
                 </div>
               </div>
             ) : (
@@ -346,15 +395,29 @@ const CompanyInfo = () => {
             )}
             <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div className="flex gap-2 ">
-                <MapPin className="h-4.5 w-4.5 text-primary mt-0.75" />
+                <MapPin className="h-4.5 w-4.5 text-black mt-0.75" />
 
                 <div className="flex flex-col gap-0.5">
                   <p className="flex items-center gap-2 text-base font-semibold capitalize tracking-wide text-gray-900">
                     Other locations
-                  </p>
-                  <p className="text-xs text-gray-700 font-medium">
-                    Manage the physical locations or virtual boundaries associated with your
-                    account.
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 shrink-0 cursor-help text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        className="w-max max-w-[280px] text-black [&_svg]:fill-[#fdf7f5]"
+                        style={{
+                          background: '#fdf7f5',
+                          border: 'none',
+                          color: '#000',
+                          boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+                        }}
+                      >
+                        Manage the physical locations or virtual boundaries associated with your
+                        account.
+                      </TooltipContent>
+                    </Tooltip>
                   </p>
                 </div>
               </div>
@@ -380,8 +443,8 @@ const CompanyInfo = () => {
                   variant={'outline'}
                   onClick={() => navigate('/admin-settings/company/location-management')}
                 >
-                  <MapPin className="mr-1 h-4 w-4" />
-                  Manage all locations
+                  <Settings className="mr-1 h-4 w-4" />
+                  Manage
                 </Button>
                 {!isTrial && canViewSites && canAddSites && (
                   <Button
@@ -395,15 +458,15 @@ const CompanyInfo = () => {
                 )}
               </div>
             </div>
-            <div className="w-full flex flex-col gap-3 pb-3">
+            <div className="grid w-full grid-cols-1 gap-5 pb-3 xl:grid-cols-2">
               {isSitesLoading ? (
-                <div className="rounded-xl border border-gray-200 bg-white px-4 py-8">
+                <div className="col-span-full rounded-xl border border-gray-200 bg-white px-4 py-8">
                   <div className="flex items-center justify-center">
                     <Loader variant="blue" size="md" />
                   </div>
                 </div>
               ) : !filteredSites.length ? (
-                <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-8 text-center">
+                <div className="col-span-full rounded-xl border border-dashed border-gray-300 bg-white px-4 py-8 text-center">
                   <p className="text-sm font-semibold text-gray-900">No additional sites found</p>
                   <p className="text-xs text-gray-600">
                     Try a different search, or create a location.
@@ -414,7 +477,10 @@ const CompanyInfo = () => {
                   const isDefault = site?.is_default === '1';
                   const siteId = site?.site_id || site?.id || site?.uuid || '---';
                   return (
-                    <div key={site?.uuid || siteId} className="rounded-xl bg-white p-4 shadow-sm">
+                    <div
+                      key={site?.uuid || siteId}
+                      className="rounded-xl border border-gray-400 bg-white p-4"
+                    >
                       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-200 pb-4">
                         <div className="flex items-start gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
@@ -438,105 +504,127 @@ const CompanyInfo = () => {
                             <p className="text-xs text-gray-500">Location ID: {siteId}</p>
                           </div>
                         </div>
+                        <div className="flex flex-1 items-center justify-end gap-1.5 pr-4 text-right">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            className="h-4 w-4 shrink-0 text-black"
+                            aria-hidden="true"
+                          >
+                            <rect x="2.5" y="10" width="4" height="9" rx="0.5" fill="currentColor" />
+                            <rect x="8.5" y="5" width="4" height="14" rx="0.5" fill="currentColor" />
+                            <rect x="14.5" y="12" width="4" height="7" rx="0.5" fill="#fb923c" />
+                            <line
+                              x1="2"
+                              y1="19.25"
+                              x2="19.5"
+                              y2="19.25"
+                              stroke="currentColor"
+                              strokeWidth="1"
+                            />
+                            <circle
+                              cx="10.5"
+                              cy="19"
+                              r="2.5"
+                              fill="white"
+                              stroke="currentColor"
+                              strokeWidth="1.2"
+                            />
+                          </svg>
+                          <p className="text-sm font-semibold text-gray-900 underline decoration-gray-300 underline-offset-2">
+                            {site?.address || '---'}
+                          </p>
+                        </div>
                         <div className="flex items-center gap-2">
-                          {!isTrial && canEditSites && !isDefault && (
-                            <button
-                              type="button"
-                              disabled={isSettingMain}
-                              title="Make this the main location"
-                              className="cursor-pointer rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-                              onClick={() => makeMainLocation(site)}
-                            >
-                              Make main
-                            </button>
-                          )}
-                          {!isTrial && canEditSites && (
-                            <button
-                              type="button"
-                              aria-label={`Edit ${site?.name || 'site'}`}
-                              title="Edit"
-                              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-gray-500 hover:bg-primary hover:text-white"
-                              onClick={() => {
-                                handleEditSite(site);
-                              }}
-                            >
-                              <Icon name="EditStrokIcon" className="h-4 w-4" />
-                            </button>
-                          )}
-                          {canDeleteSites && (
-                            <button
-                              type="button"
-                              disabled={isDefault}
-                              aria-label={`Delete ${site?.name || 'site'}`}
-                              /* The main location cannot be deleted, so the
-                                 disabled button says why rather than leaving an
-                                 admin clicking at something inert. */
-                              title={isDefault ? 'The main location cannot be deleted' : 'Delete'}
-                              className={`flex h-8 w-8 items-center justify-center rounded-full border ${
-                                isDefault
-                                  ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-300'
-                                  : 'cursor-pointer border-red-100 bg-red-100 text-red-500 hover:bg-red-500 hover:text-white'
-                              }`}
-                              onClick={() => {
-                                handleDeleteSite(site, isDefault);
-                              }}
-                            >
-                              <Icon name="TrashBin" className="h-4 w-4" />
-                            </button>
-                          )}
-                          {!canEditSites && !canDeleteSites && (
+                          {(!isTrial && canEditSites) || canDeleteSites ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={`More actions for ${site?.name || 'site'}`}
+                                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-gray-500 !outline-none hover:bg-primary hover:text-white"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {!isTrial && canEditSites && !isDefault && (
+                                  <DropdownMenuItem
+                                    disabled={isSettingMain}
+                                    onClick={() => makeMainLocation(site)}
+                                  >
+                                    <Crown className="h-3.5 w-3.5" fill="currentColor" />
+                                    Make main
+                                  </DropdownMenuItem>
+                                )}
+                                {!isTrial && canEditSites && (
+                                  <DropdownMenuItem onClick={() => handleEditSite(site)}>
+                                    <Icon name="EditStrokIcon" className="h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                )}
+                                {canDeleteSites && (
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    disabled={isDefault}
+                                    /* The main location cannot be deleted, so the item is
+                                       disabled rather than left to fail after the fact. */
+                                    title={
+                                      isDefault ? 'The main location cannot be deleted' : undefined
+                                    }
+                                    onClick={() => handleDeleteSite(site, isDefault)}
+                                  >
+                                    <Icon name="TrashBin" className="h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          ) : (
                             <span className="text-xs font-medium text-gray-400">---</span>
                           )}
                         </div>
                       </div>
-                      <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                        <div className="flex items-start gap-2">
-                          <MapPinIcon className="h-4 w-4 text-primary" />
-                          <div>
-                            <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
-                              Primary Address
-                            </p>
-                            <p className="text-sm font-medium text-gray-700">
-                              {site?.address || '---'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                        <div className="space-y-1">
-                          <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                        <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md">
+                          <p className="flex items-center gap-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                            <Globe className="h-3 w-3" />
                             Country
                           </p>
                           <p className="text-sm font-semibold text-gray-700">
                             {site?.country || '---'}
                           </p>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                        <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md">
+                          <p className="flex items-center gap-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                            <Map className="h-3 w-3" />
                             State
                           </p>
                           <p className="text-sm font-semibold text-gray-700">
                             {site?.state || '---'}
                           </p>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                        <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md">
+                          <p className="flex items-center gap-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                            <Building2 className="h-3 w-3" />
                             City
                           </p>
                           <p className="text-sm font-semibold text-gray-700">
                             {site?.city || '---'}
                           </p>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                        <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md">
+                          <p className="flex items-center gap-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                            <Hash className="h-3 w-3" />
                             Postal Code
                           </p>
                           <p className="text-sm font-semibold text-gray-700">
                             {site?.postal_code || '---'}
                           </p>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                        <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md">
+                          <p className="flex items-center gap-1 text-[11px] font-semibold capitalize tracking-wide text-gray-500">
+                            <Clock className="h-3 w-3" />
                             Timezone
                           </p>
                           <p className="text-sm font-semibold text-gray-700">
@@ -559,19 +647,31 @@ const CompanyInfo = () => {
           isOpen={drawerState}
           isTab={false}
           handleClose={() => setDrawerState(false)}
-          content={<CompanyDetails data={rowData} />}
+          content={
+            <CompanyDetails
+              data={rowData}
+              isTrial={isTrial}
+              canEdit={canEditSites}
+              canDelete={canDeleteSites}
+              isSettingMain={isSettingMain}
+              onMakeMain={() => makeMainLocation(rowData)}
+              onEdit={() => {
+                setDrawerState(false);
+                handleEditSite(rowData);
+              }}
+              onDelete={() => {
+                setDrawerState(false);
+                handleDeleteSite(rowData, rowData?.is_default === '1');
+              }}
+            />
+          }
         />
       )}
-      {drawerState2 && (
-        <SideDrawer
-          width="min(1040px, 84vw)"
-          isOpen={drawerState2}
-          handleClose={() => setDrawerState2(false)}
-          isTab={false}
-          enableResponsive
-          content={<NewSiteSteps data={rowData} handleClose={() => setDrawerState2(false)} />}
-        />
-      )}
+      <Dialog open={drawerState2} onOpenChange={(open) => !open && setDrawerState2(false)}>
+        <DialogContent className="mcm-company-theme flex max-h-[75vh] w-full max-w-[760px] flex-col overflow-hidden p-4 shadow-2xl sm:p-6">
+          <NewSiteSteps data={rowData} handleClose={() => setDrawerState2(false)} />
+        </DialogContent>
+      </Dialog>
       <AlertConfirm
         {...{
           apiLoading: isPending,

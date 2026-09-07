@@ -1,9 +1,10 @@
 /* MCM Unified Console typeface pair. Plus Jakarta Sans for UI, IBM Plex
    Mono for anything numeric — durations, counts, timestamps — so digits
-   stay tabular and stop jittering as they tick.
+   stay tabular and stop jittering as they tick. Instrument Serif is the
+   display face, used for page headings only.
    Must stay at the very top: CSS requires every @import to precede all other
    statements, and the imports below pull in real rules. */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 /* Loaded once here rather than from each page. Every rule in it is scoped to
@@ -11,19 +12,30 @@
    means a shared class like .mcm-stickyfoot works wherever it is applied
    instead of only on the 31 files that happened to import the stylesheet. */
 @import './components/mcm/mcm-page.css';
+/* Same reasoning, same fix: pulled in through the root stylesheet rather
+   than a plain `import '...css'` inside the Call Handling component file.
+   A component-level CSS import is a separate module in Vite's graph and
+   isn't guaranteed to land after Tailwind's own `@layer utilities` in the
+   final cascade — which is exactly what was happening here: Tailwind's
+   `px-2`/`h-10`/etc. on the shared `<TableHead>` kept winning over this
+   file's `.tbl__th` no matter what the values said, because of *where*
+   the rules ended up, not what they contained. Routing it through here
+   puts it in the same PostCSS-processed bundle as Tailwind and mcm-page.css,
+   in the same reliable position that already makes mcm-page.css win. */
+@import './components/mcm/ai-tools-table.css';
 
 @theme {
   --color-ucass-gray: oklch(0.9612 0 0);
   --color-ucass-orange: oklch(0.7652 0.1752 62.57);
   --color-ucass-black: oklch(0.23 0 0);
   /* --color-ucass-primary-100: oklch(0.92 0.06 215.08); blue*/
-  --color-ucass-primary-100: #e8efff;
+  --color-ucass-primary-100: #fef2f2;
   /* --color-ucass-primary-200: set dynamically from mainSiteInfo.secondary_color (fallback below) */
-  --color-ucass-primary-200: #2563eb;
+  --color-ucass-primary-200: #fee2e2;
   /* --color-ucass-active: set dynamically from mainSiteInfo.active_sidebar_color (fallback below) */
-  --color-ucass-active: #1d4ed8;
-  --color-ucass-active-bg: #e8efff;
-  --color-ucass-login-bg: #eef1f8;
+  --color-ucass-active: #b91c1c;
+  --color-ucass-active-bg: #fef2f2;
+  --color-ucass-login-bg: #f5f5f5;
   --color-ucass-green: oklch(0.96 0.1 125.78);
   --color-ucass-red: oklch(0.6 0.22 25);
 
@@ -122,21 +134,21 @@
 
 :root {
   /* ---- MCM Unified Console tokens (light is the base) ---------------- */
-  --mcm-ground: #eef1f8;
+  --mcm-ground: #f5f5f5;
   --mcm-surface: #ffffff;
-  --mcm-surface-2: #f6f8fc;
-  --mcm-surface-3: #eaeef7;
+  --mcm-surface-2: #fafafa;
+  --mcm-surface-3: #eeeeee;
   --mcm-ink: #0d1526;
   --mcm-ink-2: #3d4a63;
   --mcm-ink-3: #6b7891;
   --mcm-ink-4: #93a0b8;
-  --mcm-line: #dfe5f0;
-  --mcm-line-2: #eaeef6;
+  --mcm-line: #e5e5e5;
+  --mcm-line-2: #efefef;
 
-  --mcm-accent: #2563eb;
-  --mcm-accent-ink: #1d4ed8;
-  --mcm-accent-wash: #e8efff;
-  --mcm-accent-edge: #c3d6ff;
+  --mcm-accent: #dc2626;
+  --mcm-accent-ink: #b91c1c;
+  --mcm-accent-wash: #fef2f2;
+  --mcm-accent-edge: #fecaca;
 
   /* AI gets its own hue on purpose: machine output must never be mistaken
      for system truth. Violet reads as "generated, verify me". */
@@ -168,14 +180,14 @@
   --mcm-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: #eef1f8;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   /* --primary: set dynamically from mainSiteInfo.primary_color (fallback below) */
-  --primary: oklch(0.18 0 0);
+  --primary: #dc2626;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -204,21 +216,21 @@
 
 .dark {
   /* ---- MCM Unified Console tokens (dark redefines values only) ------- */
-  --mcm-ground: #0a0f1a;
-  --mcm-surface: #111827;
-  --mcm-surface-2: #161f31;
-  --mcm-surface-3: #1e293e;
+  --mcm-ground: #0a0a0a;
+  --mcm-surface: #171717;
+  --mcm-surface-2: #1f1f1f;
+  --mcm-surface-3: #262626;
   --mcm-ink: #eef2f9;
   --mcm-ink-2: #c3cddf;
   --mcm-ink-3: #93a1ba;
   --mcm-ink-4: #6b7a96;
-  --mcm-line: #26314a;
-  --mcm-line-2: #1c2537;
+  --mcm-line: #333333;
+  --mcm-line-2: #292929;
 
-  --mcm-accent: #5b8dff;
-  --mcm-accent-ink: #87aaff;
-  --mcm-accent-wash: #16223d;
-  --mcm-accent-edge: #2c3f68;
+  --mcm-accent: #f87171;
+  --mcm-accent-ink: #fca5a5;
+  --mcm-accent-wash: #3a1414;
+  --mcm-accent-edge: #7f1d1d;
 
   --mcm-ai: #a97fff;
   --mcm-ai-ink: #c0a3ff;
@@ -244,7 +256,7 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.6536 0.124 225.17);
+  --primary: #f87171;
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -271,6 +283,89 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ---- Toast notifications ----
+   react-toastify ships its own look (system font, flat green/red, square
+   corners) that never matched the console's card language. It exposes its
+   whole theme as CSS custom properties, so retinting it is a token swap
+   rather than a fight with its own BEM classes — same approach as the rest
+   of this file. Uses the unprefixed `--mcm-*` root tokens (not `.mcm-page`'s
+   scoped ones) because the toast container portals to `document.body`,
+   outside any page's `.mcm-page` wrapper.
+   `!important` on every one of these: react-toastify injects its own
+   `:root { --toastify-* }` block into `<head>` at runtime, when the toast
+   module first loads — after this stylesheet. Same selector, same
+   specificity, later in the document always wins the normal way, which
+   silently discarded every value below regardless of source order in this
+   file. `!important` is the one thing that still wins against a rule
+   injected after this one. */
+:root {
+  --toastify-toast-bd-radius: var(--mcm-r) !important;
+  --toastify-toast-shadow: var(--mcm-shadow-lg) !important;
+  --toastify-toast-padding: 14px 16px !important;
+  --toastify-font-family: var(--mcm-sans) !important;
+  --toastify-color-light: var(--mcm-surface) !important;
+  --toastify-text-color-light: var(--mcm-ink-2) !important;
+  --toastify-icon-color-success: var(--mcm-live) !important;
+  --toastify-icon-color-error: var(--mcm-crit) !important;
+  --toastify-icon-color-warning: var(--mcm-warn) !important;
+  --toastify-icon-color-info: var(--mcm-hold) !important;
+  --toastify-color-progress-success: var(--mcm-live) !important;
+  --toastify-color-progress-error: var(--mcm-crit) !important;
+  --toastify-color-progress-warning: var(--mcm-warn) !important;
+  --toastify-color-progress-info: var(--mcm-hold) !important;
+}
+/* `!important` throughout this block for the same reason as the `:root`
+   vars above: react-toastify's own base rules for these same selectors ship
+   in that same runtime-injected stylesheet, so on every property the two
+   sides share, its later position in the document would otherwise win. */
+.Toastify__toast {
+  border: 1px solid var(--mcm-line) !important;
+  align-items: flex-start !important;
+}
+.Toastify__toast-body {
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+}
+/* The stock icon is a bare glyph floating in the text row; every status
+   indicator elsewhere in the console (KPI cards, nav chips) puts its icon in
+   a tinted circle instead, so the toast icon gets the same treatment. */
+.Toastify__toast-icon {
+  width: 30px !important;
+  height: 30px !important;
+  margin-inline-end: 12px !important;
+  border-radius: 999px !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.Toastify__toast-icon svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+.Toastify__toast--success .Toastify__toast-icon {
+  background: var(--mcm-live-wash) !important;
+}
+.Toastify__toast--error .Toastify__toast-icon {
+  background: var(--mcm-crit-wash) !important;
+}
+.Toastify__toast--warning .Toastify__toast-icon {
+  background: var(--mcm-warn-wash) !important;
+}
+.Toastify__toast--info .Toastify__toast-icon {
+  background: var(--mcm-hold-wash) !important;
+}
+.Toastify__close-button--light {
+  color: var(--mcm-ink-4) !important;
+  opacity: 1 !important;
+}
+.Toastify__close-button--light:hover,
+.Toastify__close-button--light:focus {
+  color: var(--mcm-ink-2) !important;
+}
+.Toastify__progress-bar--wrp {
+  height: 3px !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -285,7 +380,7 @@
   #root,
   html {
     height: 100%;
-    background-color: var(--color-gray-100);
+    background-color: #e3e3e3;
   }
 
   input,
@@ -363,12 +458,31 @@
     overflow: hidden !important;
   }
 
+  /* var(--select-control-border) is unset everywhere by default, so this
+     resolves to the same --primary as before on every existing page. See
+     the --select-option-*-bg/-fg comment further down for why a page-local
+     fallback variable is used here instead of touching --primary itself,
+     which borders/rings far beyond this one control rely on. */
   .custom-react-select__control:hover {
-    border-color: var(--primary) !important;
+    border-color: var(--select-control-border, var(--primary)) !important;
   }
 
   .react-select-error .custom-react-select__control {
     border-color: var(--color-red-500) !important;
+  }
+
+  /* The Custom Days entry card in Business Hours reads its own black theme
+     (see bussiness-hours-dialog.tsx), so its fields' borders stay black too
+     instead of the app-wide red used for a required/invalid state elsewhere. */
+  .custom-day-entry .border-red-500,
+  .custom-day-entry .react-select-error .custom-react-select__control {
+    border-color: #111111 !important;
+  }
+  .custom-day-entry button[data-slot='button'] {
+    border-color: #d4d4d4 !important;
+  }
+  .custom-day-entry button[data-slot='button']:hover {
+    border-color: #111111 !important;
   }
 
   .custom-react-select__value-container {
@@ -482,7 +596,7 @@
       0 10px 15px -3px rgba(0, 0, 0, 0.1),
       0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
     border-style: solid !important;
-    border-color: var(--primary) !important;
+    border-color: #fecaca !important;
     padding: 0.25rem !important;
   }
 
@@ -576,9 +690,24 @@
     display: none !important;
   }
 
+  /* Brand red rather than the tenant primary: these controls (and their
+     portalled menus) render outside any page scope, and the console runs on
+     the accent, not the tenant colour. */
   .custom-react-select__control--is-focused,
   .custom-react-select__control--menu-is-open {
     border-color: var(--primary) !important;
+  }
+
+  /* "Select Type" in the Custom Days card: no visible border until the field
+     is actually active, then black (this card's own theme) instead of the
+     app-wide red/primary focus colour. Scoped via `inputClass` so it doesn't
+     touch any other CustomSelect. */
+  .select-type-plain.custom-react-select__control {
+    border-color: transparent !important;
+  }
+  .select-type-plain.custom-react-select__control--is-focused,
+  .select-type-plain.custom-react-select__control--menu-is-open {
+    border-color: #111111 !important;
   }
 
   .custom-react-select__menu {
@@ -609,15 +738,39 @@
     border-radius: 0.5rem !important;
   }
 
+  /* These --select-option-*-bg/-fg variables are unset everywhere by
+     default, so every rule below resolves to the same colours as before on
+     every existing page. A page can locally set them (e.g. on its own root
+     class) to recolour just hover or just the current selection for its own
+     dropdowns, without touching the app-wide --color-gray-100 / --primary
+     tokens those colours otherwise fall back to — which are both used far
+     more broadly than this menu. Hover and selected are deliberately
+     separate variables: an option can be hovered without being the current
+     value, and the two are allowed to read as different weights of
+     emphasis. Declared in this order (hover, then selected) because when an
+     option is both — the current value, freshly opened or landed on by
+     keyboard focus — the selected colour is meant to win; being later here
+     is what makes that the case. */
   .custom-react-select__option:hover,
   .custom-react-select__option--is-focused {
-    background-color: var(--color-gray-100) !important;
-    color: var(--color-black) !important;
+    background-color: var(--select-option-hover-bg, var(--color-gray-100)) !important;
+    color: var(--select-option-hover-fg, var(--color-black)) !important;
   }
 
-  .custom-react-select__option--is-selected {
-    background-color: var(--primary) !important;
-    color: var(--color-white) !important;
+  /* Selected: the brand's lightest pink band with red ink, the same pair the
+     Company screens use, rather than a solid --primary fill.
+
+     Listed AFTER hover and naming the hover/focused combinations explicitly,
+     because react-select puts BOTH classes on the row when you mouse over the
+     option that is already chosen. At equal specificity the later rule wins,
+     so without this the selected row lost its pink the moment the cursor
+     touched it — the one place the colour carries meaning. */
+  .custom-react-select__option--is-selected,
+  .custom-react-select__option--is-selected:hover,
+  .custom-react-select__option--is-selected.custom-react-select__option--is-focused {
+    background-color: #fdecec !important;
+    color: #d92b2b !important;
+    font-weight: 600 !important;
   }
 
   .custom-react-select__indicator,
@@ -629,6 +782,15 @@
   .custom-react-select__placeholder {
     color: var(--color-gray-700) !important;
     margin: 0 !important;
+  }
+
+  /* Location management's Country/Status filters: shown value reads in the
+     same light grey as an empty placeholder, matching the search box beside
+     them, instead of the usual dark selected-value colour. Scoped to this one
+     select via inputClass so other selects in the app keep their normal
+     weight. */
+  .loc-filter-select.custom-react-select__single-value {
+    color: var(--color-gray-700) !important;
   }
 
   .custom-react-select__multi-value {
@@ -1008,28 +1170,30 @@
 
 .global-search-root {
   position: relative;
-  /* width: 430px; */
-  flex-shrink: 0;
+  min-width: 0;
 }
 
 .global-search-input-wrapper {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0 12px;
+  border-radius: 12px;
+  padding: 0 10px;
   height: 38px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition:
     border-color 0.2s,
-    box-shadow 0.2s;
+    box-shadow 0.2s,
+    background 0.2s;
 }
 
 .global-search-input-wrapper:focus-within,
 .global-search-input-wrapper.is-open {
-  border-color: #cbd5e1;
+  border-color: var(--primary);
   background: #ffffff;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 14%, transparent);
 }
 
 .global-search-input {
@@ -1054,7 +1218,7 @@
 .global-search-kbd {
   flex: none;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -1062,7 +1226,7 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 5px;
-  padding: 3px 6px;
+  padding: 2px 5px;
   white-space: nowrap;
 }
 
@@ -1100,7 +1264,7 @@
   min-width: 280px;
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -1190,6 +1354,63 @@
   margin: 0;
   font-size: 13px;
   color: #6b7280;
+}
+
+.dark .global-search-input-wrapper {
+  background: #1f1f1f;
+  border-color: #333333;
+}
+
+.dark .global-search-input-wrapper:focus-within,
+.dark .global-search-input-wrapper.is-open {
+  border-color: #444444;
+  background: #171717;
+}
+
+.dark .global-search-input {
+  color: #eef2f9;
+}
+
+.dark .global-search-input::placeholder {
+  color: #93a1ba;
+}
+
+.dark .global-search-kbd {
+  color: #93a1ba;
+  background: #262626;
+  border-color: #333333;
+}
+
+.dark .global-search-cmd-k {
+  color: #93a1ba;
+  border-color: #333333;
+}
+
+.dark .global-search-dropdown {
+  background: #171717;
+  border-color: #333333;
+}
+
+.dark .global-search-section-label {
+  color: #93a1ba;
+  border-top-color: #262626;
+}
+
+.dark .global-search-item {
+  color: #eef2f9;
+}
+
+.dark .global-search-item:hover,
+.dark .global-search-item.is-active {
+  background: #1f1f1f;
+}
+
+.dark .global-search-item-title {
+  color: #eef2f9;
+}
+
+.dark .global-search-empty {
+  color: #93a1ba;
 }
 
 /* .EmojiPickerReact {
@@ -1527,6 +1748,74 @@
   }
 }
 
+/* Call Handling Template, desktop only (below 1024px the rules in the
+   media query above already turn these into small scrollable pills,
+   which is the right call on a narrow screen) — the underlined-tab look
+   `UpsertCallForwarding` uses everywhere else reads as one more list of
+   options rather than progress through a form, so this step reads instead
+   as a breadcrumb ("Settings & Permissions › Call Handling › Media"):
+   plain text, a `›` between steps, current step dark and bold, the rest
+   quieter grey. Scoped through the same `call-handling-template-*` hooks
+   the component already exposes for `isUpsertTemplate`, so Numbers' own
+   Set Forwarding flow (the same shared component, without that flag) never
+   sees this. */
+@media (min-width: 1025px) {
+  .call-handling-template-tabs-list {
+    justify-content: center;
+    gap: 0.375rem;
+    border: none;
+    background: transparent;
+  }
+
+  .call-handling-template-tab-trigger {
+    position: relative;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-gray-400);
+  }
+
+  .call-handling-template-tab-trigger[data-state='active'] {
+    color: var(--color-gray-900) !important;
+    font-weight: 700;
+  }
+
+  .call-handling-template-tab-trigger:not(:first-child) {
+    margin-left: 0.75rem;
+    padding-left: 0.75rem !important;
+  }
+
+  .call-handling-template-tab-trigger:not(:first-child)::before {
+    content: '\203A';
+    position: absolute;
+    left: -0.125rem;
+    font-weight: 400;
+    color: var(--color-gray-300);
+  }
+
+  /* The footer (Cancel/Prev/Next/Submit) is a normal child of the same
+     form that also holds the scrollable step content, inside the modal's
+     own scrolling wrapper — with enough rows in a step, that pushed the
+     footer down past the modal's visible height instead of leaving it
+     reachable, and once scrolled to it sat flush against the dim backdrop
+     with nothing marking it as still part of the dialog. Sticking it to
+     the bottom of that same scroll container keeps it always in view
+     without needing to restructure the shared form itself. */
+  .call-handling-template-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: var(--color-white);
+    border-top: 1px solid var(--color-gray-100);
+    padding-top: 0.75rem;
+    padding-bottom: 0.25rem;
+    margin-top: 0.5rem;
+  }
+}
+
 @media (min-width: 641px) and (max-width: 1024px) {
   .ten-dlc-brand-drawer .ten-dlc-brand-relationship-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1556,12 +1845,28 @@
   display: none;
 }
 
+/* Pill-shaped tabs sitting directly on the header — no surrounding track.
+   The active pill is a single element (`.mcm-areanav-indicator`) that slides
+   and resizes to whichever tab is active, instead of each tab's own
+   background just appearing/disappearing in place. */
 .mcm-areanav {
+  position: relative;
   display: none;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   height: 100%;
   min-width: 0;
+  /* When every tab doesn't fit, the strip scrolls instead of forcing the
+     header wider and pushing the search bar / icon cluster past the
+     viewport's right edge. */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.mcm-areanav::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 @media (min-width: 1024px) {
@@ -1570,46 +1875,107 @@
   }
 }
 
+.mcm-areanav-indicator {
+  /* Position, width and height all come from the component, measured off
+     the active button's own box — so this is the exact same size as the
+     hover pill (which is just that button's own background), not a guessed
+     inset from the nav bar's overall height. */
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 999px;
+  background: #f8fafc;
+  box-shadow: inset 0 0 0 1px #e2e8f0;
+  transition:
+    transform 0.25s cubic-bezier(0.65, 0, 0.35, 1),
+    width 0.25s cubic-bezier(0.65, 0, 0.35, 1),
+    height 0.25s cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+.dark .mcm-areanav-indicator {
+  background: #1f1f1f;
+  box-shadow: inset 0 0 0 1px #333333;
+}
+
 .mcm-areanav-btn {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 20px;
+  gap: 7px;
+  padding: 8px 16px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.01em;
+  line-height: 1;
   white-space: nowrap;
   color: #64748b;
-  background: none;
+  background: transparent;
   border: 0;
-  border-bottom: 3px solid transparent;
+  border-radius: 999px;
   cursor: pointer;
   transition:
-    color 0.15s,
-    background 0.15s,
-    border-color 0.15s;
+    color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .mcm-areanav-btn:hover {
-  color: #0f172a;
-  background: #f8fafc;
+  color: var(--foreground);
+  background: #e3e3e3;
+}
+
+.mcm-areanav-btn:active {
+  transform: scale(0.96);
+  transition-duration: 0.08s;
+}
+
+.dark .mcm-areanav-btn {
+  color: #93a1ba;
+}
+
+.dark .mcm-areanav-btn:hover {
+  color: var(--foreground);
+  background: #1f1f1f;
 }
 
 .mcm-areanav-btn.is-active {
   color: var(--primary);
-  border-bottom-color: var(--primary);
-  background: color-mix(in oklab, var(--primary) 10%, transparent);
-  border-radius: 8px 8px 0 0;
+  font-weight: 700;
 }
 
-/* Below the widest breakpoint the labels go and the icons carry it. */
-@media (max-width: 1279px) {
-  .mcm-areanav-btn span {
+.mcm-areanav-btn.is-active:hover {
+  color: var(--primary);
+  background: transparent;
+}
+
+/* Space runs out left-to-right in priority order: the tab labels ("Home",
+   "Directory"...) are what tells you where you are, so they're the last
+   thing to give. Before that, drop what nobody reads twice — the console's
+   own name next to its logo — which alone used to buy back enough room
+   that tab labels stayed on at ordinary laptop widths (1280-1366px) instead
+   of vanishing into icons the moment the wallet + profile chip needed room. */
+@media (max-width: 1500px) {
+  /* Doubled class beats the later base `.mcm-brand-text { display: flex }`
+     without relying on rule order. */
+  .mcm-brand-text.mcm-brand-text {
     display: none;
   }
-  /* icon-only at this width, so the tint needs to sit evenly around it */
+  /* And the tabs tighten up — labels stay, padding gives. */
   .mcm-areanav-btn {
-    padding: 9px 13px;
+    padding: 9px 10px;
+    gap: 5px;
+  }
+}
+
+/* Last resort — below this the trims above no longer add up (measured: at
+   ~1100px the header is ~170px short even with the brand text gone and tab
+   padding tightened), so the rail goes icon-only. 1269 keeps every common
+   100%-zoom laptop width (1280, 1366, 1536) in full-label mode. */
+@media (max-width: 1269px) {
+  .mcm-areanav-btn span {
+    display: none;
   }
 }
 
@@ -1618,15 +1984,24 @@
    the top bar, with the area rail below it rather than beside it.
    ============================================================ */
 .mcm-brandbar {
-  flex: none;
+  /* Shrinks under pressure (the area-nav strip inside it scrolls first, see
+     .mcm-areanav) rather than staying rigid and forcing the rest of the
+     header — search bar, icon cluster, profile pill — past the viewport. */
+  flex: 0 1 auto;
+  min-width: 0;
   height: 100%;
-  padding-right: 14px;
+  padding-right: 10px;
   border-right: 1px solid #e2e8f0;
   margin-right: 2px;
 }
 
+.dark .mcm-brandbar {
+  border-right-color: #333333;
+}
+
 .mcm-brand {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 9px;
   text-decoration: none;
@@ -1645,43 +2020,15 @@
   background: color-mix(in oklab, var(--primary) 12%, #ffffff);
 }
 
+.dark .mcm-brand-mark {
+  background: color-mix(in oklab, var(--primary) 22%, #171717);
+}
+
 .mcm-brand-mark img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   padding: 4px;
-}
-
-.mcm-brand-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.05;
-  min-width: 0;
-}
-
-.mcm-brand-name {
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: #0f172a;
-}
-
-.mcm-brand-sub {
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #94a3b8;
-  margin-top: 1px;
-}
-
-/* Below the widest breakpoint the wordmark goes and the mark carries it. */
-@media (max-width: 1279px) {
-  .mcm-brand-text {
-    display: none;
-  }
-  .mcm-brandbar {
-    padding-right: 10px;
-  }
 }
 
 /* Your own availability on the Admin People table. That page is not scoped to
@@ -1697,7 +2044,7 @@
   cursor: pointer;
 }
 .mcm-presence-admin:hover:not(:disabled) {
-  border-color: #c3d6ff;
+  border-color: #fecaca;
   color: #0d1526;
 }
 .mcm-presence-admin:disabled {
@@ -1732,14 +2079,14 @@
   padding: 5px 13px;
   border: 0;
   border-radius: 999px;
-  background: #2563eb;
+  background: #dc2626;
   color: #fff;
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
 }
 .mcm-newbuild button:hover {
-  background: #1d4ed8;
+  background: #b91c1c;
 }
 
 /* Customer initial, shown when they have not uploaded a logo. Never the
@@ -1751,13 +2098,13 @@
   width: 100%;
   height: 100%;
   border-radius: 8px;
-  background: #e8efff;
-  color: #1d4ed8;
+  background: #fef2f2;
+  color: #b91c1c;
   font-size: 15px;
   font-weight: 800;
 }
 
-/* Rail labels wrap to two lines instead of truncating. The tile is 64px wide,
+/* Rail labels wrap to two lines instead of truncating. The tile is 68px wide,
    so "External Contacts" on one line would be cut mid-word. */
 .mcm-rail-label {
   display: -webkit-box;
@@ -1767,8 +2114,9 @@
   width: 100%;
   padding: 0 2px;
   text-align: center;
-  font-size: 10px;
-  line-height: 1.2;
+  font-size: 10.5px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
   word-break: break-word;
 }
 
@@ -1908,13 +2256,13 @@
   border-radius: 8px;
   font-size: 12.5px;
   font-weight: 600;
-  color: #1d4ed8;
+  color: #b91c1c;
   text-decoration: none;
   white-space: nowrap;
 }
 .mcm-setupguide-action:hover {
-  background: #eef3ff;
-  border-color: #c3d6ff;
+  background: #fef2f2;
+  border-color: #fecaca;
 }
 @media (max-width: 640px) {
   .mcm-setupguide li {
@@ -1924,5 +2272,29 @@
     grid-column: 2;
     justify-self: start;
     margin-top: 8px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   react-select chrome: brand accent instead of the tenant primary.
+   These controls portal to <body>, so page-scoped rules cannot reach
+   them. Two later `!important` rules (the gray control border and the
+   menu border) share single-class specificity with the focus rule and
+   win on order, so the exemption is doubled-class and lives in the
+   same layer, last: for !important, layered rules outrank unlayered.
+   ------------------------------------------------------------------ */
+@layer base {
+  .custom-react-select__menu.custom-react-select__menu {
+    border-color: #fecaca !important;
+  }
+}
+
+/* A focus ring for react-select. It has to sit in the same cascade layer as
+   the base control rules: for !important declarations layered styles outrank
+   unlayered ones, so an unlayered override loses to `box-shadow: none`. */
+@layer base {
+  .mcm-selectring:focus-within .custom-react-select__control {
+    box-shadow: 0 0 0 2px #fee2e2 !important;
+    border-color: #dc2626 !important;
   }
 }

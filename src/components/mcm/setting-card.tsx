@@ -26,6 +26,9 @@
  */
 
 import { ReactNode } from 'react';
+import { Info } from 'lucide-react';
+
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 import './mcm-page.css';
 
@@ -83,7 +86,7 @@ const resolveStatus = (
 };
 
 interface SettingCardProps {
-  title: string;
+  title: ReactNode;
   description?: ReactNode;
   /* Shown at the top right - a switch that governs the whole group, or a badge. */
   aside?: ReactNode;
@@ -131,8 +134,26 @@ export const SettingCard = ({
                 {STATUS_LABEL[shown]}
               </span>
             ) : null}
+            {description ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3.5 w-3.5 shrink-0 cursor-help text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="w-max max-w-[280px] [text-wrap:pretty] text-black"
+                  style={{
+                    background: '#fdf7f5',
+                    border: 'none',
+                    color: '#000',
+                    boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+                  }}
+                >
+                  {description}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
           </div>
-          {description ? <p>{description}</p> : null}
         </div>
         {aside ? <div className="mcm-setcard-aside">{aside}</div> : null}
       </header>

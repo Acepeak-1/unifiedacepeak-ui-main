@@ -172,8 +172,8 @@ const Dialpad = ({
           className={cn(
             'inline-flex h-7 w-7 items-center justify-center rounded-lg text-[#36557f] transition',
             resolvedModalSize === 'maxi'
-              ? 'bg-primary text-white shadow-[0_4px_10px_rgba(33,96,217,0.28)]'
-              : 'hover:bg-[#e7efff]',
+              ? 'bg-primary text-white shadow-[0_4px_10px_rgba(220,38,38,0.28)]'
+              : 'hover:bg-[#fef2f2]',
           )}
         >
           <AppWindowIcon className="h-3.5 w-3.5" />
@@ -186,8 +186,8 @@ const Dialpad = ({
           className={cn(
             'inline-flex h-7 w-7 items-center justify-center rounded-lg text-[#36557f] transition',
             resolvedModalSize === 'mini'
-              ? 'bg-primary text-white shadow-[0_4px_10px_rgba(33,96,217,0.28)]'
-              : 'hover:bg-[#e7efff]',
+              ? 'bg-primary text-white shadow-[0_4px_10px_rgba(220,38,38,0.28)]'
+              : 'hover:bg-[#fef2f2]',
           )}
         >
           <Tablet className="h-3.5 w-3.5" />
@@ -657,7 +657,7 @@ const Dialpad = ({
             )}
           >
             {hasAnySession && !isMiniOnlyForActiveSession ? (
-              <div className="inline-flex items-center gap-1 rounded-xl bg-[#f5f8ff] p-1">
+              <div className="inline-flex items-center gap-1 rounded-xl bg-[#fef2f2] p-1">
                 {!isMaxiRestrictedForActiveSession ? (
                   <button
                     type="button"
@@ -667,8 +667,8 @@ const Dialpad = ({
                     className={cn(
                       'inline-flex h-7 w-7 items-center justify-center rounded-lg text-[#36557f] transition',
                       resolvedModalSize === 'maxi'
-                        ? 'bg-primary text-white shadow-[0_4px_10px_rgba(33,96,217,0.28)]'
-                        : 'hover:bg-[#e7efff]',
+                        ? 'bg-primary text-white shadow-[0_4px_10px_rgba(220,38,38,0.28)]'
+                        : 'hover:bg-[#fef2f2]',
                     )}
                   >
                     <AppWindowIcon className="h-3.5 w-3.5" />
@@ -682,8 +682,8 @@ const Dialpad = ({
                   className={cn(
                     'inline-flex h-7 w-7 items-center justify-center rounded-lg text-[#36557f] transition',
                     resolvedModalSize === 'mini'
-                      ? 'bg-primary text-white shadow-[0_4px_10px_rgba(33,96,217,0.28)]'
-                      : 'hover:bg-[#e7efff]',
+                      ? 'bg-primary text-white shadow-[0_4px_10px_rgba(220,38,38,0.28)]'
+                      : 'hover:bg-[#fef2f2]',
                   )}
                 >
                   <Tablet className="h-3.5 w-3.5" />
@@ -696,8 +696,8 @@ const Dialpad = ({
                   className={cn(
                     'inline-flex h-7 w-7 items-center justify-center rounded-lg text-[#36557f] transition',
                     resolvedModalSize === 'micro'
-                      ? 'bg-primary text-white shadow-[0_4px_10px_rgba(33,96,217,0.28)]'
-                      : 'hover:bg-[#e7efff]',
+                      ? 'bg-primary text-white shadow-[0_4px_10px_rgba(220,38,38,0.28)]'
+                      : 'hover:bg-[#fef2f2]',
                   )}
                 >
                   <Minus className="h-3.5 w-3.5" />
@@ -709,7 +709,7 @@ const Dialpad = ({
               type="button"
               onClick={handleCloseDialpadFromHeader}
               aria-label="Close dialpad"
-              className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#2f4d75] transition hover:bg-[#edf3ff] hover:text-primary"
+              className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#2f4d75] transition hover:bg-[#fef2f2] hover:text-primary"
             >
               <X className="h-4 w-4" />
             </button>

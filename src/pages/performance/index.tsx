@@ -1,5 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { Info } from 'lucide-react';
 import { useSearchParamManager } from '@/hooks/use-search-params';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import DateDropdown from '@/components/custom/date-dropdown';
 import { DateFilterTypes, handleDate } from '@/components/custom/date-dropdown/constant';
 import Timer from '@/components/timer';
@@ -21,6 +23,7 @@ import Wallboard, { type WallboardQueueRow, type WallboardTile } from './wallboa
 import { formatSecsToClock } from './format';
 import { useAnimatedNumber } from './use-animated-number';
 import '@/components/mcm/mcm-page.css';
+import './kpi-card.css';
 
 import LiveDashboard from '@/pages/dashboard/live-dashboard';
 import AiWallboard from '@/pages/dashboard/ai-wallboard';
@@ -53,6 +56,14 @@ const TABS = [
 
 const SHOW_KPI_HEADER_TABS = new Set(['queues-activity', 'campaign-activity', 'dashboards']);
 
+/**
+ * Which figures are live and which follow the date range. It used to sit above
+ * the KPI band as body copy, which spent four lines of the page on a caveat;
+ * it is now the header infotip, one hover away from the heading it qualifies.
+ */
+const RANGE_NOTE =
+  'Waiting, Longest wait, Service level, On queue agents and Occupancy are live right now. Answered, Abandon rate and Avg handle time cover the selected date range.';
+
 // Maps onto the shared status tokens in mcm-page.css rather than raw colours,
 // so the band stays legible in dark mode.
 /**
@@ -63,8 +74,8 @@ const SHOW_KPI_HEADER_TABS = new Set(['queues-activity', 'campaign-activity', 'd
 const KPI_TONE_STYLES: Record<string, string> = {
   default: '',
   success: '',
-  warning: 'warnv',
-  danger: 'bad',
+  warning: 'kpi-card__value--warn',
+  danger: 'kpi-card__value--critical',
 };
 
 const slaTone = (sla: number | null): 'default' | 'success' | 'warning' | 'danger' => {
@@ -98,6 +109,8 @@ const Performance = () => {
   const activeTab =
     viewParam && allTabKeys.includes(viewParam as string) ? (viewParam as string) : TABS[0].key;
   const setActiveTab = (key: string) => setParam({ view: key });
+  const activeTabLabel =
+    [...TABS, ...WALLBOARD_TABS].find((tab) => tab.key === activeTab)?.label ?? TABS[0].label;
   const [selectedQueueUuid, setSelectedQueueUuid] = useState<string | null>(null);
   const [isWallboardOpen, setIsWallboardOpen] = useState(false);
   const [dropdownVal, setDropdownVal] = useState(() => ({
@@ -106,6 +119,10 @@ const Performance = () => {
     dateOptions: DateFilterTypes,
   }));
   const selectedRange = dropdownVal.value;
+  // The band and the heading's infotip describe the same figures, so they
+  // appear and disappear together.
+  const showKpiBand =
+    SHOW_KPI_HEADER_TABS.has(activeTab) && !(activeTab === 'queues-activity' && selectedQueueUuid);
 
   // Queues, agents and the headline figures come from the shared live hook so
   // Home and Performance can never disagree about them. Everything below is
@@ -146,6 +163,8 @@ const Performance = () => {
     label: string;
     value: ReactNode;
     sub?: ReactNode;
+    /** Optional pill beside the figure, for a second reading of the same thing. */
+    helper?: string;
     tone?: 'default' | 'success' | 'warning' | 'danger';
   }[] = [
     {
@@ -188,7 +207,8 @@ const Performance = () => {
     {
       label: 'On queue agents',
       value: String(Math.round(onlineAgentsAnimated)),
-      sub: `of ${agentRows.length} active`,
+      helper: `${agentRows.length} active`,
+      sub: 'signed in right now',
     },
     {
       label: 'Occupancy',
@@ -307,6 +327,15 @@ const Performance = () => {
           --accent-ink: #b91c1c;
           --accent-wash: #fee2e2;
           --accent-edge: #fecaca;
+          /* The body is one flat ground — the KPI band used to sit on its own
+             tinted, bottom-bordered strip, which drew a hard line between it
+             and the filters below. */
+          --ground: #efefef;
+        }
+        .mcm-page .page-band {
+          background: transparent;
+          border-bottom: 0;
+          padding-bottom: 0;
         }
         .dark .mcm-page {
           --accent: #f87171;
@@ -314,20 +343,59 @@ const Performance = () => {
           --accent-wash: #3a1616;
           --accent-edge: #5c2626;
         }
-        .mcm-page .perf-tbar {
-          display:flex; align-items:center; gap:10px 16px;
-          flex-wrap:wrap; margin-bottom:0;
+        /* The header is now identity only — heading, its infotip and the
+           breadcrumb trail on the left, status and actions on the right. The
+           three filters that used to crowd this row moved into the body. */
+        .mcm-page .perf-head {
+          display:flex; align-items:flex-start; gap:12px 16px;
+          flex-wrap:wrap; padding:13px 0 14px;
         }
-        .mcm-page .perf-tbar-group {
-          display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0;
+        .mcm-page .perf-head-main { min-width:0; }
+        .mcm-page .perf-head-title { display:flex; align-items:center; gap:7px; }
+        /* The display face, loaded in index.css. Instrument Serif ships one
+           weight, so 400 is the regular — never bolded, and the fallback stack
+           stays serif so a failed webfont degrades in kind, not to the UI sans. */
+        .mcm-page .perf-head-title h1 {
+          margin:0;
+          font-family:'Instrument Serif', 'Times New Roman', Times, serif;
+          font-style:italic; font-weight:400; font-size:27px; line-height:41px;
+          letter-spacing:normal; color:var(--ink);
         }
-        .mcm-page .perf-tbar-end { margin-left:auto; }
-        .mcm-page .perf-tbar .fchip,
-        .mcm-page .perf-tbar .btn.sm { height:36px; border-radius:9px; }
+        .mcm-page .perf-infotip {
+          display:grid; place-items:center; flex:none; width:20px; height:20px;
+          border-radius:99px; color:var(--ink-4);
+          transition:color .14s ease, background-color .14s ease;
+        }
+        .mcm-page .perf-infotip svg { width:14px; height:14px; }
+        .mcm-page .perf-infotip:hover,
+        .mcm-page .perf-infotip:focus-visible {
+          color:var(--accent-ink); background:var(--accent-wash);
+        }
+        .mcm-page .perf-crumbs {
+          display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+          margin-top:2px; font-size:11.5px; font-weight:400; color:var(--ink-4);
+        }
+        .mcm-page .perf-crumbs .sep { color:var(--ink-4); opacity:.7; }
+        .mcm-page .perf-crumbs [aria-current] { color:var(--ink-3); font-weight:500; }
+        .mcm-page .perf-head-actions {
+          display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+          margin-left:auto; padding-top:2px;
+        }
+        .mcm-page .perf-head-actions .fchip,
+        .mcm-page .perf-head-actions .btn.sm { height:34px; border-radius:9px; }
+
+        /* The filters, in the body. No strip around them and no "Filters"
+           label: the controls already look like controls, so a frame and a
+           heading only announced a row that reads perfectly well as itself. */
+        .mcm-page .perf-filters {
+          display:flex; align-items:center; gap:8px 10px; flex-wrap:wrap;
+          margin:14px 22px 0;
+        }
+        .mcm-page .perf-filters .fchip { height:34px; border-radius:9px; }
         /* the date dropdown ships its own grey border — align it to the tokens */
-        .mcm-page .perf-tbar input,
-        .mcm-page .perf-tbar select,
-        .mcm-page .perf-tbar [role="combobox"] { border-color:var(--line); }
+        .mcm-page .perf-filters input,
+        .mcm-page .perf-filters select,
+        .mcm-page .perf-filters [role="combobox"] { border-color:var(--line); }
       `}</style>
 
       <div className="page-bar">
@@ -335,19 +403,41 @@ const Performance = () => {
             Performance — a strip here as well would be a second row of the
             same navigation. The rail links through `?view=`, which is what
             `activeTab` reads. */}
-        {/* This row is the whole page header now, so it carries the filters on
-            the left and status plus actions on the right. The controls come
-            from three places (the app's date dropdown, the design system's
-            chips, its buttons) at three different heights — `perf-tbar` below
-            settles them onto one baseline. */}
-        <div className="tbar perf-tbar">
-          <div className="perf-tbar-group">
-            <DateDropdown dropdownVal={dropdownVal} setDropdownVal={setDropdownVal} />
-            <span className="fchip">Division: All</span>
-            <span className="fchip">Media: All</span>
+        <div className="perf-head">
+          <div className="perf-head-main">
+            <div className="perf-head-title">
+              <h1>{activeTabLabel}</h1>
+              {showKpiBand && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="perf-infotip"
+                      aria-label="Which figures are live and which follow the date range"
+                    >
+                      <Info aria-hidden="true" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="bottom"
+                    align="start"
+                    className="max-w-[340px] text-left leading-relaxed"
+                  >
+                    {RANGE_NOTE}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            <nav className="perf-crumbs" aria-label="Breadcrumb">
+              <span>Performance</span>
+              <span className="sep" aria-hidden="true">
+                ›
+              </span>
+              <span aria-current="page">{activeTabLabel}</span>
+            </nav>
           </div>
 
-          <div className="perf-tbar-group perf-tbar-end">
+          <div className="perf-head-actions">
             <span className="fchip live">
               <span className="dot green pulsing" />
               Live — updates every 2s
@@ -371,30 +461,47 @@ const Performance = () => {
         </div>
       </div>
 
-      {SHOW_KPI_HEADER_TABS.has(activeTab) &&
-        !(activeTab === 'queues-activity' && selectedQueueUuid) && (
-          <div className="page-band">
-            <p className="page-note">
-              Waiting, Longest wait, Service level, On queue agents and Occupancy are live right
-              now. Answered, Abandon rate and Avg handle time cover the selected date range.
-            </p>
-            {/* `kpis-flat` is this page's own treatment of the shared band —
-                four across in two rows, more air, and the type doing the work
-                instead of colour. Scoped as a modifier so Home and the dialer
-                summary, which render the same `.kpis`, are untouched. */}
-            <div className="kpis kpis-flat">
-              {kpis.map((kpi) => (
-                <div key={kpi.label} className="kpi">
-                  <div className="k">{kpi.label}</div>
-                  <div className={`v num ${KPI_TONE_STYLES[kpi.tone || 'default']}`.trim()}>
-                    {kpi.value}
-                  </div>
-                  {kpi.sub && <div className="d">{kpi.sub}</div>}
-                </div>
-              ))}
-            </div>
+      {showKpiBand && (
+        <div className="page-band">
+          {/* The shared KPI Overview card (`kpi-card.css`), the same one the
+                AI screens use. Eight stats, so `--cols-4` puts them in two
+                clean rows rather than a row of five and a stub of three. */}
+          <div className="kpi-section-heading">
+            <span className="kpi-section-heading__label">Overview</span>
+            <span className="kpi-section-heading__rule" />
           </div>
-        )}
+          <div className="kpi-grid kpi-grid--cols-4">
+            {kpis.map((kpi) => (
+              <div key={kpi.label} className="kpi-card">
+                <span className="kpi-card__label">{kpi.label}</span>
+                <span className="kpi-card__value-row">
+                  <span
+                    className={`kpi-card__value ${KPI_TONE_STYLES[kpi.tone || 'default']}`.trim()}
+                  >
+                    {kpi.value}
+                  </span>
+                  {kpi.helper && (
+                    <span className="kpi-card__helper">
+                      <span className="kpi-card__helper-dot" />
+                      {kpi.helper}
+                    </span>
+                  )}
+                </span>
+                {kpi.sub && <span className="kpi-card__description">{kpi.sub}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* The range and scope filters, out of the header and into the body.
+          They apply to every view, so they lead the content rather than
+          living inside any one tab. */}
+      <div className="perf-filters">
+        <DateDropdown dropdownVal={dropdownVal} setDropdownVal={setDropdownVal} />
+        <span className="fchip">Division: All</span>
+        <span className="fchip">Media: All</span>
+      </div>
 
       {/* Flows in the page's own scroll rather than being a separate scroll pane. */}
       <div style={{ flex: 'none' }}>

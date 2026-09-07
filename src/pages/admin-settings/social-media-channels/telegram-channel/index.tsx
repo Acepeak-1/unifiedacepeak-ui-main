@@ -1,4 +1,6 @@
-import { ConnectIcon, SettingsLine, TelegramIcon, Warning } from '@/assets/icons';
+import { TelegramIcon } from '@/assets/icons';
+import ChannelCard from '../channel-card';
+import { DEMO_CHANNELS } from '../constants';
 import Loader from '@/components/custom/loader';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,8 +24,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { telegramChannelInitialValues, telegramChannelSchema } from '../constants';
 import { Label } from '@/components/ui/label';
 import { useEffect, useState } from 'react';
-import { CircleCheckIcon, Trash2 } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+import { Trash2 } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 
 const TelegramChannel = () => {
@@ -155,109 +156,27 @@ const TelegramChannel = () => {
 
   return (
     <div>
-      <div
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e: any) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setIsTelegramModalOpen(true);
+      <ChannelCard
+        icon={<TelegramIcon className="w-6 h-6" />}
+        tone="telegram"
+        name="Telegram"
+        description="Handle automated messages and live conversations from your Telegram bot."
+        /* DEMO fallback — remove with DEMO_CHANNELS before release. */
+        isConnected={isTelegramConnected || DEMO_CHANNELS.telegram.connected}
+        account={DEMO_CHANNELS.telegram.account}
+        capabilities={DEMO_CHANNELS.telegram.capabilities}
+        isLoading={isLodingChannelList}
+        onConnect={() => setIsTelegramModalOpen(true)}
+        onManage={() => setIsTelegramModalOpen(true)}
+        onDelete={() => setIsDeleteModalOpen(true)}
+        switchChecked={telegramData ? telegramData.status === 1 : Boolean(DEMO_CHANNELS.telegram.enabled)}
+        onSwitchChange={(checked) => {
+          if (telegramData?.uuid) {
+            mutateStatusChange({ uuid: telegramData.uuid, status: checked ? 1 : 0 });
           }
         }}
-        className="w-full bg-white rounded-xl p-4 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] hover:decoration flex flex-col gap-4 text-left "
-      >
-        <div className="w-full flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex gap-3 items-center text-sm">
-              <div className="w-9 h-9 flex items-center justify-center p-2 rounded-full bg-sky-100 text-sky-600">
-                <TelegramIcon className="w-8 h-8" />
-              </div>
-              <h6 className="font-medium">Telegram</h6>
-            </div>
-          </div>
-          <p className="text-gray-700 text-sm">
-            Connect your Telegram bot to enable automated messaging and manage conversations in real
-            time.
-          </p>
+      />
 
-          {isLodingChannelList ? (
-            <div className="p-3">
-              <Loader variant="blue" />
-            </div>
-          ) : (
-            <div
-              className={`flex items-center gap-2 p-3 rounded-lg ${isTelegramConnected ? 'bg-green-50' : 'bg-yellow-50'}`}
-            >
-              <div className={isTelegramConnected ? 'text-green-600' : 'text-yellow-600'}>
-                {isTelegramConnected ? (
-                  <CircleCheckIcon className="w-5 h-5" />
-                ) : (
-                  <Warning className="w-4 h-4" />
-                )}
-              </div>
-
-              <p
-                className={`font-medium text-sm leading-relaxed ${
-                  isTelegramConnected ? 'text-green-600' : 'text-yellow-600'
-                }`}
-              >
-                {isTelegramConnected ? 'Telegram is connected' : 'Setup required'}
-              </p>
-            </div>
-          )}
-          <div className="flex items-center justify-between gap-2">
-            {!isTelegramConnected ? (
-              <div
-                className="flex gap-1 items-center text-primary text-sm cursor-pointer"
-                onClick={() => setIsTelegramModalOpen(true)}
-              >
-                <ConnectIcon className="w-5 h-5" />
-                <h6 className={`font-medium`}>Connect Account </h6>
-              </div>
-            ) : (
-              <div className="flex gap-3 items-center">
-                <div
-                  className="flex gap-1 items-center text-primary text-sm cursor-pointer"
-                  onClick={() => setIsTelegramModalOpen(true)}
-                >
-                  <SettingsLine className="w-5 h-5" />
-                  <h6 className={`font-medium`}>Manage Settings </h6>
-                </div>
-                <div
-                  className="flex gap-1 items-center text-red-500 hover:text-red-600 text-sm cursor-pointer"
-                  onClick={(e: any) => {
-                    e.stopPropagation();
-                    setIsDeleteModalOpen(true);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <h6 className={`font-medium`}>Delete</h6>
-                </div>
-              </div>
-            )}
-
-            <div
-              className="flex items-center gap-2"
-              onClick={(e: any) => e.stopPropagation()}
-              onDoubleClick={(e: any) => e.stopPropagation()}
-            >
-              <p className="text-gray-500 text-sm">Active</p>
-              <Switch
-                disabled={!isTelegramConnected}
-                checked={telegramData?.status === 1}
-                onCheckedChange={(checked) => {
-                  if (telegramData?.uuid) {
-                    mutateStatusChange({
-                      uuid: telegramData.uuid,
-                      status: checked ? 1 : 0,
-                    });
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
 
       <Dialog
         open={isTelegramModalOpen}

@@ -99,12 +99,29 @@ export const getDomainNameFromLocation = () => {
   if (typeof window === 'undefined') return '';
 
   const host = window.location.hostname.includes('localhost')
-    ? 'qa.mycountrymobile.com'
+    ? 'ucaas.acepeak.com'
     : window.location.hostname;
 
   return getDomain(host, { allowPrivateDomains: true }) || host;
 };
-export function handleAlert({ text = '', type = 'success' }: { text: any; type: TypeOptions }) {
+export function handleAlert({
+  text = '',
+  type = 'success',
+  position = 'top-center',
+}: {
+  text: any;
+  type: TypeOptions;
+  /* Defaults to the page-level centre. A caller whose own UI (a centred
+     dialog, say) sits in that same spot should pass a corner instead, or the
+     toast renders directly on top of it while it's showing. */
+  position?:
+    | 'top-center'
+    | 'top-right'
+    | 'top-left'
+    | 'bottom-center'
+    | 'bottom-right'
+    | 'bottom-left';
+}) {
   if (typeof window !== 'undefined' && (window as any).isSessionTerminated) {
     toast.dismiss();
     return null;
@@ -112,7 +129,7 @@ export function handleAlert({ text = '', type = 'success' }: { text: any; type: 
   toast.dismiss();
   return toast(text, {
     type: type,
-    position: 'top-center',
+    position,
     transition: Slide,
   });
 }

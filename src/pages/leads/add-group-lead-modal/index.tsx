@@ -209,7 +209,7 @@ function CreateNewLeadGroup({
       <DialogContent className="sm:w-1/2 md:w-1/3 w-full p-4 max-h-[99%] ">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
           {/* HEADER */}
-          <div className="flex justify-between font-semibold">
+          <div className="dir-serif-heading flex justify-between">
             {group?._id ? 'Update Group' : 'Add Group'}
             {/* <div onClick={() => setModalState(false)} className="cursor-pointer">
               <CloseIcon className="w-3 h-3" />

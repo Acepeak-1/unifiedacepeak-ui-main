@@ -240,10 +240,11 @@ const ForwardingHolidaysActions = ({
   return (
     <>
       <div className="flex items-end gap-2 justify-between">
-        <div className={`flex  gap-2 w-[calc(100%_-_2.5rem)]`}>
-          <div className="w-1/3 max-w-fit">
+        <div className={`flex flex-wrap items-center gap-2 w-[calc(100%_-_2.5rem)]`}>
+          <div className="w-1/3 max-w-fit shrink-0">
             <CustomSelect
               className="w-fit"
+              inputClass="select-type-plain"
               options={options}
               label={typeLabel}
               placeholder="Select Type"
@@ -277,9 +278,9 @@ const ForwardingHolidaysActions = ({
             />
           </div>
           {watchForwardType?.value === 'VOICEMAIL' ? (
-            <div className="w-1/3">
+            <div className="flex-1 min-w-0">
               <RadioGroup
-                className={`flex gap-4 items-center  min-h-10 mb-0 w-full ${radioClass}  `}
+                className={`flex flex-wrap gap-4 items-center  min-h-10 mb-0 w-full ${radioClass}  `}
                 value={String(watchIsPersonalVoicemail)}
                 onValueChange={(value) => {
                   if (value === 'true') {
@@ -298,7 +299,7 @@ const ForwardingHolidaysActions = ({
                   }
                 }}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0 whitespace-nowrap">
                   <RadioGroupItem
                     value="true"
                     id={`${forwardState}-true`}
@@ -309,7 +310,7 @@ const ForwardingHolidaysActions = ({
                   </Label>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0 whitespace-nowrap">
                   <RadioGroupItem
                     value="false"
                     id={`${forwardState}-false`}
@@ -324,13 +325,21 @@ const ForwardingHolidaysActions = ({
           ) : null}
 
           {watchForwardType?.value === 'VOICEMAIL' && watchIsPersonalVoicemail ? null : (
-            <div className="w-1/3 ">
+            <div className="flex-1 min-w-0">
               {renderForwardValueOption()}
-              {watchForwardType?.value !== 'HANGUP' && errorResponse && (
-                <div className={`flex justify-end`}>
-                  <ErrorTooltip text={errorResponse} extraClasses="bg-gray-800 text-white mb-1" />
-                </div>
-              )}
+              {/* Nothing renders in this column until a type is chosen, so an
+                  error here with no type selected had no field to sit next
+                  to — it just floated in the empty space. */}
+              {watchForwardType?.value &&
+                watchForwardType?.value !== 'HANGUP' &&
+                errorResponse && (
+                  <div className={`flex justify-end`}>
+                    <ErrorTooltip
+                      text={errorResponse}
+                      extraClasses="bg-gray-800 text-white mb-1"
+                    />
+                  </div>
+                )}
             </div>
           )}
         </div>

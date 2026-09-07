@@ -15,6 +15,7 @@ export const TableManagerRow: FC<{
   makeSubRowPayload?: (row: any) => any;
   columns: CustomColumnDef[];
   getRowClassName?: any;
+  getCellClassName?: (cell: any) => string;
   showMoreData?: any;
   renderSubComponent?: (rowOriginal: any) => React.ReactNode;
 }> = ({
@@ -24,6 +25,7 @@ export const TableManagerRow: FC<{
   subRowsMutateFn,
   makeSubRowPayload = () => {},
   getRowClassName = () => '',
+  getCellClassName,
   columns,
   showMoreData = () => {},
   renderSubComponent,
@@ -87,10 +89,16 @@ export const TableManagerRow: FC<{
         )}
 
         {row.getVisibleCells().map((cell: any, cellIndex: number) => {
+          const textAlign =
+            cell?.column?.id === 'action' ? 'center' : cell?.column?.columnDef?.meta?.textAlign;
           return (
             <TableCell
               key={`${row.id}_${cell.column.id}_${cellIndex}`}
-              className="px-2 xl:px-4 py-2 border-b  border-gray-200 last-of-type:border-r-0 h-11 min-h-11 text-gray-900/80 font-normal"
+              className={
+                getCellClassName
+                  ? getCellClassName(cell)
+                  : `px-2 xl:px-4 py-2 border-b  border-gray-200 last-of-type:border-r-0 h-11 min-h-11 text-gray-900/80 font-normal text-${textAlign ?? 'left'}`
+              }
             >
               {cell?.column?.id === 'action' ? (
                 <div className="flex items-center justify-center">

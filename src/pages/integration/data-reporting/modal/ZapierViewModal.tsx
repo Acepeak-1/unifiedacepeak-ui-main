@@ -39,7 +39,8 @@ const ZapierViewModal = ({
         {data?.zaps?.map((zap, index) => (
           <div
             key={index}
-            className="sm:flex-row flex-col flex sm:items-center gap-4 justify-between border rounded-md border-gray-200 p-3 hover:shadow-sm transition"
+            /* Brand spec: list item background #FEF2F2. */
+            className="sm:flex-row flex-col flex sm:items-center gap-4 justify-between border rounded-md border-[#fecaca] bg-[#fef2f2] p-3 hover:shadow-sm transition"
           >
             <div className="flex sm:flex-row flex-col sm:items-center gap-4">
               <div className="flex gap-1 mt-1">
@@ -47,8 +48,16 @@ const ZapierViewModal = ({
                   <img
                     key={i}
                     src={icon === McmLogo ? getMcmLogoIcon(mainSiteInfo) : icon}
-                    alt="icon"
-                    className="w-8 h-8 object-contain border rounded-sm p-1"
+                    alt=""
+                    /* The org logo is served from the API host; when that base
+                       URL is empty (local dev proxies through the origin) the
+                       path 404s, so fall back to the bundled mark rather than
+                       rendering a broken image. */
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (img.src !== McmLogo) img.src = McmLogo;
+                    }}
+                    className="w-8 h-8 object-contain border border-gray-200 rounded-md p-1 bg-white"
                   />
                 ))}
               </div>
@@ -60,7 +69,13 @@ const ZapierViewModal = ({
               </div>
             </div>
             <div className="flex">
-              <Button variant={'outline'} onClick={() => window?.open(zap?.url)}>
+              <Button
+                variant={'outline'}
+                onClick={() => window?.open(zap?.url, '_blank', 'noopener,noreferrer')}
+                /* Brand spec: button bg #171717, text #FFFFFF. The dialog
+                   portals outside the page scope, so it is set here. */
+                className="border-[#171717] bg-[#171717] text-white hover:border-[#2e2e2e] hover:bg-[#2e2e2e] hover:text-white"
+              >
                 Use this Zap
               </Button>
             </div>

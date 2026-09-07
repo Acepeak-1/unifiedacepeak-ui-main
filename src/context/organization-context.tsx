@@ -83,17 +83,10 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchMainSiteInfo = useCallback(async () => {
-    /* On localhost the origin is not a tenant the API knows, so a stand-in is
-       sent instead. It has to be the SAME tenant the dev proxy presents as
-       this deployment (vite.config.ts TENANT_ORIGIN) — the two had drifted
-       apart, and asking for a tenant the backend has no settings for comes
-       back 422 "Website settings not found". That sets `error`, which renders
-       the maintenance screen on every route. Same env var, same default, so
-       they cannot drift again. */
+    const configuredDomain = (getEnv() as { VITE_APP_DOMAIN?: string }).VITE_APP_DOMAIN;
     const domain = getDomain().includes('localhost')
-      ? import.meta.env.VITE_DEV_PROXY_ORIGIN || 'https://ucaas.acepeak.com'
+      ? `https://${configuredDomain || 'ucaas.acepeak.com'}`
       : getDomain();
-    // const domain = "https://mcm.mycountrymobile.com";
     try {
       setIsLoading(true);
       setError(null);
@@ -120,31 +113,11 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     document.title = '';
     fetchMainSiteInfo();
   }, [fetchMainSiteInfo]);
-  // Apply mainSiteInfo colors to CSS variables: --primary, --color-ucass-primary-200, --color-ucass-active
-  useEffect(() => {
-    if (!mainSiteInfo || typeof document === 'undefined') return;
-    const root = document.documentElement;
-    const primary = mainSiteInfo.primary_color;
-    const secondary = mainSiteInfo.secondary_color;
-    const activeSidebar = mainSiteInfo.active_sidebar_color;
-    const activeSidebarbg = mainSiteInfo.active_sidebar_bg_color;
-    const loginBgColor = mainSiteInfo.login_page_bg_color;
-    if (typeof primary === 'string' && primary) {
-      root.style.setProperty('--primary', primary);
-    }
-    if (typeof secondary === 'string' && secondary) {
-      root.style.setProperty('--color-ucass-primary-200', secondary);
-    }
-    if (typeof activeSidebar === 'string' && activeSidebar) {
-      root.style.setProperty('--color-ucass-active', activeSidebar);
-    }
-    if (typeof activeSidebarbg === 'string' && activeSidebarbg) {
-      root.style.setProperty('--color-ucass-active-bg', activeSidebarbg);
-    }
-    if (typeof loginBgColor === 'string' && loginBgColor) {
-      root.style.setProperty('--color-ucass-login-bg', loginBgColor);
-    }
-  }, [mainSiteInfo]);
+  // Per-org white-label color override — disabled. This build is locked to the
+  // Acepeak red/neutral brand (index.css fallbacks), so a backend org record's
+  // own primary/secondary/sidebar/login-bg colors (e.g. MCM's blue on the qa
+  // domain) must not overwrite it at runtime. Re-enable by restoring the
+  // setProperty calls here if per-tenant color white-labeling is needed again.
 
   // Apply organization branding to the document and social-sharing metadata.
   useEffect(() => {
@@ -215,19 +188,6 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     error,
   };
 
-  /* The Stripe key used to gate the whole app here, ahead of the loading and
-     error checks below. Two ways that hangs on a permanent spinner:
-
-       - the org metadata call fails (it currently 422s), so `mainSiteInfo`
-         stays null and the key stays empty. The `error` branch that renders
-         ServerMaintenance sits *after* this one, so it was unreachable and
-         the failure showed as an endless loader instead.
-       - the org simply has no Stripe key configured. Stripe is only needed
-         for billing, so a missing key locked every page over one feature.
-
-     Loading and error are resolved first now, and a missing key just means
-     `stripePromise` is null — which <Elements> accepts, and which resolves
-     later if a key arrives. */
   if (isNoOrgPage) {
     return (
       <OrganizationContext.Provider value={{ ...value, isLoading: false }}>
@@ -244,6 +204,10 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
 
   if (error) {
     return <ServerMaintenance onRefresh={fetchMainSiteInfo} />;
+  }
+
+  if (!stripePublishableKey) {
+    return <FullPageLoader />;
   }
 
   return (

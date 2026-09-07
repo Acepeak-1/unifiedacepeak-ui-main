@@ -13,13 +13,18 @@ const buttonVariants = cva(
           'bg-ucass-primary-200 border border-primary text-primary shadow-xs hover:bg-primary/90 hover:text-white cursor-pointer min-h-10',
         primary:
           'bg-primary border border-primary text-white shadow-xs hover:bg-primary/90 cursor-pointer min-h-10',
-        variantIcon: 'bg-primary text-primary shadow-xs hover:bg-primary/90 cursor-pointer',
+        variantIcon: 'bg-primary text-white shadow-xs hover:bg-primary/90 cursor-pointer',
         destructive:
           'bg-destructive border border-destructive text-white shadow-xs hover:bg-destructive/90 cursor-pointer min-h-10',
         destructiveOutline:
           'bg-red-50 border border-red-200 text-red-600 shadow-xs  cursor-pointer min-h-10',
         outline:
           'bg-white border border-primary text-primary shadow-xs hover:bg-primary/90 hover:text-white cursor-pointer min-h-10',
+        /* A solid black action button, independent of the tenant's `--primary`
+           colour. Used for a dialog's main "Submit" — those sit in portalled
+           modals outside any page's colour scoping, so they can't inherit a
+           page's override the way an in-page black button can. */
+        dark: 'bg-black border border-black text-white shadow-xs hover:bg-black/90 cursor-pointer min-h-10',
         secondary:
           'bg-gray-100 border border-gray-200 text-gray-900 shadow-xs hover:bg-gray-100/90 cursor-pointer min-h-10',
         ghost: 'hover:bg-accent hover:text-accent dark:hover:bg-accent/50',

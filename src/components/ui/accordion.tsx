@@ -27,21 +27,23 @@ function AccordionTrigger({
   isActive,
   variant = 'sidebar',
   triggerIcon = true,
+  /* Lets one sidebar section (e.g. People) show its active state in a
+     different colour than the rest, without recolouring every accordion. */
+  activeClassName = '[&>button[data-state=open]]:bg-ucass-primary-200/50 [&>button[data-state=open]]:text-primary [&>button[data-state=open]]:border-r-primary [&>button[data-state=open]]:border-r-2',
+  activeIconClassName = 'text-primary',
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Trigger> & {
   isActive?: boolean;
   variant?: 'default' | 'sidebar';
   triggerIcon?: boolean;
+  activeClassName?: string;
+  activeIconClassName?: string;
 }) {
   const isSidebar = variant === 'sidebar';
 
   return (
     <AccordionPrimitive.Header
-      className={cn(
-        'flex',
-        isSidebar &&
-          'text-gray-900/80 [&>button[data-state=open]]:bg-ucass-primary-200/50 [&>button[data-state=open]]:text-primary [&>button[data-state=open]]:border-r-primary [&>button[data-state=open]]:border-r-2',
-      )}
+      className={cn('flex', isSidebar && cn('text-gray-900/80', activeClassName))}
     >
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
@@ -61,7 +63,7 @@ function AccordionTrigger({
               isSidebar ? 'mr-3' : '',
               isSidebar
                 ? isActive
-                  ? 'text-primary'
+                  ? activeIconClassName
                   : 'text-gray-400'
                 : 'text-muted-foreground pointer-events-none',
             )}
