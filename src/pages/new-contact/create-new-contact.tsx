@@ -963,6 +963,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
           <Button
             variant={'primary'}
             type="submit"
+            className="contact-submit-btn"
             disabled={showLoader || PendingAddContact || PendingUpdateContact || PendingImageUpload}
           >
             {PendingAddContact || PendingUpdateContact || PendingImageUpload || showLoader ? (

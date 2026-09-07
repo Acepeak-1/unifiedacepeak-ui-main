@@ -82,7 +82,11 @@ export const usePeopleRows = () => {
   const { queues, activeQueueCalls } = useLiveContactCentre(today);
   const { usersOnlineStatus } = useSocketEvents();
 
-  const { data: roster = [], isPending: isRosterLoading } = useQuery({
+  const {
+    data: roster = [],
+    isPending: isRosterLoading,
+    refetch: refetchRoster,
+  } = useQuery({
     queryKey: ['directoryPeople'],
     queryFn: () => getUserList({ page: 1, limit: 500 }),
     select: (res: any) => res?.data?.data?.result?.rows || [],
@@ -173,7 +177,7 @@ export const usePeopleRows = () => {
     [roster, queues, usersOnlineStatus, activeQueueCalls, departmentByUser, sites],
   );
 
-  return { rows, isLoading: isRosterLoading };
+  return { rows, isLoading: isRosterLoading, refetch: refetchRoster };
 };
 
 export default usePeopleRows;
