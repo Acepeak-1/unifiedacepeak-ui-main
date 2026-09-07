@@ -49,22 +49,22 @@ const WebsiteScanProgressModal = ({ open, status }: WebsiteScanProgressModalProp
       <div className="w-full max-w-[390px] rounded-2xl bg-white px-7 py-8 text-center shadow-2xl">
         <div className="mx-auto flex h-16 w-16 items-center justify-center">
           {isComplete ? (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-900 text-white">
               <Check className="h-8 w-8" />
             </div>
           ) : (
             <div
-              className={`h-14 w-14 rounded-full border-4 border-slate-200 ${
-                isError ? 'border-b-red-500' : 'border-b-red-700'
+              className={`h-14 w-14 rounded-full border-4 border-neutral-200 ${
+                isError ? 'border-b-red-500' : 'border-b-red-600'
               } animate-spin`}
             />
           )}
         </div>
 
-        <h3 className="mt-5 text-lg font-bold text-gray-950">
+        <h3 className="mt-5 text-lg font-bold text-neutral-950">
           {isError ? 'Scan could not complete' : 'Scanning your website...'}
         </h3>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-neutral-500">
           {isComplete
             ? 'Pages are ready.'
             : isError
@@ -75,7 +75,7 @@ const WebsiteScanProgressModal = ({ open, status }: WebsiteScanProgressModalProp
         <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-red-100">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
-              isError ? 'bg-red-500' : 'bg-red-700'
+              isError ? 'bg-red-500' : 'bg-red-600'
             }`}
             style={{
               width: isComplete
@@ -91,20 +91,20 @@ const WebsiteScanProgressModal = ({ open, status }: WebsiteScanProgressModalProp
             const isStepActive = !isComplete && !isError && index === activeStepIndex;
 
             return (
-              <div key={step} className="flex items-center gap-3 text-sm text-slate-600">
+              <div key={step} className="flex items-center gap-3 text-sm text-neutral-600">
                 <span
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
                     isStepComplete
-                      ? 'bg-emerald-500 text-white'
+                      ? 'bg-neutral-900 text-white'
                       : isStepActive
-                        ? 'bg-red-50 text-red-700 ring-1 ring-red-200'
-                        : 'bg-slate-100 text-slate-500'
+                        ? 'bg-red-50 text-red-600 ring-1 ring-red-200'
+                        : 'bg-neutral-100 text-neutral-500'
                   }`}
                 >
                   {isStepComplete ? (
                     <Check className="h-3.5 w-3.5" />
                   ) : isStepActive ? (
-                    <span className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-red-200 border-b-red-700" />
+                    <span className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-red-200 border-b-red-600" />
                   ) : (
                     index + 1
                   )}
