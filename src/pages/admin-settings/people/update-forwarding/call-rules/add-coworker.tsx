@@ -11,11 +11,11 @@ import { useFormContext } from 'react-hook-form';
 export const ExtensionListView = ({ option }: any) => {
   const { showExtension = true } = option || {};
   return (
-    <div className="flex w-full items-center justify-between">
-      <div>{option?.label}</div>
+    <div className="flex w-full min-w-0 items-center justify-between gap-3 py-0.5">
+      <div className="min-w-0 truncate text-[15px]">{option?.label}</div>
       {showExtension && (
-        <div className="flex items-center">
-          <Grid className="w-4 h-4 " />
+        <div className="flex shrink-0 items-center gap-1 rounded-md bg-neutral-100 px-1.5 py-0.5 text-xs font-medium text-neutral-600">
+          <Grid className="h-3.5 w-3.5 shrink-0" />
           {option?.value}
         </div>
       )}

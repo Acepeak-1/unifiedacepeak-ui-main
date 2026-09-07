@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@/assets/icons/icon';
+import { SearchIcon } from '@/components/custom/header/GlobalSearch';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
@@ -22,6 +25,8 @@ const CRMIntegration = () => {
   const [searchParams] = useSearchParams();
   const [drawerState, setDrawerState] = useState<boolean>(false);
   const [drawerData, setDrawerData] = useState<crmListProps>();
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'all' | 'connected' | 'available' | 'soon'>('all');
   const [deleteAlertModal, setDeleteAlertModal] = useState<Record<string, boolean>>({});
   const [mondaySetupModal, setMondaySetupModal] = useState<boolean>(false);
   const queryClient: any = useQueryClient();
@@ -102,65 +107,153 @@ const CRMIntegration = () => {
     );
   };
 
+  const matchesSearch = (crm: crmListProps) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      crm?.name?.toLowerCase()?.includes(q) ||
+      crm?.alt?.toLowerCase()?.includes(q) ||
+      crm?.description?.toLowerCase()?.includes(q)
+    );
+  };
+
+  const matchesFilter = (crm: crmListProps) => {
+    if (filter === 'connected') return getConnectionStatus(crm.id);
+    if (filter === 'soon') return Boolean(crm?.comingSoon);
+    if (filter === 'available') return !crm?.comingSoon && !getConnectionStatus(crm.id);
+    return true;
+  };
+
+  const visibleCrmList = crmList?.filter((crm) => matchesSearch(crm) && matchesFilter(crm));
+
+  /* Counts drive the tab labels, so a tab that would show nothing says so
+     before it is clicked. */
+  const counts = {
+    all: crmList?.length ?? 0,
+    connected: crmList?.filter((c) => getConnectionStatus(c.id)).length ?? 0,
+    available: crmList?.filter((c) => !c?.comingSoon && !getConnectionStatus(c.id)).length ?? 0,
+    soon: crmList?.filter((c) => Boolean(c?.comingSoon)).length ?? 0,
+  };
+  const filterTabs = [
+    { key: 'all' as const, label: 'All', count: counts.all },
+    { key: 'connected' as const, label: 'Connected', count: counts.connected },
+    { key: 'available' as const, label: 'Available', count: counts.available },
+    { key: 'soon' as const, label: 'Coming soon', count: counts.soon },
+  ];
+
   return (
     <section className="mcm-intpage">
       <div className="mcm-intpage-head">
         <div className="mcm-intpage-eyebrow">Integration</div>
-        <h1>CRM</h1>
-        <p>
-          Connect the system your team already works in, so calls, contacts and activity flow both
-          ways.
-        </p>
+        {/* One row, three cells on the same columns as the cards below: the
+            title over the first, the filter over the second, the search over
+            the third. It was a flex row with the filter nudged along by a
+            110px margin, so nothing in the head lined up with anything in
+            the grid. */}
+        <div className="mcm-intpage-headrow">
+          {/* Title and filter share one packed group instead of each owning a
+              full card-width column — a lone short title otherwise left a
+              long dead stretch before the tabs started. */}
+          <div className="mcm-intpage-headleft">
+            <div className="flex min-w-0 items-center gap-2">
+            <h1>CRM</h1>
+            <CustomTooltip
+              side="bottom"
+              sideOffset={10}
+              className="mcm-tooltip-info"
+              text="Connect the system your team already works in, so calls, contacts and activity flow both ways."
+            >
+              <span className="mcm-intpage-info">i</span>
+            </CustomTooltip>
+            </div>
+
+            <div className="mcm-segmented" role="group" aria-label="Filter integrations">
+            {filterTabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                aria-pressed={filter === tab.key}
+                className={filter === tab.key ? 'is-active' : ''}
+                onClick={() => setFilter(tab.key)}
+              >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mcm-intpage-search">
+            <Input
+              placeholder="Search integrations"
+              className="pl-9"
+              IconPosition="left-0 pl-3 inset-y-0"
+              value={search}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.startsWith(' ')) return;
+                setSearch(value);
+              }}
+              Icon={<SearchIcon />}
+            />
+          </div>
+        </div>
       </div>
       <div className="mcm-intgrid">
-        {crmList?.map((crm) => {
+        {/* Available integrations lead; coming-soon entries sit at the end
+            rather than interleaved between things you can actually use. */}
+        {[...(visibleCrmList || [])]
+          .sort((a, b) => Number(Boolean(a.comingSoon)) - Number(Boolean(b.comingSoon)))
+          .map((crm) => {
           const isConnected = getConnectionStatus(crm.id);
           console.log(isConnected, 'isConnectedisConnectedd');
 
           return (
             <div key={crm?.name} className="mcm-intcard">
-              <div className="flex flex-col gap-5 w-full">
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-start w-full">
-                    <div className="flex shrink-0 items-center justify-center bg-gray-100 rounded-lg p-3 h-16 w-16">
-                      <img src={crm?.image} alt={crm?.alt} className="w-10 h-10 object-contain" />
-                    </div>
-                    {isConnected && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          <Icon name="MenuDots" className="h-5 rotate-90 cursor-pointer" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setDrawerState(true);
-                              setDrawerData(crm);
-                            }}
-                          >
-                            <Icon name="EditStrokIcon" className="!w-4.5 !h-4.5" />
-                            Manage
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDeleteAlertModal({ [crm?.id]: true })}
-                          >
-                            <Icon name="TrashBin" className="!w-4.5 !h-4.5" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+              <div className="flex flex-col gap-2 w-full">
+                {/* Logo, name and menu share one row — the old stacked layout
+                    left the logo alone beside a card-wide empty gap. */}
+                <div className="flex items-center gap-3 w-full">
+                  <div className="flex shrink-0 items-center justify-center bg-gray-100 rounded-lg p-3 h-16 w-16">
+                    <img src={crm?.image} alt={crm?.alt} className="w-10 h-10 object-contain" />
                   </div>
-                  <h4 className="text-start font-semibold text-primary">{crm.name}</h4>
-                  <p className="text-gray-700 text-sm whitespace-normal">{crm.description}</p>
+                  <h4 className="text-start font-semibold text-primary flex-1 min-w-0 truncate">
+                    {crm.name}
+                  </h4>
+
+                  {isConnected && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <Icon name="MenuDots" className="h-5 rotate-90 cursor-pointer" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setDrawerState(true);
+                            setDrawerData(crm);
+                          }}
+                        >
+                          <Icon name="EditStrokIcon" className="!w-4.5 !h-4.5" />
+                          Manage
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setDeleteAlertModal({ [crm?.id]: true })}
+                        >
+                          <Icon name="TrashBin" className="!w-4.5 !h-4.5" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
+                <p className="text-gray-700 text-sm whitespace-normal">{crm.description}</p>
               </div>
               {!isConnected ? (
                 <div
-                  className="flex items-start justify-start text-primary hover:text-primary/90 cursor-pointer mt-auto"
+                  className={`mcm-intcard-cta flex items-center text-primary cursor-pointer mt-auto ${crm?.comingSoon ? 'is-soon' : ''}`}
                   onClick={() => !crm?.comingSoon && handleConnect(crm)}
                 >
-                  {crm?.comingSoon ? 'Coming Soon' : 'Connect'}
-                  {!crm?.comingSoon && <ChevronIcon className="-rotate-90 mt-1" />}
+                  <span>{crm?.comingSoon ? 'Coming soon' : 'Connect'}</span>
+                  {!crm?.comingSoon && <ChevronIcon className="-rotate-90" />}
                 </div>
               ) : (
                 <div className="flex w-full items-center justify-between mt-auto">
@@ -177,6 +270,9 @@ const CRMIntegration = () => {
             </div>
           );
         })}
+        {visibleCrmList?.length === 0 && (
+          <p className="text-sm text-gray-500 py-6">No integrations match “{search.trim()}”.</p>
+        )}
         <AlertConfirm
           {...{
             onConfirm: () => {

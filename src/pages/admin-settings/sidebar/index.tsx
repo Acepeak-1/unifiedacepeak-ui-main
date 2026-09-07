@@ -350,7 +350,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
         },
         {
           title: 'Manage Webhook',
-          icon: 'AnalyticsIcon',
+          icon: 'WebhookIcon',
           path: '/admin-settings/integration/data-reporting/manage-webhook',
         },
       ],
@@ -705,6 +705,10 @@ const Sidebar = ({ collapsed = false }: { collapsed?: boolean }) => {
           {searchedItems?.map(
             ({ type, icon = '', path, title, children, value, enabled }, index: number) => {
               const isActive = value === activeItem;
+              /* People gets the black/red treatment matching its own pages
+                 (Directory > People); every other section keeps the platform's
+                 blue accent. */
+              const isPeopleArea = value === 'users';
               if (type === 'accordion') {
                 const visibleChildren = (children || [])?.filter((child: any) =>
                   canShowItem(child, IS_ADMIN),
@@ -720,7 +724,17 @@ const Sidebar = ({ collapsed = false }: { collapsed?: boolean }) => {
                     collapsible
                   >
                     <AccordionItem value={value} className="">
-                      <AccordionTrigger className="p-0 items-center" isActive={isActive}>
+                      <AccordionTrigger
+                        className="p-0 items-center"
+                        isActive={isActive}
+                        {...(isPeopleArea
+                          ? {
+                              activeClassName:
+                                '[&>button[data-state=open]]:bg-red-50 [&>button[data-state=open]]:text-red-600 [&>button[data-state=open]]:border-r-red-600 [&>button[data-state=open]]:border-r-2',
+                              activeIconClassName: 'text-red-600',
+                            }
+                          : {})}
+                      >
                         {/* Tooltip scoped to just the icon, not the whole
                             row — see the matching comment in `Tile` above
                             for why anchoring to the row (which also holds
@@ -745,7 +759,9 @@ const Sidebar = ({ collapsed = false }: { collapsed?: boolean }) => {
                           <span className="mcm-adminnav-label">{title}</span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="border md:border-0  md:bg-ucass-primary-200/20 bg-white z-10 relative">
+                      <AccordionContent
+                        className={`border md:border-0 z-10 relative bg-white ${isPeopleArea ? 'md:bg-red-50/40' : 'md:bg-ucass-primary-200/20'}`}
+                      >
                         {visibleChildren?.map(
                           ({ title, path, icon, extraActiveTab, enabled }: any, index: number) => {
                             return (

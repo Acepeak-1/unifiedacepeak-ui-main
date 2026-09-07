@@ -89,6 +89,7 @@ function TableManager({
   descriptionEmptyTable = '',
   emptyIcon = null,
   imageSize = 'min-w-44  max-w-44',
+  emptyImage = null,
   clientSideSearch = false,
   renderSubComponent,
   hideFooterRefresh = false,
@@ -172,7 +173,10 @@ function TableManager({
     label: 25,
     value: 25,
   });
-  const debouncedSearch = useDebounce(search, 1000);
+  /* A second's wait is there to spare the API a request per keystroke. A
+     client-side search makes no request at all, so that second was only ever
+     a second of the table looking broken. */
+  const debouncedSearch = useDebounce(search, clientSideSearch ? 200 : 1000);
   const normalizedSearch = normalizeSearchText(debouncedSearch);
   const [paginationSearch, setPaginationSearch] = useState(normalizedSearch);
   const hasSearchChanged = normalizedSearch !== paginationSearch;
@@ -224,12 +228,21 @@ function TableManager({
 
     if (!clientSideSearch || !normalizedSearch) return rows;
 
+    /* Match what the table SHOWS, not what the record stores. A row whose
+       `type` is `call_completed` renders as "Call Completed", so searching
+       the words on screen found nothing while the underscored raw value —
+       which nobody can see — was the only thing that matched. Separators
+       collapse to spaces on both sides of the comparison. */
+    const loosen = (value: unknown) =>
+      String(value ?? '')
+        .toLowerCase()
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const needle = loosen(normalizedSearch);
+
     return rows.filter((row: any) =>
-      Object.values(row || {}).some((value) =>
-        String(value ?? '')
-          .toLowerCase()
-          .includes(normalizedSearch.toLowerCase()),
-      ),
+      Object.values(row || {}).some((value) => loosen(value).includes(needle)),
     );
   }, [tbldata, staticData, select, normalizedSearch, clientSideSearch, usesStaticData]);
 

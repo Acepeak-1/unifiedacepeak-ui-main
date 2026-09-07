@@ -14,8 +14,10 @@
  */
 
 import { NavLink, Outlet } from 'react-router-dom';
+import { Info } from 'lucide-react';
 
 import { useUser } from '@/hooks/use-user';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { COMPANY_SECTIONS } from './company-sections';
 
 import '@/components/mcm/mcm-page.css';
@@ -39,11 +41,50 @@ const CompanyLayout = () => {
   return (
     <section className="mcm-company-theme w-full h-full min-h-0 flex flex-col overflow-hidden bg-gray-200/15">
       <div className="flex items-start justify-between gap-4 p-3 border-b border-gray-200 min-h-[65px] bg-white">
-        <div>
-          <p className="text-gray-900 font-semibold text-lg">Company Phone Preferences</p>
-          <p className="text-gray-500 text-xs">
-            The phone rules for {companyName}, kept in one place.
+        <div className="flex flex-col">
+          <p
+            className="uppercase"
+            style={{
+              fontFamily: "'IBM Plex Mono', 'ui-monospace', 'SF Mono', Menlo, monospace",
+              fontWeight: 800,
+              fontStyle: 'normal',
+              fontSize: '12px',
+              lineHeight: '18px',
+              letterSpacing: '0.1em',
+              color: 'rgb(220, 38, 38)',
+            }}
+          >
+            Company
           </p>
+          <div className="flex items-center gap-1.5">
+            <p
+              className="italic text-[27px] leading-[33px]"
+              style={{
+                fontFamily: "'Instrument Serif', Georgia, serif",
+                fontWeight: 400,
+                color: 'rgb(23, 23, 23)',
+              }}
+            >
+              Company Phone Preferences
+            </p>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 shrink-0 cursor-help text-gray-400" />
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                className="w-max max-w-[280px] [text-wrap:pretty] text-black [&_svg]:fill-[#fdf7f5]"
+                style={{
+                  background: '#fdf7f5',
+                  border: 'none',
+                  color: '#000',
+                  boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+                }}
+              >
+                The phone rules for {companyName}, kept in one place.
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
 
@@ -68,16 +109,17 @@ const CompanyLayout = () => {
         {/* Links rather than buttons, so each section can be opened in a new tab,
             bookmarked, and sent to someone in a support reply. */}
         <div className="mb-3 border-b border-gray-200">
-          <nav className="flex flex-wrap gap-1" aria-label="Company settings">
+          <nav
+            className="company-tabs-nav flex flex-nowrap gap-1 overflow-x-auto"
+            aria-label="Company settings"
+          >
             {COMPANY_SECTIONS.map((item) => (
               <NavLink
                 key={item.path}
                 to={`/admin-settings/company/${item.path}`}
                 className={({ isActive }) =>
-                  `cursor-pointer px-4 py-2 text-sm font-semibold transition-colors ${
-                    isActive
-                      ? 'border-b-2 border-primary text-primary'
-                      : 'text-gray-700 hover:text-gray-900'
+                  `cursor-pointer shrink-0 whitespace-nowrap px-4 py-2 text-sm font-semibold transition-colors ${
+                    isActive ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900'
                   }`
                 }
               >

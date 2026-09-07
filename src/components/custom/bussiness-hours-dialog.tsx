@@ -9,6 +9,7 @@ import { FC, useEffect, useState } from 'react';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 import ErrorTooltip from './error-tooltip';
 import { CustomDatePicker } from './custom-datepicker';
+import { TimePicker } from './time-picker';
 import moment from 'moment';
 import ForwardingActions from './forwarding-actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -189,6 +190,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
       return handleAlert({
         text: 'Set what happens outside opening hours first. Each holiday needs an action, and company holidays copy that one.',
         type: 'error',
+        position: 'top-right',
       });
     }
 
@@ -201,16 +203,20 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
           ? 'Those company holidays are already on this line.'
           : 'No company holidays have been set up yet.',
         type: 'info',
+        position: 'top-right',
       });
     }
 
     /* The capacity message names the limit, because "3 could not be added" with
-       no reason reads as a bug. */
+       no reason reads as a bug. Placed top-right rather than the default
+       top-center: this dialog is itself centred on screen, so a centred toast
+       rendered directly over its title bar and covered it while showing. */
     handleAlert({
       text: skippedCapacity
         ? `Added ${added}. ${skippedCapacity} did not fit — a line holds ${MAX_HOLIDAYS} holidays. Remove some, or add the rest by hand.`
         : `Added ${added} company ${added === 1 ? 'holiday' : 'holidays'}. Check the action on each, then save.`,
       type: skippedCapacity ? 'info' : 'success',
+      position: 'top-right',
     });
   };
 
@@ -283,7 +289,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
       >
         <div className="flex flex-col gap-1.5 px-5 pt-5 text-900/80">
           <div className="flex items-center justify-between gap-3 truncate text-md font-semibold">
-            <DialogTitle className="flex items-center gap-2.5 text-base font-bold text-neutral-950">
+            <DialogTitle className="flex items-center gap-2.5 text-[18px] font-bold text-neutral-950">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-red-50 text-red-600">
                 <Clock3 className="h-4 w-4" />
               </span>
@@ -344,25 +350,20 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                     className={cn(
                       'flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all duration-150',
                       isSelected
-                        ? 'border-red-300 bg-red-50/60 shadow-[0_2px_8px_rgba(220,38,38,.12)]'
-                        : 'border-neutral-200 bg-white hover:-translate-y-0.5 hover:border-red-200 hover:bg-red-50/30',
+                        ? 'border-neutral-900 bg-neutral-100'
+                        : 'border-neutral-200 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50',
                     )}
                   >
                     <span
                       className={cn(
                         'grid h-9 w-9 shrink-0 place-items-center rounded-lg',
-                        isSelected ? 'bg-red-600 text-white' : 'bg-neutral-100 text-neutral-500',
+                        isSelected ? 'bg-black text-white' : 'bg-neutral-100 text-neutral-500',
                       )}
                     >
                       {option.icon}
                     </span>
                     <div className="min-w-0">
-                      <p
-                        className={cn(
-                          'text-sm font-bold',
-                          isSelected ? 'text-red-700' : 'text-neutral-950',
-                        )}
-                      >
+                      <p className="text-sm font-bold text-neutral-950">
                         {option.label}
                       </p>
                       <p className="mt-0.5 text-xs leading-5 text-neutral-500">{option.copy}</p>
@@ -393,11 +394,11 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                         key={`${day}-${index}`}
                         className={cn(
                           'flex flex-wrap items-center justify-between gap-3 rounded-2xl px-5 py-4 transition-colors',
-                          open ? 'bg-red-50/50' : 'bg-neutral-50',
+                          open ? 'bg-neutral-100' : 'bg-neutral-50',
                         )}
                       >
                         <div className="flex w-[152px] shrink-0 items-center justify-between gap-3">
-                          <Label className="text-base font-bold capitalize text-neutral-950">
+                          <Label className="text-sm font-semibold capitalize text-neutral-600">
                             {day}
                           </Label>
                           <Switch
@@ -410,20 +411,26 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                         {open && (
                           <>
                             <div className="flex shrink-0 flex-nowrap items-center gap-3">
-                              <Input
+                              <TimePicker
                                 placeholder="Enter start"
-                                type="time"
-                                className="h-9 w-[118px] shrink-0 grow-0 rounded-full border-neutral-200 bg-white px-3 text-xs focus-visible:border-red-400 focus-visible:ring-4 focus-visible:ring-red-100"
-                                {...register(`settings.operational_hours.value.${day}.start`)}
+                                value={watch(`settings.operational_hours.value.${day}.start`)}
+                                onChange={(next) =>
+                                  setValue(`settings.operational_hours.value.${day}.start`, next, {
+                                    shouldValidate: true,
+                                  })
+                                }
                               />
                               <span className="shrink-0 text-xs font-medium text-neutral-400">
                                 to
                               </span>
-                              <Input
+                              <TimePicker
                                 placeholder="Enter end"
-                                type="time"
-                                className="h-9 w-[118px] shrink-0 grow-0 rounded-full border-neutral-200 bg-white px-3 text-xs focus-visible:border-red-400 focus-visible:ring-4 focus-visible:ring-red-100"
-                                {...register(`settings.operational_hours.value.${day}.end`)}
+                                value={watch(`settings.operational_hours.value.${day}.end`)}
+                                onChange={(next) =>
+                                  setValue(`settings.operational_hours.value.${day}.end`, next, {
+                                    shouldValidate: true,
+                                  })
+                                }
                               />
                               {(errors?.settings as any)?.operational_hours?.value?.[day]?.end
                                 ?.message && (
@@ -482,7 +489,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                   })}
 
                   {!aiMode && (
-                    <div className="p-3 border border-neutral-200 rounded-lg gap-3 flex flex-col">
+                    <div className="p-4 border border-neutral-200 rounded-lg gap-3 flex flex-col">
                       <ForwardingActions
                         setValue={setValue}
                         watch={watch}
@@ -491,11 +498,12 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                         mainClasses="w-full"
                         selectWidth="w-1/2"
                         selectInnerWidth="w-fit"
-                        selectTwoWidth="w-fit"
-                        gap="sm:gap-2 xs:gap-2"
-                        mainGapClasses="gap-0"
-                        mainTypeDivClass="w-1/3"
+                        selectTwoWidth="flex-1 min-w-[220px]"
+                        gap="sm:gap-8 xs:gap-2"
+                        mainGapClasses="gap-2"
+                        mainTypeDivClass="sm:w-1/3!"
                         radioClass="w-fit pr-2"
+                        mainValueDivClass="sm:w-full!"
                         mainValueJustifyClass="justify-between w-full"
                         audioCustomClass="w-80"
                         typeLabel="Closed Hour Type"
@@ -513,7 +521,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
 
           <TabsContent value={TABS.CUSTOM_SETTINGS}>
             {/* Custom Days */}
-            <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5">
+            <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-neutral-100 p-3.5">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-bold text-neutral-950">Custom Days Settings</p>
                 <div className="flex items-center gap-2">
@@ -538,7 +546,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                     type="button"
                     onClick={() => appendCustomDays()}
                     disabled={fields.length >= MAX_HOLIDAYS}
-                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-600! px-3 text-xs font-bold text-white! shadow-[0_2px_6px_rgba(220,38,38,.25)] transition-all duration-150 hover:-translate-y-0.5 hover:bg-red-700! disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-600! px-3 text-xs font-bold text-white! shadow-[0_2px_6px_rgba(220,38,38,.25)] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add day
@@ -554,7 +562,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                 return (
                   <div
                     key={field.id}
-                    className="flex flex-col gap-2 bg-white p-3 rounded-lg border border-red-100"
+                    className="custom-day-entry flex flex-col gap-2 bg-neutral-50 p-3 rounded-lg shadow-md"
                   >
                     <div className="flex items-end gap-2 justify-between">
                       <div className="flex items-end gap-2 w-[calc(100%_-_2.5rem)]">
@@ -563,6 +571,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                             {...register(`settings.operational_hours.holidays.${index}.title`)}
                             placeholder="Title"
                             type="text"
+                            className="border-transparent! hover:border-transparent! focus:border-neutral-900!"
                             error={
                               (errors?.settings as any)?.operational_hours?.holidays?.[index]?.title
                                 ?.message
@@ -575,6 +584,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                             name={fromPath}
                             render={({ field }) => (
                               <CustomDatePicker
+                                className="border-transparent! hover:border-transparent! focus-visible:border-neutral-900! data-[state=open]:border-neutral-900!"
                                 placeholder="Select From"
                                 minDate={prevToDate ? moment(prevToDate).toDate() : new Date()}
                                 value={field.value ? moment(field.value).toDate() : null}
@@ -597,6 +607,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                             name={toPath}
                             render={({ field }) => (
                               <CustomDatePicker
+                                className="border-transparent! hover:border-transparent! focus-visible:border-neutral-900! data-[state=open]:border-neutral-900!"
                                 placeholder="Select To"
                                 minDate={
                                   currentFromDate ? moment(currentFromDate).toDate() : new Date()
@@ -646,14 +657,14 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
             <button
               type="button"
               onClick={handleCancel}
-              className="inline-flex h-10 items-center justify-center rounded-full border! border-neutral-200! bg-white! px-4 text-sm font-bold text-neutral-700 outline-none! transition-all duration-150 hover:-translate-y-0.5 hover:border-red-300! hover:bg-red-50! hover:text-red-700"
+              className="inline-flex h-10 items-center justify-center rounded-lg border! border-neutral-200! bg-white! px-4 text-sm font-bold text-neutral-700 outline-none! transition-all duration-150 hover:-translate-y-0.5 hover:border-red-300! hover:bg-red-50! hover:text-red-700"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={() => handleSubmit()}
-              className="inline-flex h-10 items-center justify-center rounded-full bg-red-600! px-4 text-sm font-bold text-white! shadow-[0_2px_6px_rgba(220,38,38,.25)] transition-all duration-150 hover:-translate-y-0.5 hover:bg-red-700!"
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-black! px-4 text-sm font-bold text-white! shadow-[0_2px_6px_rgba(0,0,0,.25)]"
             >
               Submit
             </button>

@@ -94,7 +94,7 @@ const VoiceMailConfigureModal: FC<ModalProps> = ({ modalState, setModalState }) 
             <Button type="button" variant={'transparent'} onClick={() => setModalState(false)}>
               Cancel
             </Button>
-            <Button type="button" variant={'outline'} onClick={() => setModalState(false)}>
+            <Button type="button" variant={'dark'} onClick={() => setModalState(false)}>
               Submit
             </Button>
           </div>
