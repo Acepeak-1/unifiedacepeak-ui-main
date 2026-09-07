@@ -23,7 +23,7 @@ const GreetingNotification = () => {
   return (
     <CommonGreetingNotification
       {...{ mediaOptionsGreetingNotifications, optionsData }}
-      customClass="h-[calc(100vh_-_22.5rem)]"
+      customClass=""
     />
   );
 };

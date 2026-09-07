@@ -1,0 +1,271 @@
+/* ============================================================
+   Add / Update DNC — modal surface.
+
+   The dialog renders through a portal on <body>, outside every page
+   scope, so `.dnc-modal` on the dialog content is the scope root here.
+   Re-pointing `--primary` and `--ring` on it turns the shared Input,
+   Button and focus styles red without touching those components or the
+   app-wide token, which is set at runtime from the tenant's brand
+   colour and is blue on this deployment.
+
+   The phone-input block at the bottom sits in `@layer base` on purpose:
+   index.css styles react-phone-input-2 from inside that layer with
+   `!important`, and for important declarations the cascade reverses
+   layer order — an unlayered `!important` here would lose to it however
+   specific it is. Joining the layer restores the normal contest.
+   ============================================================ */
+.dnc-modal {
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --ring: #dc2626;
+
+  --dnc-ink: #171717;
+  --dnc-muted: #6b7280;
+  --dnc-line: #e5e7eb;
+  --dnc-edge: #fca5a5;
+  --dnc-wash: #fef2f2;
+  --dnc-red: #dc2626;
+  --dnc-red-deep: #b91c1c;
+
+  width: 100%;
+  max-width: 560px;
+  padding: 0;
+  gap: 0;
+  border: 1px solid var(--dnc-line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow:
+    0 18px 48px rgba(23, 23, 23, 0.14),
+    0 3px 10px rgba(23, 23, 23, 0.06);
+  overflow: hidden;
+}
+
+/* ── header ────────────────────────────────────────────────── */
+.dnc-modal .dnc-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px 0;
+}
+.dnc-modal .dnc-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--dnc-ink);
+}
+.dnc-modal .dnc-sub {
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--dnc-muted);
+}
+.dnc-modal .dnc-close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  margin-left: auto;
+  border-radius: 99px;
+  background: #ffffff;
+  border: 1px solid var(--dnc-line);
+  color: var(--dnc-ink);
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+.dnc-modal .dnc-close:hover {
+  background: var(--dnc-wash);
+  border-color: var(--dnc-edge);
+  color: var(--dnc-red);
+}
+
+/* ── step rail ─────────────────────────────────────────────────
+   Presentational only — this form submits in one go. It is marked
+   aria-hidden so assistive tech is not told about a step that does
+   not exist. */
+.dnc-modal .dnc-steps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 0;
+}
+.dnc-modal .dnc-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.dnc-modal .dnc-step-n {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+.dnc-modal .dnc-step.is-on .dnc-step-n {
+  background: var(--dnc-red);
+  color: #ffffff;
+}
+.dnc-modal .dnc-step-l {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--dnc-muted);
+  white-space: nowrap;
+}
+.dnc-modal .dnc-step.is-on .dnc-step-l {
+  color: var(--dnc-red);
+}
+.dnc-modal .dnc-rail {
+  flex: 1;
+  height: 2px;
+  border-radius: 99px;
+  background: var(--dnc-line);
+  overflow: hidden;
+}
+.dnc-modal .dnc-rail i {
+  display: block;
+  width: 45%;
+  height: 100%;
+  background: var(--dnc-red);
+}
+
+/* ── fields ────────────────────────────────────────────────── */
+.dnc-modal .dnc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px 20px;
+}
+.dnc-modal .dnc-req {
+  color: var(--dnc-red);
+}
+.dnc-modal label,
+.dnc-modal [data-slot='label'] {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dnc-ink);
+}
+.dnc-modal [data-slot='input'] {
+  height: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border-color: var(--dnc-line);
+  font-size: 13.5px;
+  color: var(--dnc-ink);
+}
+.dnc-modal [data-slot='input']::placeholder {
+  color: #9ca3af;
+}
+.dnc-modal [data-slot='input']:hover {
+  border-color: var(--dnc-edge);
+}
+/* The ring is an outline, not a box-shadow: `shadow-sm` on the shared Input
+   owns box-shadow, and contesting it here would be a coin toss. Outline is
+   uncontested and paints the same 3px halo. */
+.dnc-modal [data-slot='input']:focus {
+  border-color: var(--dnc-red);
+  outline: 3px solid rgba(252, 165, 165, 0.45);
+  outline-offset: 0;
+}
+.dnc-modal .dnc-invalid [data-slot='input'] {
+  border-color: var(--dnc-red);
+}
+.dnc-modal .dnc-err {
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--dnc-red);
+}
+
+/* ── footer ────────────────────────────────────────────────── */
+.dnc-modal .dnc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--dnc-line);
+  background: #ffffff;
+}
+.dnc-modal .dnc-foot [data-slot='button'] {
+  height: 42px;
+  min-height: 42px;
+  border-radius: 10px;
+  padding: 0 18px;
+  font-weight: 600;
+  transition:
+    background-color 0.17s ease,
+    border-color 0.17s ease,
+    color 0.17s ease;
+}
+.dnc-modal .dnc-cancel {
+  background: #ffffff;
+  border: 1px solid var(--dnc-line);
+  color: var(--dnc-ink);
+}
+.dnc-modal .dnc-cancel:hover {
+  background: var(--dnc-wash);
+  border-color: var(--dnc-edge);
+  color: var(--dnc-red);
+}
+.dnc-modal .dnc-submit {
+  background: var(--dnc-ink);
+  border: 1px solid var(--dnc-ink);
+  color: #ffffff;
+}
+.dnc-modal .dnc-submit:hover:not(:disabled) {
+  background: var(--dnc-red);
+  border-color: var(--dnc-red);
+  color: #ffffff;
+}
+.dnc-modal .dnc-submit:active:not(:disabled) {
+  background: var(--dnc-red-deep);
+  border-color: var(--dnc-red-deep);
+}
+
+/* ── phone input ───────────────────────────────────────────────
+   See the note at the top of this file for why these are layered. */
+@layer base {
+  .dnc-modal .react-tel-input .form-control {
+    height: 44px !important;
+    min-height: 44px !important;
+    border-radius: 10px !important;
+    border-color: var(--dnc-line) !important;
+    font-size: 13.5px !important;
+    color: var(--dnc-ink) !important;
+    padding-left: 52px !important;
+  }
+  .dnc-modal .react-tel-input .form-control:hover {
+    border-color: var(--dnc-edge) !important;
+  }
+  .dnc-modal .react-tel-input .form-control:focus {
+    border-color: var(--dnc-red) !important;
+    outline: 3px solid rgba(252, 165, 165, 0.45) !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+  }
+  .dnc-modal .react-tel-input .flag-dropdown {
+    border-radius: 10px 0 0 10px !important;
+    border-color: var(--dnc-line) !important;
+    background: #ffffff !important;
+  }
+  .dnc-modal .react-tel-input .selected-flag,
+  .dnc-modal .react-tel-input .selected-flag:hover,
+  .dnc-modal .react-tel-input .selected-flag:focus {
+    border-radius: 10px 0 0 10px !important;
+    background: #ffffff !important;
+  }
+  .dnc-modal .phone-error.react-tel-input .form-control,
+  .dnc-modal .phone-error.react-tel-input .flag-dropdown {
+    border-color: var(--dnc-red) !important;
+  }
+}

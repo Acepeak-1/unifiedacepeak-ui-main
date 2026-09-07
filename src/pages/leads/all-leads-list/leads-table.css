@@ -1,0 +1,163 @@
+/* ============================================================
+   Leads table — action column, column rhythm and alignment.
+
+   Scoped on `.leads-table`, except the dropdown panel: that renders
+   through a portal on <body>, so its rules are namespaced on
+   `.leads-menu` instead and reach only the menus this table opens.
+   Neither selector exists anywhere else, so nothing outside the Leads
+   list is affected.
+   ============================================================ */
+
+/* ── the ⋯ trigger ─────────────────────────────────────────────
+   Small and square rather than the three round 32px pills this
+   column used to carry. */
+.leads-table .leads-dots {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #171717;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.leads-table .leads-dots:hover,
+.leads-table .leads-dots[data-state='open'] {
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #dc2626;
+}
+.leads-table .leads-dots:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 1px;
+}
+
+/* ── column rhythm ─────────────────────────────────────────────
+   TableManager sizes nothing, so the widest cell took whatever it
+   asked for and the rest absorbed the slack. Declared shares put each
+   heading over its own values; the min-width keeps that true by
+   scrolling the container rather than crushing the columns. */
+.leads-table table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 940px;
+}
+.leads-table th:nth-child(1) {
+  width: 15%;
+}
+.leads-table th:nth-child(2) {
+  width: 26%;
+}
+.leads-table th:nth-child(3) {
+  width: 17%;
+}
+.leads-table th:nth-child(4) {
+  width: 16%;
+}
+.leads-table th:nth-child(5) {
+  width: 16%;
+}
+.leads-table th:nth-child(6) {
+  width: 10%;
+}
+
+/* Header and body share one rule per column so a heading always sits
+   over its values. Name keeps its avatar and two-line block centred as
+   a group — the lines stay left-aligned to each other inside it. */
+.leads-table th,
+.leads-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+.leads-table td > div,
+.leads-table td > span {
+  justify-content: center;
+}
+.leads-table td:nth-child(2) > div {
+  display: inline-flex;
+  text-align: left;
+}
+.leads-table td:nth-child(3) .relative {
+  padding-right: 0;
+}
+
+/* ── row rhythm and icon sizing ───────────────────────────── */
+.leads-table td {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.leads-table td svg {
+  width: 17px;
+  height: 17px;
+}
+.leads-table .leads-dots svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* ============================================================
+   The row menu. Portalled to <body>, so it is matched on its own
+   class rather than through `.leads-table`. Unlayered, which beats
+   the component's Tailwind `@layer utilities` colours without
+   !important.
+   ============================================================ */
+.leads-menu {
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  box-shadow:
+    0 8px 24px rgba(23, 23, 23, 0.08),
+    0 2px 6px rgba(23, 23, 23, 0.05);
+  padding: 5px;
+}
+.leads-menu [data-slot='dropdown-menu-item'] {
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #171717;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.leads-menu [data-slot='dropdown-menu-item'] svg {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+}
+.leads-menu [data-slot='dropdown-menu-item']:hover,
+.leads-menu [data-slot='dropdown-menu-item']:focus,
+.leads-menu [data-slot='dropdown-menu-item'][data-highlighted] {
+  background: #fef2f2;
+  color: #dc2626;
+  outline: none;
+  box-shadow: none;
+}
+.leads-menu [data-slot='dropdown-menu-item']:hover svg,
+.leads-menu [data-slot='dropdown-menu-item']:focus svg,
+.leads-menu [data-slot='dropdown-menu-item'][data-highlighted] svg {
+  color: #dc2626;
+}
+/* Delete reads as destructive at rest, not only on hover. */
+.leads-menu [data-slot='dropdown-menu-item'][data-variant='destructive'],
+.leads-menu [data-slot='dropdown-menu-item'][data-variant='destructive'] svg {
+  color: #dc2626;
+}
+.leads-menu [data-slot='dropdown-menu-item'][data-variant='destructive']:hover,
+.leads-menu [data-slot='dropdown-menu-item'][data-variant='destructive'][data-highlighted] {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.leads-menu :focus,
+.leads-menu :focus-visible {
+  outline: none;
+  box-shadow: none;
+}

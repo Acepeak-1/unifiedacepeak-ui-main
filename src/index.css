@@ -3,7 +3,7 @@
    stay tabular and stop jittering as they tick.
    Must stay at the very top: CSS requires every @import to precede all other
    statements, and the imports below pull in real rules. */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 /* Loaded once here rather than from each page. Every rule in it is scoped to

@@ -83,8 +83,15 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchMainSiteInfo = useCallback(async () => {
+    /* On localhost the origin is not a tenant the API knows, so a stand-in is
+       sent instead. It has to be the SAME tenant the dev proxy presents as
+       this deployment (vite.config.ts TENANT_ORIGIN) — the two had drifted
+       apart, and asking for a tenant the backend has no settings for comes
+       back 422 "Website settings not found". That sets `error`, which renders
+       the maintenance screen on every route. Same env var, same default, so
+       they cannot drift again. */
     const domain = getDomain().includes('localhost')
-      ? 'https://qa.mycountrymobile.com'
+      ? import.meta.env.VITE_DEV_PROXY_ORIGIN || 'https://ucaas.acepeak.com'
       : getDomain();
     // const domain = "https://mcm.mycountrymobile.com";
     try {
@@ -208,10 +215,19 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
     error,
   };
 
-  if (!stripePublishableKey) {
-    return <FullPageLoader />;
-  }
+  /* The Stripe key used to gate the whole app here, ahead of the loading and
+     error checks below. Two ways that hangs on a permanent spinner:
 
+       - the org metadata call fails (it currently 422s), so `mainSiteInfo`
+         stays null and the key stays empty. The `error` branch that renders
+         ServerMaintenance sits *after* this one, so it was unreachable and
+         the failure showed as an endless loader instead.
+       - the org simply has no Stripe key configured. Stripe is only needed
+         for billing, so a missing key locked every page over one feature.
+
+     Loading and error are resolved first now, and a missing key just means
+     `stripePromise` is null — which <Elements> accepts, and which resolves
+     later if a key arrives. */
   if (isNoOrgPage) {
     return (
       <OrganizationContext.Provider value={{ ...value, isLoading: false }}>

@@ -8,11 +8,46 @@ import parsePhoneNumberFromString from 'libphonenumber-js';
 import { Input } from '@/components/ui/input';
 import { calculateSelectedDays, getTodayInTimezone } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import ErrorTooltip from '@/components/custom/error-tooltip';
 import moment from 'moment';
 import { Switch } from '@/components/ui/switch';
-import { X } from 'lucide-react';
+import {
+  ChevronDown,
+  Disc,
+  FileText,
+  Headphones,
+  ShieldCheck,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
+import ClockTimePicker from './clock-time-picker';
+
+const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+const DAY_GROUPS = [
+  { key: 'weekdays', label: 'Mon - Fri', days: WEEKDAYS },
+  { key: 'saturday', label: 'Saturday', days: ['saturday'] },
+  { key: 'sunday', label: 'Sunday', days: ['sunday'] },
+];
+
+const PERMISSION_ITEMS = [
+  {
+    key: 'recording',
+    icon: Disc,
+    title: 'Call Recording',
+    description: 'For quality and compliance.',
+  },
+  {
+    key: 'monitoring',
+    icon: Headphones,
+    title: 'Call Monitoring',
+    description: 'Supervisors can listen live.',
+  },
+  {
+    key: 'transcription',
+    icon: FileText,
+    title: 'Transcription',
+    description: 'Auto-transcribe every call.',
+  },
+] as const;
 
 const SettingsAndPermission = ({ campaignStatus }: { campaignStatus: string }) => {
   const {
@@ -24,11 +59,18 @@ const SettingsAndPermission = ({ campaignStatus }: { campaignStatus: string }) =
   const { user } = useUser();
   const { user_info } = user || {};
   const [timezonesList, setTimezonesList] = useState<any>([]);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  /* A pending Custom Date Override — held locally until "Add" commits it
+     to `settings.operational_hours.overrides`, since it needs date +
+     start + end all filled in together, unlike Holidays where a single
+     date is enough to add an entry immediately. */
+  const [overrideDraft, setOverrideDraft] = useState({ date: '', start: '09:00', end: '17:00' });
   const watchRegionalSettings = watch('settings.operational_hours.regional');
   const selectedTimezone = watch('settings.operational_hours.regional.timezone')?.value;
   const isAutomaticRecordingEnabled = watch('settings.recording.automatic.enabled');
   const isAiCallMonitoringEnabled = watch('settings.ai_call_monitoring.enabled');
   const isTranscriptionEnabled = watch('settings.transcription.enabled');
+  const isLocked = campaignStatus === 'PROCESSING';
 
   const parsedNumber = useMemo(() => {
     if (user_info?.phone || user_info?.phone) {
@@ -116,6 +158,7 @@ const SettingsAndPermission = ({ campaignStatus }: { campaignStatus: string }) =
   const _start_date = watch('startDate');
   const _end_date = watch('endDate');
   const _holidays = watch('settings.operational_hours.holidays');
+  const _overrides = watch('settings.operational_hours.overrides') || [];
 
   const watchBusinessHour = watch('settings.operational_hours');
   const selectedDays = watch('settings.operational_hours.value');
@@ -124,359 +167,413 @@ const SettingsAndPermission = ({ campaignStatus }: { campaignStatus: string }) =
   const endDate = watch('endDate') ? moment(watch('endDate')) : null;
   const totalSelectedDays = calculateSelectedDays(startDate, endDate, selectedDays);
 
-  const isDayWithinRange = (day: string) => {
-    if (!startDate || !endDate) return true;
-    const dayIndex = moment().day(day).day();
-
-    const checkDay = (current: moment.Moment): boolean =>
-      current.isAfter(endDate, 'day')
-        ? false
-        : current.day() === dayIndex || checkDay(current.clone().add(1, 'day'));
-
-    return checkDay(startDate.clone());
+  /* The Mon-Fri / Sat-Sun rows apply one change to every day in the group
+     at once, writing into the same per-day shape (`operational_hours.value.
+     <day>.{open,start,end}`) the payload builder and schema already read. */
+  const applyGroupSchedule = (
+    days: string[],
+    patch: Partial<{ open: boolean; start: string; end: string }>,
+  ) => {
+    const current = watchBusinessHour?.value || {};
+    const updated = { ...current };
+    days.forEach((day) => {
+      updated[day] = { ...updated[day], ...patch };
+    });
+    setValue('settings.operational_hours.value', updated, { shouldDirty: true });
   };
 
-  const handleChangeScheduleOption = (checked: boolean, day: string) => {
-    const currentScheduleOptions = watchBusinessHour?.value || {};
-    const updatedScheduleOptions = {
-      ...currentScheduleOptions,
-      [day]: {
-        ...currentScheduleOptions[day],
-        open: checked,
-        start: '10:00',
-        end: '23:00',
-      },
-    };
-    setValue('settings.operational_hours.value', updatedScheduleOptions);
+  const getGroupSummary = (days: string[]) => watchBusinessHour?.value?.[days[0]] || {};
+
+  const addOverride = () => {
+    if (!overrideDraft.date) return;
+    setValue('settings.operational_hours.overrides', [..._overrides, overrideDraft], {
+      shouldDirty: true,
+    });
+    setOverrideDraft({ date: '', start: '09:00', end: '17:00' });
+  };
+
+  const removeOverride = (index: number) => {
+    setValue(
+      'settings.operational_hours.overrides',
+      _overrides.filter((_: any, i: number) => i !== index),
+      { shouldDirty: true },
+    );
   };
 
   return (
-    <div className="flex max-h-[calc(100vh_-_22.5rem)] w-full flex-col gap-4 overflow-auto pr-1 md:flex-row">
-      <div className="flex h-full w-full flex-col gap-4 xl:w-[70%]">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center">
-          <CustomSelect
-            label={'Country'}
-            isDisabled={campaignStatus == 'PROCESSING'}
-            placeholder="Select Country"
-            options={countriesData.map((country: { name: string; isoCode: string }) => ({
-              label: country?.name,
-              value: country?.isoCode,
-            }))}
-            handleChange={(e: ISELECTVALUE | null) => {
-              onCountryChange(e);
-            }}
-            value={watch('settings.operational_hours.regional.country')}
-            error={(errors.settings as any)?.operational_hours?.regional?.country?.value?.message}
-          />
-          <CustomSelect
-            label={'Timezone'}
-            isDisabled={campaignStatus == 'PROCESSING'}
-            placeholder="Select Timezone"
-            options={timezonesList.map((timezone: { zoneName: string }) => ({
-              label: timezone?.zoneName,
-              value: timezone?.zoneName,
-            }))}
-            handleChange={(e: ISELECTVALUE | null) => {
-              setValue('settings.operational_hours.regional.timezone', e || {}, {
-                shouldValidate: true,
-              });
-            }}
-            value={watch('settings.operational_hours.regional.timezone')}
-            error={(errors.settings as any)?.operational_hours?.regional?.timezone?.value?.message}
-          />
-        </div>
-        <div className="flex w-full flex-col gap-2 md:flex-row">
-          <div className="flex flex-col gap-1.5 w-full">
-            <Input
-              disabled={campaignStatus === 'PROCESSING'}
-              label="Start Date"
-              placeholder="Enter start date"
-              type="date"
-              {...register('startDate', {
-                required: 'Start date is required',
-                validate: (value) =>
-                  !_end_date ||
-                  moment(value).isBefore(moment(_end_date), 'day') ||
-                  'Start date must be before end date',
-              })}
-              error={errors?.startDate?.message}
-              min={today}
-              max={
-                _end_date ? moment(_end_date).subtract(1, 'day').format('YYYY-MM-DD') : undefined
+    <div className="flex w-full flex-col gap-1">
+      {/* Permissions & Features is `md:absolute` — completely out of
+          normal flow on desktop — so expanding Advanced settings inside
+          it can never push Select Holidays (which lives in the left
+          column below Working hours) down. Flex `items-start`/height
+          matching wasn't enough: the row's own height still tracked
+          whichever child was tallest, so this removes that coupling
+          entirely instead of trying to out-flex it. */}
+      <div className="flex w-full flex-col gap-3 md:relative">
+        <div className="flex w-full flex-col gap-1.5 md:w-[65%]">
+          <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2 md:gap-3">
+            <CustomSelect
+              label={'Country'}
+              isDisabled={isLocked}
+              placeholder="Select Country"
+              className="acp-compact-field"
+              options={countriesData.map((country: { name: string; isoCode: string }) => ({
+                label: country?.name,
+                value: country?.isoCode,
+              }))}
+              handleChange={(e: ISELECTVALUE | null) => {
+                onCountryChange(e);
+              }}
+              value={watch('settings.operational_hours.regional.country')}
+              error={(errors.settings as any)?.operational_hours?.regional?.country?.value?.message}
+            />
+            <CustomSelect
+              label={'Timezone'}
+              isDisabled={isLocked}
+              placeholder="Select Timezone"
+              className="acp-compact-field"
+              options={timezonesList.map((timezone: { zoneName: string }) => ({
+                label: timezone?.zoneName,
+                value: timezone?.zoneName,
+              }))}
+              handleChange={(e: ISELECTVALUE | null) => {
+                setValue('settings.operational_hours.regional.timezone', e || {}, {
+                  shouldValidate: true,
+                });
+              }}
+              value={watch('settings.operational_hours.regional.timezone')}
+              error={
+                (errors.settings as any)?.operational_hours?.regional?.timezone?.value?.message
               }
             />
           </div>
+          <div className="flex w-full flex-col gap-2 md:flex-row mt-2">
+            <div className="flex flex-col gap-1 w-full">
+              <Input
+                disabled={isLocked}
+                label="Start Date"
+                placeholder="Enter start date"
+                type="date"
+                className="acp-compact-field"
+                {...register('startDate', {
+                  required: 'Start date is required',
+                  validate: (value) =>
+                    !_end_date ||
+                    moment(value).isBefore(moment(_end_date), 'day') ||
+                    'Start date must be before end date',
+                })}
+                error={errors?.startDate?.message}
+                min={today}
+                max={
+                  _end_date ? moment(_end_date).subtract(1, 'day').format('YYYY-MM-DD') : undefined
+                }
+              />
+            </div>
 
-          <div className="flex items-end gap-1.5 w-full">
-            <Input
-              label="End Date"
-              disabled={campaignStatus === 'PROCESSING'}
-              placeholder="Enter end date"
-              type="date"
-              {...register('endDate', {
-                required: 'End date is required',
-                validate: (value) =>
-                  !_start_date ||
-                  moment(value).isAfter(moment(_start_date), 'day') ||
-                  'End date must be after start date',
-              })}
-              error={errors?.endDate?.message}
-              min={_start_date ? moment(_start_date).add(1, 'day').format('YYYY-MM-DD') : today}
-            />
+            <div className="flex flex-col gap-1 w-full">
+              <Input
+                label="End Date"
+                disabled={isLocked}
+                placeholder="Enter end date"
+                type="date"
+                className="acp-compact-field"
+                {...register('endDate', {
+                  required: 'End date is required',
+                  validate: (value) =>
+                    !_start_date ||
+                    moment(value).isAfter(moment(_start_date), 'day') ||
+                    'End date must be after start date',
+                })}
+                error={errors?.endDate?.message}
+                min={_start_date ? moment(_start_date).add(1, 'day').format('YYYY-MM-DD') : today}
+              />
+            </div>
 
-            <span className="bg-gray-100 rounded-lg text-gray-700 text-sm font-medium px-3 py-2 inline-flex items-center justify-center min-w-[140px] max-h-[40px] min-h-[40px]">
-              {totalSelectedDays} Days
-            </span>
+            <div className="flex flex-col gap-1 w-full">
+              <Label>Duration</Label>
+              <span className="bg-gray-100 rounded-lg text-gray-700 text-[12.5px] font-medium px-2.5 inline-flex items-center h-[34px]">
+                {totalSelectedDays} Days
+              </span>
+            </div>
           </div>
-        </div>
-        <div className="w-full">
-          <div
-            className={`flex flex-col gap-2 ${
-              campaignStatus === 'PROCESSING' ? 'pointer-events-none opacity-50' : ''
-            }`}
-          >
-            {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(
-              (day, index) => {
-                const currentDayData = watchBusinessHour?.value?.[day];
-                if (!currentDayData) return null;
 
-                const { open } = currentDayData;
-                const disabledDay = !isDayWithinRange(day);
+          {/* Working hours — a compact Mon-Fri / Sat-Sun summary; each row
+            writes the same change to every day in that group. Always a
+            single row (no stacking breakpoint) so the Active/Inactive
+            pill stays at the far right instead of dropping below the
+            time fields on a narrower window. */}
+          <div className={`w-full ${isLocked ? 'pointer-events-none opacity-50' : ''}`}>
+            <Label className="text-sm font-semibold">Working hours</Label>
+            <p className="text-xs text-gray-500 mt-0.5 mb-1.5">
+              Set the days and time range when agents are allowed to make calls.
+            </p>
+
+            <div className="flex flex-col gap-1.5">
+              {DAY_GROUPS.map((group) => {
+                const summary = getGroupSummary(group.days);
+                const groupOpen = Boolean(summary?.open);
                 return (
                   <div
-                    key={`${day}-${index}`}
-                    className="flex flex-col gap-4 xl:flex-row xl:items-center"
+                    key={group.key}
+                    className="flex items-center gap-2 rounded-xl border border-gray-200 p-2"
                   >
-                    <div className="inline-flex w-full md:w-auto">
-                      <div className="bg-primary/20 rounded-xl py-3 px-4 flex gap-4 min-w-40 justify-between w-full">
-                        <div className="flex gap-2">
-                          <Label className={`capitalize ${disabledDay ? 'text-gray-400' : ''}`}>
-                            {day}
-                          </Label>
-                        </div>
-                        <Switch
-                          onCheckedChange={(checked) => {
-                            if (disabledDay) return;
-                            handleChangeScheduleOption(checked, day);
-                          }}
-                          checked={open}
-                          disabled={disabledDay}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex w-full flex-col gap-4 md:flex-row">
-                      <Input
-                        disabled={disabledDay || !open}
-                        placeholder="Enter start"
-                        type="time"
-                        {...register(`settings.operational_hours.value.${day}.start`)}
-                      />
-
-                      <Input
-                        disabled={disabledDay || !open}
-                        placeholder="Enter end"
-                        type="time"
-                        {...register(`settings.operational_hours.value.${day}.end`)}
-                      />
-                      {(errors?.settings as any)?.operational_hours?.value?.[day]?.end?.message && (
-                        <ErrorTooltip
-                          text={
-                            (errors?.settings as any)?.operational_hours?.value?.[day]?.end?.message
-                          }
-                        />
-                      )}
-
-                      <div className="flex gap-2 items-center w-full">
-                        <Checkbox
-                          disabled={disabledDay || !open}
-                          checked={watch(`settings.operational_hours.value.${day}.is_checked`)}
-                          onCheckedChange={(checked: boolean) => {
-                            setValue(`settings.operational_hours.value.${day}.is_checked`, checked);
-                            if (checked) {
-                              setValue(`settings.operational_hours.value.${day}.start`, '00:00');
-                              setValue(`settings.operational_hours.value.${day}.end`, '23:59');
-                            } else {
-                              setValue(`settings.operational_hours.value.${day}.start`, '10:00');
-                              setValue(`settings.operational_hours.value.${day}.end`, '23:00');
-                            }
-                          }}
-                          id={`check-${index}`}
-                        />
-                        <Label htmlFor={`check-${index}`} className="cursor-pointer">
-                          Full day
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-                );
-              },
-            )}
-          </div>
-        </div>
-        <div className="p-3 rounded-lg gap-3 flex flex-col px-0">
-          <div className="flex flex-col items-start gap-3">
-            <div className="flex w-full flex-col gap-1.5 md:w-2/4">
-              <Label>Select Holidays</Label>
-              <div className="w-full flex flex-col">
-                <Input
-                  type="date"
-                  disabled={campaignStatus == 'PROCESSING'}
-                  onChange={(e) => {
-                    const _val = e.target.value;
-                    const _selectedVal = moment(_val).format('YYYY-MM-DD');
-                    e.target.value = '';
-                    return setValue(
-                      'settings.operational_hours.holidays',
-                      _holidays.includes(_selectedVal)
-                        ? _holidays.filter((_value: any) => _selectedVal !== _value)
-                        : [..._holidays, _selectedVal],
-                    );
-                  }}
-                />
-              </div>
-            </div>
-            {_holidays && _holidays?.length ? (
-              <div className="flex flex-col gap-1">
-                <span className="font-semibold text-sm">Holidays:</span>
-                <div className="flex flex-wrap gap-2">
-                  {_holidays?.map((day: any) => (
-                    <div
-                      key={day}
-                      className="flex items-center gap-1.5 min-h-10 border border-gray-300 border-dashed px-3 py-2 rounded-md bg-gray-50 relative"
-                    >
-                      <Label>{moment(day)?.format('MMM DD, YYYY')}</Label>
-                      <span className="text-sm text-gray-600">{moment(day).format('ddd')}</span>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setValue(
-                            'settings.operational_hours.holidays',
-                            _holidays?.filter((_value: any) => _value !== day),
+                    <div className="flex items-center gap-1.5 flex-none">
+                      <Label className="text-sm font-medium whitespace-nowrap">{group.label}</Label>
+                      <Switch
+                        disabled={isLocked}
+                        checked={groupOpen}
+                        onCheckedChange={(checked) =>
+                          applyGroupSchedule(
+                            group.days,
+                            checked
+                              ? { open: true, start: '10:00', end: '23:00' }
+                              : { open: false },
                           )
                         }
-                        className="absolute -top-1 -right-1 p-0.5 rounded-full bg-red-500 text-white hover:bg-red-600"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                      />
                     </div>
-                  ))}
+                    <div className="flex flex-1 items-center gap-1.5 min-w-0">
+                      <ClockTimePicker
+                        disabled={isLocked || !groupOpen}
+                        value={summary?.start || '10:00'}
+                        onChange={(next) => applyGroupSchedule(group.days, { start: next })}
+                      />
+                      <span className="text-gray-400 text-xs flex-none">-</span>
+                      <ClockTimePicker
+                        disabled={isLocked || !groupOpen}
+                        value={summary?.end || '23:00'}
+                        onChange={(next) => applyGroupSchedule(group.days, { end: next })}
+                      />
+                    </div>
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap flex-none ${
+                        groupOpen ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {groupOpen ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Lives inside the left column now, right under Working hours —
+              not as a sibling of the row, so expanding Advanced settings
+              in the right panel (which can only grow the row's overall
+              height) never pushes this down. It only reacts to this
+              column's own content. */}
+          <div className="rounded-lg gap-1.5 flex flex-col">
+            <div className="flex flex-col items-start gap-1.5">
+              <div className="flex w-full flex-col gap-1 md:w-2/4">
+                <Label>Select Holidays</Label>
+                <div className="w-full flex flex-col">
+                  <Input
+                    type="date"
+                    className="acp-compact-field"
+                    disabled={isLocked}
+                    onChange={(e) => {
+                      const _val = e.target.value;
+                      const _selectedVal = moment(_val).format('YYYY-MM-DD');
+                      e.target.value = '';
+                      return setValue(
+                        'settings.operational_hours.holidays',
+                        _holidays.includes(_selectedVal)
+                          ? _holidays.filter((_value: any) => _selectedVal !== _value)
+                          : [..._holidays, _selectedVal],
+                      );
+                    }}
+                  />
                 </div>
               </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
+              {_holidays && _holidays?.length ? (
+                <div className="flex flex-col gap-1">
+                  <span className="font-semibold text-sm">Holidays:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {_holidays?.map((day: any) => (
+                      <div
+                        key={day}
+                        className="flex items-center gap-1.5 min-h-10 border border-gray-300 border-dashed px-3 py-2 rounded-md bg-gray-50 relative"
+                      >
+                        <Label>{moment(day)?.format('MMM DD, YYYY')}</Label>
+                        <span className="text-sm text-gray-600">{moment(day).format('ddd')}</span>
 
-      <div className="w-full rounded-xl border border-gray-200 bg-gray-50 xl:w-[30%] h-full">
-        <div
-          className={`flex justify-between p-3 cursor-pointer ${isAutomaticRecordingEnabled ? 'items-start' : 'items-center'}`}
-        >
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-4">
-              <div className="flex gap-2">
-                <Label>Call Recording</Label>
-                <Switch
-                  disabled={campaignStatus == 'PROCESSING'}
-                  onCheckedChange={(checked) => {
-                    setValue(
-                      'settings.recording.automatic',
-                      {
-                        enabled: checked,
-                        value: 'all',
-                        label: 'All',
-                        recording_on: 'ad98d65d-fcf8-4d4d-bc77-ee1426c34333.mp3',
-                      },
-                      { shouldDirty: true, shouldValidate: true },
-                    );
-                  }}
-                  checked={isAutomaticRecordingEnabled}
-                />
-              </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setValue(
+                              'settings.operational_hours.holidays',
+                              _holidays?.filter((_value: any) => _value !== day),
+                            )
+                          }
+                          className="absolute -top-1 -right-1 p-0.5 rounded-full bg-red-500 text-white hover:bg-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
-            <p className="text-gray-900 text-sm">
-              Turn on this feature to automatically record this campaign call. The recording will be
-              accessible in your campaign call logs.{' '}
-            </p>
           </div>
         </div>
 
-        <div className="border-t border-gray-200" />
-        <div
-          className={`flex justify-between p-3 cursor-pointer ${isAiCallMonitoringEnabled ? 'items-start' : 'items-center'}`}
-        >
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-4">
-              <div className="flex gap-2">
-                <Label>Call Monitoring</Label>
-                <Switch
-                  disabled={campaignStatus == 'PROCESSING'}
-                  onCheckedChange={(checked) => {
-                    setValue(
-                      'settings.ai_call_monitoring',
-                      {
-                        enabled: checked,
-                      },
-                      { shouldDirty: true, shouldValidate: true },
-                    );
-                    if (checked) {
-                      setValue(
-                        'settings.transcription',
-                        {
-                          enabled: true,
-                        },
-                        { shouldDirty: true, shouldValidate: true },
-                      );
+        <div className="w-full rounded-xl border border-gray-200 bg-white md:absolute md:right-0 md:top-0 md:w-[32%] md:mt-[22px]">
+          <div className="flex items-center gap-1.5 px-2 pt-2 pb-1">
+            <ShieldCheck className="w-3 h-3 text-primary" />
+            <Label className="text-xs font-semibold">Permissions & Features</Label>
+          </div>
+          {PERMISSION_ITEMS.map((item, index) => {
+            const checked =
+              item.key === 'recording'
+                ? isAutomaticRecordingEnabled
+                : item.key === 'monitoring'
+                  ? isAiCallMonitoringEnabled
+                  : isTranscriptionEnabled;
+            const Icon = item.icon;
+            return (
+              <div key={item.key}>
+                {index > 0 && <div className="border-t border-gray-100" />}
+                <div className="flex items-start gap-1.5 p-1.5">
+                  <span className="grid place-items-center w-5 h-5 rounded-md bg-primary/10 text-primary flex-none mt-0.5">
+                    <Icon className="w-3 h-3" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-900 leading-tight">{item.title}</p>
+                    <p className="text-[11px] text-gray-500 leading-snug mt-0.5">
+                      {item.description}
+                    </p>
+                  </div>
+                  <Switch
+                    disabled={isLocked}
+                    checked={checked}
+                    className="mt-0.5"
+                    onCheckedChange={(nextChecked) => {
+                      if (item.key === 'recording') {
+                        setValue(
+                          'settings.recording.automatic',
+                          {
+                            enabled: nextChecked,
+                            value: 'all',
+                            label: 'All',
+                            recording_on: 'ad98d65d-fcf8-4d4d-bc77-ee1426c34333.mp3',
+                          },
+                          { shouldDirty: true, shouldValidate: true },
+                        );
+                      } else if (item.key === 'monitoring') {
+                        setValue(
+                          'settings.ai_call_monitoring',
+                          { enabled: nextChecked },
+                          { shouldDirty: true, shouldValidate: true },
+                        );
+                        if (nextChecked) {
+                          setValue(
+                            'settings.transcription',
+                            { enabled: true },
+                            { shouldDirty: true, shouldValidate: true },
+                          );
+                        }
+                      } else {
+                        setValue(
+                          'settings.transcription',
+                          { enabled: nextChecked },
+                          { shouldDirty: true, shouldValidate: true },
+                        );
+                        if (!nextChecked) {
+                          setValue(
+                            'settings.ai_call_monitoring',
+                            { enabled: false },
+                            { shouldDirty: true, shouldValidate: true },
+                          );
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+          <div className="border-t-2 border-gray-200 mt-1.5" />
+          <button
+            type="button"
+            className={`flex w-full items-center gap-2 p-2.5 mt-1.5 text-left bg-gray-50 ${advancedOpen ? '' : 'rounded-b-xl'}`}
+            onClick={() => setAdvancedOpen((prev) => !prev)}
+          >
+            <span className="grid place-items-center w-6 h-6 rounded-md bg-gray-200 text-gray-600 flex-none">
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+            </span>
+            <span className="flex-1 min-w-0 text-sm font-semibold text-gray-900">
+              Advanced settings
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-gray-400 flex-none transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {advancedOpen && (
+            <div className="px-2.5 pb-2.5 bg-gray-50 rounded-b-xl">
+              {/* One-off override for a specific date — a half-day or a
+                  special shift — kept separate from Holidays, which just
+                  closes a day entirely rather than changing its hours. */}
+              <div className="rounded-lg border border-gray-200 p-1.5 flex flex-col gap-1.5">
+                <p className="text-[11px] font-semibold text-gray-700">Custom Date Override</p>
+                <div className="flex items-center gap-1 flex-wrap">
+                  <Input
+                    type="date"
+                    className="acp-compact-field min-w-[110px]"
+                    disabled={isLocked}
+                    value={overrideDraft.date}
+                    onChange={(e) =>
+                      setOverrideDraft((prev) => ({ ...prev, date: e.target.value }))
                     }
-                  }}
-                  checked={isAiCallMonitoringEnabled}
-                />
+                  />
+                  <ClockTimePicker
+                    className="min-w-[90px]"
+                    disabled={isLocked}
+                    value={overrideDraft.start}
+                    onChange={(next) => setOverrideDraft((prev) => ({ ...prev, start: next }))}
+                  />
+                  <ClockTimePicker
+                    className="min-w-[90px]"
+                    disabled={isLocked}
+                    value={overrideDraft.end}
+                    onChange={(next) => setOverrideDraft((prev) => ({ ...prev, end: next }))}
+                  />
+                  <button
+                    type="button"
+                    disabled={isLocked || !overrideDraft.date}
+                    onClick={addOverride}
+                    className="flex-none h-[34px] px-2.5 rounded-md bg-primary text-white text-[11px] font-medium disabled:opacity-40"
+                  >
+                    Add
+                  </button>
+                </div>
+                {_overrides.length > 0 && (
+                  <div className="flex flex-col gap-1">
+                    {_overrides.map((item: any, index: number) => (
+                      <div
+                        key={`${item.date}-${index}`}
+                        className="flex items-center justify-between gap-2 rounded-md bg-gray-50 px-2 py-1"
+                      >
+                        <span className="text-[11px] text-gray-700">
+                          {item.date ? moment(item.date).format('MMM DD, YYYY') : ''} · {item.start}
+                          –{item.end}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isLocked}
+                          onClick={() => removeOverride(index)}
+                          className="flex-none p-0.5 rounded-full bg-red-500 text-white hover:bg-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-            <p className="text-gray-900 text-sm">
-              Turn on this feature to automatically monitor this campaign call. The monitoring will
-              be accessible in your campaign call logs.{' '}
-            </p>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-200" />
-        <div
-          className={`flex justify-between p-3 cursor-pointer ${isTranscriptionEnabled ? 'items-start' : 'items-center'}`}
-        >
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-4">
-              <div className="flex gap-2">
-                <Label>Transcription</Label>
-                <Switch
-                  disabled={campaignStatus == 'PROCESSING'}
-                  onCheckedChange={(checked) => {
-                    setValue(
-                      'settings.transcription',
-                      {
-                        enabled: checked,
-                      },
-                      { shouldDirty: true, shouldValidate: true },
-                    );
-                    if (!checked) {
-                      setValue(
-                        'settings.ai_call_monitoring',
-                        {
-                          enabled: false,
-                        },
-                        { shouldDirty: true, shouldValidate: true },
-                      );
-                    }
-                  }}
-                  checked={isTranscriptionEnabled}
-                />
-              </div>
-            </div>
-            <p className="text-gray-900 text-sm">
-              Turn on this feature to automatically transcribe this campaign call. The transcript
-              will be accessible in your campaign call logs.{' '}
-            </p>
-          </div>
+          )}
         </div>
       </div>
     </div>

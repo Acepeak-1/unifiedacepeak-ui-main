@@ -1,12 +1,19 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CalendarClock, Check, ChevronDown, Eye, SlidersHorizontal, Trash2 } from 'lucide-react';
 import moment from 'moment';
 
 import TableManager from '@/components/custom/table-manager';
-import SideDrawer from '@/components/custom/side-drawer';
 import AlertConfirm from '@/components/custom/alert-confirm';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import CustomTooltip from '@/components/custom/custom-tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Ic, McmIconSprite } from '@/components/mcm/icons';
 import { capitalizeFirstLetter, convertDateFormateApis, handleAlert } from '@/lib/utils';
 import { campaignAnalytics, campaignList, deleteCampaign, playPauseCampaign } from '@/services/api';
@@ -60,11 +67,15 @@ const STATUS_FILTERS: Array<[string, string]> = [
   ['COMPLETED', 'Completed'],
 ];
 
+/* Dialling mode moved out of the chip row and into a single dropdown: four
+   chips for a one-of-four choice read as four independent toggles, and they
+   pushed the row onto a second line at ordinary widths. The values are the
+   same `dialMethod` codes the list query already filters on. */
 const MODE_FILTERS: Array<[string, string]> = [
   ['ALL', 'All modes'],
-  [DIALER_TYPE.PREVIEW, 'Preview'],
-  [DIALER_TYPE.NORMAL, 'Progressive'],
   [DIALER_TYPE.PREDICTIVE, 'Predictive'],
+  [DIALER_TYPE.NORMAL, 'Progressive'],
+  [DIALER_TYPE.PREVIEW, 'Preview'],
 ];
 
 /**
@@ -220,28 +231,22 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
   /* ── columns ──────────────────────────────────────────────────────── */
   const columns: any = [
     {
-      header: 'Status',
-      accessorKey: 'campaignStatus',
-      cell: ({ row }: any) => <StatusPill status={row?.original?.campaignStatus} />,
-    },
-    {
       header: 'Campaign',
       accessorKey: 'name',
       cell: ({ row }: any) => {
         const data = row?.original || {};
         const mode = DIAL_METHOD_LABEL[data?.dialMethod];
         return (
-          <div style={{ minWidth: 0 }}>
-            <div className="cname" title={capitalizeFirstLetter(data?.name)}>
-              {capitalizeFirstLetter(data?.name)}
-            </div>
-            <div className="cmeta">
-              {mode ? <span className="tag neu">{mode}</span> : null}
+          <div className="cid">
+            <div style={{ minWidth: 0 }}>
+              <div className="cname" title={capitalizeFirstLetter(data?.name)}>
+                <span>{capitalizeFirstLetter(data?.name)}</span>
+                {mode ? <span className="tag neu">{mode}</span> : null}
+              </div>
               {data?.createdAt ? (
-                <>
-                  <span className="sl">•</span>
-                  <span>created {convertDateFormateApis(data.createdAt, 'DD MMM YYYY')}</span>
-                </>
+                <div className="cmeta">
+                  <span>Created {convertDateFormateApis(data.createdAt, 'DD MMM YYYY')}</span>
+                </div>
               ) : null}
             </div>
           </div>
@@ -257,10 +262,13 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
           return <span style={{ color: 'var(--ink-4)' }}>—</span>;
         }
         return (
-          <div className="num" style={{ fontWeight: 700 }}>
-            {convertDateFormateApis(data?.startDate, 'DD MMM')} –{' '}
-            {convertDateFormateApis(data?.endDate, 'DD MMM')}
-          </div>
+          <span className="win">
+            <Ic n="cal" />
+            <span className="num">
+              {convertDateFormateApis(data?.startDate, 'DD MMM')} –{' '}
+              {convertDateFormateApis(data?.endDate, 'DD MMM')}
+            </span>
+          </span>
         );
       },
     },
@@ -294,14 +302,15 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
         const campaignId = data?._id;
         const isRefreshing = !!refreshingCampaignIds[campaignId];
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 170 }}>
-            <div style={{ flex: 1, minWidth: 110 }}>
+          <div className="outcell">
+            <div className="outcell-bar">
               <OutcomeBar analytics={data?.campaignAnalytics} />
             </div>
             <CustomTooltip text="Refresh analytics" side="top">
               <button
                 type="button"
-                className="mini ic"
+                className="mini ico"
+                aria-label="Refresh analytics"
                 disabled={isRefreshing || !campaignId}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -393,7 +402,12 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
       },
     },
     {
-      header: '',
+      header: 'Status',
+      accessorKey: 'campaignStatus',
+      cell: ({ row }: any) => <StatusPill status={row?.original?.campaignStatus} />,
+    },
+    {
+      header: 'Actions',
       accessorKey: 'action',
       enableSorting: false,
       cell: ({ row }: any) => {
@@ -408,67 +422,87 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
         const isExpired = !!(end && now.isAfter(end, 'day'));
         const canReschedule = data?.campaignStatus !== 'COMPLETED' && isExpired;
         const isRunning = data?.campaignStatus === 'PROCESSING';
+        const isPaused = data?.campaignStatus === 'PAUSE';
+
+        /* The transport control is the one action a row is usually opened for,
+           so it stays a labelled button; the other four move behind ⋯ rather
+           than crowding five identical icon squares into the last column.
+           The menu icons are lucide, not the page sprite: the menu renders
+           through a portal, outside `.mcm-page`, where the sprite's stroke
+           styling does not reach and its glyphs would fill solid black. */
+        const menu = [
+          campaignAccess?.summary && {
+            key: 'monitor',
+            Icon: Eye,
+            label: 'Open live monitor',
+            run: () => openMonitor(data),
+          },
+          campaignAccess?.pause && {
+            key: 'reschedule',
+            Icon: CalendarClock,
+            label: 'Reschedule campaign',
+            disabled: !canReschedule,
+            run: () => onReSchedule(data),
+          },
+          campaignAccess?.edit && {
+            key: 'edit',
+            Icon: SlidersHorizontal,
+            label: 'Edit campaign',
+            disabled: isRunning || outOfWindow,
+            run: () => setDrawerState({ selectedCampaign: data, isModalOpen: true }),
+          },
+          campaignAccess?.delete && {
+            key: 'delete',
+            Icon: Trash2,
+            label: 'Delete campaign',
+            disabled: isRunning,
+            danger: true,
+            run: () => setShowDeleteConfirmation(data),
+          },
+        ].filter(Boolean) as Array<{
+          key: string;
+          Icon: typeof Eye;
+          label: string;
+          disabled?: boolean;
+          danger?: boolean;
+          run: () => void;
+        }>;
 
         return (
           <div className="rowacts" onClick={(event) => event.stopPropagation()}>
             {campaignAccess?.pause && (
-              <CustomTooltip text={isRunning ? 'Pause campaign' : 'Start campaign'} side="top">
-                <button
-                  type="button"
-                  className="mini ic"
-                  disabled={outOfWindow}
-                  onClick={() => !outOfWindow && onPlayPause(data)}
-                >
-                  <Ic n={isRunning ? 'pause' : 'play'} size={12} />
-                </button>
-              </CustomTooltip>
+              <button
+                type="button"
+                className="btn run"
+                disabled={outOfWindow}
+                onClick={() => !outOfWindow && onPlayPause(data)}
+              >
+                <Ic n={isRunning ? 'pause' : 'play'} />
+                {isRunning ? 'Pause' : isPaused ? 'Resume' : 'Start'}
+              </button>
             )}
-            {campaignAccess?.summary && (
-              <CustomTooltip text="Open live monitor" side="top">
-                <button type="button" className="mini ic" onClick={() => openMonitor(data)}>
-                  <Ic n="eye" size={12} />
-                </button>
-              </CustomTooltip>
-            )}
-            {campaignAccess?.pause && (
-              <CustomTooltip text="Reschedule campaign" side="top">
-                <button
-                  type="button"
-                  className="mini ic"
-                  disabled={!canReschedule}
-                  onClick={() => canReschedule && onReSchedule(data)}
-                >
-                  <Ic n="cal" size={12} />
-                </button>
-              </CustomTooltip>
-            )}
-            {campaignAccess?.edit && (
-              <CustomTooltip text="Edit campaign" side="top">
-                <button
-                  type="button"
-                  className="mini ic"
-                  disabled={isRunning || outOfWindow}
-                  onClick={() => {
-                    if (isRunning || outOfWindow) return;
-                    setDrawerState({ selectedCampaign: data, isModalOpen: true });
-                  }}
-                >
-                  <Ic n="sliders" size={12} />
-                </button>
-              </CustomTooltip>
-            )}
-            {campaignAccess?.delete && (
-              <CustomTooltip text="Delete campaign" side="top">
-                <button
-                  type="button"
-                  className="mini ic"
-                  disabled={isRunning}
-                  onClick={() => !isRunning && setShowDeleteConfirmation(data)}
-                >
-                  <Ic n="trash" size={12} />
-                </button>
-              </CustomTooltip>
-            )}
+            {menu.length ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button type="button" className="mini dots" aria-label="More actions">
+                    <Ic n="more" size={15} fill />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={6} className="cmp-menu w-52">
+                  {menu.map((item) => (
+                    <DropdownMenuItem
+                      key={item.key}
+                      disabled={item.disabled}
+                      variant={item.danger ? 'destructive' : 'default'}
+                      onSelect={item.run}
+                    >
+                      <item.Icon />
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
           </div>
         );
       },
@@ -478,6 +512,7 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
   const KPI_CARDS = [
     {
       key: 'live',
+      icon: 'mega' as const,
       label: 'Live campaigns',
       value: (
         <>
@@ -486,21 +521,25 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
         </>
       ),
       sub: `${kpis.paused} paused · ${kpis.scheduled} scheduled`,
+      tone: 'accentv' as const,
     },
     {
       key: 'leads',
+      icon: 'users' as const,
       label: 'Leads assigned',
       value: fmt(kpis.assigned),
       sub: `${fmt(kpis.pending)} still callable`,
     },
     {
       key: 'dialed',
+      icon: 'phone' as const,
       label: 'Dialled',
       value: fmt(kpis.dialed),
       sub: `${pct(kpis.dialed, kpis.assigned)}% of assigned`,
     },
     {
       key: 'answered',
+      icon: 'check' as const,
       label: 'Answered',
       value: `${pct(kpis.answered, kpis.dialed)}%`,
       sub: `${fmt(kpis.answered)} connects`,
@@ -508,16 +547,18 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
     },
     {
       key: 'noanswer',
+      icon: 'miss' as const,
       label: 'No answer',
       value: `${pct(kpis.noAnswer, kpis.dialed)}%`,
       sub: fmt(kpis.noAnswer),
     },
     {
       key: 'dnc',
+      icon: 'shield' as const,
       label: 'DNC / blocked',
       value: `${pct(kpis.dnc, kpis.dialed)}%`,
       sub: fmt(kpis.dnc),
-      tone: kpis.dnc > 0 ? ('warnv' as const) : undefined,
+      tone: kpis.dnc > 0 ? ('bad' as const) : undefined,
     },
   ];
 
@@ -527,46 +568,73 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
       <div className="page">
         {!embedded && (
           <div className="page-head">
-            <div>
+            <div className="page-head-copy">
               <div className="eyebrow">Campaign · Outbound</div>
-              <h1>Campaigns</h1>
-              <p>
-                Every outbound calling campaign, with its contact outcomes and agent load on one
-                line. Open a campaign to watch it dial.
-              </p>
+              <div className="page-head-title-row">
+                <h1>Campaigns</h1>
+                <CustomTooltip
+                  side="bottom"
+                  className="bg-gray-200/70 text-black"
+                  text="Every outbound campaign — contact outcomes and agent load in one line."
+                >
+                  <span className="head-info" aria-label="About this page">
+                    <Ic n="info" />
+                  </span>
+                </CustomTooltip>
+              </div>
             </div>
-            <button className="btn ghost" type="button" onClick={() => navigate('/campaign/leads')}>
-              <Ic n="users" />
-              Lead groups
-            </button>
-            {campaignAccess?.add && (
+            {/* The pair is one flex item, so when the header runs out of room
+                they wrap together onto a second row instead of being pushed
+                past its edge. */}
+            <div className="page-head-actions">
               <button
-                className="btn primary"
+                className="btn ghost"
                 type="button"
-                onClick={() => setDrawerState({ selectedCampaign: null, isModalOpen: true })}
+                onClick={() => navigate('/campaign/leads')}
               >
-                <Ic n="plus" />
-                New campaign
+                <Ic n="users" />
+                Lead groups
               </button>
-            )}
+              {campaignAccess?.add && (
+                <button
+                  className="btn primary"
+                  type="button"
+                  onClick={() => setDrawerState({ selectedCampaign: null, isModalOpen: true })}
+                >
+                  <Ic n="plus" />
+                  New campaign
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         {!embedded && (
-          <div className="kpis">
-            {KPI_CARDS.map((kpi) => (
-              <div className="kpi" key={kpi.key}>
-                <div className="k">{kpi.label}</div>
-                <div className={`v num${kpi.tone ? ` ${kpi.tone}` : ''}`}>
-                  {isLoadingKpis ? (
-                    <span className="skel" style={{ display: 'block', width: 62, height: 24 }} />
-                  ) : (
-                    kpi.value
-                  )}
+          <div className="kpis-panel">
+            <div className="kpis-panel-head">
+              <span>Overview</span>
+              <span className="kpis-panel-line" />
+            </div>
+            <div className="kpis">
+              {KPI_CARDS.map((kpi) => (
+                <div className="kpi" key={kpi.key}>
+                  <div className="k">
+                    <span className="kico" aria-hidden="true">
+                      <Ic n={kpi.icon} />
+                    </span>
+                    {kpi.label}
+                  </div>
+                  <div className={`v num${kpi.tone ? ` ${kpi.tone}` : ''}`}>
+                    {isLoadingKpis ? (
+                      <span className="skel" style={{ display: 'block', width: 62, height: 24 }} />
+                    ) : (
+                      kpi.value
+                    )}
+                  </div>
+                  <div className="d">{kpi.sub}</div>
                 </div>
-                <div className="d">{kpi.sub}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
@@ -586,30 +654,68 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
             />
           </div>
 
-          {STATUS_FILTERS.map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={`fchip${statusFilter === value ? ' on' : ''}`}
-              onClick={() => setStatusFilter(value)}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="fchip modesel">
+                Status
+                {statusFilter !== 'ALL' && <span className="status-active-dot" />}
+                <ChevronDown size={14} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="bottom"
+              align="start"
+              sideOffset={6}
+              collisionPadding={12}
+              className="cmp-menu w-40"
             >
-              {value === 'PROCESSING' ? <span className="dot green" /> : null}
-              {label}
-            </button>
-          ))}
+              {STATUS_FILTERS.map(([value, label]) => (
+                <DropdownMenuItem
+                  key={value}
+                  className={statusFilter === value ? 'is-selected' : undefined}
+                  onSelect={() => setStatusFilter(value)}
+                >
+                  <Check size={14} style={{ opacity: statusFilter === value ? 1 : 0 }} />
+                  {value === 'PROCESSING' ? <span className="dot green" /> : null}
+                  {label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          <span style={{ width: 1, height: 20, background: 'var(--line)', margin: '0 3px' }} />
+          <span className="tbar-sep" />
 
-          {MODE_FILTERS.map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={`fchip${modeFilter === value ? ' on' : ''}`}
-              onClick={() => setModeFilter(value)}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="fchip modesel">
+                {MODE_FILTERS.find(([value]) => value === modeFilter)?.[1] || 'All modes'}
+                <ChevronDown size={14} />
+              </button>
+            </DropdownMenuTrigger>
+            {/* Opens below the trigger and is kept on screen: collision
+                handling shifts it inward near a viewport edge, which is what
+                keeps it visible on narrow screens. The panel is four rows
+                tall, so on any realistic viewport there is room below and it
+                does not flip up over the stats. */}
+            <DropdownMenuContent
+              side="bottom"
+              align="start"
+              sideOffset={6}
+              collisionPadding={12}
+              className="cmp-menu w-44"
             >
-              {label}
-            </button>
-          ))}
+              {MODE_FILTERS.map(([value, label]) => (
+                <DropdownMenuItem
+                  key={value}
+                  className={modeFilter === value ? 'is-selected' : undefined}
+                  onSelect={() => setModeFilter(value)}
+                >
+                  <Check size={14} style={{ opacity: modeFilter === value ? 1 : 0 }} />
+                  {label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="panel-card">
@@ -653,33 +759,23 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
         </div>
       </div>
 
-      {drawerState?.isModalOpen && (
-        <SideDrawer
-          isOpen={drawerState?.isModalOpen}
-          title={
-            drawerState?.selectedCampaign
-              ? `Update (${drawerState?.selectedCampaign?.name})`
-              : 'Add Campaign'
-          }
-          isTab={false}
-          enableResponsive
-          headerClassName="min-h-8 px-4 sm:px-5"
-          handleClose={() => setDrawerState({ selectedCampaign: null, isModalOpen: false })}
-          content={
-            <div className="h-full">
-              <div className="h-full sm:min-w-[640px] md:min-w-0">
-                <AddEditCampaign
-                  drawerState={drawerState?.isModalOpen}
-                  setDrawerState={() =>
-                    setDrawerState({ selectedCampaign: null, isModalOpen: false })
-                  }
-                  selectedCampaign={drawerState?.selectedCampaign}
-                />
-              </div>
-            </div>
-          }
-        />
-      )}
+      {/* A centred modal rather than the full-height side panel this used to
+          open in. The panel is what forced the form to fill the screen; the
+          modal sizes to its content and caps at 90vh. */}
+      <Dialog
+        open={!!drawerState?.isModalOpen}
+        onOpenChange={(open) => {
+          if (!open) setDrawerState({ selectedCampaign: null, isModalOpen: false });
+        }}
+      >
+        <DialogContent className="acp-modal" showCloseButton={false}>
+          <AddEditCampaign
+            drawerState={drawerState?.isModalOpen}
+            setDrawerState={() => setDrawerState({ selectedCampaign: null, isModalOpen: false })}
+            selectedCampaign={drawerState?.selectedCampaign}
+          />
+        </DialogContent>
+      </Dialog>
 
       {modalState?.open && (
         <AgentDetailsModal modalState={modalState} setModalState={setModalState} />
