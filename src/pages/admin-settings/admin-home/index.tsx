@@ -36,10 +36,6 @@ const DONUT_COLORS = [
   'var(--ink-4)',
 ];
 
-/** Cycled by index across "Most Accessed Areas" tiles — see `.tint-0`
-    through `.tint-3` in mcm-page.css. */
-const AREA_TILE_TINTS = 4;
-
 /* "All Screens" column count at each breakpoint — matches what CSS
    `column-count` used to switch at, but read in JS because the masonry
    packing below needs to know it upfront. */

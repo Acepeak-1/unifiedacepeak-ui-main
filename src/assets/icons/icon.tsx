@@ -342,6 +342,11 @@ export const iconMap: Record<IconType, (typeof Icons)[keyof typeof Icons]> = {
   AIBrainIcon: Icons.AIBrainIcon,
   GlobeIcon: Icons.GlobeIcon,
   Disc: Icons.Disc,
+  HeadsetLineIcon: Icons.HeadsetLineIcon,
+  BuildingLineIcon: Icons.BuildingLineIcon,
+  UsersOutlineIcon: Icons.UsersOutlineIcon,
+  BrainCircuitLineIcon: Icons.BrainCircuitLineIcon,
+  PlugLineIcon: Icons.PlugLineIcon,
 
 } as const;
 

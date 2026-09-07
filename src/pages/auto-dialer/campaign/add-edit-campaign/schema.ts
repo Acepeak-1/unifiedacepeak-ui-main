@@ -2,9 +2,23 @@ import * as yup from 'yup';
 import { CAMPAIGN_UPSERT_TAB_CONSTANT } from '../const';
 import { requiredString } from '@/lib/schema';
 
+/**
+ * Campaign name: letters, numbers and spaces only.
+ *
+ * The shared `requiredString` helper is used by forms all over the app,
+ * so the character rule is added here rather than there. It also carried
+ * the wrong field label — a campaign name reported itself as "First
+ * name" in every error this form raised.
+ */
+const CAMPAIGN_NAME_PATTERN = /^[A-Za-z0-9 ]+$/;
+const campaignName = requiredString('Campaign name', 2, 50).matches(CAMPAIGN_NAME_PATTERN, {
+  message: 'Campaign name can contain letters, numbers and spaces only.',
+  excludeEmptyString: true,
+});
+
 export const CAMPAIGN_SCEHAM: any = {
   [CAMPAIGN_UPSERT_TAB_CONSTANT.BASIC_INFORMATION]: yup.object().shape({
-    name: requiredString('First name', 2, 50),
+    name: campaignName,
     siteId: yup.object().shape({
       value: yup.string().required('Site is required'),
     }),
@@ -80,6 +94,36 @@ export const CAMPAIGN_SCEHAM: any = {
         enabled: yup.boolean().optional(),
         // timeout: yup.number().min(2).max(60).optional().nullable(),
       }),
+      manual_review_required: yup.boolean().optional(),
+      require_disposition: yup.boolean().optional(),
+      agent_availability_percent: yup
+        .number()
+        .transform((value, originalValue) => (originalValue === '' ? undefined : value))
+        .min(1, 'Minimum value is 1')
+        .max(100, 'Maximum value is 100')
+        .optional()
+        .nullable(),
+      dialing_ratio: yup
+        .number()
+        .transform((value, originalValue) => (originalValue === '' ? undefined : value))
+        .min(1, 'Minimum value is 1')
+        .max(10, 'Maximum value is 10')
+        .optional()
+        .nullable(),
+      max_concurrent_calls: yup
+        .number()
+        .transform((value, originalValue) => (originalValue === '' ? undefined : value))
+        .min(1, 'Minimum value is 1')
+        .max(500, 'Maximum value is 500')
+        .optional()
+        .nullable(),
+      abandon_rate_percent: yup
+        .number()
+        .transform((value, originalValue) => (originalValue === '' ? undefined : value))
+        .min(0, 'Minimum value is 0')
+        .max(100, 'Maximum value is 100')
+        .optional()
+        .nullable(),
     }),
     agentDisposition: yup
       .array()
@@ -133,3 +177,19 @@ export const CAMPAIGN_SCEHAM: any = {
     }),
   }),
 };
+
+/**
+ * All five steps' fields validated together, for the single-page form.
+ *
+ * Each step's schema above targets a disjoint set of top-level keys
+ * (name/siteId/... vs startDate/... vs dialerSetting/... etc.), so
+ * `.concat()`-ing them just unions the shape — nothing here overrides
+ * anything, it only combines.
+ */
+export const CAMPAIGN_FULL_SCHEMA = CAMPAIGN_SCEHAM[
+  CAMPAIGN_UPSERT_TAB_CONSTANT.BASIC_INFORMATION
+]
+  .concat(CAMPAIGN_SCEHAM[CAMPAIGN_UPSERT_TAB_CONSTANT.SETTING_PERMISSION])
+  .concat(CAMPAIGN_SCEHAM[CAMPAIGN_UPSERT_TAB_CONSTANT.SETTING])
+  .concat(CAMPAIGN_SCEHAM[CAMPAIGN_UPSERT_TAB_CONSTANT.AGENTS])
+  .concat(CAMPAIGN_SCEHAM[CAMPAIGN_UPSERT_TAB_CONSTANT.MEDIA]);

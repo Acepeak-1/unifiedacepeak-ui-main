@@ -1,6 +1,7 @@
 import { FC, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { Hash } from 'lucide-react';
 import { CloseIcon } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
@@ -76,19 +77,26 @@ const EditNumberLabel: FC<EditNumberLabelProps> = ({ did, open, onClose }) => {
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
-      <DialogContent className="max-w-lg p-4" showCloseButton={false}>
+      <DialogContent
+        showCloseButton={false}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-2xl lg:max-w-3xl"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-0.5">
-            <div className="text-md font-semibold text-gray-900">Edit label</div>
-            <div className="text-sm text-gray-800">{did?.did_number}</div>
+            <div className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
+              <Hash className="h-4 w-4 text-black" />
+              Edit label
+            </div>
+            <div className="text-sm text-gray-500">{did?.did_number}</div>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="cursor-pointer opacity-70 transition-opacity hover:opacity-100"
+            className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
           >
-            <CloseIcon className="h-3 w-3" />
+            <CloseIcon className="h-4 w-4" />
           </button>
         </div>
 
@@ -124,12 +132,18 @@ const EditNumberLabel: FC<EditNumberLabelProps> = ({ did, open, onClose }) => {
 
         <DialogFooter>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="transparent" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full border-gray-300 bg-white text-black hover:bg-gray-100 hover:text-black"
+              onClick={onClose}
+            >
               Cancel
             </Button>
             <Button
               type="button"
               variant="outline"
+              className="rounded-full border-black bg-black text-white hover:bg-gray-800 hover:text-white"
               disabled={!allowed.ok || !check.ok || unchanged || isPending}
               onClick={handleSave}
             >

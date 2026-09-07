@@ -6,6 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import CustomTooltip from '@/components/custom/custom-tooltip';
 import { useCompanyFeatures } from '@/hooks/rbac';
 import { useUser } from '@/hooks/use-user';
 import { useEffect, useMemo, useState } from 'react';
@@ -29,7 +30,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
       title: 'Captain',
       type: 'accordion',
       value: 'captain',
-      icon: 'SupportAgentLine',
+      icon: 'HeadsetLineIcon',
       visible: true,
       enabled: true,
       children: [
@@ -51,7 +52,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
       title: 'Company',
       type: 'accordion',
       value: 'company-info',
-      icon: 'CompayIcon',
+      icon: 'BuildingLineIcon',
       enabled: true,
       visible: Boolean(features?.plan_features?.account_setting?.access?.SITE?.action?.view),
       children: [
@@ -107,7 +108,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
       title: 'People',
       type: 'accordion',
       value: 'users',
-      icon: 'UsersIcon',
+      icon: 'UsersOutlineIcon',
       visible:
         IS_ADMIN || Boolean(features?.plan_features?.account_setting?.access?.USER?.action?.view),
       enabled: true,
@@ -270,7 +271,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
       title: 'AI Tools',
       type: 'accordion',
       value: 'knowledge',
-      icon: 'AIBrainIcon',
+      icon: 'BrainCircuitLineIcon',
       enabled: Boolean(features?.plan_features?.ai?.IS_SHOW),
       visible:
         Boolean(features?.plan_features?.ai?.action?.agent?.view) ||
@@ -328,7 +329,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
       title: 'Integration',
       type: 'accordion',
       value: 'integration',
-      icon: 'IntegrationIcon',
+      icon: 'PlugLineIcon',
       visible: Boolean(features?.plan_features?.integration?.action?.view),
       enabled: Boolean(features?.plan_features?.integration?.IS_SHOW),
       /* All four screens listed flat. The original nav nested Zapier, General
@@ -477,7 +478,7 @@ export const adminSettingArr = (features: any, IS_ADMIN: boolean) =>
       return item?.visible !== false;
     });
 
-const Sidebar = () => {
+const Sidebar = ({ collapsed = false }: { collapsed?: boolean }) => {
   const [manualActiveItem, setManualActiveItem] = useState<{
     pathname: string;
     value: string;
@@ -676,9 +677,25 @@ const Sidebar = () => {
           end
           className={({ isActive }) => `mcm-adminnav-all ${isActive ? 'on' : ''}`}
         >
-          <span className="mcm-adminnav-iconwrap">
-            <Icon name={'Grid' as IconType} className="h-4 w-4" />
-          </span>
+          {/* Tooltip scoped to just the icon, not the whole link — see the
+              matching comment on `Tile` for why anchoring to an element that
+              also holds the still-animating label pointed the pill at a
+              stale position instead of the icon's actual one. */}
+          {collapsed ? (
+            <CustomTooltip
+              text="All admin screens"
+              side="right"
+              className="rounded-full px-3 py-1.5 font-semibold"
+            >
+              <span className="mcm-adminnav-iconwrap">
+                <Icon name={'Grid' as IconType} className="h-4 w-4" />
+              </span>
+            </CustomTooltip>
+          ) : (
+            <span className="mcm-adminnav-iconwrap">
+              <Icon name={'Grid' as IconType} className="h-4 w-4" />
+            </span>
+          )}
           <span className="mcm-adminnav-label">All admin screens</span>
         </NavLink>
         <div className="mcm-adminnav h-full min-h-0 divide-y divide-gray-200">
@@ -718,10 +735,27 @@ const Sidebar = () => {
                             }
                           : {})}
                       >
+                        {/* Tooltip scoped to just the icon, not the whole
+                            row — see the matching comment in `Tile` above
+                            for why anchoring to the row (which also holds
+                            the still-animating label) pointed the pill at a
+                            stale position instead of the icon's actual one. */}
                         <div className="flex items-center w-full px-3 h-14 gap-2 cursor-pointer font-medium whitespace-nowrap">
-                          <span className="mcm-adminnav-iconwrap">
-                            <Icon name={icon as IconType} className="w-6 h-6 p-0.5" />
-                          </span>
+                          {collapsed ? (
+                            <CustomTooltip
+                              text={title}
+                              side="right"
+                              className="rounded-full px-3 py-1.5 font-semibold"
+                            >
+                              <span className="mcm-adminnav-iconwrap">
+                                <Icon name={icon as IconType} className="w-6 h-6 p-0.5" />
+                              </span>
+                            </CustomTooltip>
+                          ) : (
+                            <span className="mcm-adminnav-iconwrap">
+                              <Icon name={icon as IconType} className="w-6 h-6 p-0.5" />
+                            </span>
+                          )}
                           <span className="mcm-adminnav-label">{title}</span>
                         </div>
                       </AccordionTrigger>
@@ -733,7 +767,7 @@ const Sidebar = () => {
                             return (
                               <Tile
                                 key={index}
-                                {...{ title, path, icon, extraActiveTab, enabled }}
+                                {...{ title, path, icon, extraActiveTab, enabled, collapsed }}
                                 nested
                               />
                             );
@@ -744,7 +778,9 @@ const Sidebar = () => {
                   </Accordion>
                 );
               } else {
-                return <Tile key={index} {...{ title, path, icon, enabled }} topLevel />;
+                return (
+                  <Tile key={index} {...{ title, path, icon, enabled, collapsed }} topLevel />
+                );
               }
             },
           )}
@@ -756,13 +792,27 @@ const Sidebar = () => {
 
 export default Sidebar;
 
-const Tile = ({ title, path, icon, extraActiveTab, enabled, topLevel, nested }: any) => {
+const Tile = ({
+  title,
+  path,
+  icon,
+  extraActiveTab,
+  enabled,
+  topLevel,
+  nested,
+  collapsed,
+}: any) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isEnabled = enabled !== false;
 
   const isActive =
     pathname === path || extraActiveTab?.some((segment: string) => pathname?.includes(segment));
+  const iconEl = (
+    <span className="mcm-adminnav-iconwrap">
+      <Icon name={icon as IconType} className="w-5 h-5 p-0.5" />
+    </span>
+  );
   return (
     <div
       className={`flex items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer ${isActive ? 'text-primary bg-ucass-primary-200/50 border-r-primary border-r-2' : 'text-gray-900/80'} ${nested ? 'pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
@@ -772,9 +822,22 @@ const Tile = ({ title, path, icon, extraActiveTab, enabled, topLevel, nested }: 
         navigate(path);
       }}
     >
-      <span className="mcm-adminnav-iconwrap">
-        <Icon name={icon as IconType} className="w-5 h-5 p-0.5" />
-      </span>
+      {/* Tooltip scoped to just the icon, not the whole row — the row also
+          contains the label, which is still mid-transition (shrinking from
+          its full width to 0) for a moment right after the sidebar
+          collapses. Radix measures whatever it's given at the moment it
+          opens; anchoring to the row let it grab a stale, wider box while
+          the label was still animating, so the pill would point at where
+          the row used to end instead of where the icon actually is. The
+          icon itself never moves during that transition, so anchoring here
+          instead is stable regardless of timing. */}
+      {collapsed ? (
+        <CustomTooltip text={title} side="right" className="rounded-full px-3 py-1.5 font-semibold">
+          {iconEl}
+        </CustomTooltip>
+      ) : (
+        iconEl
+      )}
       <p title={title} className="mcm-adminnav-label font-medium truncate text-sm">
         {title}
       </p>
