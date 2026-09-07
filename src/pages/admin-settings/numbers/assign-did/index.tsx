@@ -199,7 +199,7 @@ const AssignDIDNumber: FC<IAsiignDIDProps> = ({ modalState, setModalState, selec
                   if (value.startsWith(' ')) return;
                   setSearch(e.target.value);
                 }}
-                Icon={<SearchLine className=" text-gray-700" />}
+                Icon={<SearchLine className="text-black" />}
               />{' '}
             </div>
           </div>

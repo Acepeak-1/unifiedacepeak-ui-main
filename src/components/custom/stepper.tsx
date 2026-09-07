@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react';
 import { DoneIcon } from '@/assets/icons';
 import { FC } from 'react';
 
@@ -8,6 +9,10 @@ interface IStepperProps {
   customClass?: string;
   customStep?: string;
   mobileHorizontal?: boolean;
+  /* 'breadcrumb' matches the plain "Step One › Step Two" header format used
+     elsewhere (e.g. the New location popup) instead of this component's
+     usual numbered-circle rail. */
+  variant?: 'circle' | 'breadcrumb';
 }
 const Stepper: FC<IStepperProps> = ({
   steps,
@@ -15,7 +20,32 @@ const Stepper: FC<IStepperProps> = ({
   customClass,
   customStep,
   mobileHorizontal = false,
+  variant = 'circle',
 }) => {
+  if (variant === 'breadcrumb') {
+    return (
+      <ol className={`flex items-center gap-1.5 ${customClass || ''}`}>
+        {steps.map((step, index) => {
+          const handleChange = step?.handleChange || null;
+          const isCurrent = currentStep === step.number;
+          const isDone = currentStep > step.number;
+          return (
+            <li key={index} className="flex items-center gap-1.5">
+              {index > 0 && <ChevronRight className="h-3.5 w-3.5 text-gray-400" />}
+              <span
+                onClick={() => handleChange?.(step)}
+                className={`text-sm ${handleChange ? 'cursor-pointer' : ''} ${
+                  isCurrent || isDone ? 'font-semibold text-gray-900' : 'text-gray-400'
+                }`}
+              >
+                {step.title}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    );
+  }
   return (
     <div className={`p-3 bg-white ${customClass}`}>
       <ol

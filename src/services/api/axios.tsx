@@ -126,6 +126,14 @@ apiClient.interceptors.response.use(
         msg = (error.response?.data as any).message;
       } else if ((error.response?.data as any)?.error?.message) {
         msg = (error.response?.data as any).error.message;
+      } else if ((error.response?.data as any)?.data?.message) {
+        /* The backend wraps success payloads as `{ data: { message, result } }`
+           — dozens of screens already read `response.data.data.message` for
+           that reason — and error payloads use the same envelope. Without this
+           check, a specific rejection reason (e.g. a DID that's no longer
+           available) sat right there in the response body while the user only
+           ever saw the generic "(422) Please retry" text below. */
+        msg = (error.response?.data as any).data.message;
       } else if (error?.response?.status === 504) {
         msg = 'This is taking longer than expected. Try a narrower date range.';
       } else if (error?.response?.status === 503) {

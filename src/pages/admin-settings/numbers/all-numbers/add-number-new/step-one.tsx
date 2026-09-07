@@ -670,10 +670,10 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
                 </div>
               </div>
             )}
-        <div className="flex w-full items-center gap-3">
-          <div className="flex w-full flex-col gap-4 lg:flex-row">
+        <div className="flex w-full items-start gap-3">
+          <div className="flex w-full flex-col gap-4">
             {isShowTable ? (
-              <div className="relative pt-7 w-full lg:w-3/4">
+              <div className="relative pt-7 w-full">
                 {errors?.groupId?.value?.message && (
                   <div className="text-red-500 font-medium text-xs pb-1 absolute top-2">
                     {errors?.groupId?.value?.message}
@@ -704,7 +704,7 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
               </div>
             ) : null}
 
-            <div className={`w-full pt-2 lg:pt-7 ${isFaxNumber ? '' : 'lg:w-1/4'}`}>
+            <div className="w-full pt-2">
               {(isFaxNumber ? watchNumberType?.value : watchGroupId?.value) && (
                 <>
                   {!isFetching ? (
@@ -728,7 +728,12 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
                   <>
                     {!isFetching ? (
                       didAvailableData?.length ? (
-                        <div className="flex flex-col gap-2 p-3">
+                        /* Capped and independently scrollable: an uncapped
+                           height here would grow this step tall enough to
+                           push the modal's Back/Next footer out of view once
+                           the DID list sits stacked below the prefix table
+                           rather than beside it. */
+                        <div className="flex max-h-[220px] flex-col gap-2 overflow-y-auto p-3">
                           {didAvailableData?.slice(0, 10)?.map((item: any) => {
                             const didNumber = isFaxNumber ? item?.phone_number : item?.number;
                             const didValue = isFaxNumber ? item?.phone_number : item?.id;

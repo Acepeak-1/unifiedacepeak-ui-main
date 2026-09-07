@@ -58,7 +58,7 @@ export default defineConfig({
     // the local .env for this to be used.
     proxy: {
       '/api': {
-        target: 'https://api2.acepeak.com',
+        target: 'https://api2.mycountrymobile.com',
         changeOrigin: true,
       },
     },

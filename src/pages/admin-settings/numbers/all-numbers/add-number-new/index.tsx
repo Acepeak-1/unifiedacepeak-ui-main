@@ -549,16 +549,16 @@ const AddNumber = ({ handleClose }: any) => {
 
   return (
     <>
-      <div className="flex h-full min-h-0 w-full flex-col justify-between gap-3 pt-2 sm:pt-3">
+      <div className="flex min-h-0 w-full flex-1 flex-col justify-between gap-3 pt-2 sm:pt-3">
         <Stepper
           steps={steps}
           currentStep={currentStep}
-          mobileHorizontal
-          customClass="bg-transparent px-0 py-1 sm:py-2"
+          variant="breadcrumb"
+          customClass="justify-center border-b border-gray-200 px-0 pt-1 pb-2 sm:pt-2 sm:pb-3"
         />
         <form
           onSubmit={handleSubmit(onSubmit, onInvalid)}
-          className="flex h-full min-h-0 w-full flex-col justify-between gap-3"
+          className="flex min-h-0 w-full flex-1 flex-col justify-between gap-3"
         >
           <div className="min-h-0 flex-1 overflow-y-auto pr-0.5 sm:pr-1">
             {stepLookUp?.[currentStep]}
@@ -592,7 +592,7 @@ const AddNumber = ({ handleClose }: any) => {
               {currentStep === steps?.length && (
                 <Button
                   variant="outline"
-                  className="min-w-0 flex-1 px-3 sm:min-w-32 sm:flex-none"
+                  className="min-w-0 flex-1 rounded-full border-black bg-black px-3 text-white hover:bg-gray-800 hover:text-white sm:min-w-32 sm:flex-none"
                   onClick={() => setModalState(true)}
                 >
                   Pay
