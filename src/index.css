@@ -180,7 +180,7 @@
   --mcm-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: #eef1f8;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -458,12 +458,31 @@
     overflow: hidden !important;
   }
 
+  /* var(--select-control-border) is unset everywhere by default, so this
+     resolves to the same --primary as before on every existing page. See
+     the --select-option-*-bg/-fg comment further down for why a page-local
+     fallback variable is used here instead of touching --primary itself,
+     which borders/rings far beyond this one control rely on. */
   .custom-react-select__control:hover {
-    border-color: var(--primary) !important;
+    border-color: var(--select-control-border, var(--primary)) !important;
   }
 
   .react-select-error .custom-react-select__control {
     border-color: var(--color-red-500) !important;
+  }
+
+  /* The Custom Days entry card in Business Hours reads its own black theme
+     (see bussiness-hours-dialog.tsx), so its fields' borders stay black too
+     instead of the app-wide red used for a required/invalid state elsewhere. */
+  .custom-day-entry .border-red-500,
+  .custom-day-entry .react-select-error .custom-react-select__control {
+    border-color: #111111 !important;
+  }
+  .custom-day-entry button[data-slot='button'] {
+    border-color: #d4d4d4 !important;
+  }
+  .custom-day-entry button[data-slot='button']:hover {
+    border-color: #111111 !important;
   }
 
   .custom-react-select__value-container {
@@ -577,7 +596,7 @@
       0 10px 15px -3px rgba(0, 0, 0, 0.1),
       0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
     border-style: solid !important;
-    border-color: var(--primary) !important;
+    border-color: #fecaca !important;
     padding: 0.25rem !important;
   }
 
@@ -671,9 +690,24 @@
     display: none !important;
   }
 
+  /* Brand red rather than the tenant primary: these controls (and their
+     portalled menus) render outside any page scope, and the console runs on
+     the accent, not the tenant colour. */
   .custom-react-select__control--is-focused,
   .custom-react-select__control--menu-is-open {
     border-color: var(--primary) !important;
+  }
+
+  /* "Select Type" in the Custom Days card: no visible border until the field
+     is actually active, then black (this card's own theme) instead of the
+     app-wide red/primary focus colour. Scoped via `inputClass` so it doesn't
+     touch any other CustomSelect. */
+  .select-type-plain.custom-react-select__control {
+    border-color: transparent !important;
+  }
+  .select-type-plain.custom-react-select__control--is-focused,
+  .select-type-plain.custom-react-select__control--menu-is-open {
+    border-color: #111111 !important;
   }
 
   .custom-react-select__menu {
@@ -704,10 +738,23 @@
     border-radius: 0.5rem !important;
   }
 
+  /* These --select-option-*-bg/-fg variables are unset everywhere by
+     default, so every rule below resolves to the same colours as before on
+     every existing page. A page can locally set them (e.g. on its own root
+     class) to recolour just hover or just the current selection for its own
+     dropdowns, without touching the app-wide --color-gray-100 / --primary
+     tokens those colours otherwise fall back to — which are both used far
+     more broadly than this menu. Hover and selected are deliberately
+     separate variables: an option can be hovered without being the current
+     value, and the two are allowed to read as different weights of
+     emphasis. Declared in this order (hover, then selected) because when an
+     option is both — the current value, freshly opened or landed on by
+     keyboard focus — the selected colour is meant to win; being later here
+     is what makes that the case. */
   .custom-react-select__option:hover,
   .custom-react-select__option--is-focused {
-    background-color: var(--color-gray-100) !important;
-    color: var(--color-black) !important;
+    background-color: var(--select-option-hover-bg, var(--color-gray-100)) !important;
+    color: var(--select-option-hover-fg, var(--color-black)) !important;
   }
 
   /* Selected: the brand's lightest pink band with red ink, the same pair the
@@ -735,6 +782,15 @@
   .custom-react-select__placeholder {
     color: var(--color-gray-700) !important;
     margin: 0 !important;
+  }
+
+  /* Location management's Country/Status filters: shown value reads in the
+     same light grey as an empty placeholder, matching the search box beside
+     them, instead of the usual dark selected-value colour. Scoped to this one
+     select via inputClass so other selects in the app keep their normal
+     weight. */
+  .loc-filter-select.custom-react-select__single-value {
+    color: var(--color-gray-700) !important;
   }
 
   .custom-react-select__multi-value {
@@ -1894,14 +1950,32 @@
   background: transparent;
 }
 
-/* Below the widest breakpoint the labels go and the icons carry it. */
-@media (max-width: 1279px) {
-  .mcm-areanav-btn span {
+/* Space runs out left-to-right in priority order: the tab labels ("Home",
+   "Directory"...) are what tells you where you are, so they're the last
+   thing to give. Before that, drop what nobody reads twice — the console's
+   own name next to its logo — which alone used to buy back enough room
+   that tab labels stayed on at ordinary laptop widths (1280-1366px) instead
+   of vanishing into icons the moment the wallet + profile chip needed room. */
+@media (max-width: 1500px) {
+  /* Doubled class beats the later base `.mcm-brand-text { display: flex }`
+     without relying on rule order. */
+  .mcm-brand-text.mcm-brand-text {
     display: none;
   }
-  /* icon-only at this width, so the tint needs to sit evenly around it */
+  /* And the tabs tighten up — labels stay, padding gives. */
   .mcm-areanav-btn {
-    padding: 9px 13px;
+    padding: 9px 10px;
+    gap: 5px;
+  }
+}
+
+/* Last resort — below this the trims above no longer add up (measured: at
+   ~1100px the header is ~170px short even with the brand text gone and tab
+   padding tightened), so the rail goes icon-only. 1269 keeps every common
+   100%-zoom laptop width (1280, 1366, 1536) in full-label mode. */
+@media (max-width: 1269px) {
+  .mcm-areanav-btn span {
+    display: none;
   }
 }
 
@@ -2198,5 +2272,29 @@
     grid-column: 2;
     justify-self: start;
     margin-top: 8px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   react-select chrome: brand accent instead of the tenant primary.
+   These controls portal to <body>, so page-scoped rules cannot reach
+   them. Two later `!important` rules (the gray control border and the
+   menu border) share single-class specificity with the focus rule and
+   win on order, so the exemption is doubled-class and lives in the
+   same layer, last: for !important, layered rules outrank unlayered.
+   ------------------------------------------------------------------ */
+@layer base {
+  .custom-react-select__menu.custom-react-select__menu {
+    border-color: #fecaca !important;
+  }
+}
+
+/* A focus ring for react-select. It has to sit in the same cascade layer as
+   the base control rules: for !important declarations layered styles outrank
+   unlayered ones, so an unlayered override loses to `box-shadow: none`. */
+@layer base {
+  .mcm-selectring:focus-within .custom-react-select__control {
+    box-shadow: 0 0 0 2px #fee2e2 !important;
+    border-color: #dc2626 !important;
   }
 }
