@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { cloneElement, isValidElement, useState } from 'react';
 import { ChevronIcon } from '@/assets/icons';
 import { cn } from '@/lib/utils';
 
@@ -186,7 +186,11 @@ const PageSidebarLayout = ({
           )}
           onMouseEnter={() => setHovered(true)}
         >
-          {collapsed && !isAdminResponsiveTopbar ? null : content}
+          {collapsed && !isAdminResponsiveTopbar
+            ? null
+            : isAdminResponsiveTopbar && isValidElement(content)
+              ? cloneElement(content as any, { collapsed })
+              : content}
         </div>
       </div>
     </section>

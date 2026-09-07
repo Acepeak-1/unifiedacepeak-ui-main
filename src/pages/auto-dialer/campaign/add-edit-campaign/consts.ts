@@ -35,6 +35,15 @@ export const PREVIW_INITIALS = {
       enabled: false,
       timeout: 2,
     },
+    /* Mode-specific settings below. Each dialling mode only ever renders its
+       own subset (see add-edit-campaign/settings), so these coexist without
+       ever showing at the same time. */
+    manual_review_required: true,
+    require_disposition: true,
+    agent_availability_percent: 80,
+    dialing_ratio: 2,
+    max_concurrent_calls: 10,
+    abandon_rate_percent: 3,
   },
   agentDisposition: [],
   members: [],

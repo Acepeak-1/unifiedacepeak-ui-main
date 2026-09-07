@@ -13,14 +13,15 @@
  * blank price reads as free.
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { SettingCard, SettingRow } from '@/components/mcm/setting-card';
-import { Button } from '@/components/ui/button';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import { SearchIcon } from '@/components/custom/header/GlobalSearch';
 import { Input } from '@/components/ui/input';
-import { AdminPage } from '@/pages/admin-settings/page-shell';
+import { Icon } from '@/assets/icons/icon';
 import { callingRatesList } from '@/services/api';
 import countryList from '@/lib/countries.json';
+import { demoRates } from './constant';
 import {
   buildDestinations,
   markFailed,
@@ -38,6 +39,9 @@ import {
    can predict. */
 const BATCH = 8;
 
+/* Rows shown before the list asks whether you want more. */
+const PAGE = 25;
+
 const price = (value?: number): string =>
   value === undefined ? '—' : `$${value.toFixed(4).replace(/0+$/, '').replace(/\.$/, '')}`;
 
@@ -49,16 +53,84 @@ const STATE_TEXT: Record<Destination['state'], string> = {
   failed: 'Failed',
 };
 
+type Filter = 'all' | 'priced' | 'unpriced' | 'unknown';
+
 const Destinations = () => {
-  const [rows, setRows] = useState<Destination[]>(() => buildDestinations(countryList as any));
+  /* DEMO prices — remove with `demoRates` before release. The rates endpoint
+     returns nothing for this workspace, so every one of the 250 rows read
+     "Not loaded" and pressing Load fired 250 requests that all came back
+     empty. Seeding through `readRateAnswer` means the demo takes exactly the
+     same path a real answer does. */
+  const [rows, setRows] = useState<Destination[]>(() =>
+    buildDestinations(countryList as any).map((destination) =>
+      readRateAnswer(
+        destination,
+        demoRates(destination.name, destination.iso, destination.dialCode),
+      ),
+    ),
+  );
   const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
+  /* 250 rows in one scroll is a wall you have to drag through to reach
+     anything, so the list opens short. One press shows the rest — pressing
+     "show more" over and over to walk a 250-row list is its own kind of
+     wall — and the same control collapses it back. */
+  const [expanded, setExpanded] = useState(false);
   const [loadingAll, setLoadingAll] = useState(false);
   /* Read inside the loop so pressing Stop takes effect on the next batch rather
      than only after every remaining country has been fetched. */
   const stopped = useRef(false);
+  /* The toggle lives at the FOOT of the list, so pressing it leaves you at
+     the bottom looking at row 25 (expanding) or past the end of a list that
+     just shrank (collapsing). Either way the answer is the top of the
+     table. */
+  const bodyRef = useRef<HTMLDivElement>(null);
 
-  const shown = useMemo(() => rows.filter((r) => matchesSearch(r, search)), [rows, search]);
+  const toggleExpanded = () => {
+    setExpanded((open) => !open);
+    /* Scroll the container itself. `scrollIntoView` on the card did nothing
+       here — the page's scroll region is `.mcm-intbody`, and on small
+       screens it is the document instead, so both are reset explicitly.
+       rAF, so the new row count is committed before the scroll lands. */
+    requestAnimationFrame(() => {
+      bodyRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  };
+
+  const shown = useMemo(
+    () =>
+      rows.filter(
+        (r) =>
+          matchesSearch(r, search) &&
+          (filter === 'all' ||
+            (filter === 'priced' && r.state === 'priced') ||
+            (filter === 'unpriced' && r.state === 'unpriced') ||
+            (filter === 'unknown' && (r.state === 'unknown' || r.state === 'failed'))),
+      ),
+    [rows, search, filter],
+  );
   const progress = useMemo(() => priceProgress(rows), [rows]);
+
+  /* Searching or switching tabs starts a different list, so it starts
+     collapsed — otherwise a search inherits the last one's expansion and
+     looks like it returned far more than it did. */
+  useEffect(() => setExpanded(false), [search, filter]);
+
+  const visible = expanded ? shown : shown.slice(0, PAGE);
+  const remaining = shown.length - visible.length;
+
+  const countOf = (state: Destination['state']) => rows.filter((r) => r.state === state).length;
+  const tabs = [
+    { key: 'all' as const, label: 'All', count: rows.length },
+    { key: 'priced' as const, label: 'Priced', count: countOf('priced') },
+    { key: 'unpriced' as const, label: 'Not sold', count: countOf('unpriced') },
+    {
+      key: 'unknown' as const,
+      label: 'Not loaded',
+      count: countOf('unknown') + countOf('failed'),
+    },
+  ];
 
   const fetchOne = useCallback(async (destination: Destination) => {
     setRows((all) => all.map((r) => (r.iso === destination.iso ? markLoading(r) : r)));
@@ -106,100 +178,140 @@ const Destinations = () => {
   };
 
   return (
-    <AdminPage
-      title="Destinations and rates"
-      description="Everywhere you can call, with its dialling code and what a call there costs."
-    >
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
-        <SettingCard
-          title="The price list"
-          description={
-            progress.complete
-              ? `All ${progress.total} destinations have been priced.`
-              : `${progress.total} destinations. ${progress.known} priced so far — prices are fetched one country at a time, so the rest load as you go.`
-          }
-          aside={
-            <div className="flex flex-wrap items-center gap-2">
-              {loadingAll ? (
-                <Button type="button" variant="outline" onClick={() => (stopped.current = true)}>
-                  Stop
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void loadAll()}
-                  disabled={progress.complete}
-                >
-                  {progress.missing > 0
-                    ? `Load ${progress.missing} remaining prices`
-                    : 'All loaded'}
-                </Button>
-              )}
-              <Button type="button" variant="outline" onClick={exportCsv}>
-                Export CSV
-              </Button>
+    <section className="mcm-intpage is-stickytable flex w-full min-w-0 flex-col overflow-hidden">
+      {/* Same head as the rest of the console: eyebrow, serif title, the
+          description folded behind the "i", filter and search on the row.
+          This screen carried the older AdminPage shell, so it and the
+          Outbound Rates page beside it did not look like the same section. */}
+      <div className="mcm-intpage-head">
+        <div className="mcm-intpage-eyebrow">SMS / Calling Rates</div>
+        <div className="mcm-intpage-headrow">
+          <div className="mcm-intpage-headleft">
+            <div className="flex min-w-0 items-center gap-2">
+              <h1>Destinations</h1>
+              <CustomTooltip
+                side="bottom"
+                sideOffset={10}
+                className="mcm-tooltip-info"
+                text="Everywhere you can call, with its dialling code and what a call there costs."
+              >
+                <span className="mcm-intpage-info">i</span>
+              </CustomTooltip>
             </div>
-          }
-        >
-          <SettingRow
-            label="Find a destination"
-            description="By country, by dialling code, or by pasting a number you are about to call."
-            control={
-              <div className="w-full sm:w-72">
-                <Input
-                  placeholder="United Kingdom, 44, or +44 20 7183 8750"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            }
-          />
 
-          {/* Wide content scrolls inside its own box - the page itself must never
-              move sideways. */}
-          <div className="scroller overflow-x-auto py-2">
-            <table className="w-full min-w-[34rem] border-collapse text-sm">
-              <thead>
+            <div className="mcm-segmented" role="group" aria-label="Filter destinations">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  aria-pressed={filter === tab.key}
+                  className={filter === tab.key ? 'is-active' : ''}
+                  onClick={() => setFilter(tab.key)}
+                >
+                  {tab.label}
+                  <em>{tab.count}</em>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mcm-intpage-search">
+            <Input
+              placeholder="Country, code, or a number"
+              className="pl-9"
+              IconPosition="left-0 pl-3 inset-y-0"
+              value={search}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.startsWith(' ')) return;
+                setSearch(value);
+              }}
+              Icon={<SearchIcon />}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* One strip: where the prices have got to, and what you can do about
+          it. Loading only appears while there is something left to load —
+          it used to sit there as a disabled "All loaded" button, which is a
+          control that can never be pressed telling you something the
+          sentence beside it already said. */}
+      <div className="mcm-destbar">
+        <span className="mcm-destbar-progress">
+          {progress.complete
+            ? `All ${progress.total} destinations priced`
+            : `${progress.known} of ${progress.total} priced — prices load one country at a time`}
+        </span>
+
+        {loadingAll ? (
+          <button type="button" className="btn" onClick={() => (stopped.current = true)}>
+            Stop
+          </button>
+        ) : progress.missing > 0 ? (
+          <button type="button" className="btn" onClick={() => void loadAll()}>
+            Load {progress.missing} remaining
+          </button>
+        ) : null}
+
+        {/* Secondary, not the black CTA: exporting is a convenience here, not
+            the thing the page is for. */}
+        <button type="button" className="btn mcm-destbar-export" onClick={exportCsv}>
+          <Icon name="DownloadIcon" className="h-3.5 w-3.5" />
+          Export CSV
+        </button>
+      </div>
+
+      <div className="mcm-intbody flex-1 overflow-y-auto p-3" ref={bodyRef}>
+        {/* Table and its footer share one bordered card, so the control that
+            extends the list sits inside the thing it extends rather than
+            floating on the page background under it. */}
+        <div className="mcm-tablecard">
+          <div className="scroller overflow-x-auto">
+            <table className="mcm-desttbl w-full min-w-[48rem] border-collapse text-sm">
+              <thead className="mcm-ratetbl-head sticky top-0 z-10">
                 <tr>
-                  {['Destination', 'Code', 'Outbound', 'Inbound', 'SMS', ''].map((h, i) => (
-                    <th
-                      key={h || i}
-                      className={`border-b border-gray-200 pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wide text-gray-500 last:pr-0 ${
-                        i === 0 || i === 1 ? 'text-left' : 'text-right'
-                      }`}
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  <th>Destination</th>
+                  <th>Code</th>
+                  <th>Outbound</th>
+                  <th>Inbound</th>
+                  <th>SMS</th>
+                  <th>MMS</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {shown.map((d) => (
+                {visible.map((d) => (
                   <tr key={d.iso}>
-                    <td className="border-b border-gray-100 py-2.5 pr-4 font-medium text-gray-900">
-                      <span className="mr-2">{d.flag}</span>
+                    <td className="font-medium text-gray-900">
+                      <span className="mcm-desttbl-flag">{d.flag}</span>
                       {d.name}
                     </td>
-                    <td className="border-b border-gray-100 py-2.5 pr-4 tabular-nums text-gray-700">
-                      {d.dialCode}
-                    </td>
-                    <td className="border-b border-gray-100 py-2.5 pr-4 text-right tabular-nums text-gray-900">
+                    <td className="tabular-nums text-gray-700">{d.dialCode}</td>
+                    <td className="tabular-nums text-gray-900">
                       {d.state === 'priced' ? price(d.outbound) : '—'}
                     </td>
-                    <td className="border-b border-gray-100 py-2.5 pr-4 text-right tabular-nums text-gray-700">
+                    <td className="tabular-nums text-gray-700">
                       {d.state === 'priced' ? price(d.inbound) : '—'}
                     </td>
-                    <td className="border-b border-gray-100 py-2.5 pr-4 text-right tabular-nums text-gray-700">
+                    <td className="tabular-nums text-gray-700">
                       {d.state === 'priced' ? price(d.sms) : '—'}
+                    </td>
+                    <td className="tabular-nums text-gray-700">
+                      {d.state === 'priced' ? price(d.mms) : '—'}
                     </td>
                     {/* A dash on its own would read as "free". The state column is
                         what stops a blank price being mistaken for a zero one. */}
-                    <td className="border-b border-gray-100 py-2.5 text-right text-xs">
-                      {d.state === 'priced' ? null : d.state === 'unknown' ? (
+                    <td className="text-xs">
+                      {d.state === 'priced' ? (
+                        <span className="mcm-intstatus connected">
+                          <i />
+                          Priced
+                        </span>
+                      ) : d.state === 'unknown' ? (
                         <button
                           type="button"
-                          className="text-primary hover:underline"
+                          className="mcm-desttbl-load"
                           onClick={() => void fetchOne(d)}
                         >
                           Load price
@@ -223,8 +335,10 @@ const Destinations = () => {
                 ))}
                 {shown.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-4 text-center text-xs text-gray-600">
-                      Nothing matches “{search}”.
+                    <td colSpan={7} className="py-6 text-center text-xs text-gray-600">
+                      {search.trim()
+                        ? `Nothing matches “${search.trim()}”.`
+                        : 'No destinations in this view.'}
                     </td>
                   </tr>
                 ) : null}
@@ -232,15 +346,36 @@ const Destinations = () => {
             </table>
           </div>
 
-          {!progress.complete ? (
-            <p className="mcm-setrow-note is-info mt-2">
-              A price only appears once it has been fetched. “Not sold” means no price is published
-              for that destination — it is not the same as a price of nothing.
-            </p>
+          {/* The list extends on request rather than dumping all 250 rows
+              into one scroll. The count rides on the button, so it is clear
+              how much is still behind it before you press. */}
+          {shown.length > PAGE ? (
+            <div className="mcm-destmore">
+              <button
+                type="button"
+                className="btn"
+                onClick={toggleExpanded}
+              >
+                {expanded ? 'Show less' : 'Show all destinations'}
+                <span>
+                  {expanded ? `(collapse to first ${PAGE})` : `(${remaining} remaining)`}
+                </span>
+              </button>
+            </div>
           ) : null}
-        </SettingCard>
+        </div>
+
+        {!progress.complete ? (
+          <div className="mcm-ratetbl-note">
+            <Icon name="InfoIcon" className="mcm-ratetbl-note-icon" />
+            <p>
+              A price only appears once it has been fetched. <strong>Not sold</strong> means no
+              price is published for that destination — it is not the same as a price of nothing.
+            </p>
+          </div>
+        ) : null}
       </div>
-    </AdminPage>
+    </section>
   );
 };
 

@@ -265,7 +265,7 @@ const CommonSettingPermission: FC<any> = ({
           {/* {IS_ADMIN ? ( */}
           {isShowRole && (
             <div className="flex bg-white justify-between gap-3.5 w-full border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                 <div className="flex items-center gap-1">
                   <p
                     className={`font-semibold truncate text-md text-gray-900 ${(errors.settings as any)?.role?.value?.message ? 'text-red' : 'text-gray-900'}`}
@@ -310,7 +310,7 @@ const CommonSettingPermission: FC<any> = ({
             </header>
           )}
           <div className="flex bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 min-w-0 flex-1">
               <div className="flex items-center gap-1">
                 <p
                   className={`font-semibold truncate text-md ${(errors.settings as any)?.operational_hours?.regional ? 'text-red' : 'text-gray-900'}`}
@@ -350,7 +350,7 @@ const CommonSettingPermission: FC<any> = ({
           </div>
           {isShowVoicemail && (
             <div className="flex bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                 <p className="font-semibold truncate text-md">Voicemail Settings</p>
                 <p className="text-gray-800 truncate text-sm">
                   {voicemail_pin?.users?.length
@@ -380,7 +380,7 @@ const CommonSettingPermission: FC<any> = ({
           )}
           {isBussinessHours ? (
             <div className="flex bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                 <div className="flex items-center gap-1">
                   <p className="font-semibold truncate text-md">
                     {isCampaignHours ? 'Campaign Hours' : 'Business Hours'}
@@ -444,7 +444,7 @@ const CommonSettingPermission: FC<any> = ({
           {features?.plan_features?.advance_call_management?.access?.RECORDING &&
             !isCampaignHours && (
               <div className="flex flex-col sm:flex-row bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                   <p className="font-semibold truncate text-md">
                     Automatic & On Demand Call Recording
                   </p>
@@ -472,7 +472,7 @@ const CommonSettingPermission: FC<any> = ({
           {features?.plan_features?.advance_call_management?.access?.TRANSCRIPTION && (
             <>
               <div className="flex bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                   <p className="font-semibold truncate text-md">Automatic Transcription</p>
                   <p className="text-gray-800 truncate text-sm">
                     Automatic transcription is{' '}
@@ -495,7 +495,7 @@ const CommonSettingPermission: FC<any> = ({
                 />
               </div>
               <div className="flex flex-col sm:flex-row bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                   <p className="font-semibold truncate text-md">AI Call Monitoring</p>
                   {/* text-xs text-gray-500 (12px, #6B7891), matching
                      CompanyLockNote's own helper-text style below — only
@@ -531,7 +531,7 @@ const CommonSettingPermission: FC<any> = ({
              fields. Every other caller keeps this row exactly as before. */}
           {!isCampaignHours && !isOwnSettingsPage && (
             <div className="flex bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                 <div className="flex items-center gap-1">
                   <p className="font-semibold truncate text-md">Display Number</p>
                   {(errors?.settings as any)?.display_number?.masking?.value?.message && (

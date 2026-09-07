@@ -303,3 +303,745 @@
   padding: 0;
   flex: none;
 }
+
+/* ============================================================
+   Acepeak brand skin — scoped to `.mcm-page.cmp`.
+
+   The shared platform sheet is blue; outbound is Acepeak's, which is
+   red on black on a warm near-white ground. Rather than fork the sheet
+   or repaint it for every page at once, this re-points the tokens the
+   sheet already reads on this one element. `.mcm-page.cmp` outranks
+   `.mcm-page`, so Home and Performance keep the blue they were built
+   with and nothing outside this page moves.
+
+   Two colours are deliberately NOT re-pointed: --live and --warn stay
+   as they are, because answered / no-answer / DNC have to remain three
+   readable states in the outcome bar — a bar that is red, red and red
+   is a bar that says nothing.
+   ============================================================ */
+.mcm-page.cmp {
+  --ground: #e5e7eb;
+  --surface: #ffffff;
+  --surface-2: #f3f4f6;
+  --surface-3: #e9eaed;
+  --ink: #171717;
+  --ink-2: #3f3f46;
+  --ink-3: #6b7280;
+  --ink-4: #a1a1aa;
+  --line: #e4e4e7;
+  --line-2: #eeeeef;
+
+  --accent: #dc2626;
+  --accent-ink: #b91c1c;
+  --accent-wash: #fef2f2;
+  --accent-edge: #f87171;
+
+  --crit: #dc2626;
+  --crit-wash: #fef2f2;
+
+  /* The black used for solid buttons. Kept separate from --ink so the
+     button ground cannot drift when body text is retuned. */
+  --btn-ink: #171717;
+  --btn-ink-h: #b91c1c;
+  /* Soft red edge for outline controls: the secondary button and the
+     mode selector, which are the same kind of control at rest. */
+  --btn-edge: #fca5a5;
+  --sel-edge: #fca5a5;
+
+  --shadow-sm: 0 1px 2px rgba(23, 23, 23, 0.05);
+  --shadow: 0 2px 10px rgba(23, 23, 23, 0.06), 0 1px 2px rgba(23, 23, 23, 0.04);
+  --r: 12px;
+  --r-lg: 16px;
+}
+.dark .mcm-page.cmp {
+  --ground: #140f10;
+  --surface: #1c1617;
+  --surface-2: #241a1b;
+  --surface-3: #2e2426;
+  --ink: #f6f0f0;
+  --ink-2: #d4c9ca;
+  --ink-3: #a3999a;
+  --ink-4: #7c7273;
+  --line: #34292b;
+  --line-2: #271e20;
+  --accent: #ef4444;
+  --accent-ink: #f87171;
+  --accent-wash: #331819;
+  --accent-edge: #5c2628;
+  --crit: #ef4444;
+  --crit-wash: #331819;
+  --btn-ink: #f5f2f2;
+  --btn-ink-h: #ef4444;
+  --btn-edge: #5c2628;
+  --sel-edge: #5c2628;
+}
+.dark .mcm-page.cmp .btn.primary,
+.dark .mcm-page.cmp .btn.run {
+  color: #171717;
+}
+.dark .mcm-page.cmp .btn.primary:hover,
+.dark .mcm-page.cmp .btn.run:hover {
+  color: #fff;
+}
+
+/* ── page header ───────────────────────────────────────────────
+   Flush white, not a floating card — `.page`'s own padding (22px top,
+   26px sides, shared by every page on this sheet) would otherwise show
+   the grey `--ground` around the header on all four sides. The negative
+   margin here cancels exactly that padding so the header bleeds to the
+   same edges the page itself does, and the matching padding put back on
+   the header keeps its content sitting where it always did. No
+   border/shadow/radius: white simply continues from the top of the page
+   through the header, and the grey ground only starts at the bottom
+   edge, past the hairline divider. The description still lives in the
+   tooltip on the info icon, not as a paragraph under the title. */
+.cmp .page-head {
+  align-items: center;
+  margin: -22px -26px 16px;
+  padding: 20px 26px 16px;
+  background: var(--surface);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+}
+/* Monospace, the same `--mono` token the rest of the sheet already
+   defines — matches the blocky label typography of the "INTEGRATION" /
+   "NUMBERS" headers elsewhere in the app, rather than the plain
+   sans-serif bold this used before. */
+.cmp .page-head .eyebrow {
+  font-family: var(--mono);
+  color: var(--accent);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+}
+/* The info icon now rides beside the title, not the eyebrow above it —
+   same placement as the reference's "CRM ⓘ". */
+.cmp .page-head-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.cmp .page-head-title-row .head-info {
+  display: inline-flex;
+  color: var(--ink-4);
+  cursor: default;
+  margin-top: 4px;
+}
+.cmp .page-head-title-row .head-info .ic {
+  width: 15px;
+  height: 15px;
+}
+/* Same elegant italic serif as the Add Campaign modal's title, rather
+   than the sheet's default sans-serif h1. */
+.cmp .page-head h1 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink);
+  font-size: 30px;
+  line-height: 1.3;
+  margin-top: 4px;
+}
+/* The sheet pushes each header .btn with its own `margin-left:auto`, which
+   splits the free space *between* them and leaves neither able to wrap as a
+   pair. The buttons now live in one wrapper, so the push belongs to it. */
+.cmp .page-head .btn,
+.cmp .page-head .btn ~ .btn {
+  margin-left: 0;
+}
+.cmp .page-head {
+  align-items: center;
+  row-gap: 14px;
+}
+/* The sheet already sizes this element via `.mcm-page .page-head > div:first-child`,
+   which is (0,3,1) — more specific than a plain `.cmp .page-head-copy`. Both
+   rules here match that weight or better so they actually take effect.
+
+   min-width:0 is what lets the copy shrink; without it the text block keeps
+   its max-content floor and shoves the buttons out of the card. */
+.mcm-page.cmp .page-head > .page-head-copy {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.cmp .page-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+/* Below this the copy column can no longer hold its 320px basis, so the
+   actions take a row of their own rather than being squeezed. */
+@media (max-width: 700px) {
+  .cmp .page-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  /* The basis switches to the main axis when the container turns vertical,
+     so `flex: 1 1 320px` would grow the copy block to 320px *tall* and open
+     a gap above the buttons. It sizes to its content here. */
+  .mcm-page.cmp .page-head > .page-head-copy {
+    flex: 0 0 auto;
+  }
+  .cmp .page-head-actions {
+    margin-left: 0;
+  }
+  .cmp .page-head-actions .btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* ── buttons: solid black, red icon ────────────────────────── */
+.cmp .btn {
+  height: 34px;
+  border-radius: 12px;
+  transition:
+    background-color 0.17s ease,
+    border-color 0.17s ease,
+    color 0.17s ease;
+}
+.cmp .btn.primary,
+.cmp .btn.ghost {
+  box-shadow: none;
+}
+/* Only the secondary button carries a red icon. On the black button the
+   plus is white, at rest and on the red hover alike. */
+.cmp .btn.ghost .ic {
+  color: var(--accent);
+}
+.cmp .btn.primary .ic {
+  color: #fff;
+}
+
+/* Black at rest, red on hover, deeper red while held. */
+.cmp .btn.primary {
+  background: var(--btn-ink);
+  color: #fff;
+}
+.cmp .btn.primary:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.cmp .btn.primary:hover .ic {
+  color: #fff;
+}
+.cmp .btn.primary:active {
+  background: var(--btn-ink-h);
+}
+
+.cmp .btn.ghost {
+  background: var(--surface);
+  border-color: var(--btn-edge);
+  color: var(--ink);
+}
+.cmp .btn.ghost:hover {
+  background: var(--accent-wash);
+  border-color: var(--accent-edge);
+  color: var(--accent);
+}
+.cmp .btn.ghost:active {
+  background: var(--accent-wash);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+/* The sheet points .mini's hover at the AI violet; on this page that is the
+   only violet on screen, so it goes red with everything else. */
+.cmp .mini:hover {
+  border-color: var(--accent-edge);
+  color: var(--accent-ink);
+}
+
+/* ── summary card ──────────────────────────────────────────── */
+/* Gray outer panel (per reference) holding a small red "Overview" label
+   + divider line above the KPI grid. */
+.cmp .kpis-panel {
+  background: #f3f4f6;
+  border-radius: 14px;
+  padding: 16px 18px 18px;
+  margin-bottom: 16px;
+}
+.cmp .kpis-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.cmp .kpis-panel-head span:first-child {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  flex: none;
+}
+.cmp .kpis-panel-line {
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+}
+/* Six equal columns, stepping 6 -> 3 -> 2 -> 1. Declared rather than
+   auto-fit so the count is predictable at every width and a row is never
+   left with one stretched card. minmax(0,1fr) is what stops a long value
+   from setting a min-content floor and blowing the track out. Each card
+   is now its own white rounded tile, separated by a real grid gap
+   instead of a shared bar with hairline dividers. */
+.cmp .kpis {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  background: transparent;
+  box-shadow: none;
+  gap: 10px;
+  margin-bottom: 0;
+}
+@media (max-width: 1200px) {
+  .cmp .kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .cmp .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 460px) {
+  .cmp .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cmp .kpi {
+  padding: 15px 16px;
+  min-width: 0;
+  background: var(--surface);
+  border-radius: 10px;
+  box-shadow: none;
+}
+.cmp .kpi .k,
+.cmp .kpi .v,
+.cmp .kpi .d {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cmp .kpi .k {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  letter-spacing: 0.07em;
+  color: var(--ink-3);
+}
+.cmp .kpi .kico {
+  width: 22px;
+  height: 22px;
+  border-radius: 99px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+}
+.cmp .kpi .kico .ic {
+  width: 12px;
+  height: 12px;
+}
+.cmp .kpi .v {
+  font-size: 24px;
+  margin-top: 9px;
+}
+.cmp .kpi .v.accentv {
+  color: var(--accent);
+}
+.cmp .kpi .d {
+  color: var(--ink-4);
+  font-weight: 600;
+}
+
+/* ── filters: pills ────────────────────────────────────────── */
+.cmp .tbar {
+  gap: 8px;
+  align-items: center;
+}
+.cmp .tbar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+  margin: 0 2px;
+  flex: none;
+}
+.cmp .fchip {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 99px;
+  flex: none;
+}
+.cmp .fchip svg {
+  color: var(--ink-4);
+}
+.cmp .fchip.on svg {
+  color: var(--accent);
+}
+/* The search is the only elastic control in the row, so it absorbs the
+   squeeze and the chips keep their size instead of being pushed out. */
+.cmp .cmp-search {
+  flex: 1 1 180px;
+  min-width: 150px;
+  max-width: 280px;
+}
+.cmp .cmp-search input {
+  height: 34px;
+  border-radius: 99px;
+  padding-left: 33px;
+}
+.cmp .cmp-search .ic {
+  top: 10px;
+  left: 12px;
+}
+
+/* ── table ─────────────────────────────────────────────────── */
+.cmp .panel-card {
+  box-shadow: var(--shadow-sm);
+}
+.cmp .pc-head h3 {
+  color: var(--ink);
+}
+.cmp th {
+  padding: 10px 14px;
+  color: var(--ink-4);
+}
+.cmp td {
+  padding: 10px 14px;
+}
+
+/* campaign identity: name, mode tag, created date. No gap or padding is
+   reserved on the left — there is nothing before the name any more.
+
+   The group is one fixed-width box centred in the cell, rather than a
+   shrink-wrapped box centred on its own content. Shrink-wrapping centres
+   each row independently, so a short name and a long one start at
+   different x and the column reads as ragged. A shared box keeps every
+   row on one left edge while the block still sits centred in the column;
+   `min()` lets it fall back to the full cell once the table is scrolling
+   and there is no spare width to centre within. */
+.cmp .cid {
+  display: inline-flex;
+  align-items: center;
+  width: min(190px, 100%);
+  text-align: left;
+}
+.cmp .cid > div {
+  flex: 1;
+  min-width: 0;
+}
+.cmp .cname {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.cmp .cname span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* dated window, with the calendar the artifact drew */
+.cmp .win {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.cmp .win .ic {
+  width: 13px;
+  height: 13px;
+  color: var(--ink-4);
+}
+
+/* Paused reads red on this page; Scheduled has to stay distinguishable
+   from it, so it becomes an outline rather than a second red fill. */
+.cmp .state.acw {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+.cmp .state.busy {
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+/* ── row actions: one solid transport button, the rest behind ⋯ ──
+   Always visible now — a Resume control that appears on hover is a
+   control you cannot find. */
+.cmp .rowacts {
+  opacity: 1;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.cmp .btn.run {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 9px;
+  background: var(--btn-ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.cmp .btn.run:hover:not(:disabled) {
+  background: var(--accent);
+}
+.cmp .btn.run:active:not(:disabled) {
+  background: var(--btn-ink-h);
+}
+.cmp .btn.run:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.cmp .btn.run .ic {
+  width: 13px;
+  height: 13px;
+}
+.cmp .mini.dots {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 9px;
+}
+
+/* ── table geometry ────────────────────────────────────────────
+   TableManager sizes nothing, so the browser gave the widest cell
+   whatever it asked for and every other column absorbed the slack —
+   headers ended up sitting a long way from the values under them.
+   Fixed layout with declared shares puts each heading directly over
+   its column; the min-width keeps that true by scrolling rather than
+   crushing once the content pane gets narrow. */
+.cmp .panel-card table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1000px;
+}
+.cmp .panel-card th:nth-child(1) {
+  width: 19%;
+}
+.cmp .panel-card th:nth-child(2) {
+  width: 13%;
+}
+.cmp .panel-card th:nth-child(3) {
+  width: 6%;
+}
+.cmp .panel-card th:nth-child(4) {
+  width: 23%;
+}
+.cmp .panel-card th:nth-child(5) {
+  width: 7%;
+}
+.cmp .panel-card th:nth-child(6) {
+  width: 7%;
+}
+.cmp .panel-card th:nth-child(7) {
+  width: 11%;
+}
+.cmp .panel-card th:nth-child(8) {
+  width: 14%;
+}
+.cmp .panel-card td {
+  vertical-align: middle;
+}
+
+/* Header and body share one alignment rule per column, so a heading always
+   sits directly over the values beneath it.
+
+   Campaign centres too, but as a block: `.cid` is inline-flex, so the cell
+   centres the whole name/date group while the two lines stay left-aligned
+   to each other. Centring the lines individually would ragged-edge them. */
+.cmp .panel-card th,
+.cmp .panel-card td {
+  text-align: center;
+}
+.cmp .panel-card td:not(:first-child) .win,
+.cmp .panel-card td:not(:first-child) .outcell {
+  justify-content: center;
+}
+.cmp .panel-card td .segfoot {
+  justify-content: center;
+}
+/* The bar itself keeps a sane reading width rather than stretching the
+   full column. */
+.cmp .outcell-bar {
+  max-width: 190px;
+}
+
+/* ── contact outcomes: the bar and its refresh control ─────────
+   The refresh button carried `.ic`, which is a rule for icons and sets
+   `width: 1em` — on a <button> that collapsed the control to ~11px and
+   left the glyph hanging outside it. It is a button, so it is sized
+   like one and the icon sits inside. */
+.cmp .outcell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.cmp .outcell-bar {
+  flex: 1;
+  min-width: 0;
+}
+.cmp .mini.ico {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 8px;
+  flex: none;
+}
+.cmp .mini.ico .ic {
+  width: 13px;
+  height: 13px;
+}
+
+/* The `action` column's header is centred by TableManager, so the
+   controls under it centre too rather than hugging the right edge. */
+.cmp .rowacts {
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+.cmp .panel-card td:last-child {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* ── one frame around the table, not three ─────────────────────
+   TableManager draws its own rounded border around the scroll area and
+   another around the pagination bar. Nested inside a panel card that
+   already has a frame, the pagination read as a separate pill floating
+   under the card. Both inner frames are dropped so the card is the only
+   boundary and the footer sits inside it. */
+.cmp .panel-card .table-scroll {
+  border: 0;
+  border-radius: 0;
+}
+.cmp .panel-card .table-scroll + div {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--surface-2);
+  padding: 9px 14px;
+  gap: 10px;
+}
+.cmp .panel-card .table-scroll + div .tableSelect {
+  width: 76px;
+}
+
+/* ── mode selector ─────────────────────────────────────────────
+   Not a filter pill: it is a select, so it takes a select's squarer
+   corner and a soft red edge that firms up to full red while open. */
+.cmp .fchip.modesel {
+  border-radius: 11px;
+  border-color: var(--sel-edge);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0 12px;
+}
+.cmp .fchip.modesel svg {
+  color: var(--ink);
+}
+.cmp .fchip.modesel:hover,
+.cmp .fchip.modesel[data-state='open'] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface);
+}
+.cmp .fchip.modesel:hover svg,
+.cmp .fchip.modesel[data-state='open'] svg {
+  color: var(--accent);
+}
+/* Small dot on the Status trigger — the trigger always reads "Status"
+   (it doesn't swap to the selected label, same as Channel/Agent/Outcome
+   filters elsewhere), so this is the only sign a filter is active. */
+.cmp .status-active-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--accent);
+  flex: none;
+}
+
+/* ============================================================
+   Dropdown panels opened from this page.
+
+   These render through a portal on <body>, outside `.mcm-page`, so the
+   page's scoped tokens cannot reach them — they pick up the app theme
+   instead, whose `--primary` is set at runtime from the tenant's brand
+   colour and is blue on this deployment. That is where the blue border
+   and the blue focus ring came from. `--primary` is shared by every
+   screen, so it stays as it is; these rules are namespaced on
+   `.cmp-menu` and repaint only the panels this page opens.
+
+   Unlayered, so they beat the component's Tailwind `@layer utilities`
+   classes without !important — the same mechanism mcm-page.css uses to
+   retune shared widgets.
+   ============================================================ */
+.cmp-menu {
+  background: #ffffff;
+  border: 1px solid #dc2626;
+  border-radius: 12px;
+  box-shadow:
+    0 8px 24px rgba(23, 23, 23, 0.08),
+    0 2px 6px rgba(23, 23, 23, 0.05);
+  padding: 5px;
+  max-width: calc(100vw - 24px);
+}
+.cmp-menu [data-slot='dropdown-menu-item'] {
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #171717;
+  background: transparent;
+  outline: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.cmp-menu [data-slot='dropdown-menu-item'] svg {
+  color: #a1a1aa;
+}
+.cmp-menu [data-slot='dropdown-menu-item']:hover,
+.cmp-menu [data-slot='dropdown-menu-item']:focus,
+.cmp-menu [data-slot='dropdown-menu-item']:focus-visible,
+.cmp-menu [data-slot='dropdown-menu-item'][data-highlighted] {
+  background: #fef2f2;
+  color: #dc2626;
+  outline: none;
+  box-shadow: none;
+}
+.cmp-menu [data-slot='dropdown-menu-item']:hover svg,
+.cmp-menu [data-slot='dropdown-menu-item']:focus svg,
+.cmp-menu [data-slot='dropdown-menu-item'][data-highlighted] svg {
+  color: #dc2626;
+}
+.cmp-menu [data-slot='dropdown-menu-item'].is-selected {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.cmp-menu [data-slot='dropdown-menu-item'].is-selected svg {
+  color: #dc2626;
+}
+/* Delete keeps its warning colour; everything else follows the rules above. */
+.cmp-menu [data-slot='dropdown-menu-item'][data-variant='destructive'],
+.cmp-menu [data-slot='dropdown-menu-item'][data-variant='destructive'] svg {
+  color: #b91c1c;
+}
+.cmp-menu :focus,
+.cmp-menu :focus-visible {
+  outline: none;
+  box-shadow: none;
+}

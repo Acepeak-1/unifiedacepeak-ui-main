@@ -8,24 +8,25 @@ import {
   parsePhoneNumberFromString,
   type CountryCode,
 } from 'libphonenumber-js';
-import DialpadMaxiTabDispositions from '@/components/dialpad/components/dialpad-maxi-tab-dispositions';
-import DialpadEndedScreen from '@/components/dialpad/components/dialpad-ended-screen';
 import DialpadAddUserList from '@/components/dialpad/components/dialpad-add-user-list';
 import DialpadMergeList from '@/components/dialpad/components/dialpad-merge-list';
 import DialpadConferenceMembersList from '@/components/dialpad/components/dialpad-conference-members-list';
 import DialpadMaxiScriptSidebar from '@/components/dialpad/components/dialpad-maxi-script-sidebar';
+import { useFetchContact } from '@/hooks/common';
 import { useDialpadCallerIdOptions } from '@/hooks/use-dialpad-caller-id-options';
 import { useUsersDirectory } from '@/hooks/use-users-directory';
 import type { DialpadSession } from '@/context/dialpad-context';
+import { findContact as findSavedContact } from './call-list-column';
 import type { ConsoleCallRow } from './call-list-column';
 import { Ic } from './icons';
-import { useConsoleDialer } from './dial-number';
+import { dialLabelFor, useConsoleDialer } from './dial-number';
 import CallRecord from './call-record';
 import { isTerminalSession, mmss, type ConsoleCallState } from './use-console-call';
 import {
   CHECKLIST,
   contactDisplayName,
   initialsOf,
+  isNumberLike,
   lineHealth,
   type ConsoleTurn,
 } from './copilot-adapter';
@@ -107,6 +108,8 @@ type StageProps = {
   selectedCall: ConsoleCallRow | null;
   onBackToDialer: () => void;
   onOpenTranscript: (leg: any) => void;
+  /** which list the selected row came from — the record view opens there */
+  recordTab?: 'calls' | 'recordings' | 'voicemails';
 };
 
 /* ---------------------------------------------------------------- caller ---- */
@@ -357,6 +360,7 @@ const StageColumn = ({
   selectedCall,
   onBackToDialer,
   onOpenTranscript,
+  recordTab = 'calls',
 }: StageProps) => {
   const [dial, setDial] = useState('');
   const [transfer, setTransfer] = useState<null | { conference: boolean }>(null);
@@ -379,8 +383,12 @@ const StageColumn = ({
   const [contactsOpen, setContactsOpen] = useState(false);
   const [contactSearch, setContactSearch] = useState('');
   const [noteText, setNoteText] = useState('');
-  const [notes, setNotes] = useState<string[]>([]);
-  const [sidePanel, setSidePanel] = useState<null | 'notes' | 'transcript'>(null);
+  /* A saved note keeps who the call was with and when it was written, so it
+     still makes sense after the call is gone. */
+  const [notes, setNotes] = useState<
+    { text: string; who: string; number: string; at: string }[]
+  >([]);
+  const [sidePanel, setSidePanel] = useState<null | 'notes' | 'transcript' | 'summary'>(null);
   const [panel, setPanel] = useState<null | 'add-user' | 'merge' | 'members' | 'script'>(null);
   const {
     callerIdOptions,
@@ -409,6 +417,9 @@ const StageColumn = ({
   const displayedCallerId =
     selectedDummy?.number || defaultCallerIdOption?.number || DUMMY_CALLER_IDS[0].number;
   const { users } = useUsersDirectory();
+  /* Saved contacts, keyed by number — so a call from a saved number shows the
+     person's name even before the session's own contact lookup lands. */
+  const { data: contactsByNumber } = useFetchContact();
   const { dial: dial2 } = useConsoleDialer();
   const [country, setCountry] = useState<CountryCode>('IN');
   const [countryOpen, setCountryOpen] = useState(false);
@@ -521,10 +532,13 @@ const StageColumn = ({
     ringingTimerRef.current = window.setTimeout(() => setForcedRinging(false), 60000);
   };
 
+  /* End call — the only way off the call screen: hangs up (if still up) and
+     clears the session, which drops the stage back to the dialer. */
   const stopRinging = () => {
     setForcedRinging(false);
     if (ringingTimerRef.current) window.clearTimeout(ringingTimerRef.current);
     if (session) dialpad.endCall(session.id);
+    onEndWrapup();
   };
 
   const pressKey = (key: string) => {
@@ -686,12 +700,64 @@ const StageColumn = ({
     </>
   );
 
-  /* Right-side slide-over for Notes / Transcript, opened from the call controls
-     or the floating tab, closed with its own X. */
+  /* Summary of the call so far, read off the live transcript: why they called
+     (the customer's opening line), where it got to (the last thing said) and
+     how much of the talking each side did. Empty until transcription streams. */
+  const callSummary = useMemo(() => {
+    if (!turns.length) return [] as string[];
+    const first = turns.find((t) => t.speaker === 'customer') || turns[0];
+    const last = turns[turns.length - 1];
+    const agentTurns = turns.filter((t) => t.speaker === 'agent').length;
+    const out = [`Opened with — ${first.text}`];
+    if (last !== first) out.push(`Latest — ${last.who}: ${last.text}`);
+    out.push(`${turns.length} turns so far · ${agentTurns} from the agent`);
+    return out;
+  }, [turns]);
+
+  /* Right-side slide-over for Notes / Transcript / Summary, opened from the
+     call controls or the floating tab, closed with its own X. */
+  /* Who the note is about — shown above the box so it's clear before you
+     write, and stored with the note. Saved contact first, then the label the
+     number was dialled with, then whatever the session knows. */
+  const noteNumber = session?.remoteNumber || selectedCall?.number || '';
+  const noteWho = (() => {
+    /* Opened straight from the dialer with nothing selected: it's just a note,
+       so it carries no contact line at all. */
+    if (!noteNumber && !session) return '';
+    const savedContact = findSavedContact(contactsByNumber as any, noteNumber);
+    const savedContactName = savedContact
+      ? `${String(savedContact.first_name || '').trim()} ${String(savedContact.last_name || '').trim()}`.trim() ||
+        String(savedContact.name || '').trim()
+      : '';
+    const sessionName = contactDisplayName(session);
+    return (
+      savedContactName ||
+      dialLabelFor(noteNumber) ||
+      (selectedCall?.name && !isNumberLike(selectedCall.name) ? selectedCall.name : '') ||
+      (isNumberLike(sessionName) ? '' : sessionName) ||
+      noteNumber ||
+      'Unknown'
+    );
+  })();
+
   const addNote = () => {
     const t = noteText.trim();
     if (!t) return;
-    setNotes((prev) => [t, ...prev]);
+    setNotes((prev) => [
+      {
+        text: t,
+        who: noteWho,
+        number: noteNumber,
+        at: new Date().toLocaleString(undefined, {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      },
+      ...prev,
+    ]);
     setNoteText('');
   };
   const sidePanelEl = (
@@ -714,6 +780,13 @@ const StageColumn = ({
           </button>
           <button
             type="button"
+            className={`csp-tab ${sidePanel === 'summary' ? 'on' : ''}`}
+            onClick={() => setSidePanel('summary')}
+          >
+            Summary
+          </button>
+          <button
+            type="button"
             className="csp-close"
             aria-label="Close"
             onClick={() => setSidePanel(null)}
@@ -722,7 +795,19 @@ const StageColumn = ({
           </button>
         </div>
 
-        {sidePanel === 'transcript' ? (
+        {sidePanel === 'summary' ? (
+          <div className="csp-body">
+            {callSummary.length ? (
+              <ul className="rec-summary-list">
+                {callSummary.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ul>
+            ) : (
+              <div className="csp-empty">No summary yet</div>
+            )}
+          </div>
+        ) : sidePanel === 'transcript' ? (
           <div className="csp-body">
             {turns.length ? (
               turns.map((t, i) => (
@@ -737,6 +822,14 @@ const StageColumn = ({
           </div>
         ) : (
           <div className="csp-body">
+            {noteWho ? (
+            <div className="csp-note-for">
+              <span className="csp-note-who">{noteWho}</span>
+              {noteNumber && noteNumber !== noteWho ? (
+                <span className="num csp-note-at">{noteNumber}</span>
+              ) : null}
+            </div>
+            ) : null}
             <textarea
               className="call-notes"
               value={noteText}
@@ -757,7 +850,20 @@ const StageColumn = ({
             {notes.length ? (
               notes.map((n, i) => (
                 <div className="csp-note" key={i}>
-                  {n}
+                  <div className="csp-note-head">
+                    {n.who ? (
+                      <span className="csp-note-who">
+                        {n.who}
+                        {n.number && n.number !== n.who ? (
+                          <span className="num"> · {n.number}</span>
+                        ) : null}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                    <span className="csp-note-at num">{n.at}</span>
+                  </div>
+                  {n.text}
                 </div>
               ))
             ) : (
@@ -788,14 +894,16 @@ const StageColumn = ({
   // intelligence / transcript view, with its plan gating intact.
   if (state === 'idle' && selectedCall) {
     return (
-      <div className="col stage">
+      <div className={`col stage ${sidePanel ? 'panel-open' : ''}`}>
         <div className="stage-inner">
           <CallRecord
             row={selectedCall}
             onBack={onBackToDialer}
             onOpenTranscript={onOpenTranscript}
+            initialTab={recordTab}
           />
         </div>
+        {sidePanelEl}
       </div>
     );
   }
@@ -803,7 +911,7 @@ const StageColumn = ({
   /* ---------------------------------------------------------------- idle ---- */
   if (state === 'idle' && !forcedRinging) {
     return (
-      <div className="col stage">
+      <div className={`col stage ${sidePanel ? 'panel-open' : ''}`}>
         <div className="stage-inner">
           <div
             className="card card-pad"
@@ -1356,14 +1464,32 @@ const StageColumn = ({
             </div>
           </div>
         </div>
+      {/* notes / transcript / summary reachable from the dialer too */}
+      {sidePanelEl}
       </div>
     );
   }
 
-  /* ----------------------------------------------------- dialing / incoming ---- */
-  if (state === 'dialing' || state === 'incoming' || forcedRinging) {
-    const callerName = contactDisplayName(session) || 'Unknown';
+  /* ------------------------------------------------------------ in a call ---- */
+  /* One screen for the whole call — ringing, connected and ended all render
+     this same card, so nothing shifts under the user mid-call. */
+  if (state !== 'idle' || forcedRinging) {
     const shownNumber = session?.remoteNumber || ringingNumber;
+    /* Prefer the saved contact for this number; only fall back to whatever the
+       session carries (which is often just the number, or a placeholder). */
+    const saved = findSavedContact(contactsByNumber as any, shownNumber);
+    const savedName = saved
+      ? `${String(saved.first_name || '').trim()} ${String(saved.last_name || '').trim()}`.trim() ||
+        String(saved.name || '').trim()
+      : '';
+    const sessionName = contactDisplayName(session);
+    const callerName =
+      savedName ||
+      /* the name the list showed when this number was dialled */
+      dialLabelFor(shownNumber) ||
+      (isNumberLike(sessionName) ? '' : sessionName) ||
+      shownNumber ||
+      'Unknown';
     return (
       <div className={`col stage ${sidePanel ? 'panel-open' : ''}`}>
         <div className="stage-inner">
@@ -1377,9 +1503,25 @@ const StageColumn = ({
                 {shownNumber}
               </div>
             ) : null}
-            <span className="state-pill ringing pulsing" style={{ margin: '6px 0 12px' }}>
-              {state === 'incoming' ? 'Incoming' : 'Ringing'}
+            <span
+              className={`state-pill ${
+                state === 'active' ? 'live' : state === 'wrapup' ? 'wrap' : 'ringing pulsing'
+              }`}
+              style={{ margin: '6px 0 12px' }}
+            >
+              {state === 'active'
+                ? 'Connected'
+                : state === 'wrapup'
+                  ? 'Wrap-up'
+                  : state === 'incoming'
+                    ? 'Incoming'
+                    : 'Ringing'}
             </span>
+            {state === 'active' || state === 'wrapup' ? (
+              <div className="num" style={{ marginBottom: 10, fontSize: 18, fontWeight: 700 }}>
+                {mmss(secs)}
+              </div>
+            ) : null}
 
             {state === 'incoming' ? (
               <div style={{ display: 'flex', justifyContent: 'center', gap: 40, paddingTop: 2 }}>
@@ -1423,53 +1565,6 @@ const StageColumn = ({
           </div>
         </div>
         {sidePanelEl}
-      </div>
-    );
-  }
-
-  /* -------------------------------------------------------------- wrap-up ---- */
-  if (state === 'wrapup') {
-    return (
-      <div className="col stage">
-        <div className="stage-inner">
-          <CallerBlock session={session} state={state} secs={secs} />
-          <div
-            className="card card-pad"
-            style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
-          >
-            <div className="sect-title">
-              <Ic n="check" size={13} /> Disposition &amp; wrap-up
-            </div>
-            {/* The platform's own wrap-up panel: it owns the queue/campaign
-                disposition payloads, the wrap-up timer and going back to
-                Available. Reused rather than reimplemented so the console
-                writes exactly what the rest of the app writes. */}
-            <DialpadMaxiTabDispositions activeSession={session} />
-          </div>
-
-          <div className="card card-pad console-embed-panel">
-            <div className="sect-title" style={{ marginBottom: 8 }}>
-              <Ic n="cal" size={13} /> After the call
-            </div>
-            {/* schedule callback (createEventAndTask), session summary and call
-                again — the platform's own ended screen, payloads unchanged */}
-            <DialpadEndedScreen
-              session={session}
-              onAddNotes={() => undefined}
-              onCallAgain={() => session?.remoteNumber && placeCall(session.remoteNumber)}
-              onClose={onEndWrapup}
-            />
-          </div>
-          <button
-            type="button"
-            className="btn ghost"
-            style={{ width: '100%' }}
-            onClick={onEndWrapup}
-          >
-            <Ic n="x" />
-            Close wrap-up
-          </button>
-        </div>
       </div>
     );
   }

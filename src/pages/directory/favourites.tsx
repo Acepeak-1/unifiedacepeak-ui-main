@@ -10,6 +10,15 @@ import { Ic } from '@/components/mcm/icons';
 import { DirectoryPage, EmptyRow, FilterChip, SearchChip } from './page-shell';
 import { usePeopleRows, type PersonRow } from './people-rows';
 import { useDirectoryFavourites } from './use-directory-favourites';
+import { InfoIcon, MoreVertical } from 'lucide-react';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import './favourites-theme.css';
 
 /**
  * Directory ▸ Favourites — the people you keep coming back to.
@@ -56,6 +65,72 @@ const TONE_CLASS: Record<string, string> = {
 
 const contactName = (row: any) =>
   `${row?.name?.first || ''} ${row?.name?.last || ''}`.trim() || 'Unknown';
+
+/* Sample favourites so the page has enough rows to look populated. Ids are
+   prefixed 'dummy-' and never sent to the API — remove this block once real
+   starred people/contacts fill the list out. */
+const DUMMY_FAVOURITE_ROWS: FavouriteRow[] = [
+  {
+    key: 'dummy:person:1',
+    kind: 'person',
+    id: 'dummy-fav-1',
+    name: 'Sara Mitchell',
+    org: 'Sales',
+    role: 'Agent',
+    reach: '2001',
+    reachLabel: 'Extension',
+    dialTarget: '2001',
+    phone: '',
+    email: 'sara.mitchell@mcmbpo.com',
+    whatsapp: '',
+    presence: 'Available',
+    tone: 'good',
+  },
+  {
+    key: 'dummy:person:2',
+    kind: 'person',
+    id: 'dummy-fav-2',
+    name: 'Priya Nair',
+    org: 'Sales',
+    role: 'Manager',
+    reach: '2003',
+    reachLabel: 'Extension',
+    dialTarget: '2003',
+    phone: '',
+    email: 'priya.nair@mcmbpo.com',
+    whatsapp: '',
+    presence: 'On Call',
+    tone: 'busy',
+  },
+  {
+    key: 'dummy:contact:1',
+    kind: 'contact',
+    id: 'dummy-fav-3',
+    name: 'Alex Thompson',
+    org: 'Northwind Traders',
+    role: 'Procurement Lead',
+    reach: '+1 415 555 0132',
+    reachLabel: 'Phone',
+    dialTarget: '+14155550132',
+    phone: '+1 415 555 0132',
+    email: 'alex.thompson@northwind.example',
+    whatsapp: '+14155550132',
+  },
+  {
+    key: 'dummy:contact:2',
+    kind: 'contact',
+    id: 'dummy-fav-4',
+    name: 'Maria Gonzalez',
+    org: 'Bluepeak Logistics',
+    role: 'Account Manager',
+    reach: '+44 20 7946 0958',
+    reachLabel: 'Phone',
+    dialTarget: '+442079460958',
+    phone: '+44 20 7946 0958',
+    email: 'maria.gonzalez@bluepeak.example',
+    whatsapp: '',
+  },
+];
 
 const Favourites = () => {
   const navigate = useNavigate();
@@ -116,7 +191,7 @@ const Favourites = () => {
         tone: undefined,
       }));
 
-    return [...fromPeople, ...fromContacts];
+    return [...fromPeople, ...fromContacts, ...DUMMY_FAVOURITE_ROWS];
   }, [people, contacts, isFavourite]);
 
   const visible = useMemo(() => {
@@ -138,10 +213,27 @@ const Favourites = () => {
     navigate(`/inbox?formState=contact&number=${encodeURIComponent(phone || '')}`);
 
   return (
-    <>
+    <div className="fav-theme">
       <DirectoryPage
-        title="Favourites"
-        description="The people you reach most, colleagues and outside contacts together, one click from here."
+        titleClassName="dir-serif-heading"
+        title={
+          <span className="flex items-center gap-2">
+            Favourites
+            <CustomTooltip
+              text={
+                <>
+                  The people you reach most, colleagues and
+                  <br />
+                  outside contacts together, one click from here.
+                </>
+              }
+              side="top"
+              className="!bg-gray-300 !text-black whitespace-normal text-left"
+            >
+              <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+            </CustomTooltip>
+          </span>
+        }
         filters={
           <>
             <FilterChip
@@ -149,6 +241,7 @@ const Favourites = () => {
               value={kind}
               options={['All', 'Colleagues', 'External']}
               onChange={setKind}
+              tone="red"
             />
             <SearchChip value={search} onChange={setSearch} placeholder="Search favourites" />
             <span className="fchip live" style={{ marginLeft: 'auto' }}>
@@ -157,17 +250,27 @@ const Favourites = () => {
           </>
         }
       >
-        <table>
+        <table className="tbl">
+          <colgroup>
+            <col style={{ width: '17%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '15%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '21%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '9%' }} />
+          </colgroup>
           <thead>
-            <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Team / Company</th>
-              <th>Role</th>
-              <th>Reach on</th>
-              <th>Email</th>
-              <th>Status</th>
-              <th>Contact via</th>
+            <tr className="tbl__head-row">
+              <th className="tbl__th tbl__th--left">Name</th>
+              <th className="tbl__th tbl__th--left">Type</th>
+              <th className="tbl__th tbl__th--left">Team / Company</th>
+              <th className="tbl__th tbl__th--left">Role</th>
+              <th className="tbl__th tbl__th--left">Reach on</th>
+              <th className="tbl__th tbl__th--left">Email</th>
+              <th className="tbl__th tbl__th--left">Status</th>
+              <th className="tbl__th tbl__th--center">Contact via</th>
             </tr>
           </thead>
           <tbody>
@@ -175,31 +278,37 @@ const Favourites = () => {
               <EmptyRow span={8} message="Loading favourites…" />
             ) : visible.length ? (
               visible.map((row) => (
-                <tr key={row.key}>
-                  <td>
-                    <span className="flex items-center gap-2.5">
+                <tr key={row.key} className="tbl__row">
+                  <td className="tbl__td tbl__td--left">
+                    <span className="tbl__agent">
                       <CustomAvatar
                         name={row.name}
                         image={row.image}
                         type={row.kind === 'contact' ? 'contact' : undefined}
                         size="30"
                       />
-                      <span style={{ fontWeight: 700 }}>{row.name}</span>
+                      <span className="tbl__name">{row.name}</span>
                     </span>
                   </td>
-                  <td>
+                  <td className="tbl__td tbl__td--left">
                     <span className={row.kind === 'person' ? 'tag acc' : 'tag neu'}>
                       {row.kind === 'person' ? 'Colleague' : 'External'}
                     </span>
                   </td>
-                  <td>{row.org || <span style={{ color: 'var(--ink-4)' }}>—</span>}</td>
-                  <td>{row.role || <span style={{ color: 'var(--ink-4)' }}>—</span>}</td>
-                  <td className="num">
-                    <span style={{ display: 'block' }}>{row.reach || '—'}</span>
-                    <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>{row.reachLabel}</span>
+                  <td className="tbl__td tbl__td--left tbl__value--muted">
+                    {row.org || <span style={{ color: 'var(--ink-4)' }}>—</span>}
                   </td>
-                  <td>{row.email || <span style={{ color: 'var(--ink-4)' }}>—</span>}</td>
-                  <td>
+                  <td className="tbl__td tbl__td--left tbl__value--muted">
+                    {row.role || <span style={{ color: 'var(--ink-4)' }}>—</span>}
+                  </td>
+                  <td className="tbl__td tbl__td--left num">
+                    <span className="tbl__value">{row.reach || '—'}</span>
+                    <span className="tbl__subtitle">{row.reachLabel}</span>
+                  </td>
+                  <td className="tbl__td tbl__td--left tbl__value--muted">
+                    {row.email || <span style={{ color: 'var(--ink-4)' }}>—</span>}
+                  </td>
+                  <td className="tbl__td tbl__td--left">
                     {row.presence ? (
                       <span className={TONE_CLASS[row.tone || 'idle'] || 'tag neu'}>
                         {row.presence}
@@ -208,73 +317,74 @@ const Favourites = () => {
                       <span style={{ color: 'var(--ink-4)' }}>—</span>
                     )}
                   </td>
-                  <td>
-                    <span className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        className="mini"
-                        title={`Call ${row.name}`}
-                        aria-label={`Call ${row.name}`}
-                        disabled={!row.dialTarget}
-                        onClick={() =>
-                          row.dialTarget &&
-                          dial(row.dialTarget, { forceRefreshContactInfo: true })
-                        }
-                      >
-                        <Ic n="phone" size={12} />
-                      </button>
-                      <button
-                        type="button"
-                        className="mini"
-                        title={`Send an SMS to ${row.name}`}
-                        aria-label={`Send an SMS to ${row.name}`}
-                        disabled={!row.phone}
-                        onClick={() => sendSms(row.phone)}
-                      >
-                        <Ic n="chat" size={12} />
-                      </button>
-                      {/* WhatsApp routes off a real number, which colleagues are
-                          not reachable on from here — so it is offered only for
-                          external contacts. */}
-                      {row.kind === 'contact' ? (
+                  <td className="tbl__td tbl__td--center" onClick={(event) => event.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <button
                           type="button"
                           className="mini"
-                          title={
-                            row.whatsapp ? `WhatsApp ${row.name}` : `${row.name} has no WhatsApp number`
-                          }
-                          aria-label={`WhatsApp ${row.name}`}
-                          disabled={!row.whatsapp}
-                          onClick={() => setWhatsappTo(row.whatsapp)}
+                          title={`Actions for ${row.name}`}
+                          aria-label={`Actions for ${row.name}`}
                         >
-                          <Ic n="send" size={12} />
+                          <MoreVertical size={14} />
                         </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="mini"
-                        title={`${row.name}'s activity`}
-                        aria-label={`${row.name}'s activity`}
-                        onClick={() =>
-                          row.kind === 'contact'
-                            ? navigate(`/contact-activity?contactId=${row.id}`, {
-                                state: { key: 'phone', value: row.phone },
-                              })
-                            : navigate(`/department/extension/${row.id}`)
-                        }
-                      >
-                        <Ic n="clock" size={12} />
-                      </button>
-                      <button
-                        type="button"
-                        className="mini mcm-fav-on"
-                        title={`Remove ${row.name} from favourites`}
-                        aria-label={`Remove ${row.name} from favourites`}
-                        onClick={() => toggleFavourite(row.kind, row.id)}
-                      >
-                        <Ic n="star" size={12} fill />
-                      </button>
-                    </span>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="border-transparent">
+                        <DropdownMenuItem
+                          className="ppl-row-menu-item"
+                          disabled={!row.dialTarget}
+                          onSelect={() =>
+                            row.dialTarget &&
+                            dial(row.dialTarget, { forceRefreshContactInfo: true })
+                          }
+                        >
+                          <Ic n="phone" size={14} />
+                          Call
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="ppl-row-menu-item"
+                          disabled={!row.phone}
+                          onSelect={() => sendSms(row.phone)}
+                        >
+                          <Ic n="chat" size={14} />
+                          Message
+                        </DropdownMenuItem>
+                        {/* WhatsApp routes off a real number, which colleagues
+                            are not reachable on from here — so it is offered
+                            only for external contacts. */}
+                        {row.kind === 'contact' ? (
+                          <DropdownMenuItem
+                            className="ppl-row-menu-item"
+                            disabled={!row.whatsapp}
+                            onSelect={() => setWhatsappTo(row.whatsapp)}
+                          >
+                            <Ic n="send" size={14} />
+                            WhatsApp
+                          </DropdownMenuItem>
+                        ) : null}
+                        <DropdownMenuItem
+                          className="ppl-row-menu-item"
+                          onSelect={() =>
+                            row.kind === 'contact'
+                              ? navigate(`/contact-activity?contactId=${row.id}`, {
+                                  state: { key: 'phone', value: row.phone },
+                                })
+                              : navigate(`/department/extension/${row.id}`)
+                          }
+                        >
+                          <Ic n="clock" size={14} />
+                          Activity
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          className="ppl-row-menu-item"
+                          onSelect={() => toggleFavourite(row.kind, row.id)}
+                        >
+                          <Ic n="star" size={14} fill />
+                          Remove from favourites
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))
@@ -308,7 +418,7 @@ const Favourites = () => {
           }
         />
       ) : null}
-    </>
+    </div>
   );
 };
 

@@ -8,7 +8,7 @@ import { useCompanyFeatures } from '@/hooks/rbac';
 import Loader from '@/components/custom/loader';
 import { dropdownCallInitialVal, handleDate } from '@/components/custom/date-dropdown/constant';
 import { Ic } from './icons';
-import { DialNumber, useConsoleDialer } from './dial-number';
+import { DialNumber, rememberDialLabel, useConsoleDialer } from './dial-number';
 import { isNumberLike } from './copilot-adapter';
 
 /** The three call-log sources the old phone page exposed, same `tabType` values. */
@@ -119,7 +119,7 @@ const getEntryNumber = (main: any = {}) => getEntryRawNumber(main).replace(/ /g,
  */
 const digitsOf = (value: string) => value.replace(/\D/g, '');
 
-const findContact = (contactsByNumber: Record<string, any>, rawNumber: string) => {
+export const findContact = (contactsByNumber: Record<string, any>, rawNumber: string) => {
   if (!contactsByNumber || !rawNumber) return null;
 
   const stripped = rawNumber.replace(/ /g, '');
@@ -526,7 +526,11 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
                 type="button"
                 key={s.key}
                 className={`ptab ${source === s.key ? 'on' : ''}`}
-                onClick={() => onSourceChange(s.key)}
+                onClick={() => {
+                  /* Missed only exists on Calls — don't leave it stuck on. */
+                  if (s.key !== 'call' && direction === 'miss') setDirection('all');
+                  onSourceChange(s.key);
+                }}
               >
                 {s.label}
               </button>
@@ -535,7 +539,11 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
 
         {source !== 'voicemail' ? (
           <div className="seg" role="tablist">
-            {DIRECTION_FILTERS.map((f) => (
+            {/* A recording only exists for a call that connected, so Missed
+                is offered on the Calls list only. */}
+            {DIRECTION_FILTERS.filter(
+              (f) => f.key !== 'miss' || source === 'call',
+            ).map((f) => (
               <button
                 key={f.key}
                 type="button"
@@ -572,8 +580,6 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
         ) : (
           <>
             {listRows.map((row, index) => {
-              const isLive =
-                !!liveNumber && !!row.number && row.number.endsWith(liveNumber.slice(-7));
               const label = sectionLabel(row.raw);
               const showHeader = index === 0 || sectionLabel(listRows[index - 1].raw) !== label;
               return (
@@ -582,7 +588,7 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
                   <div
                   role="button"
                   tabIndex={0}
-                  className={`call-row ${selectedId === row.id ? 'on' : ''} ${isLive ? 'live-now' : ''}`}
+                  className={`call-row ${selectedId === row.id ? 'on' : ''}`}
                   onClick={() => onSelect(row)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -630,7 +636,6 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
                       {row.hasRecording ? (
                         <Ic n="rec" size={11} className="cr-rec-ic" />
                       ) : null}
-                      {isLive ? <span className="tag pos">Live</span> : null}
                     </div>
                   </div>
                   {row.number ? (
@@ -642,6 +647,7 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
                         title="Call"
                         onClick={(e) => {
                           e.stopPropagation();
+                          rememberDialLabel(row.number, row.name);
                           dial(row.number);
                         }}
                       >
