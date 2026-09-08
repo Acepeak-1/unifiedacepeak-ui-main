@@ -32,9 +32,22 @@ function RadioGroupItem({
     >
       <RadioGroupPrimitive.Indicator
         data-slot="radio-group-indicator"
-        className="relative flex items-center justify-center"
+        className="absolute inset-0 flex items-center justify-center"
       >
-        <CircleIcon className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
+        {/* The indicator's own box has no intrinsic size — its only child
+            was `absolute`, taking it out of flow, so the indicator
+            collapsed to 0×0 and rendered wherever that landed inside the
+            item's content box instead of at its true center. `absolute
+            inset-0` stretches it to fill the item itself, so the flex
+            centering here actually centers the dot within the full circle. */}
+        {/* Lucide icons stroke in `currentColor` by default, and this item
+            sets `text-primary` on itself for exactly that reason — but at
+            this icon's tiny rendered size, that stroke's width reads as a
+            second, thicker ring around the dot's own edge, making the
+            whole thing look like one oversized blob rather than a small
+            fill inside a clean 16px circle. `strokeWidth={0}` leaves only
+            the fill. */}
+        <CircleIcon className="fill-primary size-1.5" strokeWidth={0} />
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   );

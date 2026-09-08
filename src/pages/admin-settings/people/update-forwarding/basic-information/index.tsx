@@ -281,13 +281,33 @@ const BasicInformation: FC<any> = ({
                 style={{ minHeight: 38 }}
               >
                 <div className="flex items-center gap-2">
-                  <RadioGroupItem value="Yes" id="yes" className="cursor-pointer" />
+                  <RadioGroupItem
+                    value="Yes"
+                    id="yes"
+                    className="h-4 w-4 cursor-pointer border-red-600! bg-white! shadow-none! ring-0! data-[state=checked]:border-red-600! data-[state=checked]:bg-white! data-[state=checked]:shadow-none! data-[state=checked]:ring-0! focus-visible:ring-0! focus-visible:shadow-none!"
+                    /* A scoped, unlayered mcm-page.css rule
+                       (`.mcm-page [data-slot='radio-group-item']`) sets this
+                       circle's border-color/width for the UpdateForwarding
+                       form specifically (it re-declares its own .mcm-page
+                       wrapper here — see the .ident-form-popup .mcm-page
+                       comment above), and being unlayered it was beating the
+                       Tailwind classes above for anything they didn't mark
+                       !important. The inline style here can't lose that
+                       fight — it's the one thing nothing in the stylesheet
+                       can out-cascade. */
+                    style={{ border: '1.5px solid #dc2626', background: '#ffffff' }}
+                  />
                   <Label htmlFor="yes" className="cursor-pointer">
                     Yes
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <RadioGroupItem value="No" id="no" className="cursor-pointer" />
+                  <RadioGroupItem
+                    value="No"
+                    id="no"
+                    className="h-4 w-4 cursor-pointer border-red-600! bg-white! shadow-none! ring-0! data-[state=checked]:border-red-600! data-[state=checked]:bg-white! data-[state=checked]:shadow-none! data-[state=checked]:ring-0! focus-visible:ring-0! focus-visible:shadow-none!"
+                    style={{ border: '1.5px solid #dc2626', background: '#ffffff' }}
+                  />
                   <Label htmlFor="no" className="cursor-pointer">
                     No
                   </Label>

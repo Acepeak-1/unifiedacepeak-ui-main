@@ -815,7 +815,7 @@ const Tile = ({
   );
   return (
     <div
-      className={`flex items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer ${isActive ? 'text-primary bg-ucass-primary-200/50 border-r-primary border-r-2' : 'text-gray-900/80'} ${nested ? 'pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
+      className={`flex items-center w-full px-3 min-h-14 h-14 gap-2 cursor-pointer transition-colors ${isActive ? 'text-gray-900 bg-gray-100 border-r-gray-400 border-r-2' : 'text-gray-900/80 hover:bg-red-50 hover:text-red-600'} ${nested ? 'pl-10' : ''} ${!isEnabled ? 'text-gray-400 opacity-60' : ''}`}
       {...getRoutePrefetchHandlers(path)}
       onClick={() => {
         if (!isEnabled || !path) return;
@@ -854,7 +854,7 @@ const Tile = ({
       {topLevel && (
         <ChevronDown
           className={`mcm-adminnav-chevron ml-auto mr-3 h-4 w-4 shrink-0 transition-transform duration-200 ${
-            isActive ? 'text-primary' : 'text-gray-400'
+            isActive ? 'text-gray-700' : 'text-gray-400'
           }`}
         />
       )}
