@@ -236,6 +236,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
+  padding-bottom: 12px;
 }
 .grp-theme .page-head,
 .grp-theme .kpis.kpi-grid,

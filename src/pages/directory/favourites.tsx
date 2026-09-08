@@ -7,7 +7,7 @@ import SideDrawer from '@/components/custom/side-drawer';
 import SendWhatsappMessage from '@/pages/messenger/drawers/send-whatsapp-message';
 import { useConsoleDialer } from '@/pages/phone/console/dial-number';
 import { Ic } from '@/components/mcm/icons';
-import { DirectoryPage, EmptyRow, FilterChip, SearchChip } from './page-shell';
+import { DirectoryPage, EmptyRow, FilterChip, SearchChip, TableFooter } from './page-shell';
 import { usePeopleRows, type PersonRow } from './people-rows';
 import { useDirectoryFavourites } from './use-directory-favourites';
 import { InfoIcon, MoreVertical } from 'lucide-react';
@@ -216,9 +216,24 @@ const Favourites = () => {
   const sendSms = (phone?: string) =>
     navigate(`/inbox?formState=contact&number=${encodeURIComponent(phone || '')}`);
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
+  const pagedRows = visible.slice((page - 1) * perPage, page * perPage);
+  if (page > pageCount) setPage(pageCount);
+
   return (
     <div className="fav-theme">
       <DirectoryPage
+        footer={
+          <TableFooter
+            page={page}
+            perPage={perPage}
+            total={visible.length}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+          />
+        }
         titleClassName="dir-serif-heading"
         title={
           <span className="flex items-center gap-2">
@@ -292,8 +307,8 @@ const Favourites = () => {
           <tbody>
             {isLoading ? (
               <EmptyRow span={8} message="Loading favourites…" />
-            ) : visible.length ? (
-              visible.map((row) => (
+            ) : pagedRows.length ? (
+              pagedRows.map((row) => (
                 <tr key={row.key} className="tbl__row">
                   <td className="tbl__td tbl__td--left">
                     <span className="tbl__agent">

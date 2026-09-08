@@ -8,7 +8,7 @@ import SideDrawer from '@/components/custom/side-drawer';
 import AlertConfirm from '@/components/custom/alert-confirm';
 import AddNewRole from '@/pages/admin-settings/roles/add-new-role';
 import AssignUsersModal from '@/pages/admin-settings/roles/assign-users-modal';
-import { DirectoryPage, EmptyRow, SearchChip } from './page-shell';
+import { DirectoryPage, EmptyRow, SearchChip, TableFooter } from './page-shell';
 import { InfoIcon, MoreVertical } from 'lucide-react';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import {
@@ -95,9 +95,24 @@ const Roles = () => {
     queryClient.invalidateQueries({ queryKey: ['rolesList'] });
   };
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
+  const pagedRows = visible.slice((page - 1) * perPage, page * perPage);
+  if (page > pageCount) setPage(pageCount);
+
   return (
     <div className="rol-theme">
       <DirectoryPage
+        footer={
+          <TableFooter
+            page={page}
+            perPage={perPage}
+            total={visible.length}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+          />
+        }
         titleClassName="dir-serif-heading"
         title={
           <span className="flex items-center gap-2">
@@ -155,8 +170,8 @@ const Roles = () => {
           <tbody>
             {isPending ? (
               <EmptyRow span={4} message="Loading roles…" />
-            ) : visible.length ? (
-              visible.map((role: Role) => {
+            ) : pagedRows.length ? (
+              pagedRows.map((role: Role) => {
                 const system = isSystemRole(role);
                 return (
                   <tr key={role?.uuid || role?.role_uuid || role?.name} className="tbl__row">

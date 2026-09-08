@@ -6,7 +6,7 @@ import CustomAvatar from '@/components/custom/custom-avatar';
 import { Ic } from '@/components/mcm/icons';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import NewDepartment from '@/pages/admin-settings/phone-systems/departments/new-department';
-import { DirectoryPage, EmptyRow, SearchChip } from './page-shell';
+import { DirectoryPage, EmptyRow, SearchChip, TableFooter } from './page-shell';
 import { InfoIcon } from 'lucide-react';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import './groups-theme.css';
@@ -101,9 +101,24 @@ const Groups = () => {
     URL.revokeObjectURL(url);
   };
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
+  const pagedRows = visible.slice((page - 1) * perPage, page * perPage);
+  if (page > pageCount) setPage(pageCount);
+
   return (
     <div className="grp-theme">
     <DirectoryPage
+      footer={
+        <TableFooter
+          page={page}
+          perPage={perPage}
+          total={visible.length}
+          onPageChange={setPage}
+          onPerPageChange={setPerPage}
+        />
+      }
       titleClassName="dir-serif-heading"
       title={
         <span className="flex items-center gap-2">
@@ -176,8 +191,8 @@ const Groups = () => {
         <tbody>
           {isPending ? (
             <EmptyRow span={5} message="Loading groups…" />
-          ) : visible.length ? (
-            visible.map((row: any) => {
+          ) : pagedRows.length ? (
+            pagedRows.map((row: any) => {
               const members = parseMembers(row?.members);
               const manager = managerName(row?.manager);
               return (

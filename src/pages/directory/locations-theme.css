@@ -232,6 +232,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
+  padding-bottom: 12px;
 }
 .loc-theme .page-head,
 .loc-theme .kpis.kpi-grid,

@@ -22,7 +22,7 @@ import {
   planBlock,
   tagRequest,
 } from '@/lib/contact-blocking';
-import { DirectoryPage, EmptyRow, SearchChip } from './page-shell';
+import { DirectoryPage, EmptyRow, SearchChip, TableFooter } from './page-shell';
 import { InfoIcon } from 'lucide-react';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import CustomSelect from '@/components/custom/custom-select';
@@ -117,9 +117,24 @@ const Blocked = () => {
       onSuccess: () => toast.success(`${contactName(contact) || 'That number'} is unblocked.`),
     });
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
+  const pagedRows = visible.slice((page - 1) * perPage, page * perPage);
+  if (page > pageCount) setPage(pageCount);
+
   return (
     <div className="blk-theme">
     <DirectoryPage
+      footer={
+        <TableFooter
+          page={page}
+          perPage={perPage}
+          total={visible.length}
+          onPageChange={setPage}
+          onPerPageChange={setPerPage}
+        />
+      }
       titleClassName="dir-serif-heading"
       title={
         <span className="flex items-center gap-2">
@@ -312,8 +327,8 @@ const Blocked = () => {
         <tbody>
           {isPending ? (
             <EmptyRow span={5} message="Loading blocked numbers…" />
-          ) : visible.length ? (
-            visible.map((row) => {
+          ) : pagedRows.length ? (
+            pagedRows.map((row) => {
               const name = contactName(row) || 'Unknown';
               return (
                 <tr key={row?._id || row?.contact?.phone}>

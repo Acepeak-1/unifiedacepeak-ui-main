@@ -7,7 +7,14 @@ import NewSiteSteps from '@/pages/admin-settings/company/new-site-steps';
 import { siteDelete, siteList } from '@/services/api';
 import { useCompanyFeatures } from '@/hooks/rbac';
 import { handleAlert } from '@/lib/utils';
-import { DirectoryDrawer, DirectoryPage, EmptyRow, FilterChip, SearchChip } from './page-shell';
+import {
+  DirectoryDrawer,
+  DirectoryPage,
+  EmptyRow,
+  FilterChip,
+  SearchChip,
+  TableFooter,
+} from './page-shell';
 import { usePeopleRows } from './people-rows';
 import { InfoIcon, MoreVertical } from 'lucide-react';
 import CustomTooltip from '@/components/custom/custom-tooltip';
@@ -118,6 +125,12 @@ const Locations = () => {
     queryClient.invalidateQueries({ queryKey: ['useGetSite'] });
   };
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
+  const pagedRows = visible.slice((page - 1) * perPage, page * perPage);
+  if (page > pageCount) setPage(pageCount);
+
   if (!canView) {
     return (
       <DirectoryPage title="Locations" description="The sites your organisation operates from.">
@@ -133,6 +146,15 @@ const Locations = () => {
   return (
     <div className="loc-theme">
       <DirectoryPage
+        footer={
+          <TableFooter
+            page={page}
+            perPage={perPage}
+            total={visible.length}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+          />
+        }
         titleClassName="dir-serif-heading"
         title={
           <span className="flex items-center gap-2">
@@ -200,8 +222,8 @@ const Locations = () => {
           <tbody>
             {isLoading ? (
               <EmptyRow span={7} message="Loading locations…" />
-            ) : visible.length ? (
-              visible.map((site: Site) => (
+            ) : pagedRows.length ? (
+              pagedRows.map((site: Site) => (
                 <tr
                   key={site?.uuid || site?.site_id}
                   className="tbl__row"

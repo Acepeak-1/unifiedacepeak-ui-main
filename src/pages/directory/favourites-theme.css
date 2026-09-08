@@ -171,6 +171,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
+  padding-bottom: 12px;
 }
 .fav-theme .page-head,
 .fav-theme .kpis.kpi-grid,
