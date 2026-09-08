@@ -98,6 +98,8 @@ function TableManager({
   pagerAccentClassName = 'border-ucass-blue-600 text-ucass-blue-600 bg-white',
   disablePerPageMenuPortal = false,
   perPageMenuPortalTarget,
+  perPageSelectClass,
+  recordNoun,
 }: Readonly<{
   columns: any;
   loading?: boolean;
@@ -171,6 +173,13 @@ function TableManager({
      theme. Left undefined, behavior is unchanged (portals to body).
      `disablePerPageMenuPortal` still takes priority when both are set. */
   perPageMenuPortalTarget?: HTMLElement | null;
+  /* Rides onto the per-page select via react-select's classNamePrefix, so a
+     page can style its own menu even though the menu is portaled to <body>
+     and therefore outside that page's wrapper. Unset elsewhere: no change. */
+  perPageSelectClass?: string;
+  /* What the rows ARE, e.g. "webhook" — the footer then reads "4 webhooks"
+     instead of "4 record(s)". Unset elsewhere, which keeps the old text. */
+  recordNoun?: string;
 }>) {
   const [rowSelection, setRowSelection] = useState(initiallySelectedRows);
   const [maxPageNumberListLimit, setMaxPageNumberListLimit] = useState(5);
@@ -542,7 +551,9 @@ function TableManager({
           : tbldata?.data?.data?.result?.totalItems || tbldata?.data?.data?.result?.total || 0;
         const recordLabel = (
           <span className={`whitespace-nowrap font-normal ${recordsPosition === 'left' ? 'sm:pl-3' : ''}`}>
-            {recordCount} record(s)
+            {recordNoun
+              ? `${recordCount} ${recordNoun}${recordCount === 1 ? '' : 's'}`
+              : `${recordCount} record(s)`}
           </span>
         );
         const perPageSelect = (
@@ -563,6 +574,7 @@ function TableManager({
                   setMaxPageNumberListLimit(pageNumberListLimit);
                 }}
                 value={perPage}
+                inputClass={perPageSelectClass}
                 menuPlacement="top"
                 menuPortalTarget={disablePerPageMenuPortal ? false : perPageMenuPortalTarget}
               />
@@ -572,7 +584,9 @@ function TableManager({
         );
         const refreshButton = !hideFooterRefresh && (
           <Button
-            className="cursor-pointer text-gray-900/80 hover:text-primary h-6 w-6"
+            aria-label="Refresh"
+            title="Refresh"
+            className="mcm-tblrefresh cursor-pointer text-gray-900/80 hover:text-primary h-6 w-6"
             type="button"
             variant={'ghost'}
             onClick={() => refetch()}

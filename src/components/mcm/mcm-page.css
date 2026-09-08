@@ -4726,11 +4726,19 @@
 }
 
 .mcm-admin .mcm-intgrid {
-  min-height: 0;
-  flex: 1;
+  /* `flex: 1` with `min-height: 0` let the grid shrink to the scroll
+     container's height while its cards overflowed past the bottom — so the
+     grid's own padding-bottom was drawn ABOVE the last row and the page had
+     nothing to scroll to. `1 0 auto` still grows to fill the ground when the
+     content is short, but never shrinks below the cards, so the foot below
+     the last row is real. */
+  flex: 1 0 auto;
   display: grid;
   gap: 18px;
-  padding: 18px 22px 26px;
+  /* The grid is the last thing on the page, so its bottom padding IS the
+     page's bottom margin — enough to show the last row has ended, not so
+     much that the page runs on. */
+  padding: 18px 22px 30px;
   /* Three across by default. Four only on a genuinely wide monitor: with the
      Admin sidebar taking ~250px, four columns on a 1280-class screen leaves
      each card ~230px, which pushes every description to three lines and reads
@@ -4773,6 +4781,8 @@
   background: #171717;
   color: #fff;
   box-shadow: none;
+  /* acepeak.com's CTA is a full pill, not a 10px rounded rectangle. */
+  border-radius: 999px;
 }
 .mcm-admin .mcm-intpage .btn.primary:hover {
   background: #2e2e2e;
@@ -4861,22 +4871,100 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 /* Key/secret rows: console field styling instead of a bare bordered box. */
+/* Heading across the top, the two credentials side by side beneath it. Each
+   column is about half the card, which its label, description and field
+   fill — stacked full-width rows left the field far wider than the value
+   inside it. */
+.mcm-admin .mcm-gsrows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* No column gap: each column carries its own 21px inset beside the
+     divider, so both fields end the same distance from their boundary — the
+     divider for the left column, the card's edge for the right. A grid gap
+     on top of that inset pushed the left field 28px further from the
+     divider than the right one sat from the card edge. */
+  gap: 0;
+  margin-top: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.mcm-admin .mcm-gsrow {
+  display: flex;
+  align-items: center;
+  /* 12px, the same gap the section headers use (Tailwind's gap-3), so every
+     icon on the page sets its text at the same offset. */
+  gap: 12px;
+  min-width: 0;
+}
+/* Fills the row up to the field, so both columns' text boxes are the same
+   width and the field lands at the same x in each. */
+.mcm-admin .mcm-gsrow-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* Hairline between the two columns, not around them. The padding is applied
+   to BOTH sides of the divider, not just the right-hand column: inset on one
+   side only, that column's content started 28px later and its value ended up
+   28px nearer its own text than the left column's did. */
+.mcm-admin .mcm-gsrow:first-child {
+  padding-right: 21px;
+}
+.mcm-admin .mcm-gsrow + .mcm-gsrow {
+  padding-left: 21px;
+  border-left: 1px solid var(--line);
+}
+
+.mcm-admin .mcm-gsdesc {
+  /* Inside the text block now, so it lines up with the label on its own. */
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-gslabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+/* The field runs the card's full width; the value fills it and the two
+   actions sit inside it at the right edge. */
 .mcm-admin .mcm-gsfield {
-  /* Tightened: 6px of padding around a 40px input made a 53px row to hold a
-     32px button and a line of text. */
-  padding: 3px 8px 3px 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  /* Sized to the value and its two buttons. Stretched to the column it was a
+     mostly-empty box, which reads worse than plain whitespace beside it. */
+  /* Fixed, so both rows' fields are the same size and their left edges line
+     up down the card — fit-content sized each to its own input and left the
+     two ragged. */
+  width: 196px;
+  max-width: 100%;
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 4px 6px 4px 14px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  /* Pill, like the search fields and filter toggles on the other pages. */
+  border-radius: 999px;
   background: var(--surface-2);
 }
 .mcm-admin .mcm-gsfield input {
-  /* Matches the height of the Copy/Show buttons beside it. The Input
-     component carries `min-h-10`, so height alone was ignored. */
-  height: 32px;
-  min-height: 32px;
+  height: 30px;
+  min-height: 30px;
   font-size: 13px;
   letter-spacing: 0.04em;
-  color: var(--ink-2);
+  color: var(--ink);
+}
+/* Square, so the pair reads as controls rather than stray glyphs. */
+.mcm-admin .mcm-gsbtn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+.mcm-admin .mcm-gscount {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--ink-3);
 }
 .mcm-admin .mcm-gsfield button {
   font-weight: 600;
@@ -4895,9 +4983,10 @@
   box-shadow: none;
   border: 0;
 }
+/* Nothing to outline now that the box is gone; the value is not editable. */
 .mcm-admin .mcm-gsfield:focus-within {
-  border-color: var(--accent-edge);
-  background: var(--surface);
+  border-color: transparent;
+  background: transparent;
 }
 
 /* ---- Connect in three steps ----
@@ -4918,7 +5007,7 @@
 }
 .mcm-admin .mcm-gssteps-row {
   display: grid;
-  gap: 24px;
+  gap: 28px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 @media (max-width: 820px) {
@@ -4927,73 +5016,72 @@
     gap: 18px;
   }
 }
-.mcm-admin .mcm-gsstep-rail {
+/* Number and heading on one line. The old rail put the number at the far
+   left, a dotted line across the middle and an unrelated glyph at the right,
+   with the heading starting underneath — four elements for a one-line
+   instruction, which is what made the row read as clutter. */
+.mcm-admin .mcm-gsstep-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 6px;
 }
 .mcm-admin .mcm-gsstep-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: #171717;
-  font-size: 14px;
-  font-weight: 800;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-edge);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-.mcm-admin .mcm-gsstep-dots {
-  flex: 1;
-  height: 0;
-  border-top: 2px dotted var(--line);
-}
-.mcm-admin .mcm-gsstep-ico {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  border: 1px solid var(--line-2);
-  background: var(--surface-2);
-  color: var(--accent);
-}
-.mcm-admin .mcm-gsstep-ico svg {
-  width: 16px;
-  height: 16px;
 }
 .mcm-admin .mcm-gsstep-name {
   font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.005em;
   color: var(--ink);
 }
+/* Indented under the heading, past the number, so the three steps read as
+   three blocks rather than text running under the numbers. */
 .mcm-admin .mcm-gsstep p {
-  margin: 3px 0 0;
+  margin: 0 0 0 34px;
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--ink-3);
 }
 
 /* Security note: quiet amber, the console's "careful" colour. */
+/* The same neutral bar as the notes under the rate tables — an "i" note is
+   the same kind of thing wherever it appears, so it gets one look. It was
+   the only amber panel in the console, which made a general aside read as a
+   warning state. The emphasis it needs is carried by the bold lead-in. */
 .mcm-admin .mcm-gsnote {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 10px 14px;
-  border: 1px solid #fde68a;
-  border-radius: 10px;
-  background: #fffbeb;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: #92400e;
+  gap: 9px;
+  padding: 11px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-gsnote strong {
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.mcm-admin .mcm-gsnote svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--ink-4);
 }
 
 /* Equal-height cards with the action pinned to the bottom, so a two-line
@@ -5124,7 +5212,7 @@
   height: 38px;
   /* The shared Input carries min-h-10 (40px); without this it wins. */
   min-height: 38px;
-  border-radius: 8px;
+  border-radius: 999px;
   /* Neutral at rest. A pink outline on an idle search box read as a
      permanent highlight — the field is not doing anything yet. */
   border: 1px solid var(--line);
@@ -5210,27 +5298,20 @@
 
 /* Info badge beside the page title: the page description folded away behind
    a hover. White "i" on translucent black, per spec. */
+/* The Company Phone Preferences tip's icon: lucide's outline Info at 16px in
+   grey, not a filled dark disc with a serif "i". Copied so an info tip is the
+   same mark everywhere in the console. */
 .mcm-admin .mcm-intpage-info {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff;
-  font-family: Georgia, serif;
-  font-size: 11.5px;
-  font-style: italic;
-  font-weight: 700;
-  line-height: 1;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #99a1af;
   cursor: help;
-  user-select: none;
-  transition: background 0.15s;
 }
 .mcm-admin .mcm-intpage-info:hover {
-  background: rgba(0, 0, 0, 0.65);
+  color: #dc2626;
 }
+
 
 /* ==================================================================
    Statement of account
@@ -6431,6 +6512,7 @@
 .mcm-admin .mcm-intpage button.btn.primary {
   background: #171717;
   color: #ffffff;
+  border-radius: 999px;
 }
 .mcm-admin .mcm-intpage .btn.primary svg {
   color: #ffffff;
@@ -6489,17 +6571,29 @@
 }
 
 /* Icon badge beside each credentials section on General Settings. */
+/* The glyph on its own — no wash, no chip. Five tinted squares stacked down
+   the page read as five badges competing with the content they label. */
+/* Sits on the first line of the text beside it, not centred against the
+   whole block (where it floated between label and description).
+
+   The height matches that line's line-height rather than nudging with a
+   margin: the icon box then overlays the line box exactly and `align-items:
+   center` does the centring. A fixed -1px margin was tuned to the 21px label
+   line and left the 25.5px section headings 4px out. */
 .mcm-admin .mcm-gsicon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: #fef2f2;
-  border: 1px solid var(--accent-edge);
+  align-self: flex-start;
+  width: 20px;
+  height: 21px;
   color: var(--accent);
+}
+/* Section headings ("App Credentials", "Connect in three steps") are 17px on
+   a 25.5px line. */
+.mcm-admin .mcm-gscard > .flex > .mcm-gsicon {
+  height: 26px;
 }
 .mcm-admin .mcm-gsicon svg {
   width: 17px;
@@ -6608,14 +6702,17 @@
   gap: 2px;
   padding: 3px;
   border: 1px solid var(--line-2);
-  border-radius: 10px;
+  /* Pill, matching acepeak.com's controls. */
+  border-radius: 999px;
   background: var(--surface-2);
 }
 .mcm-admin .mcm-segmented button,
 .mcm-admin .mcm-segmented > a {
   padding: 6px 14px;
   border: 0;
-  border-radius: 8px;
+  /* Pill inside a pill: an 8px tab in a 999px shell left the active tab's
+     corners cutting across the shell's curve. */
+  border-radius: 999px;
   background: transparent;
   color: var(--ink-3);
   font-size: 12.5px;
@@ -7221,7 +7318,10 @@
    sentence of explanatory copy on black read as an alert, not a hint.
    Light neutral instead, closer to a system tip than a warning. */
 .mcm-tooltip-info[data-slot='tooltip-content'] {
-  background: #e3e3e3;
+  /* Matches the Company Phone Preferences tip: the same warm off-white,
+     no border, the same shadow. Copied so an info tip reads identically
+     wherever it appears in the console. */
+  background: #fdf7f5;
   color: #000;
   border: none;
   box-shadow: 0 6px 20px rgba(17, 17, 17, 0.18);
@@ -7232,8 +7332,9 @@
      narrower there, and none of them a deliberate size. A fixed 18rem holds
      roughly 45 characters a line, which is a comfortable reading measure,
      and `pretty` keeps the last line from being a single orphaned word. */
-  width: 18rem;
-  max-width: 18rem;
+  /* 280px, as on the Company page, rather than this file's old 18rem. */
+  width: max-content;
+  max-width: 280px;
   text-wrap: pretty;
   /* Folded in from the six call sites, so a tip cannot be styled one way on
      one page and another way elsewhere. */
@@ -7243,7 +7344,7 @@
   padding: 8px 11px;
 }
 .mcm-tooltip-info svg {
-  fill: #e3e3e3;
+  fill: #fdf7f5;
 }
 
 /* Header band for the hand-rolled Outbound Rates table, matching the one
@@ -8349,6 +8450,37 @@
 
 @layer base {
 
+  /* Dropdowns on my pages run the standard pair the other way round: the row
+     under the cursor is the red one, and the row already chosen is a quiet
+     grey. index.css sets the opposite inside its own `@layer base` with
+     !important, and a layered !important beats an unlayered one whatever its
+     specificity — so these have to live in `base` too, where ordinary
+     specificity decides and the extra `.mcm-select` class wins.
+
+     Scoped by `.mcm-select`, not by a page wrapper: the menu is portaled to
+     <body>, so it is not a descendant of the page that opened it. The class
+     rides onto every option through react-select's classNamePrefix, which
+     only my pages set.
+
+     Selected first, hover second: react-select auto-focuses the chosen option
+     when the menu opens, so that row carries --is-selected AND --is-focused.
+     The hover selectors below repeat those compound classes and add :hover,
+     which outranks them — so the chosen row sits grey until the cursor is
+     actually on it. */
+  .mcm-select.custom-react-select__option--is-selected,
+  .mcm-select.custom-react-select__option--is-selected.custom-react-select__option--is-focused {
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+    font-weight: 600 !important;
+  }
+  .mcm-select.custom-react-select__option:hover,
+  .mcm-select.custom-react-select__option--is-selected:hover,
+  .mcm-select.custom-react-select__option--is-selected.custom-react-select__option--is-focused:hover {
+    background-color: #fdecec !important;
+    /* Only the band turns red; the text stays ink. */
+    color: #111827 !important;
+  }
+
   .mcm-admin .ident-coral-theme .custom-react-select__control:hover,
   .mcm-admin .ident-coral-theme .custom-react-select__control--is-focused,
   .mcm-admin .ident-coral-theme .custom-react-select__control--menu-is-open {
@@ -8869,3 +9001,92 @@
    up exactly (both are 22px insets off .mcm-adminpage-body). Left at the
    bar's normal 14px padding, matching the table cells' ~12px, is what
    actually lines the two up. */
+
+@media (max-width: 720px) {
+  /* Too narrow for two columns. */
+  .mcm-admin .mcm-gsrows {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px 0;
+  }
+  .mcm-admin .mcm-gsrow + .mcm-gsrow {
+    padding-left: 0;
+    padding-top: 16px;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* ---- General Settings: where to go next ---- */
+.mcm-admin .mcm-gsnext {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.mcm-admin .mcm-gsnext-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 0.15s ease;
+}
+.mcm-admin .mcm-gsnext-card:hover {
+  border-color: var(--accent-edge);
+}
+.mcm-admin .mcm-gsnext-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.mcm-admin .mcm-gsnext-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.mcm-admin .mcm-gsnext-sub {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-gsnext-arrow {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-gsnext-card:hover .mcm-gsnext-arrow {
+  color: var(--accent-ink);
+}
+@media (max-width: 900px) {
+  .mcm-admin .mcm-gsnext {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Table footer (Manage Webhook) ----
+   The bar under the table carried the per-page select, the record count and
+   a refresh glyph at three different weights and spacings, so it read as
+   three loose fragments rather than one strip. */
+.mcm-admin .mcm-intbody > .z-10 {
+  padding: 8px 14px;
+}
+/* The count is secondary information beside the control it describes. */
+.mcm-admin .mcm-intbody > .z-10 .font-semibold {
+  font-weight: 500;
+}
+.mcm-admin .mcm-intbody > .z-10 span {
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+/* A real button rather than a glyph floating between two labels. Needs the
+   `.z-10 button` ancestry to outrank the footer's own 8px button radius. */
+.mcm-admin .mcm-intbody .z-10 button.mcm-tblrefresh {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-intbody .z-10 button.mcm-tblrefresh:hover {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}

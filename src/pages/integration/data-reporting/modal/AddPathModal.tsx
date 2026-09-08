@@ -86,6 +86,7 @@ const AddPathModal = ({
 
           <div className="w-full mcm-selectring">
             <CustomSelect
+              inputClass="mcm-select"
               label={'Event'}
               options={webhookEventTypes}
               handleChange={(e) => setValue(`type`, e)}
