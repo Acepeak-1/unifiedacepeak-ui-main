@@ -7,16 +7,16 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
 import { useSocketEvents } from '@/hooks/use-socket-events';
 import { useUser } from '@/hooks/use-user';
+import { demoAgentChats, demoAgentMessages } from './demo-data';
+import DateRangeMenu from '@/components/custom/date-range-menu';
 import moment from 'moment';
 import { Pin, CircleCheck, ArrowLeft, CircleAlert } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import AgentChat from './components/agent-chat';
 import VisitorProfile from './components/visitor-profile';
-import CustomSelect from '@/components/custom/custom-select';
 
 type AgentChatTab = 'unassigned' | 'active' | 'missed' | 'resolved';
 type AgentChatDateRange = 'today' | '7_days' | '30_days';
@@ -25,8 +25,8 @@ const AGENT_CHAT_REQUEST_ACCEPTED_EVENT = 'agent-chat:request-accepted';
 const AGENT_CHAT_TABS: AgentChatTab[] = ['unassigned', 'active', 'missed', 'resolved'];
 const AGENT_CHAT_DATE_OPTIONS: Array<{ label: string; value: AgentChatDateRange }> = [
   { label: 'Today', value: 'today' },
-  { label: '7 days', value: '7_days' },
-  { label: '30 days', value: '30_days' },
+  { label: 'Last 7 Days', value: '7_days' },
+  { label: 'Last 30 Days', value: '30_days' },
 ];
 
 const getAgentChatTabFromQuery = (value: string | null): AgentChatTab => {
@@ -501,22 +501,96 @@ const ListItem = ({
   );
 };
 
+/**
+ * A read-only sample conversation, shown when a demo row in the queue is
+ * opened. Deliberately not the real `AgentChat`: there is no chat id behind a
+ * sample, so the socket layer has nothing to load and the composer has nowhere
+ * to send. It says so rather than offering a box that silently does nothing.
+ */
+const DemoConversation = ({ chat, onBack }: { chat: any; onBack: () => void }) => {
+  const visitor = chat?.users?.[0];
+  const name = `${visitor?.first_name || ''} ${visitor?.last_name || ''}`.trim() || 'Visitor';
+  const messages = demoAgentMessages(chat?.chatId || '');
+
+  return (
+    <div className="flex h-full min-h-0 w-full flex-col bg-white">
+      <div className="flex min-h-16 shrink-0 items-center gap-3 border-b border-gray-200 px-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 lg:hidden"
+          aria-label="Back to queue"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <CustomAvatar name={name} size="38" />
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-gray-900">{name}</div>
+          <div className="truncate text-xs text-gray-500">Web chat visitor</div>
+        </div>
+        <span className="ml-auto inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-amber-700">
+          Demo data
+        </span>
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[#fcfcfd] p-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex w-full ${message.fromVisitor ? 'justify-start' : 'justify-end'}`}
+          >
+            <div className="max-w-[78%]">
+              <div
+                className={`rounded-2xl px-3 py-2 text-[13px] leading-5 ${
+                  message.fromVisitor
+                    ? 'bg-white text-gray-800 shadow-[0_1px_2px_rgba(17,17,17,0.06)]'
+                    : 'bg-red-50 text-gray-900'
+                }`}
+              >
+                {message.text}
+              </div>
+              <div
+                className={`mt-1 text-[10.5px] text-gray-400 ${
+                  message.fromVisitor ? 'text-left' : 'text-right'
+                }`}
+              >
+                {message.at}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="shrink-0 border-t border-gray-200 p-3">
+        <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-center text-[12.5px] text-gray-400">
+          This is a sample conversation — replying is disabled.
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SidebarContent = ({
   activeTab,
   setActiveTab,
   selectedPendingRequestId,
   setSelectedPendingRequestId,
   isCompactLayout,
+  onDemoChatSelect,
+  selectedDemoChatId,
 }: {
   activeTab: AgentChatTab;
   setActiveTab: (tab: AgentChatTab) => void;
   selectedPendingRequestId: string;
   setSelectedPendingRequestId: (chatId: string) => void;
   isCompactLayout: boolean;
+  /** Selecting a sample opens a sample conversation — there is no real chat
+      behind it, so the page handles it rather than the socket layer. */
+  onDemoChatSelect?: (chat: any) => void;
+  selectedDemoChatId?: string;
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dateRange, setDateRange] = useState<AgentChatDateRange>('today');
-  const shouldUseDateFilter = activeTab === 'missed' || activeTab === 'resolved';
 
   const {
     allAgentChats = [],
@@ -534,17 +608,12 @@ const SidebarContent = ({
   useEffect(() => {
     if (!user?.uuid) return;
 
-    if (!shouldUseDateFilter) {
-      getAgentChats();
-      return;
-    }
-
     const { start_date, end_date } = getAgentChatDateRange(dateRange);
     getAgentChats({
       start_date,
       end_date,
     });
-  }, [dateRange, getAgentChats, shouldUseDateFilter, user?.uuid]);
+  }, [dateRange, getAgentChats, user?.uuid]);
 
   const visibleChats = useMemo(
     () =>
@@ -556,10 +625,10 @@ const SidebarContent = ({
           !chat?.isHidden?.includes(user?.uuid) &&
           !chat?.isDeleted &&
           chat?.groupType === 'AI' &&
-          (!shouldUseDateFilter || isTimestampWithinDateRange(chatTimestamp, dateRange))
+          isTimestampWithinDateRange(chatTimestamp, dateRange)
         );
       }),
-    [allAgentChats, user?.uuid, dateRange, shouldUseDateFilter],
+    [allAgentChats, user?.uuid, dateRange],
   );
 
   useEffect(() => {
@@ -762,6 +831,14 @@ const SidebarContent = ({
     [groupList, filteredPendingRequests.length],
   );
 
+  /* Samples for whichever tab is showing, only while it has nothing real. */
+  const demoChats = useMemo(
+    () => (emptyMessenger ? demoAgentChats(activeTab) : []),
+    [emptyMessenger, activeTab],
+  );
+
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const prevTabRef = useRef(activeTab);
 
   useEffect(() => {
@@ -799,15 +876,77 @@ const SidebarContent = ({
 
   return (
     <div className="w-full h-full bg-white">
-      <div className="min-h-16 flex items-center px-3 sm:px-4 justify-between border-b border-gray-200">
-        <div className="text-xl font-semibold w-full min-w-0 truncate text-gray-900">
-          Web Chat Manager
+      <div className="flex items-center justify-between gap-2 px-[14px] py-3 border-b border-gray-200">
+        <div
+          className="w-full min-w-0 truncate text-[27px] font-normal italic leading-[1.5] text-gray-900"
+          style={{ fontFamily: "'Instrument Serif', Georgia, 'Times New Roman', serif" }}
+        >
+          Agent Chat
+        </div>
+        {/* Search collapses to an icon and expands in place, as on the phone
+            console and the chat sidebar. */}
+        <div className="flex shrink-0 items-center gap-2">
+          {isSearchOpen ? (
+            <input
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onBlur={() => {
+                if (!searchQuery.trim()) setIsSearchOpen(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setSearchQuery('');
+                  setIsSearchOpen(false);
+                }
+              }}
+              placeholder="Search chats, users…"
+              aria-label="Search chats and users"
+              className="h-[34px] w-[190px] max-w-[46vw] rounded-[9px] border border-red-200 bg-white px-3 text-[13px] text-gray-900 shadow-[0_1px_3px_rgba(17,17,17,0.06)] outline-none placeholder:text-gray-400"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              title="Search"
+              aria-label="Search"
+              className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border border-gray-200 bg-white text-gray-500 shadow-[0_1px_3px_rgba(17,17,17,0.06)] transition-colors hover:border-primary hover:text-primary"
+            >
+              <SearchLine className="h-[15px] w-[15px]" />
+            </button>
+          )}
+          {/* Available on every queue, not just the historical ones. */}
+          <DateRangeMenu
+            options={AGENT_CHAT_DATE_OPTIONS}
+            value={dateRange}
+            onChange={setDateRange}
+          />
         </div>
       </div>
 
-      <div className="px-4 pt-4 pb-5 border-b border-border bg-white">
-        <div className="h-12 rounded-[14px] bg-muted p-[5px]">
-          <div className="grid h-full grid-cols-[1.5fr_1fr_1fr_1.15fr] gap-1.5">
+      {/* Queue counts, mirroring the phone console's KPI row. Every figure is
+          read from tabCounts, so they always agree with the tabs below. */}
+      <div className="grid grid-cols-4 gap-2 px-[14px] pb-3 pt-3">
+        {(
+          [
+            { key: 'unassigned', label: 'Unassigned' },
+            { key: 'active', label: 'Active' },
+            { key: 'missed', label: 'Missed' },
+            { key: 'resolved', label: 'Resolved' },
+          ] as { key: AgentChatTab; label: string }[]
+        ).map((tile) => (
+          <div key={tile.key} className="min-w-0 rounded-xl bg-[#ebedf0] px-3 py-2.5">
+            <div className="truncate text-[11px] font-medium text-gray-500">{tile.label}</div>
+            <div className="mt-0.5 text-[22px] font-extrabold leading-tight tracking-tight tabular-nums text-gray-900">
+              {tabCounts[tile.key] || 0}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="px-[14px] pb-3 border-b border-border bg-white">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
             {tabOptions.map((tab) => {
               const count = tabCounts[tab.value as AgentChatTab] || 0;
               const isActive = activeTab === tab.value;
@@ -822,10 +961,10 @@ const SidebarContent = ({
               return (
                 <button
                   key={tab.value}
-                  className={`h-[38px] min-w-0 rounded-[12px] px-1 text-[10px] sm:text-[11px] font-semibold cursor-pointer ${
+                  className={`shrink-0 cursor-pointer whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-colors ${
                     isActive
-                      ? `${styles.activeBg} ${styles.activeText} ${styles.activeDecoration || ''}`
-                      : `${styles.inactiveText} hover:text-foreground`
+                      ? 'bg-[#0b1220] text-white'
+                      : 'bg-[#f5f5f5] text-[#64748b] hover:bg-red-50 hover:text-primary'
                   }`}
                   onClick={() => {
                     if (tab.value === 'unassigned' || tab.value === 'missed') {
@@ -847,7 +986,9 @@ const SidebarContent = ({
                     <span>{tab.label}</span>
                     {count > 0 && (
                       <span
-                        className={`inline-flex h-[16px] min-w-[16px] shrink-0 items-center justify-center rounded-full ${badgeBg} px-1 text-[9px] font-bold ${badgeText}`}
+                        className={`inline-flex h-[16px] min-w-[16px] shrink-0 items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+                          isActive ? 'bg-white/20 text-white' : `${badgeBg} ${badgeText}`
+                        }`}
                       >
                         {count}
                       </span>
@@ -858,36 +999,39 @@ const SidebarContent = ({
             })}
           </div>
         </div>
-
-        <div className="mt-3 flex items-center gap-2">
-          <div className="min-w-0 flex-1">
-            <Input
-              Icon={<SearchLine className="text-muted-foreground" />}
-              IconPosition="left-0 pl-4 inset-y-0"
-              className="  rounded-[12px] border-0 bg-muted pl-11 text-[14px] shadow-none placeholder:text-muted-foreground hover:border-transparent focus:border-transparent focus:shadow-none focus:ring-0"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search chats, users..."
-            />
-          </div>
-          {shouldUseDateFilter && (
-            <div className="w-28 shrink-0">
-              <CustomSelect
-                options={AGENT_CHAT_DATE_OPTIONS}
-                value={AGENT_CHAT_DATE_OPTIONS.find((option) => option.value === dateRange)}
-                handleChange={(selectedOption) => {
-                  if (selectedOption?.value) setDateRange(selectedOption.value);
-                }}
-                inputClass=""
-                menuPlacement="bottom"
-              />
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="w-full h-full overflow-auto max-h-[calc(100vh-220px)] pb-8 bg-white">
-        {emptyMessenger ? (
+        {emptyMessenger && demoChats.length ? (
+          /* Nothing in this queue: show sample conversations rather than an
+             empty panel. They render through the real ListItem so the rows are
+             the genuine article, but selecting one is a no-op — there is no
+             conversation behind them. */
+          <div className="flex flex-col gap-2 py-2.5 pb-[45px]">
+            <div className="flex items-center gap-2 px-2 pb-1">
+              <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-amber-700">
+                Demo data
+              </span>
+              <span className="text-[11px] font-medium text-gray-400">
+                queue is empty — showing samples
+              </span>
+            </div>
+            {demoChats.map((demoChat) => (
+              <div
+                key={demoChat.chatId}
+                className={
+                  selectedDemoChatId === demoChat.chatId ? 'bg-gray-100' : ''
+                }
+              >
+                <ListItem
+                  chat={demoChat}
+                  onChatSelect={() => onDemoChatSelect?.(demoChat)}
+                  activeTab={activeTab}
+                />
+              </div>
+            ))}
+          </div>
+        ) : emptyMessenger ? (
           <div className="w-full h-full flex justify-center items-center">
             <div className="flex items-center justify-center px-4">
               <div className="max-w-md w-full text-center px-4 pb-11">
@@ -1041,6 +1185,13 @@ const AgentChatMessenger = () => {
     }
   }, [isCompactLayout]);
 
+  /* The sample conversation currently open, if any. Cleared whenever a real
+     chat is selected, so the two can never both be showing. */
+  const [demoChat, setDemoChat] = useState<any>(null);
+  useEffect(() => {
+    if (activeChatId) setDemoChat(null);
+  }, [activeChatId]);
+
   const handleBackToChatList = useCallback(() => {
     setSelectedPendingRequestId('');
     setChatWindows([]);
@@ -1064,7 +1215,7 @@ const AgentChatMessenger = () => {
   return (
     <div className="w-full h-full min-h-0 flex overflow-hidden bg-white">
       <section
-        className={`${activeChatId ? 'hidden md:block' : 'w-full'} h-full min-h-0 border-r border-gray-200 bg-white lg:w-[23rem] lg:min-w-[23rem] lg:max-w-[23rem]`}
+        className={`${activeChatId ? 'hidden md:block' : 'w-full'} h-full min-h-0 border-r border-gray-200 bg-white lg:w-[var(--mcm-list-panel-w)] lg:min-w-[var(--mcm-list-panel-w)] lg:max-w-[var(--mcm-list-panel-w)]`}
       >
         <SidebarContent
           activeTab={activeTab}
@@ -1072,11 +1223,16 @@ const AgentChatMessenger = () => {
           selectedPendingRequestId={selectedPendingRequestId}
           setSelectedPendingRequestId={setSelectedPendingRequestId}
           isCompactLayout={isCompactLayout}
+          onDemoChatSelect={setDemoChat}
+          selectedDemoChatId={demoChat?.chatId}
         />
       </section>
       <section
-        className={`${activeChatId ? 'block' : 'hidden lg:block'} h-full min-h-0 w-full min-w-0 flex-1 bg-white`}
+        className={`${activeChatId || demoChat ? 'block' : 'hidden lg:block'} h-full min-h-0 w-full min-w-0 flex-1 bg-white`}
       >
+        {demoChat ? (
+          <DemoConversation chat={demoChat} onBack={() => setDemoChat(null)} />
+        ) : (
         <AgentChat
           chatId={activeChatId}
           pendingRequest={
@@ -1098,8 +1254,13 @@ const AgentChatMessenger = () => {
             });
           }}
         />
+        )}
       </section>
-      <VisitorProfile activeChatId={activeChatId} chat={selectedChat} currentUserId={user?.uuid} />
+      <VisitorProfile
+        activeChatId={demoChat?.chatId || activeChatId}
+        chat={demoChat || selectedChat}
+        currentUserId={user?.uuid}
+      />
       {isCompactLayout ? (
         <Drawer direction="right" open={isProfileDrawerOpen} onOpenChange={setIsProfileDrawerOpen}>
           <DrawerContent className="w-full max-w-none p-0 sm:w-[22rem] sm:max-w-[22rem]">

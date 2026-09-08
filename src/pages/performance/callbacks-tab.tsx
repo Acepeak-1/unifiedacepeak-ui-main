@@ -14,6 +14,7 @@ import { useDialpad } from '@/hooks/use-dialpad';
 import PerfStatCard from './stat-card';
 import moment from 'moment';
 import { useRecordingAccess } from '@/hooks/use-recording-access';
+import { DUMMY_TASKS, DUMMY_VOICEMAILS } from './dummy-tab-data';
 
 const CallbacksTab = () => {
   const { user } = useUser();
@@ -27,20 +28,25 @@ const CallbacksTab = () => {
   const [recordingUrl, setRecordingUrl] = useState('');
   const [view, setView] = useState<'tasks' | 'voicemail'>('tasks');
 
-  const { data: tasks = [] } = useQuery({
+  const { data: realTasks = [] } = useQuery({
     queryKey: ['performanceCallbackTasksSummary'],
     queryFn: () =>
       calendarMeetingList({ page: 1, limit: 200, filters: [{ key: 'category', value: 'TASK' }] }),
     select: (res: any) => res?.data?.data?.result?.rows || [],
     refetchInterval: 10000,
   });
+  // No scheduled tasks yet on a fresh account — see `dummy-tab-data.ts`. The
+  // "Scheduled tasks" table below still reads the real (empty) API on its
+  // own, so this only fills the stat cards above it.
+  const tasks = realTasks.length ? realTasks : DUMMY_TASKS;
 
-  const { data: voicemails = [] } = useQuery({
+  const { data: realVoicemails = [] } = useQuery({
     queryKey: ['performanceCallbackVoicemailSummary'],
     queryFn: () => callList({ page: 1, limit: 200, type: 'voicemail' }),
     select: (res: any) => res?.data?.data?.result?.rows || [],
     refetchInterval: 10000,
   });
+  const voicemails = realVoicemails.length ? realVoicemails : DUMMY_VOICEMAILS;
 
   const now = moment();
   const overdueCount = tasks.filter(

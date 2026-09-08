@@ -190,6 +190,12 @@ const CreateNewAddress = ({
       <div className="flex flex-col gap-4">
         <div className="flex w-full flex-col gap-6 xl:flex-row">
           <div className="w-full flex flex-col gap-4">
+            <div className="flex flex-col gap-0.5">
+              <div className="text-base font-bold text-gray-900">Location</div>
+              <div className="text-sm text-gray-500">
+                Where this address is, and who it belongs to.
+              </div>
+            </div>
             <div className="flex w-full flex-col gap-4 md:flex-row">
               <div className="w-full">
                 <Controller

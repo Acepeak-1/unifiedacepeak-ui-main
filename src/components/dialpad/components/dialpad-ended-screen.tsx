@@ -14,11 +14,11 @@ import { CalendarClock, Clock3, NotebookPen, Phone, PhoneOff, Trash2 } from 'luc
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DialpadCountdownRingTimer from './dialpad-countdown-ring-timer';
 import DialpadScheduleCallback from './dialpad-schedule-callback';
-import DialpadSessionSummaryCard from './dialpad-session-summary-card';
 import { formatDialpadDuration } from './dialpad-call-timer';
 import { handleAlert } from '@/lib/utils';
 import { isExtensionDialTarget } from '@/lib/extension-utility';
-import { getMonitoringCallLabel } from '../session-display';
+import { getDialpadSessionDisplayInfo, getMonitoringCallLabel } from '../session-display';
+import CustomAvatar from '@/components/custom/custom-avatar';
 
 type DialpadEndedScreenProps = {
   session: DialpadSession | null;
@@ -106,7 +106,6 @@ const DialpadEndedScreen = ({
             ? 'Rejected'
             : 'Call Failed';
 
-  const causeLabel = session?.cause || 'No reason available';
   const queueWrapupTimeSeconds = Number(
     session?.queueMetaData?.response?.settings?.wrapup_time ?? 0,
   );
@@ -744,33 +743,66 @@ const DialpadEndedScreen = ({
     ],
   );
 
+  /* One shape for every secondary action, so the stack reads as a list of
+     equal choices rather than five competing colours. */
+  const { contactName: endedContactName, contactNumber: endedContactNumber } =
+    getDialpadSessionDisplayInfo(session);
+  const endedAvatarImage = String(
+    session?.contactInfo?.profile || session?.contactInfo?.avatar || '',
+  ).trim();
+
+  /* One shape for the icon actions, so the row reads as a set of equal
+     controls with the green Call Again as the only emphasis. */
+  const iconActionBtn =
+    'flex h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50';
+
   return (
-    <div className="flex h-full  flex-col w-full justify-between xl:gap-10">
-      <div className="mt-1 mb-2 rounded-2xl  bg-white   md:mb-4">
-        <div className="mb-2.5 sm:mb-3">
-          <DialpadSessionSummaryCard session={session} statusLabel={endStatus} showTimer={false} />
-        </div>
-
-        <div className="rounded-xl border border-red-100  px-2.5 py-1.5 text-[11px] font-medium text-red-600  bg-red-50  max-[380px]:px-2 max-[380px]:py-1.5 max-[380px]:text-[10px] sm:px-3 sm:py-2 sm:text-xs flex items-center gap-2 ">
-          <PhoneOff className="h-3 w-3 max-[380px]:h-3 max-[380px]:w-3 sm:h-3.5 sm:w-3.5" />
-          {endStatus}
-        </div>
-
-        <p className="mt-2.5 rounded-xl border border-[#e8edf6] bg-[#f9fbff] px-2.5 py-1.5 text-[11px] font-medium text-primary max-[380px]:px-2 max-[380px]:py-1.5 max-[380px]:text-[10px] sm:mt-3 sm:px-3 sm:py-2 sm:text-xs">
-          Cause: {causeLabel}
-        </p>
-
-        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-xl border border-[#d9e5f6] bg-ucass-active-bg px-2.5 py-1.5 text-[11px] font-semibold text-[#2f4f79] max-[380px]:px-2 max-[380px]:py-1.5 max-[380px]:text-[10px] sm:px-3 sm:py-2 sm:text-xs">
-          <span className="flex items-center gap-2">
-            <Clock3 className="h-3 w-3 max-[380px]:h-3 max-[380px]:w-3 sm:h-3.5 sm:w-3.5" />
-            Duration
+    <div className="flex h-full w-full flex-col">
+      {/* Details scroll inside the fixed frame so the actions below stay put. */}
+      <div className="dialpad-no-scrollbar min-h-0 flex-1 overflow-y-auto rounded-2xl bg-white">
+        {/* Who the call was with, given the room the dialer gives it: one
+            large disc, the name, the number. The compact row this replaced
+            truncated the name to a few characters in a 380px window. */}
+        <div className="flex flex-col items-center gap-2.5 px-2 pb-4 pt-2 text-center">
+          <CustomAvatar
+            name={endedContactName}
+            image={endedAvatarImage}
+            size="72"
+            isActivityInfo={false}
+          />
+          <div className="w-full min-w-0">
+            <p className="truncate text-[17px] font-bold leading-tight tracking-tight text-slate-900">
+              {endedContactName}
+            </p>
+            {endedContactNumber ? (
+              <p className="mt-0.5 truncate font-mono text-[13px] text-slate-400">
+                {endedContactNumber}
+              </p>
+            ) : null}
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+            {endStatus}
           </span>
-          <span className="font-mono">{formatDialpadDuration(callDurationSeconds)}</span>
+        </div>
+
+        {/* Just how long it lasted — the clock says what it is, so the word
+            "Duration" and a box around it were both spare. The title carries
+            the meaning for anyone the glyph alone doesn't reach. */}
+        <div
+          className="flex items-center justify-center gap-2 pb-1"
+          title="Call duration"
+          aria-label={`Call duration ${formatDialpadDuration(callDurationSeconds)}`}
+        >
+          <Clock3 className="h-3.5 w-3.5 text-slate-400" aria-hidden />
+          <span className="font-mono text-[13px] font-semibold tabular-nums text-slate-700">
+            {formatDialpadDuration(callDurationSeconds)}
+          </span>
         </div>
 
         {shouldShowWrapupTimer ? (
-          <div className="mt-3 flex w-full flex-col items-center justify-center gap-1.5 sm:mt-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#5a7396] max-[380px]:text-[10px] sm:text-xs">
+          <div className="mt-4 flex w-full flex-col items-center justify-center gap-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
               {wrapupTimerSource === 'queue' ? 'Queue Wrap-up Time' : 'Campaign Wrap-up Time'}
             </p>
             <DialpadCountdownRingTimer
@@ -783,69 +815,83 @@ const DialpadEndedScreen = ({
       </div>
 
       {!shouldShowBottomActionButtons && !shouldShowCloseButton ? null : (
-        <div className="mt-auto grid grid-cols-1 gap-1.5 sm:gap-2">
-          {shouldShowBottomActionButtons ? (
-            <>
-              {!isExtensionCallSession ? (
-                isScheduleCallbackOpen ? (
-                  <DialpadScheduleCallback
-                    onSave={handleSaveScheduleCallback}
-                    isLoading={isScheduling}
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsScheduleCallbackOpen(true)}
-                    className="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#d4e1f6] bg-ucass-active-bg text-[12px] font-semibold text-[#2f4f79] transition max-[380px]:h-8 max-[380px]:text-[11px] sm:h-10 sm:gap-2 sm:text-sm"
-                  >
-                    <CalendarClock className="h-3.5 w-3.5 max-[380px]:h-3 max-[380px]:w-3 sm:h-4 sm:w-4" />
-                    Schedule Callback
-                  </button>
-                )
-              ) : null}
-
-              {!isExtensionCallSession ? (
-                <button
-                  type="button"
-                  onClick={onAddNotes}
-                  className="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#d4e1f6] bg-ucass-active-bg text-[12px] font-semibold text-[#2f4f79] transition max-[380px]:h-8 max-[380px]:text-[11px] sm:h-10 sm:gap-2 sm:text-sm"
-                >
-                  <NotebookPen className="h-3.5 w-3.5 max-[380px]:h-3 max-[380px]:w-3 sm:h-4 sm:w-4" />
-                  Add Notes
-                </button>
-              ) : null}
-
-              {shouldShowCallAgainButton && session?.direction === 'outgoing' ? (
-                <button
-                  type="button"
-                  onClick={onCallAgain}
-                  className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-primary text-[12px] font-semibold text-white transition max-[380px]:h-8 max-[380px]:text-[11px] sm:h-10 sm:gap-2 sm:text-sm"
-                >
-                  <Phone className="h-3.5 w-3.5 max-[380px]:h-3 max-[380px]:w-3 sm:h-4 sm:w-4" />
-                  Call Again
-                </button>
-              ) : null}
-            </>
+        <div className="mt-auto grid grid-cols-1 gap-2 pt-4">
+          {/* The callback form opens above the row, so the row itself never
+              reflows and the icon stays put while you fill it in. */}
+          {shouldShowBottomActionButtons && !isExtensionCallSession && isScheduleCallbackOpen ? (
+            <DialpadScheduleCallback
+              onSave={handleSaveScheduleCallback}
+              onCancel={() => setIsScheduleCallbackOpen(false)}
+              isLoading={isScheduling}
+            />
           ) : null}
 
-          {!isCampaignCallFromSession ? (
-            <button
-              type="button"
-              onClick={clearAllSessions}
-              className="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 text-[12px] font-semibold text-red-600 transition hover:bg-red-100 max-[380px]:h-8 max-[380px]:text-[11px] sm:h-10 sm:gap-2 sm:text-sm"
-            >
-              <Trash2 className="h-3.5 w-3.5 max-[380px]:h-3 max-[380px]:w-3 sm:h-4 sm:w-4" />
-              Clear All Sessions
-            </button>
-          ) : null}
+          {/* Four actions on one row, icon-only. Each carries a title and an
+              aria-label, since a glyph alone tells a screen reader nothing. */}
+          <div className="flex items-center gap-2">
+            {shouldShowBottomActionButtons && !isExtensionCallSession ? (
+              <button
+                type="button"
+                onClick={() => setIsScheduleCallbackOpen((open) => !open)}
+                className={`${iconActionBtn} ${
+                  isScheduleCallbackOpen ? 'border-red-200 bg-red-50 text-red-600' : ''
+                }`}
+                title="Schedule callback"
+                aria-label="Schedule callback"
+                aria-pressed={isScheduleCallbackOpen}
+              >
+                <CalendarClock className="h-[18px] w-[18px]" />
+              </button>
+            ) : null}
 
+            {shouldShowBottomActionButtons && !isExtensionCallSession ? (
+              <button
+                type="button"
+                onClick={onAddNotes}
+                className={iconActionBtn}
+                title="Add notes"
+                aria-label="Add notes"
+              >
+                <NotebookPen className="h-[18px] w-[18px]" />
+              </button>
+            ) : null}
+
+            {shouldShowBottomActionButtons &&
+            shouldShowCallAgainButton &&
+            session?.direction === 'outgoing' ? (
+              <button
+                type="button"
+                onClick={onCallAgain}
+                className="flex h-11 flex-1 items-center justify-center rounded-xl bg-[#16a34a] text-white shadow-sm transition-colors hover:bg-[#15803d]"
+                title="Call again"
+                aria-label="Call again"
+              >
+                <Phone className="h-[18px] w-[18px]" />
+              </button>
+            ) : null}
+
+            {!isCampaignCallFromSession ? (
+              <button
+                type="button"
+                onClick={clearAllSessions}
+                className={`${iconActionBtn} hover:!border-red-200 hover:!bg-red-50 hover:!text-red-600`}
+                title="Clear all sessions"
+                aria-label="Clear all sessions"
+              >
+                <Trash2 className="h-[18px] w-[18px]" />
+              </button>
+            ) : null}
+          </div>
+
+          {/* Close keeps its label: it is the one action that ends the window,
+              and it should never be a guess. */}
           {shouldShowCloseButton ? (
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 items-center justify-center gap-1.5 rounded-xl  bg-red-600 text-white text-[12px] font-semibold  transition max-[380px]:h-8 max-[380px]:text-[11px] sm:h-10 sm:gap-2 sm:text-sm"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#dc2626] text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-[#b91c1c] max-[380px]:h-10"
             >
-              <PhoneOff className="h-3.5 w-3.5 max-[380px]:h-3 max-[380px]:w-3 sm:h-4 sm:w-4" />
+              <PhoneOff className="h-4 w-4" />
               Close
             </button>
           ) : null}

@@ -11,6 +11,7 @@ import { getUserNameByExtension } from '@/lib/extension-utility';
 import { Ic } from './icons';
 import { DialNumber, rememberDialLabel, useConsoleDialer } from './dial-number';
 import { initialsOf, isNumberLike } from './copilot-adapter';
+import { demoRecordLegs } from './demo-data';
 import type { ConsoleCallRow } from './call-list-column';
 
 /**
@@ -44,16 +45,6 @@ export type RecordLeg = {
   viaDid: string;
   recordingUrl: string;
   transcriptUrl: string;
-  /* Set on demo/sample rows: a directly-playable URL used instead of the
-     authenticated media path, so the demo lists actually play. */
-  audioUrl?: string;
-  demo?: boolean;
-  /* Inline transcript turns (used by demo rows; real rows open the side
-     panel via onOpenTranscript instead). */
-  transcript?: TranscriptTurn[];
-  /* Call summary bullets shown beside the transcript. When absent one is
-     derived from the transcript turns. */
-  summary?: string[];
 };
 
 type TranscriptTurn = {
@@ -62,21 +53,6 @@ type TranscriptTurn = {
   time: string;
   text: string;
 };
-
-const DEMO_TRANSCRIPT: TranscriptTurn[] = [
-  { who: 'caller', speaker: 'Caller', time: '00:02', text: 'Hi, I’m calling about my recent order — it hasn’t arrived yet.' },
-  { who: 'agent', speaker: 'Agent', time: '00:09', text: 'I’m sorry to hear that. Could you share your order number so I can check?' },
-  { who: 'caller', speaker: 'Caller', time: '00:18', text: 'Sure, it’s 48213-A.' },
-  { who: 'agent', speaker: 'Agent', time: '00:24', text: 'Thanks. I can see it shipped yesterday and is out for delivery today.' },
-  { who: 'caller', speaker: 'Caller', time: '00:37', text: 'Oh great, that’s a relief. Thank you for the quick help!' },
-  { who: 'agent', speaker: 'Agent', time: '00:42', text: 'You’re welcome. Is there anything else I can help you with?' },
-];
-
-const DEMO_SUMMARY = [
-  'Caller reported that order 48213-A had not arrived yet.',
-  'Agent looked up the order and confirmed it shipped the previous day.',
-  'Delivery is expected today; caller was satisfied and no follow-up is needed.',
-];
 
 /* Fallback summary when the call has no stored one: open with the caller's
    first turn and close with the agent's last, which is what a short call
@@ -89,114 +65,6 @@ const deriveSummary = (turns: TranscriptTurn[]): string[] => {
     lastAgent ? `Agent: ${lastAgent.text}` : '',
   ].filter(Boolean);
 };
-
-/* --- Demo/sample data so Calls, Recordings and Voicemails all show content
-   even when the real call has no stored media. Mirrors the demo rows used in
-   the call list; the audio points at small public sample clips. --- */
-const SAMPLE_AUDIO = [
-  'https://download.samplelib.com/mp3/sample-6s.mp3',
-  'https://download.samplelib.com/mp3/sample-9s.mp3',
-  'https://download.samplelib.com/mp3/sample-12s.mp3',
-  'https://download.samplelib.com/mp3/sample-15s.mp3',
-];
-
-const demoLeg = (o: Partial<RecordLeg> & { id: string }): RecordLeg => ({
-  raw: {},
-  direction: 'in',
-  when: '—',
-  duration: '00:00',
-  by: '—',
-  viaDid: '',
-  recordingUrl: '',
-  transcriptUrl: '',
-  demo: true,
-  ...o,
-});
-
-const DEMO_CALLS: RecordLeg[] = [
-  demoLeg({
-    id: 'demo-call-1',
-    direction: 'out',
-    when: '3 Sep 2026, 6:12 PM',
-    duration: '02:14',
-    viaDid: '+1 (415) 555-0132',
-  }),
-  demoLeg({
-    id: 'demo-call-2',
-    direction: 'in',
-    when: '2 Sep 2026, 11:40 AM',
-    duration: '00:47',
-    viaDid: '+1 (415) 555-0132',
-  }),
-  demoLeg({
-    id: 'demo-call-3',
-    direction: 'miss',
-    when: '1 Sep 2026, 9:05 AM',
-    duration: '00:00',
-    viaDid: '+1 (415) 555-0132',
-  }),
-];
-
-const DEMO_RECORDINGS: RecordLeg[] = [
-  demoLeg({
-    id: 'demo-rec-1',
-    direction: 'in',
-    when: '4 Sep 2026, 4:22 PM',
-    duration: '03:00',
-    viaDid: '+1 (415) 555-0132',
-    recordingUrl: SAMPLE_AUDIO[0],
-    audioUrl: SAMPLE_AUDIO[0],
-    transcript: DEMO_TRANSCRIPT,
-    summary: DEMO_SUMMARY,
-  }),
-  demoLeg({
-    id: 'demo-rec-2',
-    direction: 'out',
-    when: '4 Sep 2026, 1:18 PM',
-    duration: '01:36',
-    viaDid: '+1 (415) 555-0132',
-    recordingUrl: SAMPLE_AUDIO[1],
-    audioUrl: SAMPLE_AUDIO[1],
-    transcript: DEMO_TRANSCRIPT,
-    summary: DEMO_SUMMARY,
-  }),
-  demoLeg({
-    id: 'demo-rec-3',
-    direction: 'in',
-    when: '3 Sep 2026, 10:05 AM',
-    duration: '04:41',
-    viaDid: '+1 (415) 555-0132',
-    recordingUrl: SAMPLE_AUDIO[2],
-    audioUrl: SAMPLE_AUDIO[2],
-    transcript: DEMO_TRANSCRIPT,
-    summary: DEMO_SUMMARY,
-  }),
-];
-
-const DEMO_VOICEMAILS: RecordLeg[] = [
-  demoLeg({
-    id: 'demo-vm-1',
-    direction: 'in',
-    when: '3 Sep 2026, 8:02 AM',
-    duration: '00:22',
-    viaDid: '+1 (415) 555-0132',
-    raw: { voicemail_file_url: 'demo-voicemail-1.mp3' },
-    audioUrl: SAMPLE_AUDIO[2],
-    transcript: DEMO_TRANSCRIPT,
-    summary: DEMO_SUMMARY,
-  }),
-  demoLeg({
-    id: 'demo-vm-2',
-    direction: 'in',
-    when: '31 Aug 2026, 7:44 PM',
-    duration: '00:38',
-    viaDid: '+1 (415) 555-0132',
-    raw: { voicemail_file_url: 'demo-voicemail-2.mp3' },
-    audioUrl: SAMPLE_AUDIO[3],
-    transcript: DEMO_TRANSCRIPT,
-    summary: DEMO_SUMMARY,
-  }),
-];
 
 /* Deterministic waveform bar heights (0.15–1) so the wave looks organic but
    never jitters on re-render. */
@@ -427,14 +295,13 @@ const CallRecord = ({
     });
   }, [row, extensionList, companyUuid]);
 
-  /* History summary — reflects the calls actually shown (real + demo). */
+  /* History summary for this number, from its real call legs. */
   const summary = useMemo(() => {
-    const all = [...legs, ...DEMO_CALLS];
-    const outgoing = all.filter((l) => l.direction === 'out').length;
-    const incoming = all.filter((l) => l.direction !== 'out').length;
+    const outgoing = legs.filter((l) => l.direction === 'out').length;
+    const incoming = legs.filter((l) => l.direction !== 'out').length;
     const stamp = row.raw?.start_stamp || legs[0]?.raw?.start_stamp;
     const lastCall = stamp && moment(stamp).isValid() ? moment(stamp).fromNow() : '—';
-    return { total: all.length, outgoing, incoming, lastCall };
+    return { total: legs.length, outgoing, incoming, lastCall };
   }, [legs, row]);
 
   const dateLabel = (leg: RecordLeg) => {
@@ -476,14 +343,26 @@ const CallRecord = ({
   const sectionTitle =
     tab === 'recordings' ? 'Recording History' : tab === 'voicemails' ? 'Voicemail History' : 'Call History';
 
-  const shown = useMemo(() => {
-    if (tab === 'recordings') return recordingLegs.length ? recordingLegs : DEMO_RECORDINGS;
-    if (tab === 'voicemails') return voicemailLegs.length ? voicemailLegs : DEMO_VOICEMAILS;
-    const base = filter === 'all' ? legs : legs.filter((l) => l.direction === filter);
-    const demoCalls =
-      filter === 'all' ? DEMO_CALLS : DEMO_CALLS.filter((l) => l.direction === filter);
-    return [...base, ...demoCalls];
+  const realShown = useMemo(() => {
+    if (tab === 'recordings') return recordingLegs;
+    if (tab === 'voicemails') return voicemailLegs;
+    return filter === 'all' ? legs : legs.filter((l) => l.direction === filter);
   }, [tab, legs, filter, recordingLegs, voicemailLegs]);
+
+  /* Nothing of this kind on the contact: show samples rather than an empty
+     list. Never mixed in with real legs, and chipped where they render. */
+  const isDemo = realShown.length === 0;
+  const shown: RecordLeg[] = useMemo(() => {
+    if (!isDemo) return realShown;
+    return demoRecordLegs(tab)
+      .filter((l) => tab !== 'calls' || filter === 'all' || l.direction === filter)
+      .map((l) => ({
+        ...l,
+        raw: {},
+        recordingUrl: '',
+        transcriptUrl: '',
+      }));
+  }, [isDemo, realShown, tab, filter]);
 
   /* Picking a row in the left column lands on the matching history here: the
      Recordings list for a recording, Voicemails for a voicemail, Calls
@@ -509,7 +388,7 @@ const CallRecord = ({
 
   /* Stored transcripts, fetched on demand and cached per leg. A real call has
      no inline turns — only a transcript file — so without this the Transcript
-     and Summary panel could only ever appear on the demo rows. The file is the
+     and Summary panel could never appear at all. The file is the
      same JSON the call log's TranscriptInfo reads: { speaker: [...], summary }. */
   const [storedPanels, setStoredPanels] = useState<
     Record<string, { turns: TranscriptTurn[]; summary: string[]; state: 'loading' | 'done' | 'error' }>
@@ -518,7 +397,7 @@ const CallRecord = ({
   useEffect(() => {
     if (!transcriptId) return;
     const leg = shown.find((l) => l.id === transcriptId);
-    if (!leg || leg.transcript?.length || !leg.transcriptUrl) return;
+    if (!leg || !leg.transcriptUrl) return;
     if (storedPanels[transcriptId]) return;
 
     let active = true;
@@ -580,20 +459,17 @@ const CallRecord = ({
   const renderMediaCard = (leg: RecordLeg) => {
     const vmFile = String((leg.raw as any)?.voicemail_file_url ?? '').trim();
     const src =
-      leg.audioUrl ||
       leg.recordingUrl ||
       (vmFile && companyUuid ? `${MEDIA_URL}/${companyUuid}/recording/${vmFile}` : '');
     const open = playingId === leg.id;
-    const canPlayRec = leg.demo || canListen;
+    const canPlayRec = canListen;
     const stored = storedPanels[leg.id];
-    const turns = leg.transcript?.length ? leg.transcript : (stored?.turns ?? []);
+    const turns = stored?.turns ?? [];
     /* The card is the same everywhere, so the Transcript / Summary button is
        always there: whether it has content is a property of the call, not of
        the list it was opened from. A call with no transcript says so. */
     const panelOpen = transcriptId === leg.id;
-    const summaryBullets = leg.summary?.length
-      ? leg.summary
-      : (stored?.summary ?? deriveSummary(turns));
+    const summaryBullets = stored?.summary ?? deriveSummary(turns);
     const doDownload = () =>
       handleDownloadFile({
         fileUrl: src,
@@ -866,11 +742,11 @@ const CallRecord = ({
             ) : (
             shown.map((leg) => {
               const vmFile = String((leg.raw as any)?.voicemail_file_url ?? '').trim();
-              const vmUrl = vmFile
-                ? leg.audioUrl ||
-                  (companyUuid ? `${MEDIA_URL}/${companyUuid}/recording/${vmFile}` : '')
-                : '';
-              const canPlayRec = leg.demo || canListen;
+              const vmUrl =
+                vmFile && companyUuid
+                  ? `${MEDIA_URL}/${companyUuid}/recording/${vmFile}`
+                  : '';
+              const canPlayRec = canListen;
               const vmKey = `vm-${leg.id}`;
               const recPlaying = playingId === leg.id;
               const vmPlaying = playingId === vmKey;
@@ -931,7 +807,7 @@ const CallRecord = ({
                               disabled={downloading[leg.id]}
                               onClick={() =>
                                 handleDownloadFile({
-                                  fileUrl: leg.audioUrl || leg.recordingUrl,
+                                  fileUrl: leg.recordingUrl,
                                   name: `${row.name || row.number}-${leg.when}`,
                                   setLoading: (value: any) =>
                                     setDownloading((prev) => ({
@@ -986,25 +862,17 @@ const CallRecord = ({
 
                   {recPlaying && leg.recordingUrl ? (
                     <div className="leg-audio">
-                      {leg.audioUrl ? (
-                        <audio src={leg.audioUrl} controls autoPlay preload="metadata" />
-                      ) : (
-                        <AuthenticatedAudio
-                          src={leg.recordingUrl}
-                          controls
-                          autoPlay
-                          preload="metadata"
-                        />
-                      )}
+                      <AuthenticatedAudio
+                        src={leg.recordingUrl}
+                        controls
+                        autoPlay
+                        preload="metadata"
+                      />
                     </div>
                   ) : null}
                   {vmPlaying && vmUrl ? (
                     <div className="leg-audio">
-                      {leg.audioUrl ? (
-                        <audio src={leg.audioUrl} controls autoPlay preload="metadata" />
-                      ) : (
-                        <AuthenticatedAudio src={vmUrl} controls autoPlay preload="metadata" />
-                      )}
+                      <AuthenticatedAudio src={vmUrl} controls autoPlay preload="metadata" />
                     </div>
                   ) : null}
                 </div>

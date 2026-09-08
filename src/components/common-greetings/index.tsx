@@ -19,6 +19,15 @@ const ACEPEAK_ROW_LABELS: Record<string, string> = {
   ring_tone: 'Ring tone',
 };
 
+/** Same acepeakTheme-only opt-in as the row labels above — a short helper
+ * sentence shown beside each title, only on the Settings > Greetings page. */
+const ACEPEAK_ROW_DESCRIPTIONS: Record<string, string> = {
+  welcome_greeting: 'Play a greeting when callers first connect.',
+  on_hold_music: 'Play music while callers are waiting on hold.',
+  voicemail: 'Play a message when a call goes to voicemail.',
+  ring_tone: 'Choose the sound played when an incoming call rings.',
+};
+
 interface IGREETINGPROPS {
   optionsData: Record<string, GreetingItem[]>;
   mediaOptionsGreetingNotifications: Array<any>;
@@ -132,6 +141,11 @@ const CommonGreetingNotification: FC<IGREETINGPROPS> = ({
                         ? (ACEPEAK_ROW_LABELS[name] ?? capitalizeFirstLetter(label))
                         : `Do you want to add "${capitalizeFirstLetter(label)} message" ?`}
                     </p>
+                    {acepeakTheme && ACEPEAK_ROW_DESCRIPTIONS[name] && (
+                      <span className="acepeak-greeting-row-desc">
+                        {ACEPEAK_ROW_DESCRIPTIONS[name]}
+                      </span>
+                    )}
                   </div>
 
                   {name === 'waiting' ? null : (

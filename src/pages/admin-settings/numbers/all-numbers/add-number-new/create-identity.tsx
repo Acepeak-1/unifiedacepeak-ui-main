@@ -1,4 +1,5 @@
 import CustomSelect from '@/components/custom/custom-select';
+import CustomTooltip from '@/components/custom/custom-tooltip';
 import ErrorTooltip from '@/components/custom/error-tooltip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -697,20 +698,47 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
               </div>
             )}
             <div className="w-full flex">
-              <Button
-                className="max-w-[140px]"
-                type="button"
-                variant={'outline'}
-                onClick={() => {
-                  if (fields?.length >= didProofTypeList?.length) return;
-                  const newIndex = fields.length;
-                  append({ file: null, proof_type_id: null });
-                  trigger(`proofs.${newIndex}`);
-                }}
-                disabled={fields?.length >= didProofTypeList?.length}
-              >
-                Add New
-              </Button>
+              {(() => {
+                const isProofAddDisabled = (fields?.length || 0) >= (didProofTypeList?.length || 0);
+                const addProofButton = (
+                  <Button
+                    className="w-full"
+                    type="button"
+                    variant={'outline'}
+                    onClick={() => {
+                      if (isProofAddDisabled) return;
+                      const newIndex = fields.length;
+                      append({ file: null, proof_type_id: null });
+                      trigger(`proofs.${newIndex}`);
+                    }}
+                    disabled={isProofAddDisabled}
+                  >
+                    Add New
+                  </Button>
+                );
+                if (!isProofAddDisabled) {
+                  return <div className="max-w-[140px] w-full">{addProofButton}</div>;
+                }
+                return (
+                  <CustomTooltip
+                    text={
+                      !watchType
+                        ? 'Select a Type (Personal/Business) above first'
+                        : 'Every available proof type has already been added'
+                    }
+                    side="top"
+                  >
+                    {/* A disabled <button> stops receiving pointer events
+                        entirely (Button's own `disabled:pointer-events-none`),
+                        so hovering it while disabled — exactly when this
+                        tooltip explaining why is most needed — never reached
+                        Radix's trigger. Wrapping it in a plain span, which
+                        stays hoverable regardless of the button's own state,
+                        gives the tooltip something to actually listen on. */}
+                    <span className="inline-block max-w-[140px] w-full">{addProofButton}</span>
+                  </CustomTooltip>
+                );
+              })()}
             </div>
           </div>
           {errors?.proofs?.message && (
@@ -860,20 +888,41 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
               </div>
             )}
             <div className="w-full flex">
-              <Button
-                className="max-w-[140px]"
-                type="button"
-                variant={'outline'}
-                onClick={() => {
-                  if (supportingDocuments?.length >= didSupportingDocList?.length) return;
-                  appendSupportingDoc({ file: null, supporting_document_template_id: null });
-                  const newIndex = supportingDocuments.length;
-                  trigger(`supporting_documents.${newIndex}`);
-                }}
-                disabled={supportingDocuments?.length >= didSupportingDocList?.length}
-              >
-                Add New
-              </Button>
+              {(() => {
+                const isSupportingAddDisabled =
+                  (supportingDocuments?.length || 0) >= (didSupportingDocList?.length || 0);
+                const addSupportingButton = (
+                  <Button
+                    className="w-full"
+                    type="button"
+                    variant={'outline'}
+                    onClick={() => {
+                      if (isSupportingAddDisabled) return;
+                      appendSupportingDoc({ file: null, supporting_document_template_id: null });
+                      const newIndex = supportingDocuments.length;
+                      trigger(`supporting_documents.${newIndex}`);
+                    }}
+                    disabled={isSupportingAddDisabled}
+                  >
+                    Add New
+                  </Button>
+                );
+                if (!isSupportingAddDisabled) {
+                  return <div className="max-w-[140px] w-full">{addSupportingButton}</div>;
+                }
+                return (
+                  <CustomTooltip
+                    text={
+                      didSupportingDocList?.length === 0
+                        ? 'No supporting document templates are configured for this account'
+                        : 'Every available document type has already been added'
+                    }
+                    side="top"
+                  >
+                    <span className="inline-block max-w-[140px] w-full">{addSupportingButton}</span>
+                  </CustomTooltip>
+                );
+              })()}
             </div>
           </div>
           {errors?.supporting_documents?.message && (

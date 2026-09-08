@@ -537,13 +537,19 @@ const NewDepartment = ({ rowData, setDrawerState, setTabData }: any) => {
                   <Button
                     variant={'outline'}
                     type="button"
+                    className="grp-prev-btn"
                     onClick={handlePrev}
                     disabled={currentStep === TABS_ORDER[0]}
                   >
                     Prev
                   </Button>
                   {currentStep !== DEPARTMENT_TAB_CONSTANT.GREETING_NOTIFICATION && (
-                    <Button variant={'outline'} type="button" onClick={handleNext}>
+                    <Button
+                      variant={'outline'}
+                      type="button"
+                      className="grp-next-btn"
+                      onClick={handleNext}
+                    >
                       Next
                     </Button>
                   )}
@@ -569,7 +575,7 @@ const NewDepartment = ({ rowData, setDrawerState, setTabData }: any) => {
                     type="button"
                     onClick={handlePrev}
                     disabled={currentStep === TABS_ORDER[0]}
-                    className="shrink-0"
+                    className="grp-prev-btn shrink-0"
                   >
                     Prev
                   </Button>
@@ -578,7 +584,7 @@ const NewDepartment = ({ rowData, setDrawerState, setTabData }: any) => {
                       variant={'outline'}
                       type="button"
                       onClick={handleNext}
-                      className="shrink-0"
+                      className="grp-next-btn shrink-0"
                     >
                       Next
                     </Button>

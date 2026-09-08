@@ -472,7 +472,12 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto">
+    /* No h-full/overflow-y-auto of its own — the parent step-content region
+       (in AddNumber's form) already scrolls, and having two nested scroll
+       containers here let this step's own height grow past what the parent
+       could see, pushing the Next/Back footer (a sibling of the parent,
+       fixed below it) out of view once enough DID checkboxes rendered. */
+    <div className="flex w-full flex-col gap-3">
       <div className="flex flex-col">
         <div className="flex flex-col gap-4">
           <div className="flex w-full items-center gap-3">
@@ -521,13 +526,21 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <RadioGroupItem value="yes" id="fax-number-yes" />
+                  <RadioGroupItem
+                    value="yes"
+                    id="fax-number-yes"
+                    className="h-4 w-4 border-red-600! bg-white! shadow-none! ring-0! data-[state=checked]:border-red-600! data-[state=checked]:bg-white! data-[state=checked]:shadow-none! data-[state=checked]:ring-0! focus-visible:ring-0! focus-visible:shadow-none!"
+                  />
                   <Label className="cursor-pointer" htmlFor="fax-number-yes">
                     Yes
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <RadioGroupItem value="no" id="fax-number-no" />
+                  <RadioGroupItem
+                    value="no"
+                    id="fax-number-no"
+                    className="h-4 w-4 border-red-600! bg-white! shadow-none! ring-0! data-[state=checked]:border-red-600! data-[state=checked]:bg-white! data-[state=checked]:shadow-none! data-[state=checked]:ring-0! focus-visible:ring-0! focus-visible:shadow-none!"
+                  />
                   <Label className="cursor-pointer" htmlFor="fax-number-no">
                     No
                   </Label>
@@ -597,6 +610,17 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
                   error={errors?.numberType?.message}
                   isLoading={numberTypesLoading}
                   isDisabled={!watchLocation?.value}
+                  /* Neither portaled-to-body (its "auto" placement only
+                     checks the browser window's height, not this shorter
+                     dialog, so it opened onto the backdrop) nor rendered
+                     inline (an open, un-portaled menu sits in normal flow
+                     and was pushing/overlapping the footer below it) gave a
+                     reliably correct position here. This list is short
+                     (Local/Toll-free/…) and the field sits near the top of
+                     the form, so forcing it open upward sidesteps the
+                     downward-space calculation entirely instead of trying
+                     to get it right. */
+                  menuPlacement="top"
                 />
                 {hasNoFaxNumbersForLocation && (
                   <p className="text-xs font-medium text-red-500">
@@ -670,10 +694,10 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
                 </div>
               </div>
             )}
-        <div className="flex w-full items-start gap-3">
-          <div className="flex w-full flex-col gap-4">
+        <div className="flex w-full min-w-0 items-start gap-3">
+          <div className="flex w-full min-w-0 flex-col gap-4">
             {isShowTable ? (
-              <div className="relative pt-7 w-full">
+              <div className="relative min-w-0 w-full pt-7">
                 {errors?.groupId?.value?.message && (
                   <div className="text-red-500 font-medium text-xs pb-1 absolute top-2">
                     {errors?.groupId?.value?.message}
@@ -698,13 +722,25 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
                     enabled: Boolean(isShowTable),
                     columns,
                     showPagination: false,
-                    customClass: 'min-h-[80px]',
+                    /* Uncapped height here let an empty result (its "not
+                       found" placeholder is roughly 250-300px on its own)
+                       grow the whole step's scrollable body tall enough,
+                       combined with the fields above it, to push the modal's
+                       own Back/Next footer past the dialog's fixed max
+                       height — the footer was still in the DOM, just clipped
+                       out of view by the dialog's overflow-hidden. A capped,
+                       independently scrolling height here keeps this table's
+                       size predictable regardless of row count — capped at
+                       300px rather than 220px so the "not found" placeholder
+                       itself fits without triggering its own scrollbar; a
+                       real result list still scrolls internally past that. */
+                    customClass: 'min-h-[80px] max-h-[300px]',
                   }}
                 />
               </div>
             ) : null}
 
-            <div className="w-full pt-2">
+            <div className="w-full min-w-0 pt-2">
               {(isFaxNumber ? watchNumberType?.value : watchGroupId?.value) && (
                 <>
                   {!isFetching ? (
@@ -728,11 +764,11 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
                   <>
                     {!isFetching ? (
                       didAvailableData?.length ? (
-                        /* Capped and independently scrollable: an uncapped
-                           height here would grow this step tall enough to
-                           push the modal's Back/Next footer out of view once
-                           the DID list sits stacked below the prefix table
-                           rather than beside it. */
+                        /* Capped and independently scrollable for the same reason
+                           as the prefix table's max-h-[220px] above: this list now
+                           sits stacked below the prefix table rather than beside
+                           it, so an uncapped height here would grow the step tall
+                           enough to push the modal's Back/Next footer out of view. */
                         <div className="flex max-h-[220px] flex-col gap-2 overflow-y-auto p-3">
                           {didAvailableData?.slice(0, 10)?.map((item: any) => {
                             const didNumber = isFaxNumber ? item?.phone_number : item?.number;
@@ -774,10 +810,8 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
                           })}
                         </div>
                       ) : (
-                        <div>
-                          <div className="text-red-500 text-sm font-medium">
-                            {isFaxNumber ? 'No fax number found' : 'No DID Found'}
-                          </div>
+                        <div className="mx-3 rounded-lg border border-red-200 bg-red-50 px-3 py-4 text-center text-sm font-medium text-red-500">
+                          {isFaxNumber ? 'No fax number found' : 'No DID Found'}
                         </div>
                       )
                     ) : null}

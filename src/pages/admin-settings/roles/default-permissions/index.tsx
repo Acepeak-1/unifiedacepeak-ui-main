@@ -169,8 +169,8 @@ const DefaultPermissionsPage = () => {
     onSuccess: () => {
       handleAlert({ text: 'Role saved. It can now be picked when adding people.', type: 'success' });
       queryClient.invalidateQueries({ queryKey: ['useRolesListQueryFn'] });
-      queryClient.invalidateQueries(['rolesList']);
-      queryClient.invalidateQueries(['useRolesList', false]);
+      queryClient.invalidateQueries({ queryKey: ['rolesList'] });
+      queryClient.invalidateQueries({ queryKey: ['useRolesList', false] });
     },
   });
 

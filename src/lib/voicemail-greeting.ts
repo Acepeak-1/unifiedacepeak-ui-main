@@ -32,8 +32,8 @@ export const DEFAULT_LOCALE = 'en-US';
  */
 export const voicemailScriptFor = (name: string, company?: string) =>
   company
-    ? `You have reached the voicemail of ${name} from ${company}. Please leave your name, number and a short message after the tone, and your call will be returned.`
-    : `You have reached the voicemail of ${name}. Please leave your name, number and a short message after the tone, and your call will be returned.`;
+    ? `${name}'s voicemail at ${company}. Leave a message after the tone.`
+    : `${name}'s voicemail. Leave a message after the tone.`;
 
 /** The greeting's name in Media Files, and how an existing one is recognised. */
 export const voicemailGreetingName = (name: string) => `Voicemail — ${name}`;

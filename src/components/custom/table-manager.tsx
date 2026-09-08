@@ -67,6 +67,7 @@ function TableManager({
   tableRef,
   isHeightSet = true,
   tableMaxHeight = null,
+  fitHeightToContent = false,
   hasSubRows = false,
   subRowsMutateKey = '',
   subRowsMutateFn = defaultSubRowsMutateFn,
@@ -97,6 +98,10 @@ function TableManager({
   centerPager = false,
   pagerAccentClassName = 'border-ucass-blue-600 text-ucass-blue-600 bg-white',
   disablePerPageMenuPortal = false,
+  hideFooterDivider = false,
+  perPageMenuPortalTarget,
+  perPageSelectClass,
+  recordNoun,
 }: Readonly<{
   columns: any;
   loading?: boolean;
@@ -119,6 +124,16 @@ function TableManager({
   getRowClassName?: (row: any) => string;
   isHeightSet?: boolean;
   tableMaxHeight?: any;
+  /* isHeightSet locks the table box to a fixed `height` (tableMaxHeight, or
+     the measured `tableHeight` fallback) so it doesn't grow/shrink as a
+     client-side search filters rows in and out. That same fixed height
+     also reserves blank space below a short result set, sitting between
+     the last row and the footer, when the box is taller than its content
+     needs. `fitHeightToContent` swaps `height` for `max-height` — still
+     capped so a long result set scrolls internally instead of growing the
+     page without bound, but a short one shrinks the box to fit, closing
+     that gap. */
+  fitHeightToContent?: boolean;
   hasSubRows?: boolean;
   subRowsMutateKey?: string;
   subRowsMutateFn?: (payload?: any) => any;
@@ -161,6 +176,29 @@ function TableManager({
   centerPager?: boolean;
   pagerAccentClassName?: string;
   disablePerPageMenuPortal?: boolean;
+  /* Drops the `sm:divide-x` line TableManager's footer normally draws
+     between the per-page picker and the "N record(s)" count, and forces
+     that count to the same muted slate as the rest of the footer instead
+     of whatever color it would otherwise inherit — for callers whose own
+     design has no such divider (the Numbers section's plain text-only
+     footer). Left false, behavior is unchanged. */
+  hideFooterDivider?: boolean;
+  /* The "per page" react-select menu portals to document.body by default,
+     which escapes this table's own overflow:hidden card — necessary so the
+     menu isn't clipped, but it also means the menu no longer inherits CSS
+     variables scoped to a themed ancestor (a page-specific accent color,
+     say). Passing an element still inside that themed ancestor — but
+     outside anything that clips — keeps both: no clipping, and the right
+     theme. Left undefined, behavior is unchanged (portals to body).
+     `disablePerPageMenuPortal` still takes priority when both are set. */
+  perPageMenuPortalTarget?: HTMLElement | null;
+  /* Rides onto the per-page select via react-select's classNamePrefix, so a
+     page can style its own menu even though the menu is portaled to <body>
+     and therefore outside that page's wrapper. Unset elsewhere: no change. */
+  perPageSelectClass?: string;
+  /* What the rows ARE, e.g. "webhook" — the footer then reads "4 webhooks"
+     instead of "4 record(s)". Unset elsewhere, which keeps the old text. */
+  recordNoun?: string;
 }>) {
   const [rowSelection, setRowSelection] = useState(initiallySelectedRows);
   const [maxPageNumberListLimit, setMaxPageNumberListLimit] = useState(5);
@@ -254,16 +292,32 @@ function TableManager({
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row: any, index: number) =>
       String(row?._id ?? row?.id ?? row?.uuid ?? row?.value ?? index),
-    pageCount: tbldata?.data?.data?.result?.totalPages
-      ? tbldata?.data?.data?.result?.totalPages
-      : -1,
+    /* staticData is the whole dataset up front — its page count is knowable
+       from its own length, unlike the API-backed path where a page count
+       comes back from the server (or -1 while that's unknown). Passing -1
+       here for static data left getPageOptions() with nothing to enumerate,
+       so the current-page pill never rendered even though there was
+       obviously exactly one page.
+
+       Only turned on when the pagination row is actually shown, though: a
+       caller passing staticData with showPagination={false} is asking to
+       see every row with no paging UI at all, and switching on real
+       (non-manual) pagination would start slicing that data to pageSize
+       behind its back with no controls left to reach the rest. */
+    pageCount: usesStaticData
+      ? showPagination
+        ? Math.max(1, Math.ceil(tableData.length / pageSize))
+        : 1
+      : tbldata?.data?.data?.result?.totalPages
+        ? tbldata?.data?.data?.result?.totalPages
+        : -1,
     getPaginationRowModel: getPaginationRowModel(),
     state: {
       pagination,
       rowSelection,
     },
     onPaginationChange: setPagination,
-    manualPagination: true,
+    manualPagination: !(usesStaticData && showPagination),
     enableRowSelection: true,
   });
   const hasRows = table.getRowModel().rows.length > 0;
@@ -383,7 +437,11 @@ function TableManager({
         ref={tableScrollRef}
         className={`${tableWrapClassName} ${customClass}`}
         style={
-          isHeightSet && showPagination ? { height: tableMaxHeight || `${tableHeight}px` } : {}
+          isHeightSet && showPagination
+            ? fitHeightToContent
+              ? { maxHeight: tableMaxHeight || `${tableHeight}px` }
+              : { height: tableMaxHeight || `${tableHeight}px` }
+            : {}
         }
       >
         {isFilter && (
@@ -488,7 +546,7 @@ function TableManager({
               </div>
             </div>
           ) : (
-            <div className="flex flex-col justify-center items-center gap-1 py-5 h-[calc(100%_-_45px)] w-full mx-auto">
+            <div className="flex flex-col justify-center items-center gap-3 py-12 h-[calc(100%_-_45px)] w-full mx-auto">
               <img src={NotFound} alt="BusyImage" className={imageSize} />
               <p className="text-md font-medium text-gray-900">{emptyTablePlaceholder}</p>
               <p className="text-sm text-gray-700">{descriptionEmptyTable}</p>
@@ -511,9 +569,13 @@ function TableManager({
       </div>
 
       {showPagination && (() => {
-        const recordCount = tbldata?.data?.data?.result?.totalItems || tbldata?.data?.data?.result?.total || 0;
+        const recordCount = usesStaticData
+          ? tableData.length
+          : tbldata?.data?.data?.result?.totalItems || tbldata?.data?.data?.result?.total || 0;
         const recordLabel = (
-          <span className={`whitespace-nowrap font-normal ${recordsPosition === 'left' ? 'sm:pl-3' : ''}`}>
+          <span
+            className={`whitespace-nowrap font-normal ${recordsPosition === 'left' ? 'sm:pl-3' : ''} ${hideFooterDivider ? 'text-slate-500' : ''}`}
+          >
             {recordCount} record(s)
           </span>
         );
@@ -535,8 +597,9 @@ function TableManager({
                   setMaxPageNumberListLimit(pageNumberListLimit);
                 }}
                 value={perPage}
+                inputClass={perPageSelectClass}
                 menuPlacement="top"
-                menuPortalTarget={disablePerPageMenuPortal ? false : undefined}
+                menuPortalTarget={disablePerPageMenuPortal ? false : perPageMenuPortalTarget}
               />
             </div>
             <span>per page</span>
@@ -544,7 +607,9 @@ function TableManager({
         );
         const refreshButton = !hideFooterRefresh && (
           <Button
-            className="cursor-pointer text-gray-900/80 hover:text-primary h-6 w-6"
+            aria-label="Refresh"
+            title="Refresh"
+            className="mcm-tblrefresh cursor-pointer text-gray-900/80 hover:text-primary h-6 w-6"
             type="button"
             variant={'ghost'}
             onClick={() => refetch()}
@@ -642,7 +707,9 @@ function TableManager({
         <div className="z-10 flex w-full flex-col gap-2 rounded-xl border border-gray-200 bg-white px-2 py-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2 font-semibold sm:gap-3">
-              <div className="flex flex-wrap items-center gap-3 sm:divide-x sm:divide-gray-200">
+              <div
+                className={`flex flex-wrap items-center gap-3 ${hideFooterDivider ? '' : 'sm:divide-x sm:divide-gray-200'}`}
+              >
                 {perPageSelect}
                 {recordsPosition === 'left' && recordLabel}
               </div>

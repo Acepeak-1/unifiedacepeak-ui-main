@@ -1,7 +1,14 @@
 import { Icon, IconName } from '@/assets/icons/icon';
-import CustomTooltip from '@/components/custom/custom-tooltip';
-import SideDrawer from '@/components/custom/side-drawer';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { X } from 'lucide-react';
 import TableManager from '@/components/custom/table-manager';
+import TableSearchHeader from '@/components/custom/table-search-header';
 import {
   deleteIdentity,
   getIdentityList,
@@ -9,19 +16,58 @@ import {
   uploadIdentityProof,
   uploadIdentitySupportingDocuments,
 } from '@/services/api';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import CreateIdentity from '../../all-numbers/add-number-2/create-identity';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { identitiesUpdateSchema, initialState } from '../../all-numbers/constants';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { parsePhoneNumber } from 'libphonenumber-js/max';
+import { darkenColor, lightenColorWithAlpha, stringToColour } from '@/lib/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Loader from '@/components/custom/loader';
 import { handleAlert } from '@/lib/utils';
 import AlertConfirm from '@/components/custom/alert-confirm';
+import { Trash2 } from 'lucide-react';
+import Flag from '@/components/flag';
 
-const Identities = ({ search }: { search: string }) => {
+export const DUMMY_IDENTITIES = [
+  {
+    identity_id: 'dummy-identity-1',
+    identity: { firstname: 'John', lastname: 'Doe', prefix: '+1', phone: '2025551234' },
+    identity_type: 'Individual',
+    address_count: 1,
+    proof_count: 2,
+  },
+  {
+    identity_id: 'dummy-identity-2',
+    identity: { firstname: 'Acme', lastname: 'Corp', prefix: '+44', phone: '2079460958' },
+    identity_type: 'Business',
+    address_count: 2,
+    proof_count: 3,
+  },
+  {
+    identity_id: 'dummy-identity-3',
+    identity: { firstname: 'Maria', lastname: 'Garcia', prefix: '+34', phone: '600123456' },
+    identity_type: 'Individual',
+    address_count: 1,
+    proof_count: 1,
+  },
+];
+
+const Identities = ({
+  search: debouncedSearch,
+  liveSearch,
+  setSearch,
+  menuPortalTarget,
+}: {
+  /** Debounced value TableManager actually filters on. */
+  search: string;
+  /** Immediate value the search box itself displays. */
+  liveSearch: string;
+  setSearch: (value: string) => void;
+  menuPortalTarget?: HTMLElement | null;
+}) => {
   const [drawerState, setDrawerState] = useState({
     editIdentity: false,
   });
@@ -29,6 +75,16 @@ const Identities = ({ search }: { search: string }) => {
     deleteIdentity: false,
   });
   const [rowData, setRowData] = useState<any>(null);
+  const [isTableRefreshing, setIsTableRefreshing] = useState(false);
+  const tableRef = useRef<any>(null);
+  const handleRefreshTable = async () => {
+    setIsTableRefreshing(true);
+    try {
+      await tableRef.current?.refetchTable();
+    } finally {
+      setIsTableRefreshing(false);
+    }
+  };
   const formInstance = useForm<any>({
     defaultValues: initialState,
     resolver: yupResolver(identitiesUpdateSchema),
@@ -137,34 +193,83 @@ const Identities = ({ search }: { search: string }) => {
 
   const columns = [
     {
-      header: 'Name',
+      /* Indented by the avatar's own width (w-8 = 32px) plus the gap next
+         to it (gap-2.5 = 10px) so "Name" sits directly above the actual
+         name text below it, not above the avatar circle that precedes it. */
+      header: () => <span className="pl-[42px]">Name</span>,
       accessorKey: 'identity',
       cell: ({ row }: any) => {
         const data = row?.original || {};
-        const name = `${data?.identity?.firstname || ''} ${data?.identity?.lastname || ''}`;
-        return name;
+        const firstname = data?.identity?.firstname || '';
+        const lastname = data?.identity?.lastname || '';
+        const name = `${firstname} ${lastname}`.trim();
+        const initials = `${firstname.charAt(0)}${lastname.charAt(0)}`.toUpperCase() || '?';
+        const nameColour = stringToColour(name || '?') || '#dc2626';
+        const textColour = darkenColor(nameColour, 90);
+        const bgColour = lightenColorWithAlpha(nameColour, 5, 0.15);
+        return (
+          <div className="flex items-center gap-2.5">
+            <div
+              style={{ color: textColour, background: bgColour }}
+              className="flex items-center justify-center w-8 h-8 min-w-8 rounded-full text-xs font-semibold"
+            >
+              {initials}
+            </div>
+            <span>{name}</span>
+          </div>
+        );
       },
     },
     {
       header: 'Type',
       accessorKey: 'identity_type',
+      cell: ({ row }: any) => (
+        <span className="ident-type-badge">{row?.original?.identity_type}</span>
+      ),
     },
     {
-      header: 'Phone Number',
+      /* Indented to clear the flag icon (roughly 15px) plus the gap next to
+         it (gap-1.5 = 6px), same reasoning as the Name column's indent. */
+      header: () => <span className="pl-[21px]">Phone Number</span>,
       accessorKey: 'exp_year',
       cell: ({ row }: any) => {
         const data = row?.original || {};
-        const phone = `${data?.identity?.prefix || ''} ${data?.identity?.phone || ''}`;
-        return phone;
+        const prefix = data?.identity?.prefix || '';
+        const rawNumber = data?.identity?.phone || '';
+        const phone = `${prefix}${rawNumber}`;
+        let formatted = `${prefix} ${rawNumber}`;
+        try {
+          formatted = parsePhoneNumber(phone)?.formatInternational() || formatted;
+        } catch {
+          // Keep the plain prefix + digits fallback above.
+        }
+        return (
+          <span className="flex items-center gap-1.5 text-[var(--ink)]">
+            <Flag phoneNumber={phone} svg />
+            {formatted}
+          </span>
+        );
       },
     },
     {
-      header: 'Address',
+      header: () => <span className="flex w-full justify-center">Address</span>,
       accessorKey: 'address_count',
+      meta: { textAlign: 'center' },
+      cell: ({ row }: any) => (
+        <div className="flex w-full items-center justify-center">
+          <span className="ident-count-chip">{row?.original?.address_count}</span>
+        </div>
+      ),
     },
     {
-      header: 'Proofs',
+      header: () => <span className="flex w-full justify-center">Proofs</span>,
       accessorKey: 'proof_count',
+      meta: { textAlign: 'center' },
+      cell: ({ row }: any) => (
+        <div className="flex w-full items-center justify-center">
+          <span className="ident-count-chip">{row?.original?.proof_count}</span>
+        </div>
+      ),
     },
     {
       header: 'Action',
@@ -179,7 +284,7 @@ const Identities = ({ search }: { search: string }) => {
               setRowData({ isEdit: true, formData: data });
               setDrawerState((prev) => ({ ...prev, editIdentity: true }));
             },
-            className: 'bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white',
+            className: 'bg-transparent! text-gray-900/80! hover:bg-gray-100! hover:text-gray-900!',
             tooltipText: 'Edit',
           },
           {
@@ -188,26 +293,31 @@ const Identities = ({ search }: { search: string }) => {
               setRowData({ isEdit: true, formData: data });
               setModalState((prev) => ({ ...prev, deleteIdentity: true }));
             },
-            className: 'bg-red-100 text-red-500 hover:bg-red-500 hover:text-white',
+            className: 'bg-transparent! text-gray-900/80! hover:bg-gray-100! hover:text-gray-900!',
             tooltipText: 'Delete',
           },
         ];
 
         return (
-          <div className="flex items-center gap-2">
-            {actions?.map((action, index) => (
-              <CustomTooltip text={action.tooltipText} side="top">
+          <div className="flex items-center justify-center w-full">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <div
-                  key={index}
-                  className={`cursor-pointer flex items-center justify-center rounded-full w-8 h-8 ${action.className}`}
-                  onClick={() => {
-                    action.onClick();
-                  }}
+                  className="cursor-pointer flex items-center justify-center rounded-full w-8 h-8 bg-red-100 text-red-500 hover:bg-red-500 hover:text-white"
+                  onClick={(event) => event.stopPropagation()}
                 >
-                  <Icon name={action.icon as IconName} className="w-5 h-5" />
+                  <Icon name="MenuDots" className="w-5 h-5" />
                 </div>
-              </CustomTooltip>
-            ))}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="border-neutral-200! bg-white! text-black!">
+                {actions?.map((action, index) => (
+                  <DropdownMenuItem key={index} onClick={action.onClick} className={action.className}>
+                    <Icon name={action.icon as IconName} className="w-4 h-4 text-current" />
+                    {action.tooltipText}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       },
@@ -268,13 +378,48 @@ const Identities = ({ search }: { search: string }) => {
 
   return (
     <div>
-      <div className="w-ful p-3 flex flex-col gap-2">
+      <div className="ident-table-card ident-table-card--plain ident-table--identities w-full flex flex-col">
         <TableManager
           {...{
             columns,
-            search,
+            search: debouncedSearch,
+            tableRef,
+            hideFooterRefresh: true,
+            pagerAccentClassName: 'border-red-600 bg-red-600 text-white',
+            customHeader: (
+              <TableSearchHeader
+                value={liveSearch}
+                onChange={setSearch}
+                onRefresh={handleRefreshTable}
+                refreshing={isTableRefreshing}
+                placeholder="Search identities"
+                rightSlot={
+                  <div className="ml-auto flex h-9 shrink-0 items-center gap-3 rounded-full border border-neutral-200 bg-white px-3.5 text-sm">
+                    <span className="font-semibold text-gray-900">All {DUMMY_IDENTITIES.length}</span>
+                    <span className="h-4 w-px bg-neutral-200" />
+                    <span className="flex items-center gap-1.5 text-gray-500">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
+                      Business{' '}
+                      {DUMMY_IDENTITIES.filter((row) => row.identity_type === 'Business').length}
+                    </span>
+                  </div>
+                }
+              />
+            ),
             fetcherKey: 'getIdentityList',
             fetcherFn: getIdentityList,
+            staticData: DUMMY_IDENTITIES,
+            clientSideSearch: true,
+            perPageMenuPortalTarget: menuPortalTarget,
+            hideFooterDivider: true,
+            fitHeightToContent: true,
+            /* A fixed height rather than isHeightSet:false — that let the
+               card grow and shrink with the row count, which as you typed
+               into search (clientSideSearch filters rows live) made the
+               whole tabs+table card visibly jump up and down. A stable
+               height tall enough for this page's small dummy dataset gives
+               both: no internal scrollbar, and no reflow while filtering. */
+            tableMaxHeight: '320px',
             emptyTablePlaceholder: 'No identities yet',
             descriptionEmptyTable:
               'Identities are created while buying a number that requires verification. Any you register during that flow appear here.',
@@ -282,31 +427,56 @@ const Identities = ({ search }: { search: string }) => {
         />
       </div>
       {drawerState.editIdentity && (
-        <SideDrawer
-          width="min(1040px, 84vw)"
-          title="Edit Identity"
-          isOpen={drawerState.editIdentity}
-          isTab={false}
-          handleClose={handleDrawerClose}
-          content={
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <CreateIdentity
-                rowData={rowData}
-                className="h-[calc(100vh-11rem)]"
-                handleClose={handleDrawerClose}
-                formInstance={formInstance}
-              />
-              <div className="flex justify-end gap-2">
-                <Button type="button" onClick={handleDrawerClose} variant={'transparent'}>
+        <Dialog open={drawerState.editIdentity} onOpenChange={(open) => !open && handleDrawerClose()}>
+          <DialogContent
+            showCloseButton={false}
+            onPointerDownOutside={(e) => e.preventDefault()}
+            className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-2xl lg:max-w-3xl"
+          >
+            <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
+              <DialogTitle className="popup-title">Edit Identity</DialogTitle>
+              <button
+                type="button"
+                onClick={handleDrawerClose}
+                aria-label="Close"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </DialogHeader>
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden"
+            >
+              <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">
+                <CreateIdentity
+                  rowData={rowData}
+                  className="h-full"
+                  handleClose={handleDrawerClose}
+                  formInstance={formInstance}
+                />
+              </div>
+              <div className="flex flex-none items-center justify-end gap-2 border-t border-gray-200 pt-3">
+                <Button
+                  type="button"
+                  onClick={handleDrawerClose}
+                  variant={'outline'}
+                  className="flex items-center gap-1.5 rounded-full border-gray-300 bg-white text-black hover:bg-gray-100 hover:text-black"
+                >
                   Cancel
                 </Button>
-                <Button disabled={isLoading} variant={'primary'} type="submit" className="min-w-32">
+                <Button
+                  disabled={isLoading}
+                  variant={'outline'}
+                  type="submit"
+                  className="min-w-32 rounded-full border-black bg-black text-white hover:bg-gray-800 hover:text-white"
+                >
                   {isLoading && <Loader variant="blue" />}Update
                 </Button>
               </div>
             </form>
-          }
-        />
+          </DialogContent>
+        </Dialog>
       )}
       {modalState?.deleteIdentity && (
         <AlertConfirm
@@ -317,6 +487,13 @@ const Identities = ({ search }: { search: string }) => {
             },
             open: modalState?.deleteIdentity,
             setOpen: () => handleModalClose(),
+            icon: <Trash2 className="h-7 w-7" />,
+            iconTone: 'danger',
+            headerClassName: 'ident-confirm-title',
+            confirmBtnClassName: 'rounded-full bg-red-600 hover:bg-red-700 text-white border-red-600',
+            closeBtnClassName:
+              'rounded-full border border-gray-200 text-gray-700! hover:bg-gray-50! hover:text-gray-700! focus-visible:ring-0! shadow-none!',
+            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5 bg-white!',
           }}
         />
       )}
