@@ -109,8 +109,8 @@ export const evaluateNumber = (did: any): Coverage => {
       state: 'partial',
       headline: 'No voicemail',
       detail: ringsAnExtension
-        ? 'Calls ring the extension, but nothing catches them when nobody answers or the call is rejected — those callers get silence.'
-        : `Calls reach ${destination.toLowerCase()}, but nothing catches an unanswered call. Choose a mailbox for this number in Set Forwarding.`,
+        ? 'Unanswered calls get silence.'
+        : 'Choose a mailbox here.',
       fixable: ringsAnExtension,
     };
   }
@@ -221,8 +221,7 @@ export const evaluateUser = (user: any): Coverage => {
     return {
       state: 'gap',
       headline: 'Hangs up',
-      detail:
-        'Unanswered calls are set to be ended, so the caller is hung up on instead of reaching a message.',
+      detail: 'Unanswered calls are set to end, so the caller is hung up on.',
       fixable: false,
     };
   }

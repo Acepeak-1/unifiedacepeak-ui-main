@@ -167,7 +167,7 @@ const PaymentModal = ({
       }}
     >
       <DialogContent
-        className="w-1/2 p-3 max-h-[99%] overflow-y-auto"
+        className="ident-form-popup w-1/2 p-3 max-h-[99%] overflow-y-auto"
         showCloseButton={false}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
@@ -177,15 +177,17 @@ const PaymentModal = ({
           <div className="flex flex-col gap-4 w-full">
             <div className="flex flex-col">
               <div className="flex justify-between items-center">
-                <div className="text-gray-900 font-semibold text-lg">Checkout</div>
-                <div
+                <div className="popup-title">Checkout</div>
+                <button
+                  type="button"
                   onClick={() => {
                     if (!isApiLoad) setModalState(false);
                   }}
-                  className="cursor-pointer text-gray-500 ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
+                  aria-label="Close"
+                  className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
                 >
-                  <CloseIcon className="w-3 h-3" />
-                </div>
+                  <CloseIcon className="h-4 w-4" />
+                </button>
               </div>
               <div className="text-gray-800 text-sm">Select and add your payment information</div>
             </div>
