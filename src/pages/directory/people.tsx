@@ -295,8 +295,7 @@ const People = () => {
                   skills and one-click contact.
                 </>
               }
-              side="top"
-              className="!bg-gray-300 !text-black"
+              side="right"
             >
               <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
             </CustomTooltip>
@@ -379,6 +378,7 @@ const People = () => {
                   <DropdownMenuItem
                     key={`department-${option}`}
                     className="ppl-row-menu-item justify-between"
+                    data-selected={option === department}
                     onSelect={(event) => {
                       event.preventDefault();
                       setDepartment(option);
@@ -397,6 +397,7 @@ const People = () => {
                   <DropdownMenuItem
                     key={`location-${option}`}
                     className="ppl-row-menu-item justify-between"
+                    data-selected={option === location}
                     onSelect={(event) => {
                       event.preventDefault();
                       setLocation(option);
@@ -415,6 +416,7 @@ const People = () => {
                   <DropdownMenuItem
                     key={`presence-${option}`}
                     className="ppl-row-menu-item justify-between"
+                    data-selected={option === presence}
                     onSelect={(event) => {
                       event.preventDefault();
                       setPresence(option);

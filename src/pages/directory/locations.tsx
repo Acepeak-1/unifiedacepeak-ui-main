@@ -59,7 +59,11 @@ const Locations = () => {
   const canEdit = Boolean(siteAccess?.edit);
   const canDelete = Boolean(siteAccess?.delete);
 
-  const { data: sites = [], isLoading } = useQuery({
+  const {
+    data: sites = [],
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['siteList'],
     queryFn: () => siteList({ page: 1, limit: 1000 }),
     enabled: canView,
@@ -141,8 +145,8 @@ const Locations = () => {
                   address, timezone and who works there.
                 </>
               }
-              side="top"
-              className="!bg-gray-300 !text-black whitespace-normal text-left"
+              side="right"
+              className="whitespace-normal text-left"
             >
               <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
             </CustomTooltip>
@@ -166,6 +170,15 @@ const Locations = () => {
               tone="red"
             />
             <SearchChip value={search} onChange={setSearch} placeholder="Search locations" />
+            <button
+              type="button"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+              title="Refresh"
+              aria-label="Refresh locations"
+              onClick={() => refetch()}
+            >
+              <Ic n="refresh" size={15} />
+            </button>
             <span className="fchip live" style={{ marginLeft: 'auto' }}>
               {visible.length} of {sites.length}
             </span>

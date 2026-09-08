@@ -121,7 +121,7 @@ const External = () => {
   const [newLabel, setNewLabel] = useState('');
   const labels = useContactLabels();
 
-  const { data: apiRows = [], isPending } = useQuery({
+  const { data: apiRows = [], isPending, refetch } = useQuery({
     /* create-new-contact invalidates ['getContactList']; sharing that prefix is
        what makes a new or edited contact show up here. */
     queryKey: ['getContactList', 'directoryExternal'],
@@ -203,8 +203,8 @@ const External = () => {
                   how to reach them, and every channel you can use.
                 </>
               }
-              side="top"
-              className="!bg-gray-300 !text-black whitespace-normal text-left"
+              side="right"
+              className="whitespace-normal text-left"
             >
               <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
             </CustomTooltip>
@@ -237,6 +237,15 @@ const External = () => {
               onChange={setSearch}
               placeholder="Search contacts and labels"
             />
+            <button
+              type="button"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+              title="Refresh"
+              aria-label="Refresh contacts"
+              onClick={() => refetch()}
+            >
+              <Ic n="refresh" size={15} />
+            </button>
             <span className="fchip live" style={{ marginLeft: 'auto' }}>
               <span className="num">{rows.length}</span> contacts
             </span>

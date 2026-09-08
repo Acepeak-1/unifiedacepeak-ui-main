@@ -63,7 +63,7 @@ const Blocked = () => {
   /* Two reads of the same list. The blocked one is filtered on the server, which
      is what the table shows; the whole book is what a typed number is matched
      against, because the number you want to block is usually already saved. */
-  const { data: blocked = [], isPending } = useQuery({
+  const { data: blocked = [], isPending, refetch } = useQuery({
     queryKey: ['getContactList', 'directoryBlocked'],
     queryFn: () =>
       getContactList({ page: 1, limit: 200, filters: [{ key: 'tag', value: 'BLOCK' }] }),
@@ -134,8 +134,8 @@ const Blocked = () => {
                 someone new.
               </>
             }
-            side="top"
-            className="!bg-gray-300 !text-black whitespace-normal text-left"
+            side="right"
+            className="whitespace-normal text-left"
           >
             <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
           </CustomTooltip>
@@ -144,6 +144,15 @@ const Blocked = () => {
       filters={
         <>
           <SearchChip value={search} onChange={setSearch} placeholder="Search blocked numbers" />
+          <button
+            type="button"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+            title="Refresh"
+            aria-label="Refresh blocked numbers"
+            onClick={() => refetch()}
+          >
+            <Ic n="refresh" size={15} />
+          </button>
           <span className="fchip live" style={{ marginLeft: 'auto' }}>
             <span className="num">{blocked.length}</span> blocked
           </span>

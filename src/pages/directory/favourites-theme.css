@@ -118,3 +118,78 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Secondary buttons (Export, Close, etc.) filled black to match .btn.primary. */
+.fav-theme .btn.ghost {
+  background: #171717;
+  border-color: #171717;
+  color: #fff;
+}
+.fav-theme .btn.ghost .ic {
+  color: #fff;
+}
+.fav-theme .btn.ghost:hover {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+
+/* Filters dropdown trigger filled black to match the other buttons. */
+.mcm-page .fav-theme .fchip-select {
+  background: #171717;
+  border-color: #171717;
+  color: #fff;
+  border-radius: 9999px;
+}
+.fav-theme .fchip-select svg {
+  color: #fff;
+}
+.mcm-page .fav-theme .fchip-select:hover {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+
+/* Page head (title + actions) filled white like the stats band and the
+   table card below it, so the top of the page reads as three distinct
+   cards instead of the title floating on the bare grey page background. */
+.mcm-page .fav-theme .page-head {
+  background: #fff;
+  margin: -22px -26px 20px;
+  padding: 20px 26px;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 0;
+}
+
+/* Only the table body scrolls — title/stats/search stay put. See
+   people-theme.css for the full reasoning: `.page` becomes a column flex
+   box so the head/kpis/search keep their natural height and the table card
+   takes the rest of the space, scrolling internally instead of the whole
+   page moving. */
+.fav-theme .page {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+}
+.fav-theme .page-head,
+.fav-theme .kpis.kpi-grid,
+.fav-theme .page-caveat {
+  flex-shrink: 0;
+}
+.fav-theme .panel-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.fav-theme .tbar-in-card {
+  flex-shrink: 0;
+}
+.fav-theme .tbl-wrap {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}

@@ -64,7 +64,7 @@ const Roles = () => {
   const [assigning, setAssigning] = useState<Role | null>(null);
   const [deleting, setDeleting] = useState<Role | null>(null);
 
-  const { data: roles = [], isPending } = useQuery({
+  const { data: roles = [], isPending, refetch } = useQuery({
     queryKey: ['rolesList', 'directoryRoles'],
     queryFn: () => userRolesList({ page: 1, limit: 200 }),
     select: (res: any) => res?.data?.data?.result?.rows || [],
@@ -110,8 +110,8 @@ const Roles = () => {
                   and how many people hold each role.
                 </>
               }
-              side="top"
-              className="!bg-gray-300 !text-black whitespace-normal text-left"
+              side="right"
+              className="whitespace-normal text-left"
             >
               <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
             </CustomTooltip>
@@ -128,6 +128,15 @@ const Roles = () => {
         filters={
           <>
             <SearchChip value={search} onChange={setSearch} placeholder="Search roles" />
+            <button
+              type="button"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+              title="Refresh"
+              aria-label="Refresh roles"
+              onClick={() => refetch()}
+            >
+              <Ic n="refresh" size={15} />
+            </button>
             <span className="fchip live" style={{ marginLeft: 'auto' }}>
               {visible.length} of {roles.length}
             </span>

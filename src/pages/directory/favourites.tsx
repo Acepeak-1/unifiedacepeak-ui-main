@@ -140,9 +140,13 @@ const Favourites = () => {
   const [kind, setKind] = useState('All');
   const [whatsappTo, setWhatsappTo] = useState('');
 
-  const { rows: people, isLoading: peopleLoading } = usePeopleRows();
+  const { rows: people, isLoading: peopleLoading, refetch: refetchPeople } = usePeopleRows();
 
-  const { data: contacts = [], isPending: contactsLoading } = useQuery({
+  const {
+    data: contacts = [],
+    isPending: contactsLoading,
+    refetch: refetchContacts,
+  } = useQuery({
     /* Shares the ['getContactList'] prefix, so editing a contact refreshes
        this list too. */
     queryKey: ['getContactList', 'directoryFavourites'],
@@ -227,8 +231,8 @@ const Favourites = () => {
                   outside contacts together, one click from here.
                 </>
               }
-              side="top"
-              className="!bg-gray-300 !text-black whitespace-normal text-left"
+              side="right"
+              className="whitespace-normal text-left"
             >
               <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
             </CustomTooltip>
@@ -244,6 +248,18 @@ const Favourites = () => {
               tone="red"
             />
             <SearchChip value={search} onChange={setSearch} placeholder="Search favourites" />
+            <button
+              type="button"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+              title="Refresh"
+              aria-label="Refresh favourites"
+              onClick={() => {
+                refetchPeople();
+                refetchContacts();
+              }}
+            >
+              <Ic n="refresh" size={15} />
+            </button>
             <span className="fchip live" style={{ marginLeft: 'auto' }}>
               <span className="num">{rows.length}</span> favourite{rows.length === 1 ? '' : 's'}
             </span>

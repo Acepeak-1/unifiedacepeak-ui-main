@@ -484,7 +484,7 @@
   gap: 7px;
   height: 40px;
   padding: 0 18px;
-  border-radius: 11px;
+  border-radius: 9999px;
   font-size: 13.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -766,13 +766,64 @@
   color: var(--ink-2);
 }
 .mcm-page .fchip:hover {
-  border-color: var(--accent-edge);
-  color: var(--accent-ink);
+  /* Not --accent-edge: on a page that tints it a strong colour (People's
+     red), a hover border in that colour reads as an error state on a plain
+     search box or the Filters button rather than as a hover effect. */
+  border-color: var(--ink-3);
+  color: var(--ink);
 }
 .mcm-page .fchip.live {
   background: var(--live-wash);
   border-color: transparent;
   color: var(--live);
+}
+/* Filters (and any other dropdown-trigger chip) needs to read as an actual
+   button, not inert text — a visible border/background at rest on every
+   Directory page, not just on hover. */
+.mcm-page .fchip-select {
+  background: var(--surface);
+  border-color: var(--line);
+}
+/* The search box is the primary control on this row on every Directory
+   page — bigger and fully rounded instead of the same small chip shape as
+   Filters and the count badge. */
+.mcm-page .search-fchip {
+  height: 36px;
+  max-width: 360px !important;
+  border-radius: 9999px;
+  padding: 0 12px 0 8px;
+  gap: 8px;
+}
+/* No dark hover outline on the search box — the shared .fchip:hover rule
+   darkens the border on hover, which reads as an error/focus state here.
+   Only the deliberate light-red border on focus (below) should show. */
+.mcm-page .search-fchip:hover {
+  border-color: var(--line);
+  color: var(--ink-2);
+}
+/* The magnifier sits inside its own small circular badge instead of sitting
+   bare in the chip — matches the search box style used elsewhere (AI
+   Receptionists). No focus ring/glow anywhere on this control; clicking into
+   it should not add a gradient or halo. */
+.mcm-page .search-fchip__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: #fef2f2;
+  color: #dc2626;
+}
+.mcm-page .search-fchip:focus-within {
+  outline: none;
+  box-shadow: none;
+  border-color: #fca5a5;
+}
+.mcm-page .search-fchip input:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 /* ---- dense KPI strip ---- */

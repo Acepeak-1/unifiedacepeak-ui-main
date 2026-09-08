@@ -62,7 +62,7 @@ const Groups = () => {
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const { data: apiRows = [], isPending } = useQuery({
+  const { data: apiRows = [], isPending, refetch } = useQuery({
     /* The platform's department writes invalidate ['getDepartmentList']; keying
        this list anything else meant a newly created group never appeared. */
     queryKey: ['getDepartmentList', 'directoryGroups'],
@@ -116,8 +116,8 @@ const Groups = () => {
                 the same records Admin calls Departments.
               </>
             }
-            side="top"
-            className="!bg-gray-300 !text-black whitespace-normal text-left"
+            side="right"
+            className="whitespace-normal text-left"
           >
             <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
           </CustomTooltip>
@@ -148,6 +148,15 @@ const Groups = () => {
       filters={
         <>
           <SearchChip value={search} onChange={setSearch} placeholder="Search groups" />
+          <button
+            type="button"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+            title="Refresh"
+            aria-label="Refresh groups"
+            onClick={() => refetch()}
+          >
+            <Ic n="refresh" size={15} />
+          </button>
           <span className="fchip live" style={{ marginLeft: 'auto' }}>
             <span className="num">{rows.length}</span> groups
           </span>
@@ -229,8 +238,8 @@ const Groups = () => {
                     and assign multiple users to a single extension.
                   </>
                 }
-                side="top"
-                className="!bg-gray-300 !text-black whitespace-normal text-left"
+                side="right"
+                className="whitespace-normal text-left"
               >
                 <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
               </CustomTooltip>

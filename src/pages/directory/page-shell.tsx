@@ -117,11 +117,8 @@ export const FilterChip = ({
       {options.map((option) => (
         <DropdownMenuItem
           key={option}
-          className={cn(
-            'cursor-pointer',
-            option === value && 'font-semibold',
-            tone === 'red' && 'focus:bg-[#fef2f2] focus:text-[#171717]',
-          )}
+          className="cursor-pointer"
+          data-selected={option === value}
           onSelect={() => onChange(option)}
         >
           {option}
@@ -141,12 +138,14 @@ export const SearchChip = ({
   placeholder: string;
 }) => (
   <label className="fchip search-fchip" style={{ flex: '1 1 220px', maxWidth: 320 }}>
-    <Ic n="search" size={13} />
+    <span className="search-fchip__icon">
+      <Ic n="search" size={13} />
+    </span>
     <input
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      style={{ border: 0, background: 'transparent', width: '100%', outline: 'none' }}
+      style={{ border: 0, background: 'transparent', width: '100%', outline: 'none', boxShadow: 'none' }}
     />
   </label>
 );
