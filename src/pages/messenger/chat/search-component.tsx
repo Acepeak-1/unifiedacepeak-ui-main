@@ -75,9 +75,12 @@ const getUserId = (value: any): string => {
 const SearchComponent = ({
   currentChat,
   disableScrollTop,
+  onRequestClose,
 }: {
   currentChat: any;
   disableScrollTop: React.MutableRefObject<boolean>;
+  /** Collapse back to the icon — Escape, or blurring while still empty. */
+  onRequestClose?: () => void;
 }) => {
   const { socketEventsManager, handleGetMessageByChatId, setMessageList } = useSocketEvents();
   const { user } = useUser();
@@ -247,6 +250,18 @@ const SearchComponent = ({
         }}
         onFocus={() => {
           if (results.length > 0) setIsOpen(true);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.stopPropagation();
+            setIsOpen(false);
+            onRequestClose?.();
+          }
+        }}
+        onBlur={() => {
+          /* Only release while empty. Once something is typed the results are
+             the point of the field, and clicking one must not collapse it. */
+          if (!inputValue.trim()) onRequestClose?.();
         }}
       />
 

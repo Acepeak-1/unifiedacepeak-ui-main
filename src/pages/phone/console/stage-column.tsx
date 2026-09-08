@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ReactCountryFlag from 'react-country-flag';
 import {
   AsYouType,
@@ -21,6 +22,8 @@ import type { ConsoleCallRow } from './call-list-column';
 import { Ic } from './icons';
 import { dialLabelFor, useConsoleDialer } from './dial-number';
 import CallRecord from './call-record';
+import { AskDock } from './ask-dock';
+import { demoCallNotes, demoCallSummary, demoTranscriptTurns } from './demo-data';
 import { isTerminalSession, mmss, type ConsoleCallState } from './use-console-call';
 import {
   CHECKLIST,
@@ -388,7 +391,29 @@ const StageColumn = ({
   const [notes, setNotes] = useState<
     { text: string; who: string; number: string; at: string }[]
   >([]);
-  const [sidePanel, setSidePanel] = useState<null | 'notes' | 'transcript' | 'summary'>(null);
+  /* The panel is part of the page rather than something you go and fetch, so
+     it opens with the dialer — on Copilot, the tab that has something to say
+     before a call has even started. Closing it with the X still sticks for
+     the rest of the visit. */
+  const [sidePanel, setSidePanel] = useState<
+    null | 'copilot' | 'notes' | 'transcript' | 'summary'
+  >('copilot');
+
+  /* Arriving from the floating call window's Add Notes: it hands over the
+     number the call was with so the note is filed against that person rather
+     than against nothing. Read once into state and taken back out of the URL,
+     so a later refresh doesn't silently re-attach a stale number. */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [notesSubjectNumber, setNotesSubjectNumber] = useState('');
+  useEffect(() => {
+    if (searchParams.get('panel') !== 'notes') return;
+    setNotesSubjectNumber(searchParams.get('number') || '');
+    setSidePanel('notes');
+    const next = new URLSearchParams(searchParams);
+    next.delete('panel');
+    next.delete('number');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
   const [panel, setPanel] = useState<null | 'add-user' | 'merge' | 'members' | 'script'>(null);
   const {
     callerIdOptions,
@@ -719,7 +744,7 @@ const StageColumn = ({
   /* Who the note is about — shown above the box so it's clear before you
      write, and stored with the note. Saved contact first, then the label the
      number was dialled with, then whatever the session knows. */
-  const noteNumber = session?.remoteNumber || selectedCall?.number || '';
+  const noteNumber = session?.remoteNumber || selectedCall?.number || notesSubjectNumber || '';
   const noteWho = (() => {
     /* Opened straight from the dialer with nothing selected: it's just a note,
        so it carries no contact line at all. */
@@ -760,10 +785,23 @@ const StageColumn = ({
     ]);
     setNoteText('');
   };
+  /* Each tab falls back to a sample only when the platform has produced
+     nothing for it — never mixed in with real content, and always chipped. */
+  const demoNotes = notes.length ? [] : demoCallNotes();
+  const demoTurns = turns.length ? [] : demoTranscriptTurns();
+  const demoSummary = callSummary.length ? [] : demoCallSummary();
+
   const sidePanelEl = (
     <>
       <div className={`call-sidepanel ${sidePanel ? 'open' : ''}`} role="dialog" aria-label="Call notes and transcript">
         <div className="csp-head">
+          <button
+            type="button"
+            className={`csp-tab ${sidePanel === 'copilot' ? 'on' : ''}`}
+            onClick={() => setSidePanel('copilot')}
+          >
+            Copilot
+          </button>
           <button
             type="button"
             className={`csp-tab ${sidePanel === 'notes' ? 'on' : ''}`}
@@ -795,7 +833,13 @@ const StageColumn = ({
           </button>
         </div>
 
-        {sidePanel === 'summary' ? (
+        {sidePanel === 'copilot' ? (
+          /* The dock brings its own scroller and composer, so it fills the
+             panel body rather than sitting inside .csp-body's padding. */
+          <div className="csp-copilot">
+            <AskDock session={session} />
+          </div>
+        ) : sidePanel === 'summary' ? (
           <div className="csp-body">
             {callSummary.length ? (
               <ul className="rec-summary-list">
@@ -803,6 +847,18 @@ const StageColumn = ({
                   <li key={i}>{s}</li>
                 ))}
               </ul>
+            ) : demoSummary.length ? (
+              <>
+                <div style={{ marginBottom: 10 }}><span className="src demo">
+                  <Ic n="alert" size={9} />
+                  Demo data
+                </span></div>
+                <ul className="rec-summary-list">
+                  {demoSummary.map((s, i) => (
+                    <li key={`demo-${i}`}>{s}</li>
+                  ))}
+                </ul>
+              </>
             ) : (
               <div className="csp-empty">No summary yet</div>
             )}
@@ -816,6 +872,19 @@ const StageColumn = ({
                   <div className="csp-turn-text">{t.text}</div>
                 </div>
               ))
+            ) : demoTurns.length ? (
+              <>
+                <div style={{ marginBottom: 10 }}><span className="src demo">
+                  <Ic n="alert" size={9} />
+                  Demo data
+                </span></div>
+                {demoTurns.map((t) => (
+                  <div className={`csp-turn ${t.speaker}`} key={t.id}>
+                    <div className="csp-turn-who">{t.who}</div>
+                    <div className="csp-turn-text">{t.text}</div>
+                  </div>
+                ))}
+              </>
             ) : (
               <div className="csp-empty">No transcript yet</div>
             )}
@@ -866,6 +935,25 @@ const StageColumn = ({
                   {n.text}
                 </div>
               ))
+            ) : demoNotes.length ? (
+              <>
+                <div style={{ marginBottom: 10 }}><span className="src demo">
+                  <Ic n="alert" size={9} />
+                  Demo data
+                </span></div>
+                {demoNotes.map((n, i) => (
+                  <div className="csp-note" key={`demo-note-${i}`}>
+                    <div className="csp-note-head">
+                      <span className="csp-note-who">
+                        {n.who}
+                        <span className="num"> · {n.number}</span>
+                      </span>
+                      <span className="csp-note-at num">{n.at}</span>
+                    </div>
+                    {n.text}
+                  </div>
+                ))}
+              </>
             ) : (
               <div className="csp-empty">No notes yet</div>
             )}

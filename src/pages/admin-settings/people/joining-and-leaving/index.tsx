@@ -22,8 +22,9 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarClock, KeyRound, LogOut, Mail, UserPlus, Users } from 'lucide-react';
+import { CalendarClock, InfoIcon, KeyRound, LogOut, Mail, UserPlus, Users } from 'lucide-react';
 
+import CustomTooltip from '@/components/custom/custom-tooltip';
 import Loader from '@/components/custom/loader';
 import { SettingCard, SettingRow } from '@/components/mcm/setting-card';
 import { Button } from '@/components/ui/button';
@@ -89,8 +90,26 @@ const JoiningAndLeaving = () => {
   return (
     <AdminPage
       section="People"
-      title="Joining and leaving"
-      description="What somebody receives when you add them, what they start out able to do, and what happens to their number, their data and their account when they go."
+      title={
+        <span className="flex items-center gap-2">
+          <span className="dir-serif-heading">Joining and leaving</span>
+          <CustomTooltip
+            text={
+              <>
+                What somebody receives when you add them, what
+                <br />
+                they start out able to do, and what happens to
+                <br />
+                their number, data and account when they go.
+              </>
+            }
+            side="top"
+            className="!bg-gray-300 !text-black whitespace-normal text-left"
+          >
+            <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+          </CustomTooltip>
+        </span>
+      }
       actions={
         <Button type="button" variant="outline" onClick={() => navigate('/admin-settings/people')}>
           Open the people list

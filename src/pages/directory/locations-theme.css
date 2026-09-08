@@ -7,6 +7,12 @@
   display: contents;
 }
 
+/* shadcn's DialogContent uses `bg-background`, which is the app-wide ground
+   colour (#eef1f8) now — this dialog wants plain white instead. */
+.loc-create-dialog {
+  background: #fff;
+}
+
 /* The shared .fchip search/filter pills turn their border/text --accent-ink
    on hover, which defaults to blue since this page sets no accent override —
    kept black here instead. */

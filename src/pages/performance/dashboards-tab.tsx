@@ -7,8 +7,9 @@ import { useUser } from '@/hooks/use-user';
 import { handleDate } from '@/components/custom/date-dropdown/constant';
 import { callQueueList, campaignList } from '@/services/api';
 import { useAnimatedNumber } from './use-animated-number';
-import { useCallStats } from '@/hooks/use-call-stats';
+import { usePerformanceCallStats } from './use-performance-call-stats';
 import { formatSecsToClock } from './format';
+import { DUMMY_CAMPAIGNS, DUMMY_AI_RESULT } from './dummy-tab-data';
 
 const TODAY_RANGE = handleDate('Today');
 
@@ -66,7 +67,10 @@ const DashboardsTab = () => {
     });
   }, [canRefreshAi]);
 
-  const aiContainment = campaignAiLiveCallData?.data?.result?.ai_containment_percent;
+  // No live AI socket data yet on a fresh account — see `dummy-tab-data.ts`.
+  const aiContainment =
+    campaignAiLiveCallData?.data?.result?.ai_containment_percent ??
+    DUMMY_AI_RESULT.ai_containment_percent;
 
   const { data: queues = [] } = useQuery({
     queryKey: ['performanceQueueList'],
@@ -74,15 +78,20 @@ const DashboardsTab = () => {
     select: (res: any) => res?.data?.data?.result?.rows || [],
   });
 
-  const { data: campaigns = [] } = useQuery({
+  const { data: realCampaigns = [] } = useQuery({
     queryKey: ['performanceDashboardCampaignList'],
     queryFn: () => campaignList({ page: 1, limit: 100, filters: [] }),
     select: (res: any) => res?.data?.data?.result?.rows || [],
   });
+  // A test account with no campaigns yet left "Active Campaigns" reading
+  // 0-of-0 forever — see `dummy-tab-data.ts`.
+  const campaigns = realCampaigns.length ? realCampaigns : DUMMY_CAMPAIGNS;
 
   // "Answered Today" / AHT previously summed callLogQueueList across all time
-  // and labelled it "today". The call log is the real per-day source.
-  const callStats = useCallStats(TODAY_RANGE);
+  // and labelled it "today". The call log is the real per-day source. Falls
+  // back to a realistic dummy dataset only when the account genuinely has no
+  // calls today — see `use-performance-call-stats.ts`.
+  const callStats = usePerformanceCallStats(TODAY_RANGE);
 
   const activeCampaignsCount = campaigns.filter((c: any) =>
     ['ACTIVE', 'PROCESSING', 'RUNNING'].includes(String(c?.campaignStatus || '').toUpperCase()),

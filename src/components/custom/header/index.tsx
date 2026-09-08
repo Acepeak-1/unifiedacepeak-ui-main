@@ -398,7 +398,7 @@ const Header = () => {
               )}
               <button
                 type="button"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-[#262626] text-gray-700 dark:text-gray-300 transition-colors hover:bg-ucass-primary-200 hover:text-foreground md:hidden"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-[#262626] text-gray-700 dark:text-gray-300 transition-colors hover:bg-ucass-primary-200 hover:text-foreground md:hidden"
                 onClick={() => setIsMobileMenuOpen((prev) => !prev)}
                 aria-label={isMobileMenuOpen ? 'Close header menu' : 'Open header menu'}
                 aria-expanded={isMobileMenuOpen}
@@ -431,16 +431,14 @@ const Header = () => {
                   }
                   .hdr-quick-toggle {
                     display: inline-flex; align-items: center; justify-content: center;
-                    width: 38px; height: 38px; border-radius: 12px;
+                    width: 38px; height: 38px; border-radius: 999px;
                     background: #f3f4f6; color: #374151; cursor: pointer;
-                    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
                     transition: transform .3s cubic-bezier(.34,1.56,.64,1),
-                                background .15s ease, color .15s ease, box-shadow .15s ease;
+                                background .15s ease, color .15s ease;
                   }
-                  .hdr-quick-toggle:hover { background: #fee2e2; color: var(--foreground); box-shadow: 0 2px 6px rgba(220, 38, 38, .15); }
+                  .hdr-quick-toggle:hover { background: #fee2e2; color: var(--foreground); }
                   .hdr-quick-toggle.on {
                     transform: rotate(135deg); background: var(--primary); color: #fff;
-                    box-shadow: 0 2px 8px color-mix(in oklab, var(--primary) 35%, transparent);
                   }
 
                   .hdr-quick {
@@ -495,7 +493,7 @@ const Header = () => {
                   <div className="inline-flex items-center justify-center font-medium">
                     <CustomTooltip text={'Tasks'} side="bottom">
                       <span
-                        className={`cursor-pointer relative flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-lg transition-all ${activePath === ACTIVE_PATH.CALENDAR && currentView === 'task-list' ? 'bg-ucass-primary-200 text-primary' : 'bg-gray-100 text-gray-700 dark:bg-[#262626] dark:text-gray-300 hover:bg-ucass-primary-200 hover:text-foreground'}`}
+                        className={`cursor-pointer relative flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-full transition-all ${activePath === ACTIVE_PATH.CALENDAR && currentView === 'task-list' ? 'bg-ucass-primary-200 text-primary' : 'bg-gray-100 text-gray-700 dark:bg-[#262626] dark:text-gray-300 hover:bg-ucass-primary-200 hover:text-foreground'}`}
                         {...getHeaderRouteHandlers(taskRoute)}
                       >
                         {unreadTaskCount > 0 ? (
@@ -510,7 +508,7 @@ const Header = () => {
 
                   <CustomTooltip text={'Calendar'} side="bottom">
                     <span
-                      className={`cursor-pointer ${ACTIVE_PATH?.CALENDAR === activePath && currentView === 'calendar' ? 'bg-ucass-primary-200 text-primary' : 'bg-gray-100 text-gray-700 dark:bg-[#262626] dark:text-gray-300 hover:text-foreground'} flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-lg hover:bg-ucass-primary-200`}
+                      className={`cursor-pointer ${ACTIVE_PATH?.CALENDAR === activePath && currentView === 'calendar' ? 'bg-ucass-primary-200 text-primary' : 'bg-gray-100 text-gray-700 dark:bg-[#262626] dark:text-gray-300 hover:text-foreground'} flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-full hover:bg-ucass-primary-200`}
                       {...getHeaderRouteHandlers(calendarRoute)}
                     >
                       <CalendarIcon className="w-4.5 h-4.5" />
@@ -519,7 +517,7 @@ const Header = () => {
                   {campaignAccess && (
                     <CustomTooltip text={'My Campaigns'} side="bottom">
                       <span
-                        className={`cursor-pointer ${ACTIVE_PATH?.RUNNING_CAMPAIGN === activePath ? 'bg-ucass-primary-200 text-primary' : 'bg-gray-100 text-gray-700 dark:bg-[#262626] dark:text-gray-300 hover:text-foreground'} flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-lg hover:bg-ucass-primary-200`}
+                        className={`cursor-pointer ${ACTIVE_PATH?.RUNNING_CAMPAIGN === activePath ? 'bg-ucass-primary-200 text-primary' : 'bg-gray-100 text-gray-700 dark:bg-[#262626] dark:text-gray-300 hover:text-foreground'} flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-full hover:bg-ucass-primary-200`}
                         {...getHeaderRouteHandlers(myCampaignsRoute)}
                       >
                         <Headphones className="w-4.5 h-4.5" />
@@ -528,7 +526,7 @@ const Header = () => {
                   )}
                   {/* <CustomTooltip text={'Running Campaigns'} side="bottom">
               <span
-                className={`cursor-pointer ${ACTIVE_PATH?.RUNNING_CAMPAIGN === activePath ? 'bg-ucass-primary-200 text-primary hover:text-primary' : 'bg-white text-gray-700 dark:bg-[#262626] dark:text-gray-300'} flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-lg hover:bg-ucass-primary-200 hover:text-primary`}
+                className={`cursor-pointer ${ACTIVE_PATH?.RUNNING_CAMPAIGN === activePath ? 'bg-ucass-primary-200 text-primary hover:text-primary' : 'bg-white text-gray-700 dark:bg-[#262626] dark:text-gray-300'} flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-full hover:bg-ucass-primary-200 hover:text-primary`}
                 onClick={() => openPowerCampaign()}
               >
                 <CallForwardLine className="w-4.5 h-4.5" />
@@ -536,7 +534,7 @@ const Header = () => {
             </CustomTooltip> */}
                   <CustomTooltip text={'Activity'} side="bottom">
                     <span
-                      className={`cursor-pointer ${ACTIVE_PATH?.ACTIVITY === activePath ? 'bg-ucass-primary-200 text-primary' : 'bg-gray-100 text-gray-700 dark:bg-[#262626] dark:text-gray-300 hover:text-foreground'} flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-lg hover:bg-ucass-primary-200`}
+                      className={`cursor-pointer ${ACTIVE_PATH?.ACTIVITY === activePath ? 'bg-ucass-primary-200 text-primary' : 'bg-gray-100 text-gray-700 dark:bg-[#262626] dark:text-gray-300 hover:text-foreground'} flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-full hover:bg-ucass-primary-200`}
                       {...getHeaderRouteHandlers(activityRoute)}
                     >
                       <ActivityIcon className="w-4.5 h-4.5" />
@@ -546,7 +544,7 @@ const Header = () => {
                     <div className="inline-flex items-center justify-center font-medium">
                       <CustomTooltip text={'Monitoring'} side="bottom">
                         <span
-                          className={`cursor-pointer ${ACTIVE_PATH?.ALL_CALLS === activePath ? 'bg-ucass-primary-200 text-primary' : 'bg-gray-100 text-gray-700 dark:bg-[#262626] dark:text-gray-300 hover:text-foreground'} flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-lg hover:bg-ucass-primary-200`}
+                          className={`cursor-pointer ${ACTIVE_PATH?.ALL_CALLS === activePath ? 'bg-ucass-primary-200 text-primary' : 'bg-gray-100 text-gray-700 dark:bg-[#262626] dark:text-gray-300 hover:text-foreground'} flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-full hover:bg-ucass-primary-200`}
                           {...getHeaderRouteHandlers(monitoringRoute)}
                         >
                           <Monitor className="w-4.5 h-4.5" />
@@ -567,7 +565,7 @@ const Header = () => {
               {/* <div className="inline-flex items-center justify-center font-medium">
                 <CustomTooltip text={'AI Chat Requests'} side="bottom">
                   <span
-                    className="cursor-pointer relative bg-gray-100 dark:bg-[#262626] flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-lg hover:bg-ucass-primary-200 hover:text-primary"
+                    className="cursor-pointer relative bg-gray-100 dark:bg-[#262626] flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-full hover:bg-ucass-primary-200 hover:text-primary"
                     onClick={() => {
                       setPendingChatState(true);
                       setIsMobileMenuOpen(false);
@@ -597,7 +595,7 @@ const Header = () => {
               <div className="inline-flex items-center justify-center font-medium">
                 <CustomTooltip text={'Notification'} side="bottom">
                   <span
-                    className="cursor-pointer relative bg-gray-100 dark:bg-[#262626] flex items-center justify-center min-h-[38px] min-w-[38px] max-w-[38px] max-h-[38px] rounded-xl shadow-sm transition-all hover:bg-ucass-primary-200 hover:text-foreground hover:shadow"
+                    className="cursor-pointer relative bg-gray-100 dark:bg-[#262626] flex items-center justify-center min-h-[38px] min-w-[38px] max-w-[38px] max-h-[38px] rounded-full transition-all hover:bg-ucass-primary-200 hover:text-foreground"
                     onClick={() => {
                       setNotificationState(true);
                       setIsMobileMenuOpen(false);
@@ -628,7 +626,7 @@ const Header = () => {
                 <div className="flex items-center">
                   <CustomTooltip text={'Add Funds'} side="bottom">
                     <div
-                      className="group flex items-center gap-2 px-3.5 h-[38px] rounded-full border border-ucass-primary-200/70 bg-ucass-primary-100 shadow-sm transition-all hover:shadow-md hover:-translate-y-px cursor-pointer dark:border-primary/25 dark:bg-primary/10"
+                      className="group flex items-center gap-2 px-3.5 h-[38px] rounded-full border border-ucass-primary-200/70 bg-ucass-primary-100 transition-all hover:-translate-y-px cursor-pointer dark:border-primary/25 dark:bg-primary/10"
                       {...getHeaderRouteHandlers(addFundsRoute)}
                     >
                       <Wallet className="w-4.5 h-4.5 text-primary group-hover:scale-110 transition-transform duration-300" />
@@ -641,7 +639,7 @@ const Header = () => {
               ) : null}
 
               {/* User Profile */}
-              <div className="flex shrink-0 items-center rounded-full bg-gray-100 shadow-sm transition-all hover:shadow-md dark:bg-[#262626]">
+              <div className="flex shrink-0 items-center rounded-full bg-gray-100 transition-all dark:bg-[#262626]">
                 <Popover
                   open={profileState === 'profile'}
                   onOpenChange={(val) => setProfileState(val ? 'profile' : null)}

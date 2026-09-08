@@ -40,7 +40,17 @@ const maskingOptions: ISELECTVALUE[] = [
   { label: 'None', value: 'N' },
 ];
 
-const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data }) => {
+const DisplayNumberModal: FC<ModalProps & { anchorRight?: boolean }> = ({
+  modalState,
+  setModalState,
+  data,
+  /* Off by default — the original centered dialog, unchanged for every
+     caller except the Preferences page (see the comment where this is
+     passed in from common-settings/index.tsx). Only adds `lg:`-prefixed
+     position overrides below, so a narrow screen still gets the normal
+     centered modal either way. */
+  anchorRight = false,
+}) => {
   const { settings = {} } = data || {};
   const {
     watch,
@@ -87,21 +97,32 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
     });
     setModalState(false);
   };
-  return (
-    <Dialog open={modalState} onOpenChange={setModalState}>
-      <DialogContent
-        className="sm:w-1/2 lg:w-1/4 p-3 max-h-[99%] overflow-y-auto"
-        showCloseButton={false}
-      >
-        <div className="flex flex-col gap-1.5  text-900/80">
-          <div className="font-semibold truncate text-[18px] flex items-center justify-between">
+  /* The fields, header and footer are identical in both modes — only the
+     wrapper around them differs. Kept as one JSX value rather than two
+     copies so there is exactly one place that ever needs to change. */
+  const content = (
+    <>
+      <div className="flex flex-col gap-1.5  text-900/80">
+          {/* 15px only for the Preferences page's own anchored panel, to
+             match its "Regional"/"Calling" section headers — every other
+             caller keeps the original 18px dialog title. */}
+          <div
+            className={`font-semibold truncate flex items-center justify-between ${anchorRight ? 'text-[15px]' : 'text-[18px]'}`}
+          >
             Display Number
-            <div
-              onClick={handleCancel}
-              className="cursor-pointer ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
-            >
-              <CloseIcon className="w-3 h-3" />
-            </div>
+            {/* The anchored Preferences panel has nothing to close — it's
+               always visible, not opened/dismissed — so this icon (which
+               only ever reverted values and, for every other caller,
+               closed the dialog) is dropped for that mode only. Every
+               other caller keeps it exactly as before. */}
+            {!anchorRight && (
+              <div
+                onClick={handleCancel}
+                className="cursor-pointer ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
+              >
+                <CloseIcon className="w-3 h-3" />
+              </div>
+            )}
           </div>
         </div>
         <ul role="list" className="divide-y divide-gray-200">
@@ -146,7 +167,11 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
               <div className="flex gap-2 flex-col">
                 <div className="flex flex-col gap-1">
                   <p className="font-semibold text-[14px] text-gray-900">Masking</p>
-                  <p className="text-gray-800 text-[12px]">
+                  {/* text-xs text-gray-500 (12px, #6B7891) for this page's
+                     anchored panel only, matching its other helper text
+                     (e.g. the Regional card's CompanyLockNote); every
+                     other caller keeps text-gray-800 text-[12px]. */}
+                  <p className={anchorRight ? 'text-xs text-gray-500' : 'text-gray-800 text-[12px]'}>
                     {showMaskingInputDesc[maskingValue as Exclude<MaskingType, 'N'>] ??
                       'Invalid masking type'}
                   </p>
@@ -280,16 +305,55 @@ const DisplayNumberModal: FC<ModalProps> = ({ modalState, setModalState, data })
           </li>
         </ul>
 
-        <DialogFooter>
-          <div className="justify-end flex gap-2">
+      <DialogFooter>
+        <div className="justify-end flex gap-2">
+          {/* Same reasoning as the close icon above — nothing to cancel out
+             of on the always-visible Preferences panel. Every other
+             caller keeps Cancel exactly as before. */}
+          {!anchorRight && (
             <Button type="button" variant={'transparent'} onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="button" variant={'dark'} onClick={() => handleSubmit()}>
-              Submit
-            </Button>
-          </div>
-        </DialogFooter>
+          )}
+          <Button type="button" variant={'dark'} onClick={() => handleSubmit()}>
+            Submit
+          </Button>
+        </div>
+      </DialogFooter>
+    </>
+  );
+
+  /* anchorRight (Preferences page only): a real always-visible panel, not
+     a forced-open Dialog. Radix's Dialog applies focus-trap, body-scroll-
+     lock and an inert background whenever it is open — permanently true
+     here would have permanently blocked interaction with the Regional /
+     Calling cards beside it. Plain positioning avoids that entirely, at
+     the cost of not being a real Dialog: no focus trap, no ESC-to-close,
+     no overlay — which is exactly what an always-open side panel needs
+     instead of a modal. Every other caller is untouched below. */
+  if (anchorRight) {
+    /* Positioning itself (fixed, width, offsets) lives in the Preferences
+       page's own CSS (scoped to .acepeak-preferences .acepeak-dn-panel),
+       not as Tailwind lg: utilities here — this project redefines the
+       "lg" breakpoint to 1280px (see index.css's @theme block), which
+       didn't match the page's own hand-written 1024px breakpoint for its
+       two-column grid, leaving this panel keying off the wrong width.
+       Plain CSS on the one page that uses this class avoids relying on
+       Tailwind's breakpoint tokens matching some other, unrelated CSS. */
+    return (
+      <div className="acepeak-dn-panel bg-white text-card-foreground w-full rounded-xl border p-3 shadow-lg flex flex-col gap-4">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Dialog open={modalState} onOpenChange={setModalState}>
+      <DialogContent
+        className="sm:w-1/2 lg:w-1/4 p-3 max-h-[99%] overflow-y-auto"
+        showCloseButton={false}
+      >
+        {content}
       </DialogContent>
     </Dialog>
   );

@@ -77,6 +77,8 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
   const location = useLocation();
   const [search, setSearch] = useState('');
   const [removingForwardingUuid, setRemovingForwardingUuid] = useState('');
+  const [assigningUuid, setAssigningUuid] = useState('');
+  const [justAssignedUuid, setJustAssignedUuid] = useState('');
   const [reassignData, setReassignData] = useState<{
     open: boolean;
     didUuid: string;
@@ -121,11 +123,10 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
 
   const { mutate: assignNumber, isPending: isAssigning } = useMutation({
     mutationFn: addReceptionistDid,
-    onSuccess: () => {
+    onSuccess: (_data: any, variables: any) => {
       handleAlert({ text: 'Number assigned successfully!', type: 'success' });
       invalidateReceptionistAndNumberQueries(queryClient);
-      resetModalState();
-      onClose();
+      setJustAssignedUuid(variables?.did_uuid || '');
     },
     onError: (err: any) => {
       handleAlert({
@@ -133,6 +134,7 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
         type: 'error',
       });
     },
+    onSettled: () => setAssigningUuid(''),
   });
 
   const { mutate: mutateRemoveForwarding, isPending: isRemovingForwarding } = useMutation({
@@ -170,6 +172,8 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
 
   function resetModalState() {
     setSearch('');
+    setAssigningUuid('');
+    setJustAssignedUuid('');
     setReassignData({
       open: false,
       didUuid: '',
@@ -186,6 +190,7 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
   const handleAssignNumber = (didUuid: string, type?: 're-assign') => {
     if (!didUuid) return;
 
+    setAssigningUuid(didUuid);
     assignNumber({
       agentId: receptionistData?.agent_uuid || receptionistData?.id,
       did_uuid: didUuid,
@@ -208,35 +213,38 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
         if (!value) closeModal();
       }}
     >
-      <DialogContent className="w-[680px] p-0 gap-0" showCloseButton={false}>
-        <div className="p-5 border-b border-gray-200 flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-0.5">
-            <DialogTitle className="text-xl font-semibold text-gray-900">
-              Assign Caller ID
-            </DialogTitle>
-            <p className="text-sm text-gray-500">
-              Selecting number for <span className="text-primary font-semibold">{agentName}</span>
-            </p>
+      <DialogContent className="w-[680px] p-0 gap-0 overflow-hidden rounded-2xl!" showCloseButton={false}>
+        <div className="flex items-start justify-between gap-4 border-b border-neutral-200 bg-white p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-0.5">
+              <DialogTitle className="text-xl font-semibold text-neutral-900">
+                Assign Caller ID
+              </DialogTitle>
+              <p className="text-sm text-neutral-500">
+                Selecting number for{' '}
+                <span className="text-[13px] font-normal text-slate-950">{agentName}</span>
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={closeModal}
-            className="text-gray-500 hover:text-gray-900 cursor-pointer"
+            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600"
           >
             <Icon name="XIcon" className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-4 flex flex-col gap-4">
+        <div className="flex flex-col gap-4 bg-white p-4">
           <Input
             placeholder="Search numbers..."
-            className="pl-10"
+            className="rounded-full! border-neutral-200! pl-10 focus-visible:border-neutral-900! focus-visible:ring-neutral-100!"
             IconPosition="left-0 pl-3 inset-y-0"
             value={search}
             inputMode="numeric"
             pattern="[0-9]*"
             onChange={(event) => setSearch(event.target.value.replace(/\D/g, ''))}
-            Icon={<SearchLine className="text-gray-500" />}
+            Icon={<SearchLine className="text-red-600" />}
           />
 
           <div className="flex flex-col gap-3 max-h-[calc(100vh_-_23rem)] overflow-y-auto pr-1 min-h-[240px]">
@@ -248,39 +256,42 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
               filteredNumbers.map((item: any) => {
                 const assignedName =
                   `${item?.User?.first_name || ''}${item?.User?.last_name ? ` ${item.User.last_name}` : ''}`.trim();
+                const isJustAssigned = Boolean(justAssignedUuid) && justAssignedUuid === item?.uuid;
                 const isAssignedToCurrentAgent =
+                  isJustAssigned ||
                   assignedDidKeys.has(String(item?.uuid || '')) ||
                   assignedDidKeys.has(String(item?.did_number || ''));
-                const isAssignedToUser = Boolean(item?.user_uuid || assignedName);
-                const isForwarded = Boolean(item?.forward_call_actions);
+                const isAssignedToUser = !isJustAssigned && Boolean(item?.user_uuid || assignedName);
+                const isForwarded = !isJustAssigned && Boolean(item?.forward_call_actions);
                 const isRemovingThisForwarding =
                   isRemovingForwarding && removingForwardingUuid === item?.uuid;
                 const isReassignDisabled = isAssigning || isRemovingForwarding || isForwarded;
+                const isThisAssigning = isAssigning && assigningUuid === item?.uuid;
 
                 return (
                   <div
                     key={item?.uuid || item?.did_number}
-                    className="w-full border border-gray-200 rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
+                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-neutral-200 px-4 py-3 transition-colors hover:border-neutral-300 hover:bg-neutral-50"
                   >
                     <div className="flex flex-col gap-1">
                       <NumberWithFlag number={item?.did_number} />
                       {isAssignedToCurrentAgent ? (
-                        <p className="text-xs font-medium flex items-center gap-1 text-gray-500">
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+                        <p className="text-xs font-medium flex items-center gap-1 text-neutral-500">
+                          <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 inline-block" />
                           Assigned to this Receptionist
-                          <span className="text-gray-700">- {agentName}</span>
+                          <span className="text-neutral-700">- {agentName}</span>
                         </p>
                       ) : isAssignedToUser ? (
-                        <p className="text-xs font-medium flex items-center gap-1 text-gray-500">
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+                        <p className="text-xs font-medium flex items-center gap-1 text-neutral-500">
+                          <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 inline-block" />
                           Assigned to User
                           {assignedName ? (
-                            <span className="text-gray-700">- {assignedName}</span>
+                            <span className="text-neutral-700">- {assignedName}</span>
                           ) : null}
                         </p>
                       ) : isForwarded ? (
-                        <p className="text-primary text-xs font-medium flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+                        <p className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
                           Forwarded
                         </p>
                       ) : (
@@ -292,20 +303,15 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
                     </div>
 
                     {isAssignedToCurrentAgent ? (
-                      <Button
-                        size="sm"
-                        variant="destructiveOutline"
-                        className="min-w-[110px]"
-                        disabled
-                      >
+                      <span className="inline-flex h-8 min-w-[110px] shrink-0 select-none items-center justify-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 text-xs font-medium text-red-600">
                         <Icon name="DoneIcon" className="w-4 h-4" />
                         Assigned
-                      </Button>
+                      </span>
                     ) : isAssignedToUser ? (
                       <Button
                         size="sm"
-                        variant="destructiveOutline"
-                        className="min-w-[110px]"
+                        variant="ghost"
+                        className="min-w-[110px] rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-none hover:bg-neutral-50 hover:text-neutral-700"
                         disabled={isReassignDisabled}
                         title={
                           isForwarded
@@ -328,8 +334,8 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
                     ) : isForwarded ? (
                       <Button
                         size="sm"
-                        variant="destructiveOutline"
-                        className="min-w-[150px] shrink-0"
+                        variant="ghost"
+                        className="min-w-[150px] shrink-0 rounded-full border border-amber-200 bg-white text-amber-600 shadow-none hover:bg-amber-50 hover:text-amber-600"
                         disabled={isAssigning || isRemovingForwarding}
                         onClick={() => handleRemoveForwarding(item?.uuid)}
                       >
@@ -345,13 +351,19 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
                     ) : (
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="min-w-[110px]"
+                        variant="ghost"
+                        className="min-w-[110px] rounded-full border border-neutral-200 bg-neutral-100 text-neutral-600 shadow-none hover:bg-neutral-200 hover:text-neutral-600"
                         disabled={isAssigning || isRemovingForwarding}
                         onClick={() => handleAssignNumber(item?.uuid)}
                       >
-                        <Icon name="AssignNumberLine" className="w-4 h-4" />
-                        Assign
+                        {isThisAssigning ? (
+                          <Loader variant="blue" />
+                        ) : (
+                          <>
+                            <Icon name="AssignNumberLine" className="w-4 h-4" />
+                            Assign
+                          </>
+                        )}
                       </Button>
                     )}
                   </div>
@@ -365,11 +377,11 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between border-t border-neutral-200 bg-white px-4 py-3">
           <Button
             type="button"
-            variant="outline"
-            className="rounded-xl"
+            variant="ghost"
+            className="rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-none hover:border-red-200 hover:bg-red-50 hover:text-red-600"
             onClick={() => {
               closeModal();
               navigate('/admin-settings/numbers/all?openAddNumber=1', {
@@ -383,7 +395,7 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
           <Button
             type="button"
             variant="transparent"
-            className="text-gray-700"
+            className="text-neutral-500 hover:text-red-600"
             onClick={closeModal}
           >
             Done
@@ -400,21 +412,24 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
           }))
         }
       >
-        <DialogContent className="w-[460px] max-w-[calc(100%-2rem)] p-6" showCloseButton={false}>
+        <DialogContent
+          className="w-[460px] max-w-[calc(100%-2rem)] rounded-2xl! p-6"
+          showCloseButton={false}
+        >
           <div className="flex flex-col items-center text-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-500">
+            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-600">
               <Icon name="AlertIcon" className="w-8 h-8" />
             </div>
 
-            <DialogTitle className="text-[34px] font-semibold leading-none text-gray-900">
+            <DialogTitle className="text-[28px] font-semibold leading-none text-neutral-900">
               Re-assign Caller ID?
             </DialogTitle>
 
-            <p className="text-gray-500 text-sm leading-6">
+            <p className="text-neutral-500 text-sm leading-6">
               The number{' '}
-              <span className="text-gray-800 font-semibold">{reassignData.didNumber}</span> is
+              <span className="text-neutral-800 font-semibold">{reassignData.didNumber}</span> is
               currently assigned to User{' '}
-              <span className="text-primary font-semibold">- {reassignData.assignedTo}</span>.{' '}
+              <span className="text-red-600 font-semibold">- {reassignData.assignedTo}</span>.{' '}
               Re-assigning it will assign it to{' '}
               <span className="text-green-600 font-semibold">{agentName}</span>. Proceed?
             </p>
@@ -422,8 +437,8 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
             <div className="w-full flex items-center gap-3 pt-1">
               <Button
                 type="button"
-                variant="secondary"
-                className="flex-1 min-w-0"
+                variant="ghost"
+                className="flex-1 min-w-0 rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-none hover:bg-neutral-50 hover:text-neutral-700"
                 onClick={() =>
                   setReassignData({
                     open: false,
@@ -437,8 +452,8 @@ const AssignReceptionistCallerIdModal: FC<AssignReceptionistCallerIdModalProps> 
               </Button>
               <Button
                 type="button"
-                variant="destructive"
-                className="flex-1 min-w-0"
+                variant="ghost"
+                className="flex-1 min-w-0 rounded-full bg-red-600 text-white shadow-[0_2px_10px_rgba(220,38,38,.3)] hover:bg-red-700 hover:text-white"
                 disabled={isAssigning || !reassignData.didUuid}
                 onClick={() => {
                   if (!reassignData.didUuid) return;

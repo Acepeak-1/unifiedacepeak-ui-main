@@ -60,21 +60,15 @@ const OrderSummary = ({
           Order Summary
         </h5>
 
-        <ul className="grid grid-cols-1 gap-x-10 gap-y-2 pt-3 text-xs text-gray-800 sm:grid-cols-2">
-          <li className="flex items-center justify-between gap-2">
+        <ul className="grid grid-cols-1 gap-x-10 gap-y-1 pt-3 text-xs text-gray-800 sm:grid-cols-2">
+          <li className="flex items-center gap-2 sm:col-span-2">
             <span className="font-semibold">Monthly License Cost:</span>
 
             {isLoading ? (
               <Skeleton className="h-3 w-[60px] bg-gray-200" />
             ) : (
-              <>${getTaxes?.plan_cost}</>
+              <>$ {getTaxes?.plan_cost}</>
             )}
-          </li>
-          <li className="flex items-center justify-between gap-2">
-            <span className="font-semibold">
-              Prorated Period ({today?.format('MMM D')} – {expirationDate?.format('MMM D')}):
-            </span>{' '}
-            {remainingDays} days
           </li>
           <li className="flex items-center justify-between gap-2">
             <span className="font-semibold">Prorated Charge for {totalPayableUnit} Licenses:</span>{' '}
@@ -98,7 +92,13 @@ const OrderSummary = ({
               </div>
             )}
           </li>
-          <li className="flex items-center justify-between gap-2 sm:col-span-2">
+          <li className="flex items-center justify-between gap-2">
+            <span className="font-semibold">
+              Prorated Period ({today?.format('MMM D')} – {expirationDate?.format('MMM D')}):
+            </span>{' '}
+            {remainingDays} days
+          </li>
+          <li className="flex items-center justify-between gap-2">
             <span className="font-semibold">Total Amount:</span>
 
             {isLoading ? (

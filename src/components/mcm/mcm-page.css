@@ -27,7 +27,7 @@
 .mcm-page {
   /* Hover edge for the portrait stat cards (Performance). */
   --stat-hover-line: #e9adc3;
-  --ground: #f5f5f5;
+  --ground: #efefef;
   --surface: #ffffff;
   --surface-2: #fafafa;
   --surface-3: #eeeeee;
@@ -743,6 +743,14 @@
   gap: 7px;
   flex-wrap: wrap;
   margin-bottom: 14px;
+}
+/* Search/filters row, when it renders inside .panel-card (DirectoryPage) —
+   the whole card reads as one unit, search through table, instead of the
+   search bar sitting as a separate block above a second white card. */
+.mcm-page .tbar-in-card {
+  margin-bottom: 0;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
 }
 .mcm-page .fchip {
   display: inline-flex;
@@ -2711,18 +2719,13 @@
   margin-left: 3px;
   background: #fff;
   box-shadow: 0 1px 2px rgb(13 21 38 / 0.25);
-  translate: 2px 0;
+  translate: 2px -50%;
 }
 /* Override `translate`, not `transform`: Tailwind v4's translate-x-* sets the
    standalone `translate` property, so a transform here stacked on top of it
    and pushed the thumb clean out of the track. */
 .mcm-page [data-slot='switch'][data-state='checked'] [data-slot='switch-thumb'] {
-  translate: 15px 0;
-  transform: none;
-}
-.mcm-page [data-slot='switch'][data-state='unchecked'] [data-slot='switch-thumb'] {
-  translate: 0 0;
-  transform: none;
+  translate: 16px 0;
 }
 
 /* 3. Radio dots were a hairline ring that all but vanished against the
@@ -2834,8 +2837,8 @@
    Scoped to the nav — `h-14` is used inside pages too, and shrinking those
    would squash the Call Rules panels. */
 .mcm-admin .mcm-adminnav .h-14 {
-  height: 46px;
-  min-height: 46px;
+  height: 40px;
+  min-height: 40px;
 }
 
 .mcm-admin a,
@@ -2916,7 +2919,7 @@
   --surface: #ffffff;
   --surface-2: #fafafa;
   --surface-3: #eeeeee;
-  --ground: #f5f5f5;
+  --ground: #efefef;
   --line: #e5e5e5;
   --line-2: #efefef;
   --ink: #0d1526;
@@ -2945,7 +2948,7 @@
   --shadow-sm: 0 1px 2px rgba(13, 21, 38, 0.06), 0 1px 1px rgba(13, 21, 38, 0.04);
   --shadow: 0 4px 14px rgba(13, 21, 38, 0.07), 0 1px 3px rgba(13, 21, 38, 0.05);
 
-  background: #e3e3e3;
+  background: #f5f6f8;
 }
 
 .mcm-adminhome-head {
@@ -2974,7 +2977,6 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 10px;
 }
 .mcm-adminhome-head h1 {
   margin: 0;
@@ -3059,7 +3061,15 @@
   font-size: 14px;
 }
 
-.mcm-adminhome-tabs {
+/* `.mcm-page .ptabstrip` (this strip's other class, shared by ~10 other
+   tab strips) sets its own `gap: 0` at higher specificity (two classes vs.
+   one) than a bare `.mcm-adminhome-tabs` selector, which silently won the
+   cascade and collapsed the gap between "All" and "Recently used" — the
+   active tab's pink pill sized itself to the button's own box correctly,
+   but with nothing separating the buttons it read as touching the next
+   one. `.mcm-page` prefixed here too, matching the button rule below it,
+   to actually win. */
+.mcm-page .mcm-adminhome-tabs {
   position: relative;
   flex: none;
   gap: 14px;
@@ -3185,7 +3195,7 @@
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--accent-ink);
+  color: #dc2626;
 }
 .mcm-adminoverview-eyebrow::after {
   content: '';
@@ -4143,24 +4153,34 @@
   transition: padding 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 /* No separator line between rows at all, in either state — rows read as a
-   quiet list on their own spacing/hover states alone. */
-.mcm-admin .mcm-adminnav.divide-y > * + * {
-  border-top: 0;
+   quiet list on their own spacing/hover states alone.
+   The actual `divide-y` rule Tailwind v4 generates is
+   `:where(.divide-y > :not(:last-child)) { border-bottom-width: ... }` —
+   bottom, not top, and wrapped in `:where()` for zero specificity. The old
+   override here targeted `border-top` on a `* + *` selector, which is the
+   Tailwind v3 shape of this utility and never matched what v4 actually
+   sets, so the line survived on every row but the last. A plain
+   (non-`:where`) selector beats zero specificity outright — no
+   `!important` needed. */
+.mcm-admin .mcm-adminnav.divide-y > * {
+  border-top-width: 0;
+  border-bottom-width: 0;
 }
 
 /* Every row: section triggers and leaf tiles alike. A long label ("Social
    Media Channels", "SMS/Calling Rates") wraps onto a second line instead of
    truncating with an ellipsis — `min-height` (not a fixed `height`) lets the
-   row grow to fit it without clipping. */
+   row grow to fit it without clipping. Tightened from 38px/6px so rows sit
+   closer together — the gap between them was mostly this padding. */
 .mcm-admin .mcm-adminnav .h-14,
 .mcm-admin .mcm-adminnav .min-h-14 {
-  min-height: 38px;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  min-height: 32px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   padding-left: 4px;
   padding-right: 4px;
   border: 1px solid transparent;
-  border-radius: var(--r-sm);
+  border-radius: 5px;
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-2);
@@ -4171,6 +4191,7 @@
     color 0.15s ease,
     box-shadow 0.15s ease,
     border-color 0.15s ease,
+    transform 0.2s ease,
     padding 0.5s cubic-bezier(0.22, 1, 0.36, 1),
     gap 0.5s cubic-bezier(0.22, 1, 0.36, 1),
     margin 0.5s cubic-bezier(0.22, 1, 0.36, 1);
@@ -4184,11 +4205,52 @@
   text-overflow: clip;
   white-space: normal;
 }
+/* Nested children (`.pl-10`, indented under an open section) read one step
+   down from the section rows and their own top-level siblings — slightly
+   smaller text and icon rather than identical sizing at every depth. */
+.mcm-admin .mcm-adminnav .min-h-14.pl-10 {
+  font-size: 12px;
+}
+.mcm-admin .mcm-adminnav .min-h-14.pl-10 svg {
+  width: 17px;
+  height: 17px;
+}
 /* Leaf tiles (`.min-h-14`) are one plain element, so painting the fill
-   directly on it is safe — there's nothing else to leave uncovered. */
+   directly on it is safe — there's nothing else to leave uncovered. Text
+   stays black on hover: red is reserved for "you are here", not "you're
+   pointing at this". Grey, not pink — a quieter hover than the section
+   rows' active-page accent, which stays reserved for "you are here". */
 .mcm-admin .mcm-adminnav .min-h-14:hover {
-  background: var(--accent-wash);
-  color: var(--accent-ink);
+  background: #f3f4f6;
+  color: var(--ink);
+}
+/* Section rows are split across two flex siblings by the shared
+   AccordionTrigger — the icon+label div (`.h-14`) and the chevron sit
+   side by side with a gap between them, so painting the hover fill on
+   `.h-14` alone left the chevron and the gap next to it unhovered, a
+   block that stopped short of the row's own right edge. Painting it on
+   the trigger button itself instead covers the row's whole clickable
+   width, chevron included. */
+.mcm-admin .mcm-adminnav [data-slot='accordion-trigger']:hover {
+  background: #f3f4f6;
+  border-radius: 5px;
+}
+.mcm-admin .mcm-adminnav [data-slot='accordion-trigger']:hover .h-14 {
+  color: var(--ink);
+}
+/* The right-shift-on-hover lives here, scoped to the expanded list only
+   (`section:not([data-rail-collapsed='true'])`), instead of applying
+   everywhere and being cancelled again for the icon-only rail elsewhere —
+   there's a label to shift toward once the list is expanded; there's
+   nothing to shift toward once it's just icons, so the rule simply never
+   targets that state rather than getting overridden in it. The whole row
+   nudges right along with its own chevron, rather than the chevron
+   sliding on its own while everything around it sits still. */
+.mcm-admin section:not([data-rail-collapsed='true']) .mcm-adminnav .min-h-14:hover {
+  transform: translateX(3px);
+}
+.mcm-admin section:not([data-rail-collapsed='true']) .mcm-adminnav [data-slot='accordion-trigger']:hover .h-14 {
+  transform: translateX(3px);
 }
 
 /* Icons sized to the text, not to the row. */
@@ -4246,19 +4308,19 @@
 .mcm-admin .mcm-adminnav .text-primary:hover {
   color: var(--ink);
 }
-/* Same thin-border-plus-wash treatment as "All admin screens" above it, so
-   the current section reads consistently with the link back to the
-   overview — not the left inset rail this used to draw instead. */
+/* The current section: a flat light-pink wash, no border — the grey fill
+   plus red border this used to carry read as an error/warning state, not
+   "you are here". */
 .mcm-admin .mcm-adminnav .border-r-primary {
-  border: 1px solid var(--accent-edge) !important;
-  background: #e3e3e3;
+  border: 1px solid transparent !important;
+  background: var(--accent-wash);
   box-shadow: none;
 }
 /* Same reasoning as the text-colour pin above: the generic hover rule would
-   otherwise swap the active row's own pink for the brighter hover pink. */
+   otherwise swap the active row's own pink for the brighter hover grey. */
 .mcm-admin .mcm-adminnav .border-r-primary:hover {
-  border: 1px solid var(--accent-edge) !important;
-  background: #e3e3e3;
+  border: 1px solid transparent !important;
+  background: var(--accent-wash);
   box-shadow: none;
 }
 
@@ -4283,7 +4345,7 @@
    it and left a white gap at the end. */
 .mcm-admin .mcm-adminnav [data-slot='accordion-trigger']:has(.mcm-adminnav-section-active) {
   background: var(--accent-wash);
-  border-radius: var(--r-sm);
+  border-radius: 5px;
 }
 .mcm-admin .mcm-adminnav [data-slot='accordion-trigger']:has(.mcm-adminnav-section-active) svg {
   color: var(--accent-ink);
@@ -4478,22 +4540,48 @@
 .mcm-adminnav-label {
   display: inline-block;
 }
-.mcm-admin section[data-rail-collapsed='true'] .mcm-adminnav-label,
+/* A top-level tile's own decorative chevron (e.g. "SMC") is a third flex
+   child alongside the icon and label, inside the same row. `max-width: 0`
+   removed it along a *row*'s main axis, but collapsed rows are
+   `flex-direction: column` now — width is the cross axis there, so the
+   chevron's own height (its intrinsic SVG size) still counted toward the
+   column's total height, making tiles with this chevron taller than
+   every accordion row (which has no such child) next to them.
+   `max-height: 0` removes it along the axis that now actually matters. */
 .mcm-admin section[data-rail-collapsed='true'] .mcm-adminnav-chevron {
-  max-width: 0;
-  opacity: 0;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  /* Squeezed to 0 width, the label's text (still `white-space: normal`,
-     needed for the two-line wrap when expanded — see the comment above)
-     wrapped onto a new line per word instead of just going invisible,
-     growing the label many lines tall. Invisible via opacity, but its
-     height still counted, inflating that row — worse the longer the
-     label ("All admin screens" wrapped to ~3 lines vs. a short group
-     name's one), which is why only some rows looked misaligned. Forcing
-     one line here, only while collapsed, removes the height without
-     touching the expanded-state wrap this rule's comment protects. */
-  white-space: nowrap !important;
+  /* `display: none` (not just zero size) — the column's `gap` still
+     inserted space around this child even shrunk to nothing, adding 4px
+     that a row without this chevron never had. Removing it from layout
+     entirely is fine here: it's already fully hidden, not animating. */
+  display: none;
+}
+/* The label doesn't disappear when collapsed — it drops under the icon as
+   a small permanent caption, the same icon-over-label rail pattern the
+   Performance page's own side nav uses (`.mcm-rail-label` in this file),
+   rather than only surfacing on hover via a tooltip. Rows are `height:
+   auto`, so a two-line label ("SMS/Calling Rates") made its own row taller
+   than every one-line neighbour ("Billing", "Templates") — reserving a
+   fixed two-line-tall box here, vertically centred, gives every row the
+   same height regardless of how many words its label actually wraps to. */
+.mcm-admin section[data-rail-collapsed='true'] .mcm-adminnav-label {
+  max-width: 100%;
+  opacity: 1;
+  margin: 0 !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  align-items: center;
+  overflow: hidden;
+  width: 100%;
+  min-height: 26px;
+  padding: 0 2px;
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--ink-2);
+  white-space: normal !important;
 }
 /* The real accordion chevron (rendered by the shared AccordionTrigger, not
    this file's own markup) gets the same fade-and-shrink treatment, plus its
@@ -4516,6 +4604,43 @@
 .mcm-admin [data-slot='accordion-trigger'] > svg,
 .mcm-admin .mcm-adminnav-chevron {
   margin-right: 7px !important;
+}
+/* Lighter and smaller than the component's own default `text-gray-400`
+   16px glyph — it's a disclosure hint, not something that should compete
+   with the row's icon for attention. Extends each element's own existing
+   transition list (rather than a bare `transition: transform`, which would
+   replace it outright) so the fade/shrink-on-collapse animation these
+   already had keeps working alongside the new hover shift below. */
+.mcm-admin .mcm-adminnav [data-slot='accordion-trigger'] > svg {
+  color: #9ca3af;
+  width: 14px;
+  height: 14px;
+  transition:
+    max-width 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    margin-right 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.25s ease;
+}
+.mcm-admin .mcm-adminnav-chevron {
+  color: #9ca3af;
+  width: 14px;
+  height: 14px;
+  transition:
+    max-width 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    margin 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.25s ease;
+}
+/* Nudges right on hover instead of sitting static — a small cue that the
+   row is interactive, matching the row's own hover wash. Scoped to the
+   expanded list only (see the matching comment above the row-shift rules) —
+   this chevron is already `max-width: 0`/`opacity: 0` once collapsed, but
+   excluding it here too means there's no transform left on it at all in
+   that state, not just an invisible one. */
+.mcm-admin section:not([data-rail-collapsed='true']) .mcm-adminnav [data-slot='accordion-trigger']:hover > svg,
+.mcm-admin section:not([data-rail-collapsed='true']) .mcm-adminnav .h-14:hover .mcm-adminnav-chevron,
+.mcm-admin section:not([data-rail-collapsed='true']) .mcm-adminnav .min-h-14:hover .mcm-adminnav-chevron {
+  transform: translateX(3px);
 }
 .mcm-admin section[data-rail-collapsed='true'] [data-slot='accordion-trigger'] > svg {
   max-width: 0;
@@ -4564,13 +4689,6 @@
      for, without capping height too. */
   overflow-x: hidden;
 }
-/* Each accordion section is its own `AccordionItem`, which carries its own
-   `border-b` (from the shared component, not this file's `.divide-y` rule
-   removed above) — a leftover section separator that still drew a line
-   between every icon once the rail was down to icons alone. */
-.mcm-admin section[data-rail-collapsed='true'] [data-slot='accordion-item'] {
-  border-bottom: 0;
-}
 /* The scroll container's own scrollbar rendered inside this same narrow
    column, right next to the icons, covering the space they need to
    breathe in — this is what made the icons unreadable the first time this
@@ -4590,7 +4708,7 @@
   height: 0;
 }
 .mcm-admin section[data-rail-collapsed='true'] .mcm-adminnav {
-  padding: 10px 0;
+  padding: 6px 0;
 }
 /* Full-width rows with the icon centred inside, rather than a fixed-size
    pill — sizing the row itself off a guessed pixel value is exactly the
@@ -4602,20 +4720,28 @@
    own row but the row itself sat flush against the divider line above and
    10px clear of the one below, reading as "pushed up" between the two
    dividers even though it's centred in its own box. */
+/* Icon stacked over its (now permanent) label — the same tile shape as the
+   Performance page's own side rail — instead of a horizontal row with
+   nothing beside the icon once the label used to disappear. The row is
+   tall enough on its own now (icon + label) that the hover/active chip
+   (48px) fits inside it without overflowing into a neighbour, so the
+   large inter-row margin the horizontal layout needed is gone too. */
 .mcm-admin section[data-rail-collapsed='true'] .h-14,
 .mcm-admin section[data-rail-collapsed='true'] .min-h-14 {
+  flex-direction: column;
   justify-content: center;
-  gap: 0;
-  margin: 5px 0;
-  padding-left: 0;
-  padding-right: 0;
+  gap: 4px;
+  height: auto;
+  min-height: 60px;
+  margin: 2px 0;
+  padding: 4px 2px;
 }
 .mcm-admin section[data-rail-collapsed='true'] .mcm-adminnav-all {
+  flex-direction: column;
   justify-content: center;
-  gap: 0;
-  margin: 5px 0;
-  padding-left: 0;
-  padding-right: 0;
+  gap: 4px;
+  margin: 2px 0;
+  padding: 4px 2px;
 }
 .mcm-admin section[data-rail-collapsed='true'] .pl-10 {
   padding-left: 0;
@@ -4654,17 +4780,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  color: var(--ink);
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+  width: 32px;
+  height: 32px;
+  /* No resting chip shape — bare icon until you actually hover it. */
+  border-radius: 0;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  /* Matches the Performance page's own side rail (`sidebar.tsx`'s inactive
+     tile colour, `text-gray-500`) rather than plain black. */
+  color: #6b7280;
+  /* No transition — the box's size and shape never change (hover/active
+     just retint it), and animating a colour swap on a rail this dense
+     read as constant motion rather than one row responding to the
+     pointer. */
 }
+/* One fixed size for every icon in the rail, matching the Performance
+   page's own side rail icon size (`h-[1.15rem] w-[1.15rem]` in
+   sidebar.tsx). "All admin screens" carries its own 15px rule elsewhere in
+   this file for the expanded state, which otherwise won by specificity
+   here too and made it the odd one out next to every other row's icon.
+   `!important` settles that regardless of which rule happens to come
+   first. */
 .mcm-admin section[data-rail-collapsed='true'] .mcm-adminnav-iconwrap svg {
-  width: 25px;
-  height: 25px;
+  width: 1.15rem !important;
+  height: 1.15rem !important;
   /* The svg has its own unconditional `color: var(--ink-2)` from the
      pre-existing base rule (further up this file, predates this rail
      entirely) — set directly on the element, not inherited, so it wins
@@ -4673,26 +4813,32 @@
      lets the icon follow the wrapper's colour on hover. */
   color: inherit;
 }
+/* Hover: colour only, same fixed 32px box — now that the icon has a label
+   under it, growing the chip on hover grew the row past its own
+   `min-height` too (the row auto-sizes to its content), which pushed every
+   row below it down the instant one was hovered. A stable box size keeps
+   the whole rail still; only the tint changes. */
 .mcm-admin section[data-rail-collapsed='true'] .h-14:hover .mcm-adminnav-iconwrap,
 .mcm-admin section[data-rail-collapsed='true'] .min-h-14:hover .mcm-adminnav-iconwrap,
 .mcm-admin section[data-rail-collapsed='true'] .mcm-adminnav-all:hover .mcm-adminnav-iconwrap {
-  background: #e3e3e3;
-  color: var(--accent-ink);
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: var(--ink);
 }
-/* Active section: just a soft grey chip, no accent bar — the left rail was
-   flagged as an unwanted "red add-on" and removed. `!important` because the
-   chip wasn't appearing on the active item despite this rule looking like
-   it should already win — rather than keep guessing at whatever it's
-   losing to, force the issue directly. */
+/* Active section: the same light-pink chip the expanded list uses for its
+   current row, not a bare colour change — "selected" should read the same
+   way in both states. Same fixed 32px box as the hover state above, for
+   the same reason — no size change, no reflow. */
 .mcm-admin section[data-rail-collapsed='true'] .border-r-primary .mcm-adminnav-iconwrap {
-  background: #e3e3e3 !important;
-  color: var(--accent-ink) !important;
+  background: var(--accent-wash) !important;
+  border-radius: 10px !important;
+  color: var(--ink) !important;
 }
 /* Same chip treatment for "All admin screens" when it's the active page —
    it uses its own `.on` class rather than `.border-r-primary`, so it needs
    its own copy of the rule above. */
 .mcm-admin section[data-rail-collapsed='true'] .mcm-adminnav-all.on .mcm-adminnav-iconwrap {
-  background: #e3e3e3 !important;
+  background: transparent !important;
   color: var(--ink) !important;
 }
 /* A group's own icon when its section is open — leaf tiles get the grey
@@ -8683,15 +8829,34 @@
     background-color: #fef2f2 !important;
     color: #111827 !important;
   }
-  /* Every grey surface in these popups (a disabled field like Number Type
-     before its Location is picked, a disabled select) standardized on the
-     same shade rather than whatever grey each control's own default
-     happened to be. */
-  .ident-form-popup input[data-slot='input']:disabled {
-    background-color: #e3e3e3 !important;
+
+  /* Selected: the pink band and red ink from the reference.
+   *
+   * Listed AFTER hover, and naming the hover and focus combinations explicitly,
+   * because react-select puts BOTH classes on the row when you mouse over the
+   * option that is already chosen. At equal specificity the later rule wins, so
+   * without this the selected row lost its red the moment the cursor touched
+   * it — which is the one place the colour actually carries meaning. */
+  body:has(.mcm-company-theme) .custom-react-select__option--is-selected,
+  body:has(.mcm-company-theme) .custom-react-select__option--is-selected:hover,
+  body:has(.mcm-company-theme) .custom-react-select__option--is-selected.custom-react-select__option--is-focused,
+  body:has(.mcm-company-theme) .select-group__option--is-selected,
+  body:has(.mcm-company-theme) .select-group__option--is-selected:hover,
+  body:has(.mcm-company-theme) .select-group__option--is-selected.select-group__option--is-focused {
+    background-color: #fdecec !important;
+    color: #d92b2b !important;
+    font-weight: 600 !important;
   }
-  .ident-form-popup .custom-react-select__control--is-disabled {
-    background-color: #e3e3e3 !important;
+
+  /* The closed control, which is inside the page but whose focus and hover
+     borders also resolve through --primary. */
+  body:has(.mcm-company-theme) .custom-react-select__control--is-focused,
+  body:has(.mcm-company-theme) .custom-react-select__control--menu-is-open,
+  body:has(.mcm-company-theme) .custom-react-select__control:hover,
+  body:has(.mcm-company-theme) .select-group__control--is-focused,
+  body:has(.mcm-company-theme) .select-group__control--menu-is-open,
+  body:has(.mcm-company-theme) .select-group__control:hover {
+    border-color: #d92b2b !important;
   }
 }
 
