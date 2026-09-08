@@ -301,21 +301,18 @@ const VisitorProfile = ({
       return <div className="h-full bg-white">{emptyState}</div>;
     }
     return (
-      <aside className="hidden h-full min-w-[21rem] max-w-[21rem] border-l border-border bg-white lg:block">
+      <aside className="hidden h-full min-w-[var(--mcm-profile-panel-w)] max-w-[var(--mcm-profile-panel-w)] border-l border-border bg-white lg:block">
         {emptyState}
       </aside>
     );
   }
 
   const profileData = getVisitorProfileData(chat, currentUserId);
-  console.log(profileData, 'profileData');
 
   const getPath = (url: string) => {
     try {
       if (!url) return '';
       const pathname = new URL(url).pathname;
-      console.log(pathname, 'pathname');
-
       return pathname === '/' ? '/home' : pathname;
     } catch {
       return '';
@@ -326,7 +323,14 @@ const VisitorProfile = ({
   const shouldShowImage = Boolean(profileData.image) && isAbsoluteImage(profileData.image);
   const profileContent = (
     <div className="h-full overflow-y-auto">
-      <div className="border-b border-border px-6 py-8">
+      {/* Titled header, so the panel names itself rather than opening straight
+          onto a face. */}
+      {/* 64px, matching the conversation header and the queue header beside it,
+          so the three columns share one rule across the top of the page. */}
+      <div className="sticky top-0 z-10 flex min-h-16 items-center border-b border-border bg-white px-5">
+        <h3 className="text-sm font-semibold text-foreground">Visitor Profile</h3>
+      </div>
+      <div className="border-b border-border px-5 py-6">
         <div className="flex flex-col items-center text-center">
           <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-border bg-muted text-[36px] font-semibold tracking-wide text-muted-foreground">
             {shouldShowImage ? (
@@ -342,13 +346,13 @@ const VisitorProfile = ({
             )}
           </div>
 
-          <h2 className="mt-5 text-3xl font-semibold tracking-tight text-foreground">
+          <h2 className="mt-4 text-xl font-bold tracking-tight text-foreground">
             {profileData?.name || 'Unknown Visitor'}
           </h2>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             {profileData.page && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-ucass-active/20 bg-ucass-active-bg px-3 py-1 text-xs font-semibold text-ucass-active">
+              <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-primary">
                 <Globe className="h-3.5 w-3.5" />
                 {profileData?.page?.replace(/^https?:\/\//, '').split('/')[0]}
               </span>
@@ -362,7 +366,7 @@ const VisitorProfile = ({
         </div>
       </div>
 
-      <div className="space-y-8 px-6 py-6">
+      <div className="space-y-7 px-5 py-6">
         <section className="space-y-4">
           <SectionTitle title="Contact Profile" />
           <ProfileRow
@@ -458,7 +462,7 @@ const VisitorProfile = ({
     return <div className="h-full bg-white">{profileContent}</div>;
   }
   return (
-    <aside className="hidden h-full min-w-[21rem] max-w-[21rem] border-l border-border bg-white lg:block">
+    <aside className="hidden h-full min-w-[var(--mcm-profile-panel-w)] max-w-[var(--mcm-profile-panel-w)] border-l border-border bg-white lg:block">
       {profileContent}
     </aside>
   );

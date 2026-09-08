@@ -6034,3 +6034,321 @@
     border-color: #d92b2b !important;
   }
 }
+
+/* ---- chat sidebar, matched to the phone console's call-list column ----
+   The `.mcm-page button` reset above sets `font: inherit` and `border: 0`, and
+   it is plain CSS while Tailwind's utilities sit in @layer utilities — so the
+   layer loses regardless of specificity and `font-bold` / `border-b-2` never
+   reach these controls. The tab and icon-button shapes are therefore declared
+   here, mirroring `.ptab` and the call list's header buttons in console.css. */
+.mcm-page .mcm-chat-tabs button {
+  padding: 12px 11px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111111;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 7px 7px 0 0;
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s;
+}
+/* Hovering an inactive tab previews the selection: the label takes the accent
+   and a pale bar appears exactly where the solid one will land. */
+.mcm-page .mcm-chat-tabs button:hover {
+  color: var(--primary, #dc2626);
+  background: #fef2f2;
+  border-bottom-color: var(--mcm-accent-edge, #fecaca);
+}
+.mcm-page .mcm-chat-tabs button.on {
+  color: #111111;
+  border-bottom-color: var(--primary, #dc2626);
+}
+/* The active tab keeps its solid bar while hovered — only the wash reacts. */
+.mcm-page .mcm-chat-tabs button.on:hover {
+  border-bottom-color: var(--primary, #dc2626);
+}
+.mcm-page button.mcm-chat-iconbtn,
+.mcm-page .mcm-chat-iconbtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid var(--mcm-line, #e5e5e5);
+  box-shadow: 0 1px 3px rgba(17, 17, 17, 0.06);
+  color: var(--mcm-ink-2, #3d4a63);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.mcm-page button.mcm-chat-iconbtn:hover,
+.mcm-page .mcm-chat-iconbtn:hover {
+  border-color: var(--primary, #dc2626);
+  color: var(--primary, #dc2626);
+}
+
+/* The chat composer card carries its own focus state on its outer edge, so the
+   global `:focus-visible` ring above would draw a second red rectangle around
+   the text area inside it. Suppressed for the editable surface only — every
+   other control in the composer (Attach, emoji, send, ...) keeps its ring. */
+.mcm-page .mcm-chat-composer [contenteditable]:focus,
+.mcm-page .mcm-chat-composer [contenteditable]:focus-visible {
+  outline: none;
+}
+
+/* Chat header actions. Same reason as the sidebar rules above: the
+   `.mcm-page button` reset strips border/background/colour off these, so the
+   boxed and bare button shapes are declared here rather than in Tailwind. */
+.mcm-page .mcm-chat-iconbtn.on {
+  border-color: var(--primary, #dc2626);
+  color: var(--primary, #dc2626);
+  background: #fef2f2;
+}
+.mcm-page button.mcm-chat-iconbtn-bare,
+.mcm-page .mcm-chat-iconbtn-bare {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 0;
+  background: none;
+  color: var(--mcm-ink-2, #3d4a63);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+.mcm-page button.mcm-chat-iconbtn-bare:hover,
+.mcm-page .mcm-chat-iconbtn-bare:hover {
+  color: var(--primary, #dc2626);
+  background: #fef2f2;
+}
+
+/* The chat header's person block is a button that opens their info panel, so
+   it needs a hover that survives the `.mcm-page button` reset above. */
+.mcm-page .mcm-chat-identity {
+  border-radius: 8px;
+  transition: background-color 0.15s;
+}
+.mcm-page .mcm-chat-identity[data-interactive='true']:hover {
+  background: #f9fafb;
+}
+.mcm-page .mcm-chat-identity[data-interactive='false'] {
+  cursor: default;
+}
+
+
+/* ---- chat sidebar header + tabs, matched to the phone console's call list ----
+   Ported from `.mcm-console .col.calls .col-title` / `.panel-tabs` in
+   console.css, including its 1100px branch: a fixed 113px title block on wide
+   screens, collapsing to content height with 12px/14px padding when narrow. */
+.mcm-page .mcm-chat-head {
+  height: 113px;
+  padding: 0 14px;
+}
+.mcm-page .mcm-chat-tabs {
+  height: 40px;
+  padding: 0 14px;
+  align-items: stretch;
+}
+.mcm-page .mcm-chat-tabs button {
+  height: 40px;
+  padding: 0 10px;
+  font-size: 14px;
+  align-items: center;
+}
+@media (max-width: 1100px) {
+  .mcm-page .mcm-chat-head {
+    height: auto;
+    padding: 12px 14px;
+  }
+}
+
+/* Single-line chat composer: every control in the bar is this one shape, so
+   the row reads as one object. Declared here because the `.mcm-page button`
+   reset strips colour and background off them. */
+.mcm-page .mcm-composer-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 0;
+  background: none;
+  color: var(--mcm-ink-3, #6b7891);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+.mcm-page .mcm-composer-btn:hover {
+  color: var(--primary, #dc2626);
+  background: #fef2f2;
+}
+.mcm-page .mcm-composer-btn.on {
+  color: var(--primary, #dc2626);
+  background: #fef2f2;
+}
+.mcm-page .mcm-composer-btn.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- Notes panel ----
+   The editor is one clipped field: a toolbar strip, a hairline, then the text.
+   `overflow: hidden` matters — the Slate toolbar carries its own radius and an
+   inline `margin-bottom`, which otherwise escaped the rounded corner and drew
+   a stray rule across the panel. */
+.mcm-page .mcm-notes-editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: 12px;
+}
+.mcm-page .mcm-notes-editor > div {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--mcm-line, #e5e5e5);
+  border-radius: 10px;
+  background: #fff;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.mcm-page .mcm-notes-editor > div:focus-within {
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.04);
+}
+/* Toolbar sits flush against the field's top edge — no gap, no second radius. */
+.mcm-page .mcm-notes-editor [data-test-id='menu'] {
+  margin: 0 !important;
+  border-radius: 0;
+  background: #f6f7f9;
+  border-bottom: 1px solid var(--mcm-line, #e5e5e5);
+  padding: 6px 10px;
+  gap: 6px;
+}
+/* Room to actually write a note in. */
+.mcm-page .mcm-notes-editor [contenteditable] {
+  min-height: 132px;
+  padding: 10px 12px !important;
+}
+.mcm-page .mcm-notes-editor [contenteditable]:focus,
+.mcm-page .mcm-notes-editor [contenteditable]:focus-visible {
+  outline: none;
+}
+/* The card fills the panel so the footer sits at the bottom rather than
+   floating halfway up a mostly empty box. */
+.mcm-page .mcm-notes-card {
+  min-height: 0;
+}
+.mcm-page .mcm-notes-card > div:first-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The note field grows into the card instead of leaving a tall blank gap
+   between it and the footer. The editable's own max-height caps it at ~130px,
+   which is a chat-composer constraint, not a note-taking one. */
+.mcm-page .mcm-notes-editor {
+  flex: 1;
+}
+.mcm-page .mcm-notes-editor > div {
+  flex: 1;
+}
+.mcm-page .mcm-notes-editor [contenteditable] {
+  flex: 1;
+  max-height: none;
+  overflow-y: auto;
+}
+
+/* Footer actions. `variant="primary"` sets bg-primary/text-white in Tailwind,
+   which the `.mcm-page button` reset above discards — so both buttons rendered
+   as the same white outline and Cancel looked as important as Create.
+   Element + class here to out-rank the reset without !important. */
+.mcm-page .mcm-notes-foot button.mcm-notes-btn {
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--mcm-line, #e5e5e5);
+  background: #fff;
+  color: var(--mcm-ink-2, #3d4a63);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.mcm-page .mcm-notes-foot button.mcm-notes-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+.mcm-page .mcm-notes-foot button.mcm-notes-btn.is-primary {
+  background: var(--primary, #dc2626);
+  border-color: var(--primary, #dc2626);
+  color: #fff;
+}
+.mcm-page .mcm-notes-foot button.mcm-notes-btn.is-primary:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
+}
+
+/* ---- chat sidebar tabs as chips ----
+   Same spec as the phone console's filter row (`.seg button`): pale grey at
+   rest, a solid #0B1220 pill for the selected one. Declared last so it takes
+   over from the underlined-tab rules above rather than fighting them.  */
+.mcm-page .mcm-chat-tabs {
+  height: auto;
+  padding: 8px 14px;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.mcm-page .mcm-chat-tabs button {
+  height: auto;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748b;
+  background: #f5f5f5;
+  white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+.mcm-page .mcm-chat-tabs button:hover:not(.on) {
+  color: var(--primary, #dc2626);
+  background: #fef2f2;
+}
+/* The selected tab does not react to hover — same colours at rest and over. */
+.mcm-page .mcm-chat-tabs button.on,
+.mcm-page .mcm-chat-tabs button.on:hover {
+  color: #ffffff;
+  background: #0b1220;
+}

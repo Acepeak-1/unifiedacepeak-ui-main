@@ -239,3 +239,172 @@ export const demoNotes = (number: string): DemoNote[] => {
     },
   ];
 };
+
+/* ---------------------------------------------------------------- call log --
+ * Sample rows for the call list, and a sample Copilot exchange.
+ *
+ * Same three rules as everything above: synthetic and obvious, always chipped
+ * as demo where it renders, and only ever shown when the platform returned
+ * nothing. Unlike the version removed earlier, these never top up a partial
+ * result — a list with one real call shows one call, not one call and five
+ * inventions.
+ */
+
+export type DemoCallRow = {
+  id: string;
+  direction: 'in' | 'out' | 'miss';
+  name: string;
+  number: string;
+  time: string;
+  duration: string;
+  hasRecording: boolean;
+};
+
+const DEMO_CALLS_BASE: DemoCallRow[] = [
+  { id: 'demo-call-1', direction: 'in', name: 'Aarav Mehta', number: '+919876543210', time: '14:34', duration: '04:34', hasRecording: true },
+  { id: 'demo-call-2', direction: 'out', name: 'Sophia Turner', number: '+14155550132', time: '13:20', duration: '02:36', hasRecording: true },
+  { id: 'demo-call-3', direction: 'miss', name: '', number: '+447911123456', time: '12:05', duration: '—', hasRecording: false },
+  { id: 'demo-call-4', direction: 'in', name: 'Rahul Verma', number: '+919812345678', time: '11:10', duration: '01:12', hasRecording: false },
+  { id: 'demo-call-5', direction: 'out', name: 'Emily Clark', number: '+12025550187', time: '09:45', duration: '03:48', hasRecording: true },
+  { id: 'demo-call-6', direction: 'miss', name: 'Liam Wong', number: '+61291234567', time: '08:30', duration: '—', hasRecording: false },
+];
+
+export const demoCallRows = (source: 'call' | 'recording' | 'voicemail'): DemoCallRow[] => {
+  if (!DEMO_ENABLED) return [];
+  if (source === 'recording') return DEMO_CALLS_BASE.filter((r) => r.hasRecording);
+  /* A voicemail is an inbound call nobody picked up, so the missed rows are
+     the only honest sample for that list. */
+  if (source === 'voicemail') {
+    return DEMO_CALLS_BASE.filter((r) => r.direction !== 'out').map((r) => ({
+      ...r,
+      id: `${r.id}-vm`,
+      duration: r.duration === '—' ? '00:24' : r.duration,
+    }));
+  }
+  return DEMO_CALLS_BASE;
+};
+
+/* ----------------------------------------------------------------- copilot --
+ * A sample exchange, so the Copilot pane shows what it does before an agent is
+ * configured or a call is up. Marked as demo, and replaced the moment the real
+ * socket returns anything.
+ */
+export type DemoAskMessage = { role: 'q' | 'a'; text: string };
+
+export const demoAskThread = (): DemoAskMessage[] => {
+  if (!DEMO_ENABLED) return [];
+  return [
+    { role: 'q', text: 'Summarise this call so far' },
+    {
+      role: 'a',
+      text: 'The caller is chasing order 48213-A, placed last Tuesday and not yet delivered. You confirmed it shipped and is out for delivery today. They asked to be notified if it slips again.',
+    },
+    { role: 'q', text: 'What should I say next?' },
+    {
+      role: 'a',
+      text: 'Offer to set a delivery alert on the order, then confirm the best number to reach them on. If they push for compensation, the goodwill credit on this account is £10 without approval.',
+    },
+  ];
+};
+
+/* ------------------------------------------------------- record view legs --
+ * Sample rows for the call record's Calls / Recordings / Voicemails lists.
+ *
+ * Deliberately carry no media URL: there is no recording behind them, so they
+ * show the row and its metadata and offer no player rather than pointing at
+ * some third-party sample clip. Shown only when the contact has none of that
+ * kind, and chipped as demo where they render.
+ */
+export type DemoLeg = {
+  id: string;
+  direction: 'in' | 'out' | 'miss';
+  when: string;
+  duration: string;
+  by: string;
+  viaDid: string;
+};
+
+const DEMO_LEGS: DemoLeg[] = [
+  { id: 'demo-leg-1', direction: 'out', when: '3 Sep, 6:12 PM', duration: '02:14', by: 'Priya Nair', viaDid: '+1 415 555 0132' },
+  { id: 'demo-leg-2', direction: 'in', when: '2 Sep, 11:40 AM', duration: '00:47', by: 'Ravi Kumar', viaDid: '+1 415 555 0132' },
+  { id: 'demo-leg-3', direction: 'miss', when: '1 Sep, 9:05 AM', duration: '00:00', by: '—', viaDid: '+1 415 555 0132' },
+  { id: 'demo-leg-4', direction: 'in', when: '31 Aug, 4:22 PM', duration: '03:00', by: 'Priya Nair', viaDid: '+44 20 7946 0958' },
+];
+
+export const demoRecordLegs = (tab: 'calls' | 'recordings' | 'voicemails'): DemoLeg[] => {
+  if (!DEMO_ENABLED) return [];
+  /* A missed call never connected, so it has neither a recording nor a
+     voicemail-length row — same rule the real lists use. */
+  if (tab === 'recordings') return DEMO_LEGS.filter((l) => l.direction !== 'miss');
+  if (tab === 'voicemails') {
+    return DEMO_LEGS.filter((l) => l.direction !== 'out').map((l) => ({
+      ...l,
+      id: `${l.id}-vm`,
+      duration: l.duration === '00:00' ? '00:24' : l.duration,
+    }));
+  }
+  return DEMO_LEGS;
+};
+
+/* ------------------------------------------------- call panel placeholders --
+ * Notes, transcript and summary for the call side panel, so each tab shows
+ * what it is for before a call has produced anything real. Same three rules as
+ * the rest of this module: obviously synthetic, chipped where it renders, and
+ * only ever shown when the platform has given us nothing.
+ */
+export type DemoNoteEntry = { text: string; who: string; number: string; at: string };
+
+export const demoCallNotes = (): DemoNoteEntry[] => {
+  if (!DEMO_ENABLED) return [];
+  return [
+    {
+      text: 'Wants the delivery alert set on order 48213-A. Confirmed the mobile on file is the right one to text.',
+      who: 'Aarav Mehta',
+      number: '+91 98765 43210',
+      at: '3 Sep 2026, 18:14',
+    },
+    {
+      text: 'Asked about the £10 goodwill credit — applied, no approval needed. Mentioned they may upgrade the plan next quarter.',
+      who: 'Sophia Turner',
+      number: '+1 415 555 0132',
+      at: '2 Sep 2026, 11:47',
+    },
+  ];
+};
+
+export const demoTranscriptTurns = () => {
+  if (!DEMO_ENABLED) return [];
+  const turns: {
+    id: string;
+    speaker: 'agent' | 'customer';
+    who: string;
+    time: string;
+    text: string;
+    isSummary: boolean;
+  }[] = [
+    ['customer', 'Aarav Mehta', '00:02', 'Hi — I’m calling about my order, it still hasn’t turned up.'],
+    ['agent', 'You', '00:07', 'Sorry about that. Could you give me the order number and I’ll take a look?'],
+    ['customer', 'Aarav Mehta', '00:15', 'It’s 48213-A.'],
+    ['agent', 'You', '00:21', 'Thanks. It shipped yesterday and it’s out for delivery today.'],
+    ['customer', 'Aarav Mehta', '00:34', 'That’s a relief. Can you let me know if it slips again?'],
+    ['agent', 'You', '00:39', 'Of course — I’ll set an alert on it now and text you on this number.'],
+  ].map(([speaker, who, time, text], i) => ({
+    id: `demo-turn-${i}`,
+    speaker: speaker as 'agent' | 'customer',
+    who: who as string,
+    time: time as string,
+    text: text as string,
+    isSummary: false,
+  }));
+  return turns;
+};
+
+export const demoCallSummary = (): string[] => {
+  if (!DEMO_ENABLED) return [];
+  return [
+    'Opened with — chasing order 48213-A, not yet delivered.',
+    'Confirmed the order shipped yesterday and is out for delivery today.',
+    'Agreed to set a delivery alert and text this number if it slips.',
+    '6 turns so far · 3 from the agent',
+  ];
+};

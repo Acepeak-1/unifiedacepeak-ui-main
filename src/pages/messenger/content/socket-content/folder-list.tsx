@@ -23,9 +23,14 @@ import { TrashBin } from '@/assets/icons';
 const FolderList = ({
   selectedChat,
   setActiveState,
+  embedded = false,
 }: {
   selectedChat: any;
   setActiveState: any;
+  /** Rendered inside the Docs tab rather than as its own side panel: there is
+      no panel to go back to, so the back arrow only appears when it means
+      "up out of this folder". */
+  embedded?: boolean;
 }) => {
   const { user } = useUser();
   const {
@@ -280,11 +285,24 @@ const FolderList = ({
   // }, [currentChatFolders?.length]);
 
   return (
-    <div className="w-full flex flex-col h-full bg-[var(--color-bg-gray-50)] overflow-hidden">
-      <div className="w-full shrink-0 px-4 bg-white flex items-center justify-between border-b min-h-[56px] lg:min-h-[65px] border-b-gray-200">
+    <div
+      className={`w-full flex flex-col h-full overflow-hidden ${
+        embedded ? 'bg-white' : 'bg-[var(--color-bg-gray-50)]'
+      }`}
+    >
+      <div
+        className={`w-full shrink-0 px-4 bg-white flex items-center justify-between ${
+          embedded
+            ? 'min-h-[48px] border-b border-b-slate-100'
+            : 'min-h-[56px] lg:min-h-[65px] border-b border-b-gray-200'
+        }`}
+      >
         <div
-          className="cursor-pointer"
+          className={
+            embedded && !getObjectLength(selectedFolder) ? 'cursor-default' : 'cursor-pointer'
+          }
           onClick={() => {
+            if (embedded && !getObjectLength(selectedFolder)) return;
             setSearchParams({
               channel,
               type,
@@ -298,7 +316,9 @@ const FolderList = ({
           }}
         >
           <div className="flex gap-2 items-center">
-            <ArrowLeft className="w-5 h-5 text-gray-500" />
+            {embedded && !getObjectLength(selectedFolder) ? null : (
+              <ArrowLeft className="w-5 h-5 text-gray-500" />
+            )}
             <h3 className="text-sm lg:text-base font-semibold text-gray-900">
               {getObjectLength(selectedFolder) ? selectedFolder?.folderName : 'Folders'}
             </h3>

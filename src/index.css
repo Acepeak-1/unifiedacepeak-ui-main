@@ -127,6 +127,19 @@
   --mcm-surface: #ffffff;
   --mcm-surface-2: #fafafa;
   --mcm-surface-3: #eeeeee;
+
+  /* Width of the right-hand detail panel — the phone console's call panel
+     and the chat page's contact-info panel. One value so the two pages cannot
+     drift apart. */
+  --mcm-side-panel-w: 460px;
+
+  /* Width of the left listing column — the phone console's call list and the
+     chat page's conversation list. Shared so the two pages stay level. */
+  --mcm-list-panel-w: 440px;
+
+  /* The visitor profile sits as a third column beside the queue and the
+     conversation, so it is narrower than the two-column detail panels. */
+  --mcm-profile-panel-w: 340px;
   --mcm-ink: #0d1526;
   --mcm-ink-2: #3d4a63;
   --mcm-ink-3: #6b7891;
@@ -2172,5 +2185,30 @@
     grid-column: 2;
     justify-self: start;
     margin-top: 8px;
+  }
+}
+
+/* The floating call window is a fixed 380x536, so its panes scroll — but a
+   visible bar inside a small rounded card reads as a rendering fault rather
+   than an affordance. Scrolling stays; the bar goes.
+   Deliberately its own class: the codebase uses `scrollbar-hide` in a few
+   places, but no plugin ever defined it, so applying that here would silently
+   change those pages too. */
+.dialpad-no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.dialpad-no-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* The phone console narrowed its call list below 1240px; the chat sidebar had
+   no equivalent, so the two drifted apart on a laptop. Narrowing the shared
+   token instead moves both at once. */
+@media (max-width: 1240px) {
+  :root {
+    --mcm-list-panel-w: 320px;
   }
 }

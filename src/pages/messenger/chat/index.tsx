@@ -37,7 +37,6 @@ import {
   ChevronDown,
   CheckCheck,
   FileText,
-  Folder,
   Loader2,
   Mic,
   NotebookPenIcon,
@@ -55,6 +54,7 @@ import {
   Calendar,
   File as FileIcon,
   Plus,
+  Type,
   Sparkles,
   Video,
   Play,
@@ -87,7 +87,6 @@ import {
   getVideoToAudioFallback,
   useCallEligibility,
 } from '@/components/audio-video-call/hooks/use-call-eligibility';
-import { EyeLine } from '@/assets/icons';
 import { useJitsi } from '@/hooks/use-jitsi';
 import NotesList from '../content/socket-content/notes-list';
 import FolderList from '../content/socket-content/folder-list';
@@ -822,7 +821,7 @@ export const Messages = ({
           messageContainerRef.current.scrollTop = 150;
         }
       }}
-      className={`chatInnerSec relative w-full h-full min-h-0 overflow-y-auto overflow-x-hidden flex-1 ${isAgentChat ? 'bg-ucass-gray' : 'bg-gray-100'} ${
+      className={`chatInnerSec relative w-full h-full min-h-0 overflow-y-auto overflow-x-hidden flex-1 ${isAgentChat ? 'bg-ucass-gray' : 'bg-[#fcfcfd]'} ${
         shouldConstrainHeight ? 'max-h-[calc(100vh-300px)]' : ''
       }`}
       style={{ overflowAnchor: 'auto' }}
@@ -871,14 +870,16 @@ export const Messages = ({
           return (
             <div className="w-full flex flex-col" key={messageId || `msg-${index}`}>
               {showDateSeparator && currentDate.isValid() ? (
-                <div className="flex items-center justify-center my-4 mx-auto w-[25%]">
-                  <p className="bg-gray-200 rounded-full px-4 text-xs py-1">
+                <div className="flex items-center gap-3 my-5 w-full px-2">
+                  <span className="h-px flex-1 bg-gray-200" aria-hidden />
+                  <p className="text-xs font-medium text-gray-500 whitespace-nowrap">
                     {currentDate.isSame(moment(), 'day')
                       ? 'Today'
                       : currentDate.isSame(moment().subtract(1, 'day'), 'day')
                         ? 'Yesterday'
                         : currentDate.format('DD MMMM')}
                   </p>
+                  <span className="h-px flex-1 bg-gray-200" aria-hidden />
                 </div>
               ) : null}
 
@@ -935,6 +936,32 @@ export const Messages = ({
         {!displayMessages.length ? (
           <div className="w-full py-10 flex items-center justify-center text-sm text-gray-500">
             No messages found
+          </div>
+        ) : null}
+
+        {/* Nothing has been said yet. System entries (the conversation-start
+            notice, call logs) don't count as a message, so the prompt still
+            shows beneath them. */}
+        {!displayMessages.some(
+          (item: any) => !['prompt', 'alert', 'meet'].includes(String(item?.messageType || '')),
+        ) ? (
+          <div className="flex min-h-[38vh] select-none flex-col items-center justify-center gap-3 px-6 text-center">
+            <svg width="92" height="62" viewBox="0 0 92 62" fill="none" aria-hidden>
+              <rect x="2" y="4" width="52" height="34" rx="12" fill="#f1f3f7" />
+              <path d="M16 38l-2 10 12-10z" fill="#f1f3f7" />
+              <circle cx="18" cy="21" r="2.6" fill="#c8cedb" />
+              <circle cx="28" cy="21" r="2.6" fill="#c8cedb" />
+              <circle cx="38" cy="21" r="2.6" fill="#c8cedb" />
+              <rect x="38" y="20" width="52" height="34" rx="12" fill="#fdeaea" />
+              <path d="M76 54l2 8-12-8z" fill="#fdeaea" />
+              <circle cx="54" cy="37" r="2.8" fill="#e08b8b" />
+              <circle cx="64" cy="37" r="2.8" fill="#e08b8b" />
+              <circle cx="74" cy="37" r="2.8" fill="#e08b8b" />
+            </svg>
+            <div className="text-sm font-semibold text-gray-900">Say hello!</div>
+            <div className="text-xs text-gray-500">
+              Start the conversation or share files to collaborate.
+            </div>
           </div>
         ) : null}
 
@@ -1236,12 +1263,6 @@ export const ChatHeader = ({
         ]
       : [
           {
-            icon: <FileText className="w-4 h-4" />,
-            onClick: () => onOpenSidebarMode(activeSidebarMode === 'files' ? null : 'files'),
-            type: 'files',
-            tooltip: 'Files',
-          },
-          {
             icon: <Pin className="w-4 h-4" />,
             onClick: () => onOpenSidebarMode(activeSidebarMode === 'pinned' ? null : 'pinned'),
             type: 'pinned',
@@ -1253,19 +1274,9 @@ export const ChatHeader = ({
             type: 'notes',
             tooltip: 'Open Notes',
           },
-          {
-            icon: <Folder className="w-4 h-4" />,
-            onClick: () => onOpenSidebarMode(activeSidebarMode === 'folders' ? null : 'folders'),
-            type: 'folders',
-            tooltip: 'Open Folders',
-          },
-          {
-            icon: <EyeLine className="w-4 h-4" />,
-            onClick: () =>
-              onOpenSidebarMode(activeSidebarMode === 'description' ? null : 'description'),
-            type: 'description',
-            tooltip: currentChat?.isGroupChat ? 'Team Info' : 'User Info',
-          },
+          /* Files, folders and info have no icons of their own any more: Docs
+             in the info panel carries files and folders, and the name in this
+             header opens that panel. */
           isGroupChat &&
             iamAdmin && {
               icon: <Trash2 className="w-4 h-4 text-red-500" />,
@@ -1482,21 +1493,20 @@ export const ChatHeader = ({
     const isPresenceBlocked =
       (isOtherUserOnCall && !isGroupChat) || (isUserOffline && !isGroupChat);
     if (isPresenceBlocked) {
+      /* Offline shows nothing at all: the presence dot on the avatar already
+         says the person is away, so a disabled pill only repeats it and eats
+         header space. On another call still gets a control — that state looks
+         identical to "available" otherwise. */
+      if (isUserOffline && !isGroupChat) return null;
+
       return (
-        <CustomTooltip
-          text={
-            isUserOffline && !isGroupChat
-              ? 'User is unavailable'
-              : 'User is currently on another call'
-          }
-          side="top"
-        >
+        <CustomTooltip text="User is currently on another call" side="top">
           <button
             disabled
             className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors duration-200 font-medium text-sm text-gray-400 bg-gray-100 cursor-not-allowed"
           >
             <PhoneCall className="w-4 h-4" />
-            {isUserOffline && !isGroupChat ? 'User Unavailable' : 'Start Call'}
+            Start Call
           </button>
         </CustomTooltip>
       );
@@ -1585,20 +1595,22 @@ export const ChatHeader = ({
               <ArrowLeft className="w-4.5 h-4.5" />
             </button>
           ) : null}
-          {showSearch ? (
-            <div className="w-full flex items-center gap-2">
-              <SearchComponent currentChat={currentChat} disableScrollTop={disableScrollTop} />
-              <button
-                type="button"
-                className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-gray-100 text-gray-600 shrink-0"
-                onClick={resetSearch}
-                aria-label="Close search"
-              >
-                <X width={16} height={16} />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 min-w-0">
+          {
+            /* Clicking the person opens their info beside the conversation and
+               clicking again closes it — the same panel the eye button opens,
+               reached the way people expect from every other chat app. */
+            <button
+              type="button"
+              className="mcm-chat-identity flex items-center gap-3 min-w-0 -ml-1 px-1 py-0.5 text-left"
+              data-interactive={chatFeatures.canUseSidebarActions ? 'true' : 'false'}
+              onClick={() => {
+                if (!chatFeatures.canUseSidebarActions) return;
+                onOpenSidebarMode(activeSidebarMode === 'description' ? null : 'description');
+              }}
+              aria-expanded={activeSidebarMode === 'description'}
+              aria-label={`${nameToShow} — contact info`}
+              title={chatFeatures.canUseSidebarActions ? 'Contact info' : undefined}
+            >
               <CustomAvatar
                 name={nameToShow}
                 size="38"
@@ -1620,13 +1632,20 @@ export const ChatHeader = ({
                   </div>
                 ) : null}
               </div>
-            </div>
-          )}
+            </button>
+          }
         </div>
 
-        {!showSearch && !fromMeetChat ? (
+        {!fromMeetChat ? (
           <div className="flex min-w-0 flex-1 justify-end">
-            <div className="flex min-w-0 max-w-[52vw] sm:max-w-[62vw] xl:max-w-full items-center gap-1 overflow-x-auto overflow-y-hidden md:overflow-visible sm:gap-2 scrollbar-hide">
+            <div
+              className={cn(
+                'flex min-w-0 max-w-[52vw] sm:max-w-[62vw] xl:max-w-full items-center gap-1 sm:gap-2 scrollbar-hide',
+                showSearch
+                  ? 'overflow-visible'
+                  : 'overflow-x-auto overflow-y-hidden md:overflow-visible',
+              )}
+            >
               {isMessageSelectionMode ? (
                 <>
                   <div className="text-xs font-semibold text-gray-700 px-2">
@@ -1652,10 +1671,6 @@ export const ChatHeader = ({
                 </>
               ) : null}
 
-              {!isMessageSelectionMode && !fromMeetChat && canUseCallActions
-                ? renderCallAction()
-                : null}
-
               {!isMessageSelectionMode &&
               !activeSidebarMode &&
               chatFeatures.canEndChat &&
@@ -1678,20 +1693,6 @@ export const ChatHeader = ({
                 />
               )}
 
-              {!isMessageSelectionMode ? (
-                <CustomTooltip text="Search" side="top">
-                  <button
-                    type="button"
-                    className={`cursor-pointer shrink-0 flex items-center justify-center rounded-full w-9 h-9 bg-gray-100 text-gray-900/80 hover:bg-ucass-active hover:text-white transition-colors duration-200
-                   `}
-                    onClick={() => setShowSearch(true)}
-                    aria-label="Search"
-                  >
-                    <Search width={16} height={16} />
-                  </button>
-                </CustomTooltip>
-              ) : null}
-
               {!isMessageSelectionMode &&
                 filteredBtnArr.map(({ icon, onClick, tooltip, type }, idx) => (
                   <CustomTooltip text={tooltip} side="top" key={idx}>
@@ -1699,14 +1700,42 @@ export const ChatHeader = ({
                       key={idx}
                       type="button"
                       onClick={onClick}
-                      className={`cursor-pointer shrink-0 flex items-center justify-center rounded-full w-9 h-9 bg-gray-100 text-gray-900/80 hover:bg-ucass-active hover:text-white transition-colors duration-200
-                    ${activeSidebarMode === type ? 'text-ucass-active bg-ucass-active-bg' : ''}`}
+                      className={cn('mcm-chat-iconbtn', activeSidebarMode === type ? 'on' : '')}
                       aria-label={tooltip}
                     >
                       {icon}
                     </button>
                   </CustomTooltip>
                 ))}
+
+              {!isMessageSelectionMode ? (
+                showSearch ? (
+                  /* Expanded in the icon's own slot: type to search, Escape or
+                     blur-while-empty to release it back to the icon. */
+                  <div className="w-[200px] shrink-0 sm:w-[260px]">
+                    <SearchComponent
+                      currentChat={currentChat}
+                      disableScrollTop={disableScrollTop}
+                      onRequestClose={resetSearch}
+                    />
+                  </div>
+                ) : (
+                  <CustomTooltip text="Search" side="top">
+                    <button
+                      type="button"
+                      className="mcm-chat-iconbtn-bare"
+                      onClick={() => setShowSearch(true)}
+                      aria-label="Search"
+                    >
+                      <Search width={16} height={16} />
+                    </button>
+                  </CustomTooltip>
+                )
+              ) : null}
+
+              {!isMessageSelectionMode && !fromMeetChat && canUseCallActions
+                ? renderCallAction()
+                : null}
             </div>
           </div>
         ) : null}
@@ -2283,6 +2312,10 @@ export const ChatFooter = ({
     processed: 0,
   });
   const [isRecording, setIsRecording] = useState(false);
+  /* WhatsApp-style: the bar rests as a single line, and the rich-text toolbar
+     appears above the field only when asked for. Nothing is lost — bold,
+     italic, code and the lists are all still there behind this. */
+  const [showFormatting, setShowFormatting] = useState(false);
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const chatAccess = features?.plan_features?.chat || {};
@@ -3364,7 +3397,7 @@ export const ChatFooter = ({
       placeholder={
         placeholder ||
         (!isGuestRestrictedFooter && !isGuestMeetingChat && canUseAttachmentAndRecordingControls
-          ? 'Type something or drag and drop files...'
+          ? 'Type a message or drag and drop files...'
           : 'Type a message...')
       }
       availableUsers={availableUsers}
@@ -3372,6 +3405,7 @@ export const ChatFooter = ({
       fromMeetChat={fromMeetChat}
       className={className}
       allowEveryoneMention={currentChat?.groupType === 'CHANNEL'}
+      hideToolbar={!showFormatting}
     />
   );
 
@@ -3416,7 +3450,7 @@ export const ChatFooter = ({
   );
 
   const baseComposerClasses =
-    'w-full flex flex-col border-t-2 border-r border-l border-t-primary/70 focus-visible:border-t-primary focus-within:border-t-primary border-r-gray-200 border-l-gray-200 rounded-md shadow-sm min-h-[120px] pb-8 relative';
+    'mcm-chat-composer flex w-full items-end gap-1 rounded-2xl border border-gray-200 focus-within:border-gray-400 focus-within:shadow-[0_0_0_3px_rgba(17,17,17,0.04)] bg-white shadow-[0_1px_3px_rgba(17,17,17,0.06)] px-2 py-1.5 relative transition-colors';
   const attachmentPreviewMeta = [
     activeAttachment?.name,
     activeAttachment?.sizeLabel,
@@ -3436,7 +3470,9 @@ export const ChatFooter = ({
         'transition-colors',
         hasAttachmentPreview
           ? 'absolute inset-0 z-20 flex h-full min-h-0 w-full flex-col bg-[#edf1f6]'
-          : `w-full shrink-0 bg-white px-2 py-2 relative flex flex-col ${typingText ? 'gap-0' : 'gap-3'} border-t border-gray-200`,
+          : /* No rule above the composer — it is its own bordered card now, so
+               a divider here only doubled up on its top edge. */
+            `w-full shrink-0 bg-white px-2 py-2 relative flex flex-col ${typingText ? 'gap-0' : 'gap-3'}`,
         isDragOver ? 'bg-ucass-active-bg ring-2 ring-primary/20 ring-inset' : '',
       )}
     >
@@ -3617,33 +3653,62 @@ export const ChatFooter = ({
               {typingText ? (
                 <div className="text-xs text-ucass-active px-1 py-1">{typingText}</div>
               ) : null}
-              <div className={baseComposerClasses}>{renderComposerEditor()}</div>
-              <div className="absolute right-0 bottom-1 z-[12]">
-                <div className="flex gap-1.5 items-center px-2  pointer-events-auto rounded-full">
+              <div className={baseComposerClasses}>
+                {/* left of the field */}
+                <div className="flex shrink-0 items-center gap-1 pb-0.5">
+                  {!isGuestRestrictedFooter && chatFeatures.canUseAttachmentAndRichComposer ? (
+                    <button
+                      type="button"
+                      className={cn(
+                        'mcm-composer-btn',
+                        showFormatting ? 'on' : '',
+                        isComposerBusy ? 'is-disabled' : '',
+                      )}
+                      onClick={() => {
+                        if (!isComposerBusy) setShowFormatting((prev) => !prev);
+                      }}
+                      title={showFormatting ? 'Hide formatting' : 'Formatting'}
+                      aria-label="Formatting"
+                      aria-pressed={showFormatting}
+                    >
+                      <Type width={18} height={18} />
+                    </button>
+                  ) : null}
+
+                  {!isGuestRestrictedFooter &&
+                  chatFeatures.canUseAttachmentAndRichComposer &&
+                  canUseFileUploadControls &&
+                  !isGuestMeetingChat ? (
+                    <>
+                      <input
+                        ref={fileInputRef}
+                        id={attachmentInputId}
+                        type="file"
+                        multiple
+                        hidden
+                        onChange={handleAttachmentInputChange}
+                        disabled={isComposerBusy}
+                      />
+                      <label
+                        htmlFor={attachmentInputId}
+                        className={cn('mcm-composer-btn', isComposerBusy ? 'is-disabled' : '')}
+                        title="Attach files"
+                      >
+                        <Paperclip width={18} height={18} />
+                      </label>
+                    </>
+                  ) : null}
+                </div>
+
+                <div className="min-w-0 flex-1">{renderComposerEditor()}</div>
+
+                {/* right of the field, inside the same row */}
+                <div className="flex shrink-0 items-center gap-1 pb-0.5">
+                  {renderEmojiButton()}
                   {!isGuestRestrictedFooter && chatFeatures.canUseAttachmentAndRichComposer ? (
                     <>
                       {canUseFileUploadControls && !isGuestMeetingChat ? (
                         <>
-                          <input
-                            ref={fileInputRef}
-                            id={attachmentInputId}
-                            type="file"
-                            multiple
-                            hidden
-                            onChange={handleAttachmentInputChange}
-                            disabled={isComposerBusy}
-                          />
-                          <label
-                            htmlFor={attachmentInputId}
-                            className={cn(
-                              'cursor-pointer min-w-7 max-h-7 max-w-7 min-h-7 rounded-full flex justify-center items-center text-gray-500 transition-colors hover:text-ucass-active',
-                              isComposerBusy ? 'opacity-50 cursor-not-allowed' : '',
-                            )}
-                            title="Attach files"
-                          >
-                            <Paperclip width={18} height={18} />
-                          </label>
-
                           {!fromMeetChat ? (
                             <div
                               className={cn(
@@ -3696,8 +3761,6 @@ export const ChatFooter = ({
                       ) : null}
                     </>
                   ) : null}
-
-                  {renderEmojiButton()}
 
                   {showAiAssistTrigger ? (
                     hasAiAssistAgent ? (
@@ -3766,10 +3829,10 @@ export const ChatFooter = ({
                   <button
                     type="button"
                     className={cn(
-                      'min-w-7 max-h-7 max-w-7 min-h-7 flex justify-center items-center text-ucass-active border-l border-gray-200 pl-2 transition-colors',
+                      'ml-1 h-8 w-8 shrink-0 rounded-full flex justify-center items-center transition-colors',
                       !canSend || isComposerBusy
-                        ? 'cursor-not-allowed opacity-50'
-                        : 'cursor-pointer hover:text-primary',
+                        ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+                        : 'cursor-pointer bg-primary text-white shadow-sm hover:bg-primary/90',
                     )}
                     onClick={() => sendMessage()}
                     disabled={!canSend || isComposerBusy}
@@ -5227,50 +5290,51 @@ const ChatWorkspace = ({
         hiddenHeaderActions={hiddenHeaderActions}
         disableCallActions={disableCallActions}
       />
-      <div
-        className={`flex-1 min-h-0 overflow-hidden ${isAuxSidebarOpen ? '' : 'flex flex-col lg:flex-row'}`}
-      >
-        {isAuxSidebarOpen ? null : (
-          <div className="relative flex-1 min-w-0 min-h-0 flex flex-col bg-white">
-            <MessagesComponent
-              currentChat={currentChat}
-              typingText={typingText}
-              disableScrollTop={disableScrollTop}
-              searchQuery={searchQuery}
-              fromMeetChat={fromMeetChat}
-              disableRouteMaxHeight={disableRouteMaxHeight}
-              disableMessageHoverActions={disableMessageHoverActions}
-              disableInitialMessageFetch={disableInitialMessageFetch}
-              onMessageAction={handleMainMessageAction}
-              isAgentChat={isAgentChat}
-              isSelectionMode={isMessageSelectionMode}
-              selectedMessageIds={selectedForwardMessages.map((messageItem: any) =>
-                getStableMessageId(messageItem),
-              )}
-              onToggleMessageSelection={handleToggleMessageSelection}
-              MessageItemComponent={MessageItemComponent}
-            />
-            {hideFooter ? null : currentChat && currentChat?.isEnded ? (
-              <div className="w-full shrink-0 border-t border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-center gap-2">
-                <span className="text-sm text-gray-500 font-medium">Chat has been ended</span>
-              </div>
-            ) : (
-              <FooterComponent
-                currentChat={currentChat}
-                mentionUsers={mentionUsers}
-                typingText={typingText}
-                messageItemAction={mainMessageItemAction}
-                setMessageItemAction={setMainMessageItemAction}
-                fromMeetChat={fromMeetChat}
-                isAgentChat={isAgentChat}
-                aiAssistOpen={isAiAssistPanelOpen}
-                onAiAssistOpenChange={setIsAiAssistPanelOpen}
-                onAiAssistContextChange={handleAiAssistContextChange}
-                renderAiAssistInline={!isDesktopAiLayout}
-              />
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col lg:flex-row">
+        <div
+          className={cn(
+            'relative flex-1 min-w-0 min-h-0 flex-col bg-white',
+            isAuxSidebarOpen ? 'hidden lg:flex' : 'flex',
+          )}
+        >
+          <MessagesComponent
+            currentChat={currentChat}
+            typingText={typingText}
+            disableScrollTop={disableScrollTop}
+            searchQuery={searchQuery}
+            fromMeetChat={fromMeetChat}
+            disableRouteMaxHeight={disableRouteMaxHeight}
+            disableMessageHoverActions={disableMessageHoverActions}
+            disableInitialMessageFetch={disableInitialMessageFetch}
+            onMessageAction={handleMainMessageAction}
+            isAgentChat={isAgentChat}
+            isSelectionMode={isMessageSelectionMode}
+            selectedMessageIds={selectedForwardMessages.map((messageItem: any) =>
+              getStableMessageId(messageItem),
             )}
-          </div>
-        )}
+            onToggleMessageSelection={handleToggleMessageSelection}
+            MessageItemComponent={MessageItemComponent}
+          />
+          {hideFooter ? null : currentChat && currentChat?.isEnded ? (
+            <div className="w-full shrink-0 border-t border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-center gap-2">
+              <span className="text-sm text-gray-500 font-medium">Chat has been ended</span>
+            </div>
+          ) : (
+            <FooterComponent
+              currentChat={currentChat}
+              mentionUsers={mentionUsers}
+              typingText={typingText}
+              messageItemAction={mainMessageItemAction}
+              setMessageItemAction={setMainMessageItemAction}
+              fromMeetChat={fromMeetChat}
+              isAgentChat={isAgentChat}
+              aiAssistOpen={isAiAssistPanelOpen}
+              onAiAssistOpenChange={setIsAiAssistPanelOpen}
+              onAiAssistContextChange={handleAiAssistContextChange}
+              renderAiAssistInline={!isDesktopAiLayout}
+            />
+          )}
+        </div>
 
         {!isAuxSidebarOpen &&
         isDesktopAiLayout &&
@@ -5329,78 +5393,84 @@ const ChatWorkspace = ({
           </Dialog>
         )}
 
-        {chatFeatures.canUseSidebarActions && sidePanelMode === 'notes' ? (
-          <NotesList selectedChat={currentChat} setActiveState={setSidePanelMode} />
-        ) : null}
+        {/* Contact info, files, pinned and the rest open beside the
+            conversation rather than replacing it. */}
+        {isAuxSidebarOpen ? (
+          <div className="flex w-full min-w-0 min-h-0 flex-col overflow-hidden bg-white lg:w-[var(--mcm-side-panel-w)] lg:min-w-[var(--mcm-side-panel-w)] lg:max-w-[var(--mcm-side-panel-w)] lg:border-l lg:border-gray-200">
+            {chatFeatures.canUseSidebarActions && sidePanelMode === 'notes' ? (
+              <NotesList selectedChat={currentChat} setActiveState={setSidePanelMode} />
+            ) : null}
 
-        {chatFeatures.canUseSidebarActions && sidePanelMode === 'thread' && threadInfo ? (
-          <ThreadPanel
-            threadInfo={threadInfo}
-            currentChat={currentChat}
-            mentionUsers={mentionUsers}
-            onClose={() => {
-              setThreadInfo(null);
-              setThreadMessageItemAction({ action: '', msgObj: null });
-              setSidePanelMode(null);
-            }}
-            onMessageAction={handleThreadMessageAction}
-            messageItemAction={threadMessageItemAction}
-            setMessageItemAction={setThreadMessageItemAction}
-            fromMeetChat={fromMeetChat}
-            isAgentChat={isAgentChat}
-          />
-        ) : null}
-
-        {chatFeatures.canUseSidebarActions && sidePanelMode === 'call-details' && threadInfo ? (
-          <div className="h-full min-h-0">
-            <Thread
-              threadInfo={threadInfo}
-              setThreadInfo={setThreadInfo}
-              currentChat={currentChat}
-              setInfoBar={(val: boolean) => {
-                if (!val) {
+            {chatFeatures.canUseSidebarActions && sidePanelMode === 'thread' && threadInfo ? (
+              <ThreadPanel
+                threadInfo={threadInfo}
+                currentChat={currentChat}
+                mentionUsers={mentionUsers}
+                onClose={() => {
                   setThreadInfo(null);
                   setThreadMessageItemAction({ action: '', msgObj: null });
                   setSidePanelMode(null);
-                }
-              }}
-              setMode={setSidePanelMode}
-            />
+                }}
+                onMessageAction={handleThreadMessageAction}
+                messageItemAction={threadMessageItemAction}
+                setMessageItemAction={setThreadMessageItemAction}
+                fromMeetChat={fromMeetChat}
+                isAgentChat={isAgentChat}
+              />
+            ) : null}
+
+            {chatFeatures.canUseSidebarActions && sidePanelMode === 'call-details' && threadInfo ? (
+              <div className="h-full min-h-0">
+                <Thread
+                  threadInfo={threadInfo}
+                  setThreadInfo={setThreadInfo}
+                  currentChat={currentChat}
+                  setInfoBar={(val: boolean) => {
+                    if (!val) {
+                      setThreadInfo(null);
+                      setThreadMessageItemAction({ action: '', msgObj: null });
+                      setSidePanelMode(null);
+                    }
+                  }}
+                  setMode={setSidePanelMode}
+                />
+              </div>
+            ) : null}
+
+            {chatFeatures.canUseSidebarActions && sidePanelMode === 'description' ? (
+              <DescriptionModal
+                selectedChat={currentChat}
+                setActiveState={setSidePanelMode}
+                messageList={messageList}
+              />
+            ) : null}
+
+            {chatFeatures.canUseSidebarActions && sidePanelMode === 'folders' ? (
+              <FolderList selectedChat={currentChat} setActiveState={setSidePanelMode} />
+            ) : null}
+
+            {chatFeatures.canUseSidebarActions && sidePanelMode === 'pinned' ? (
+              <PinnedMessagesView
+                currentChat={currentChat}
+                onClose={() => setSidePanelMode(null)}
+                onJumpToMessage={jumpToMessage}
+                isAgentChat={isAgentChat}
+              />
+            ) : null}
+
+            {chatFeatures.canUseSidebarActions && sidePanelMode === 'files' ? (
+              <FilesView
+                currentChat={currentChat}
+                onClose={() => setSidePanelMode(null)}
+                onJumpToMessage={jumpToMessage}
+                isAgentChat={isAgentChat}
+              />
+            ) : null}
+
+            {chatFeatures.canUseSidebarActions && sidePanelMode === 'members' ? (
+              <MembersView currentChat={currentChat} onClose={() => setSidePanelMode(null)} />
+            ) : null}
           </div>
-        ) : null}
-
-        {chatFeatures.canUseSidebarActions && sidePanelMode === 'description' ? (
-          <DescriptionModal
-            selectedChat={currentChat}
-            setActiveState={setSidePanelMode}
-            messageList={messageList}
-          />
-        ) : null}
-
-        {chatFeatures.canUseSidebarActions && sidePanelMode === 'folders' ? (
-          <FolderList selectedChat={currentChat} setActiveState={setSidePanelMode} />
-        ) : null}
-
-        {chatFeatures.canUseSidebarActions && sidePanelMode === 'pinned' ? (
-          <PinnedMessagesView
-            currentChat={currentChat}
-            onClose={() => setSidePanelMode(null)}
-            onJumpToMessage={jumpToMessage}
-            isAgentChat={isAgentChat}
-          />
-        ) : null}
-
-        {chatFeatures.canUseSidebarActions && sidePanelMode === 'files' ? (
-          <FilesView
-            currentChat={currentChat}
-            onClose={() => setSidePanelMode(null)}
-            onJumpToMessage={jumpToMessage}
-            isAgentChat={isAgentChat}
-          />
-        ) : null}
-
-        {chatFeatures.canUseSidebarActions && sidePanelMode === 'members' ? (
-          <MembersView currentChat={currentChat} onClose={() => setSidePanelMode(null)} />
         ) : null}
       </div>
     </div>

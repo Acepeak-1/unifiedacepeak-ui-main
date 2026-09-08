@@ -15,7 +15,6 @@ import DialpadEndedScreen from './dialpad-ended-screen';
 import DialpadKeypad from './dialpad-keypad';
 import DialpadNumberDisplay from './dialpad-number-display';
 import DialpadRingingScreen from './dialpad-ringing-screen';
-import DialpadSessionSwitcher from './dialpad-session-switcher';
 import { getMonitoringCallLabel } from '../session-display';
 
 type DialpadScreenState = 'idle' | 'ringing' | 'connected' | 'ended';
@@ -76,8 +75,10 @@ type DialpadMiniFrameProps = {
 const DialpadMiniFrame = ({
   dialpadScreen,
   campaignContactCards,
-  allSessions,
-  activeSessionId,
+  /* allSessions / activeSessionId / onSwitchSession are still accepted — they
+     fed the Call Sessions dropdown, which this frame no longer renders. Kept on
+     the props so the two call sites need no change and the switcher is a
+     one-line restore. */
   activeSession,
   ringingSession,
   typedNumber,
@@ -91,7 +92,6 @@ const DialpadMiniFrame = ({
   isHold,
   isMuted,
   isSpeakerOn,
-  onSwitchSession,
   onToggleCallerId,
   onSelectCallerId,
   onOpenGuide,
@@ -152,17 +152,9 @@ const DialpadMiniFrame = ({
     >
       {topAccessory ? <div className="mb-2 flex items-center">{topAccessory}</div> : null}
 
-      {allSessions.length > 1 ? (
-        <DialpadSessionSwitcher
-          sessions={allSessions}
-          activeSessionId={activeSessionId ?? allSessions[0]?.id ?? null}
-          onSwitchSession={onSwitchSession}
-        />
-      ) : null}
-
       <div
         className={cn(
-          ' flex min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y w-full',
+          'dialpad-no-scrollbar flex min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y w-full',
           contentClassName,
         )}
       >
