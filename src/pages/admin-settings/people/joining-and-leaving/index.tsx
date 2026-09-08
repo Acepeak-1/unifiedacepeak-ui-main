@@ -103,8 +103,8 @@ const JoiningAndLeaving = () => {
                 their number, data and account when they go.
               </>
             }
-            side="top"
-            className="!bg-gray-300 !text-black whitespace-normal text-left"
+            side="right"
+            className="whitespace-normal text-left"
           >
             <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
           </CustomTooltip>

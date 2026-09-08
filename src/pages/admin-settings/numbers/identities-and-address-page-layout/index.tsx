@@ -11,6 +11,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useDebounce from '@/hooks/use-debounce';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import CreateNewAddress from './addresses/create-new-address';
+import { useSlidingTabIndicator } from '@/components/custom/use-sliding-tab-indicator';
 import CreateIdentity from '../all-numbers/add-number-new/create-identity';
 import { GETSCHEMA, initialState } from '../all-numbers/constants';
 import {
@@ -32,6 +33,7 @@ import {
   FileCheck2,
   Globe2,
   IdCard,
+  Info,
   MapPin,
   Plus,
   ShieldCheck,
@@ -58,7 +60,7 @@ const tabList = [
 /* Shown as a tooltip off the title's info icon rather than a line under it —
    see AdminPage's `titleSuffix` prop. */
 const PAGE_DESCRIPTION =
-  'The registered identities and service addresses your numbers are issued against. Records are created while buying a number that requires one — this page is where you review and edit them.';
+  'Identities and addresses your numbers are issued against, created when buying a number that needs one. Review and edit them here.';
 
 /* A quick census for each tab, matching the design mockup's KPI row.
    Recomputed from the same dummy array each tab's own table renders
@@ -181,6 +183,7 @@ const IdentitiesAndAddressesPageLayout = () => {
   const { pathname } = useLocation();
   const getActiveTab = pathname?.split('/')[pathname?.split('/')?.length - 1];
   const activeTab = getActiveTab?.toLocaleLowerCase();
+  const { navRef: tabsNavRef, indicatorStyle: tabsIndicatorStyle } = useSlidingTabIndicator(activeTab);
   const [drawerState, setDrawerState] = useState({
     addNewAddress: false,
     addNewIdentity: false,
@@ -415,9 +418,21 @@ const IdentitiesAndAddressesPageLayout = () => {
         menuPortalTarget={menuPortalTarget}
       />
     ),
-    addresses: <Addresses search={debouncedSearch} liveSearch={search} setSearch={setSearch} />,
+    addresses: (
+      <Addresses
+        search={debouncedSearch}
+        liveSearch={search}
+        setSearch={setSearch}
+        menuPortalTarget={menuPortalTarget}
+      />
+    ),
     verifications: (
-      <Verification search={debouncedSearch} liveSearch={search} setSearch={setSearch} />
+      <Verification
+        search={debouncedSearch}
+        liveSearch={search}
+        setSearch={setSearch}
+        menuPortalTarget={menuPortalTarget}
+      />
     ),
   };
 
@@ -439,13 +454,14 @@ const IdentitiesAndAddressesPageLayout = () => {
           <CustomTooltip
             text={PAGE_DESCRIPTION}
             side="right"
-            className="w-max max-w-[340px] whitespace-normal border-0 bg-[#fdf7f5] text-black shadow-[0_6px_20px_rgba(17,17,17,0.18)] [&_svg]:fill-[#fdf7f5]"
+            className="w-[300px] whitespace-normal text-balance border-0 bg-[#fdf7f5] text-black shadow-[0_6px_20px_rgba(17,17,17,0.18)] [&_svg]:fill-[#fdf7f5]"
           >
-            <span className="mcm-intpage-info">i</span>
+            <Info className="h-5 w-5 text-gray-500 transition-colors hover:text-red-600 active:text-red-600 data-[state=delayed-open]:text-red-600 data-[state=instant-open]:text-red-600" />
           </CustomTooltip>
         }
         headerTabs={
-          <nav className="mcm-segmented" role="group" aria-label="Numbers views">
+          <nav ref={tabsNavRef} className="mcm-segmented" role="group" aria-label="Numbers views">
+            <span className="ident-segmented-indicator" style={tabsIndicatorStyle} aria-hidden="true" />
             {tabList.map(({ label, value }) => (
               <button
                 key={value}
@@ -466,7 +482,7 @@ const IdentitiesAndAddressesPageLayout = () => {
                 className="ident-pill-btn black"
                 onClick={() => setDrawerState((prev) => ({ ...prev, addNewIdentity: true }))}
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-5 h-5 text-white" />
                 Add identity
               </button>
             )}
@@ -476,7 +492,7 @@ const IdentitiesAndAddressesPageLayout = () => {
                 className="ident-pill-btn black"
                 onClick={() => setDrawerState((prev) => ({ ...prev, addNewAddress: true }))}
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-5 h-5 text-white" />
                 Add address
               </button>
             )}
@@ -506,15 +522,12 @@ const IdentitiesAndAddressesPageLayout = () => {
             className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-2xl lg:max-w-3xl"
           >
             <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
-              <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-                <MapPin className="h-4 w-4 text-black" />
-                Add Address
-              </DialogTitle>
+              <DialogTitle className="popup-title">Add Address</DialogTitle>
               <button
                 type="button"
                 onClick={() => handleClose('addNewAddress')}
                 aria-label="Close"
-                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -536,7 +549,7 @@ const IdentitiesAndAddressesPageLayout = () => {
                 type="button"
                 disabled={isCreatingAddress}
                 onClick={submitAddress}
-                className="border-black bg-black text-white hover:bg-gray-800 hover:text-white"
+                className="rounded-full border-black bg-black px-5 text-white hover:bg-gray-800 hover:text-white"
               >
                 {isCreatingAddress && <Loader variant="blue" />}Save Address
               </Button>
@@ -556,15 +569,12 @@ const IdentitiesAndAddressesPageLayout = () => {
             className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-2xl lg:max-w-3xl"
           >
             <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
-              <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-                <IdCard className="h-4 w-4 text-black" />
-                Add Identity
-              </DialogTitle>
+              <DialogTitle className="popup-title">Add Identity</DialogTitle>
               <button
                 type="button"
                 onClick={() => handleClose('addNewIdentity')}
                 aria-label="Close"
-                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
               >
                 <X className="h-4 w-4" />
               </button>

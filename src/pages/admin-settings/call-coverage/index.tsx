@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import NumberWithFlag from '@/components/custom/number-with-flag';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { allNumbersList, callForwarding, getGreetings, getUserList } from '@/services/api';
 import { useUser } from '@/hooks/use-user';
@@ -27,18 +28,22 @@ import {
 } from '@/lib/call-standard';
 import { invalidateNumberLists } from '@/lib/number-list-cache';
 import {
-  Hash,
-  Users,
+  Info,
   Voicemail,
   X,
   Wrench,
   KeyRound,
   Phone,
   Sparkles,
+  TriangleAlert,
+  CircleCheck,
+  Building2,
 } from 'lucide-react';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import TableSearchHeader from '@/components/custom/table-search-header';
+import SimpleTableFooter, { type SimplePagination } from '@/components/custom/simple-table-footer';
+import { useSlidingTabIndicator } from '@/components/custom/use-sliding-tab-indicator';
 import '@/components/mcm/mcm-page.css';
 
 /**
@@ -75,6 +80,7 @@ type Tab = 'numbers' | 'extensions' | 'greetings';
 const CallCoverage = () => {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('numbers');
+  const { navRef: tabsNavRef, indicatorStyle: tabsIndicatorStyle } = useSlidingTabIndicator(tab);
   const [confirming, setConfirming] = useState<{ did: any; coverage: Coverage } | null>(null);
   const [onlyGaps, setOnlyGaps] = useState(true);
   const [search, setSearch] = useState('');
@@ -82,6 +88,11 @@ const CallCoverage = () => {
   const [generating, setGenerating] = useState<string | null>(null);
   const [, setGeneratedFor] = useState<string[]>([]);
   const [failedFor, setFailedFor] = useState<Record<string, string>>({});
+  /* The per-page picker's dropdown menu renders into document.body by
+     default, escaping the .ident-coral-theme scope below and falling back
+     to react-select's plain default colors instead of this page's red
+     theme — same fix as Identities & addresses' own menuPortalTarget. */
+  const [menuPortalTarget, setMenuPortalTarget] = useState<HTMLDivElement | null>(null);
   const { user } = useUser();
   const { mainSiteInfo } = useOrganization();
 
@@ -168,6 +179,9 @@ const CallCoverage = () => {
 
   const searchTerm = search.trim().toLowerCase();
 
+  const personName = (person: any) =>
+    `${person?.first_name || ''} ${person?.last_name || ''}`.trim();
+
   const visibleNumbers = (
     onlyGaps ? numberRows.filter((row) => row.coverage.state !== 'covered') : numberRows
   ).filter(
@@ -193,8 +207,31 @@ const CallCoverage = () => {
         .toLowerCase()
         .includes(searchTerm),
   );
+  const visibleGreetingPeople = (users as any[])
+    .filter((person) => personName(person))
+    .filter((person) => !searchTerm || personName(person).toLowerCase().includes(searchTerm));
 
   const isLoading = tab === 'numbers' ? numbersLoading : usersLoading;
+
+  /* One pagination state shared across the three tabs — each keeps its own
+     page in practice since switching tabs (or narrowing the search/filter)
+     resets it back to page 1, the same way TableManager's own pagination
+     does. */
+  const [pagination, setPagination] = useState<SimplePagination>({ pageIndex: 0, pageSize: 25 });
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [tab, search, onlyGaps]);
+  const pageSlice = <T,>(rows: T[]) =>
+    rows.slice(pagination.pageIndex * pagination.pageSize, (pagination.pageIndex + 1) * pagination.pageSize);
+  const pagedNumbers = pageSlice(visibleNumbers);
+  const pagedUsers = pageSlice(visibleUsers);
+  const pagedGreetingPeople = pageSlice(visibleGreetingPeople);
+  const currentTabTotal =
+    tab === 'numbers'
+      ? visibleNumbers.length
+      : tab === 'extensions'
+        ? visibleUsers.length
+        : visibleGreetingPeople.length;
 
   const isTableRefreshing =
     tab === 'numbers' ? numbersRefetching : tab === 'extensions' ? usersRefetching : greetingsRefetching;
@@ -228,9 +265,6 @@ const CallCoverage = () => {
       /* Private browsing — the field still works for this session. */
     }
   };
-
-  const personName = (person: any) =>
-    `${person?.first_name || ''} ${person?.last_name || ''}`.trim();
 
   /* A person already has one when a voicemail greeting carries their name.
      Matching on name rather than an id because the greeting library has no
@@ -290,7 +324,10 @@ const CallCoverage = () => {
   );
 
   return (
-    <div className="ident-coral-theme call-coverage-page flex min-h-0 w-full flex-1 flex-col">
+    <div
+      ref={setMenuPortalTarget}
+      className="ident-coral-theme call-coverage-page flex min-h-0 w-full flex-1 flex-col"
+    >
       <AdminPage
         section="Numbers"
         title="Call coverage"
@@ -298,13 +335,14 @@ const CallCoverage = () => {
           <CustomTooltip
             text={PAGE_DESCRIPTION}
             side="right"
-            className="w-max max-w-[340px] whitespace-normal border-0 bg-[#fdf7f5] text-black shadow-[0_6px_20px_rgba(17,17,17,0.18)] [&_svg]:fill-[#fdf7f5]"
+            className="w-[260px] whitespace-normal text-balance border-0 bg-[#fdf7f5] text-black shadow-[0_6px_20px_rgba(17,17,17,0.18)] [&_svg]:fill-[#fdf7f5]"
           >
-            <span className="mcm-intpage-info">i</span>
+            <Info className="h-5 w-5 text-gray-500 transition-colors hover:text-red-600 active:text-red-600 data-[state=delayed-open]:text-red-600 data-[state=instant-open]:text-red-600" />
           </CustomTooltip>
         }
         headerTabs={
-          <nav className="mcm-segmented" role="group" aria-label="Call coverage views">
+          <nav ref={tabsNavRef} className="mcm-segmented" role="group" aria-label="Call coverage views">
+            <span className="ident-segmented-indicator" style={tabsIndicatorStyle} aria-hidden="true" />
             <button
               type="button"
               className={tab === 'numbers' ? 'is-active' : ''}
@@ -389,9 +427,10 @@ const CallCoverage = () => {
               tab === 'greetings' ? (
                 <>
                   <label
-                    className="fchip"
-                    style={{ flex: '0 1 auto', minWidth: 260, border: '1px solid #f5a3a3' }}
+                    className="fchip ident-fchip border-neutral-200! bg-white! focus-within:border-[rgba(220,38,38,0.4)]!"
+                    style={{ flex: '0 1 auto', minWidth: 260 }}
                   >
+                    <Building2 className="h-3.5 w-3.5 flex-none" />
                     Company:
                     <input
                       value={companyName}
@@ -409,25 +448,27 @@ const CallCoverage = () => {
                   </label>
                   <button
                     type="button"
-                    className="btn flex-none bg-black text-white hover:bg-gray-800"
+                    className="btn ident-generate-btn flex-none bg-black! text-white! hover:bg-gray-800!"
                     disabled={Boolean(generating) || !peopleNeedingGreeting.length}
                     onClick={() => runGeneration(peopleNeedingGreeting)}
                   >
+                    <Sparkles className="h-3.5 w-3.5" />
                     {generating
                       ? 'Generating…'
                       : `Generate all missing (${peopleNeedingGreeting.length})`}
                   </button>
                   <span
-                    className={`fchip ${peopleNeedingGreeting.length ? 'bad' : 'live'}`}
+                    className={`fchip ident-fchip ${peopleNeedingGreeting.length ? 'bad' : 'live'}`}
                     style={{ marginLeft: 'auto', whiteSpace: 'nowrap', flex: 'none', marginRight: 8 }}
                   >
+                    <Voicemail className="h-3.5 w-3.5" />
                     <span className="num">{peopleNeedingGreeting.length}</span> without a greeting
                   </span>
                 </>
               ) : (
                 <>
                   <label
-                    className="fchip"
+                    className="fchip ident-fchip"
                     style={{ marginLeft: 'auto', whiteSpace: 'nowrap', flex: 'none' }}
                   >
                     <input
@@ -438,9 +479,14 @@ const CallCoverage = () => {
                     Only show gaps
                   </label>
                   <span
-                    className={`fchip ${counts.gaps ? 'bad' : 'live'}`}
+                    className={`fchip ident-fchip ${counts.gaps ? 'bad' : 'live'}`}
                     style={{ whiteSpace: 'nowrap', flex: 'none', marginRight: 8 }}
                   >
+                    {counts.gaps ? (
+                      <TriangleAlert className="h-3.5 w-3.5" />
+                    ) : (
+                      <CircleCheck className="h-3.5 w-3.5" />
+                    )}
                     <span className="num">{counts.gaps}</span> of {counts.total} would drop a call
                   </span>
                 </>
@@ -457,19 +503,23 @@ const CallCoverage = () => {
           <table>
             <thead>
               <tr>
-                <th>Number</th>
-                <th>Assigned to</th>
-                <th>Coverage</th>
-                <th>What a caller gets</th>
-                <th className="fix-col">Fix</th>
+                <th style={{ width: '22%' }}>Number</th>
+                <th style={{ width: '20%' }}>Assigned to</th>
+                <th style={{ width: '18%' }}>Coverage</th>
+                <th style={{ width: '24%' }}>What a caller gets</th>
+                <th className="fix-col" style={{ width: '16%' }}>
+                  Fix
+                </th>
               </tr>
             </thead>
             <tbody>
               {visibleNumbers.length ? (
-                visibleNumbers.map(({ did, coverage }) => (
+                pagedNumbers.map(({ did, coverage }) => (
                   <tr key={did?.uuid || did?.did_number}>
                     <td className="num">
-                      <span style={{ display: 'block', fontWeight: 700 }}>{did?.did_number}</span>
+                      <span style={{ display: 'block', fontWeight: 500 }}>
+                        <NumberWithFlag number={did?.did_number} />
+                      </span>
                       {did?.did_name ? (
                         <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>{did.did_name}</span>
                       ) : null}
@@ -497,7 +547,7 @@ const CallCoverage = () => {
                       {coverage.fixable ? (
                         <button
                           type="button"
-                          className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-100"
+                          className="flex items-center gap-1.5 whitespace-nowrap rounded-full border! border-[var(--accent-edge)]! bg-[var(--accent-wash)]! px-3 py-1.5 text-sm font-medium text-[var(--accent)]! hover:bg-red-100!"
                           onClick={() => setConfirming({ did, coverage })}
                           disabled={applying}
                         >
@@ -507,7 +557,7 @@ const CallCoverage = () => {
                       ) : coverage.state === 'covered' ? (
                         <span style={{ color: 'var(--ink-4)', fontSize: 12 }}>—</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-sm text-gray-500">
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-gray-100 px-3 py-1.5 text-sm text-gray-500">
                           <KeyRound className="h-3.5 w-3.5" />
                           Needs a decision
                         </span>
@@ -533,16 +583,18 @@ const CallCoverage = () => {
           <table>
             <thead>
               <tr>
-                <th>Extension</th>
-                <th>Name</th>
-                <th>Coverage</th>
-                <th>What a caller gets</th>
-                <th className="w-20 text-center">Fix</th>
+                <th style={{ width: '18%' }}>Extension</th>
+                <th style={{ width: '22%' }}>Name</th>
+                <th style={{ width: '18%' }}>Coverage</th>
+                <th style={{ width: '26%' }}>What a caller gets</th>
+                <th className="fix-col" style={{ width: '16%' }}>
+                  Fix
+                </th>
               </tr>
             </thead>
             <tbody>
               {visibleUsers.length ? (
-                visibleUsers.map(({ user, coverage }) => (
+                pagedUsers.map(({ user, coverage }) => (
                   <tr key={user?.uuid}>
                     <td className="num">{user?.extension || '—'}</td>
                     <td>
@@ -552,7 +604,7 @@ const CallCoverage = () => {
                       <span className={STATE_CLASS[coverage.state]}>{coverage.headline}</span>
                     </td>
                     <td style={{ maxWidth: 420 }}>{coverage.detail}</td>
-                    <td className="w-20 text-center">
+                    <td className="fix-col w-20">
                       <CustomTooltip
                         text={coverage.state === 'covered' ? 'Call rules' : 'Set voicemail'}
                         side="top"
@@ -588,18 +640,16 @@ const CallCoverage = () => {
           <table>
             <thead>
               <tr>
-                <th>Person</th>
-                <th>Extension</th>
-                <th>Greeting</th>
-                <th>What the caller will hear</th>
-                <th className="text-center">Generate</th>
+                <th style={{ width: '18%' }}>Person</th>
+                <th style={{ width: '14%' }}>Extension</th>
+                <th style={{ width: '14%' }}>Greeting</th>
+                <th style={{ width: '46%' }}>What the caller will hear</th>
+                <th style={{ width: '8%', textAlign: 'left' }}>Generate</th>
               </tr>
             </thead>
             <tbody>
-              {(users as any[]).length ? (
-                (users as any[])
-                  .filter((person) => personName(person))
-                  .filter((person) => !searchTerm || personName(person).toLowerCase().includes(searchTerm))
+              {visibleGreetingPeople.length ? (
+                pagedGreetingPeople
                   .map((person) => {
                     const has = greetingExistsFor(person);
                     const failure = failedFor[person.uuid];
@@ -621,14 +671,14 @@ const CallCoverage = () => {
                           {failure ||
                             voicemailScriptFor(personName(person), spokenCompany || undefined)}
                         </td>
-                        <td className="text-center">
+                        <td>
                           <CustomTooltip
                             text={busy ? 'Generating…' : has ? 'Regenerate' : 'Generate'}
                             side="top"
                           >
                             <button
                               type="button"
-                              className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-500 hover:text-white disabled:pointer-events-none disabled:opacity-50"
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-500 hover:text-white disabled:pointer-events-none disabled:opacity-50"
                               disabled={Boolean(generating)}
                               onClick={() => runGeneration([person])}
                             >
@@ -657,27 +707,44 @@ const CallCoverage = () => {
           </table>
         )}
 
+        {/* Same red-bordered notice style as All numbers' own banner, and
+            positioned the same way relative to the footer: description
+            first, pagination footer after it — matching the AI
+            Receptionist list's own table-then-footer order. */}
         {tab === 'greetings' ? (
-          <div className="mcm-tblfoot">
-            Each greeting is synthesised, saved to Media Files, and attached to that person's
-            voicemail in one step. Attaching goes through <code>/api/user/update</code>, which
-            replaces the whole user record — so every other field is read off the person and written
-            straight back, unchanged. Run one person first and confirm their name, role and settings
-            are intact before generating for everyone.
-          </div>
+          <p className="mx-4 mt-4 mb-3 flex items-start gap-2 rounded-lg border border-[var(--accent-edge)] bg-[var(--accent-wash)] px-[13px] py-[10px] text-[12.5px] leading-relaxed text-[var(--ink-2)]">
+            <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--accent)]" />
+            <span>
+              Generating rewrites the person's whole user record — test on one person before
+              running it for everyone.
+            </span>
+          </p>
         ) : null}
 
         {tab === 'extensions' ? (
-          <div className="mcm-tblfoot">
-            This is the control that decides whether an unanswered call reaches voicemail. Open an
-            extension, expand <strong>Incoming Calls</strong>, and set{' '}
-            <strong>If Busy / Unanswered / Unreachable</strong> to{' '}
-            <strong>Send to Voicemail</strong>. It is not applied in bulk on purpose: the only
-            endpoint that writes call rules replaces the whole user record — name, role, greetings
-            and settings included — so a partial write would quietly clear fields this screen never
-            asked about.
-          </div>
+          <p className="mx-4 mt-4 mb-3 flex items-start gap-2 rounded-lg border border-[var(--accent-edge)] bg-[var(--accent-wash)] px-[13px] py-[10px] text-[12.5px] leading-relaxed text-[var(--ink-2)]">
+            <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--accent)]" />
+            <span>
+              Open an extension → <strong>Incoming Calls</strong> → set{' '}
+              <strong>If Busy / Unanswered / Unreachable</strong> to{' '}
+              <strong>Send to Voicemail</strong>. Not bulk-applied, to avoid rewriting each
+              person's whole record.
+            </span>
+          </p>
         ) : null}
+
+        {(tab === 'greetings' || tab === 'extensions') && (
+          <div className="border-t border-[#f0f0f0]" />
+        )}
+
+        {!isLoading && currentTabTotal > 0 && (
+          <SimpleTableFooter
+            totalItems={currentTabTotal}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            menuPortalTarget={menuPortalTarget}
+          />
+        )}
         </div>
       </AdminPage>
 
@@ -696,12 +763,7 @@ const CallCoverage = () => {
             className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-2xl lg:max-w-3xl"
           >
             <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
-              <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-                <Users className="h-4 w-4 text-black" />
-                Call rules ·{' '}
-                {`${editingUser?.first_name || ''} ${editingUser?.last_name || ''}`.trim() ||
-                  'Extension'}
-              </DialogTitle>
+              <DialogTitle className="popup-title">Call rules</DialogTitle>
               <button
                 type="button"
                 onClick={() => {
@@ -709,7 +771,7 @@ const CallCoverage = () => {
                   queryClient.invalidateQueries({ queryKey: ['fetchUsersList'] });
                 }}
                 aria-label="Close"
-                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -733,18 +795,15 @@ const CallCoverage = () => {
         <Dialog open={Boolean(confirming)} onOpenChange={(open) => !open && setConfirming(null)}>
           <DialogContent
             showCloseButton={false}
-            className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-md lg:max-w-lg"
+            className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-2xl lg:max-w-3xl"
           >
             <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
-              <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-                <Hash className="h-4 w-4 text-black" />
-                Apply standard call handling
-              </DialogTitle>
+              <DialogTitle className="popup-title">Apply standard call handling</DialogTitle>
               <button
                 type="button"
                 onClick={() => setConfirming(null)}
                 aria-label="Close"
-                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
               >
                 <X className="h-4 w-4" />
               </button>

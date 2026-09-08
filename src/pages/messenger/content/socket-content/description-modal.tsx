@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import FolderList from './folder-list';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/hooks/use-user';
@@ -999,7 +1000,7 @@ const DescriptionModal = ({
                 <InfoTabTrigger value="members">Members</InfoTabTrigger>
               ) : null}
               <InfoTabTrigger value="media">Media</InfoTabTrigger>
-              <InfoTabTrigger value="files">Files</InfoTabTrigger>
+              <InfoTabTrigger value="files">Docs</InfoTabTrigger>
               <InfoTabTrigger value="links">Links</InfoTabTrigger>
               <InfoTabTrigger value="calls">Calls</InfoTabTrigger>
             </TabsList>
@@ -1032,10 +1033,11 @@ const DescriptionModal = ({
           </TabsContent>
 
           <TabsContent value="files" className="m-0 w-full">
-            <FilesTab
+            <DocsTab
               items={fileAttachments}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
+              selectedChat={selectedChat}
             />
           </TabsContent>
 
@@ -1417,6 +1419,65 @@ const MediaThumb = ({
         </span>
       ) : null}
     </button>
+  );
+};
+
+/**
+ * Docs — shared files and the chat's folders in one place, since both are
+ * "documents in this conversation" and having them behind separate controls
+ * meant guessing which one a given attachment had ended up in.
+ *
+ * Neither list is reimplemented: this is the existing file list and the
+ * existing FolderList (with its create / add / pin / delete actions intact),
+ * chosen between by a switch.
+ */
+const DocsTab = ({
+  items,
+  searchQuery,
+  setSearchQuery,
+  selectedChat,
+}: {
+  items: InfoAttachment[];
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  selectedChat: any;
+}) => {
+  const [view, setView] = useState<'files' | 'folders'>('files');
+
+  return (
+    <div className="bg-white">
+      <div className="px-3 pt-3">
+        <div className="flex gap-0.5 rounded-[9px] bg-slate-100 p-0.5">
+          {(
+            [
+              { value: 'files', label: 'Files' },
+              { value: 'folders', label: 'Folders' },
+            ] as { value: 'files' | 'folders'; label: string }[]
+          ).map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setView(option.value)}
+              className={`flex-1 cursor-pointer rounded-[7px] px-2 py-[5px] text-xs font-bold transition-colors ${
+                view === option.value
+                  ? 'bg-white text-slate-800 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {view === 'files' ? (
+        <FilesTab items={items} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      ) : (
+        <div className="min-h-[320px]">
+          <FolderList selectedChat={selectedChat} setActiveState={() => {}} embedded />
+        </div>
+      )}
+    </div>
   );
 };
 

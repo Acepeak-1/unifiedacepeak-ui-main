@@ -6,9 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import Loader from '@/components/custom/loader';
 import { SocketEvents } from '@/context/socket-events-context';
 import { useUser } from '@/hooks/use-user';
-import { useCallStats } from '@/hooks/use-call-stats';
+import { usePerformanceCallStats } from './use-performance-call-stats';
 import { callReportAgentList, campaignList, getGroupList, getSmsLogList } from '@/services/api';
 import PerfStatCard from './stat-card';
+import { DUMMY_CAMPAIGNS, DUMMY_AI_RESULT } from './dummy-tab-data';
+import { buildDummyAgentStats } from './dummy-call-data';
 import {
   REPORT_CATALOG,
   AVAILABLE_REPORT_COUNT,
@@ -72,7 +74,9 @@ const ReportsTab = ({ selectedRange }: { selectedRange: { from: string; to: stri
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
 
   const selected = findReport(selectedId);
-  const callStats = useCallStats(selectedRange);
+  // Falls back to a realistic dummy dataset only when the account genuinely
+  // has no calls in this range — see `use-performance-call-stats.ts`.
+  const callStats = usePerformanceCallStats(selectedRange);
 
   const { campaignAiLiveCallData, getAiLiveWallboardData, isSocketConnected } =
     useContext(SocketEvents);
@@ -86,7 +90,7 @@ const ReportsTab = ({ selectedRange }: { selectedRange: { from: string; to: stri
   const needsSms = selectedId === 'media-type';
   const needsLists = selectedId === 'contact-list-status';
 
-  const { data: agentStatsRows = [], isPending: isAgentPending } = useQuery({
+  const { data: realAgentStatsRows = [], isPending: isAgentPending } = useQuery({
     queryKey: ['performanceReportAgentSummary', selectedRange],
     queryFn: () =>
       callReportAgentList({
@@ -99,13 +103,24 @@ const ReportsTab = ({ selectedRange }: { selectedRange: { from: string; to: stri
     select: (res: any) => res?.data?.data?.result?.rows || [],
     enabled: needsAgents,
   });
+  // No agent activity in this range on a fresh account — reuse the same
+  // dummy CDR rows the KPI band/Queues/Agents tabs fall back to, so the
+  // numbers agree with each other. See `dummy-call-data.ts`.
+  const agentStatsRows = useMemo(
+    () =>
+      realAgentStatsRows.length
+        ? realAgentStatsRows
+        : buildDummyAgentStats(callStats.rows, []),
+    [realAgentStatsRows, callStats.rows],
+  );
 
-  const { data: campaigns = [], isPending: isCampaignPending } = useQuery({
+  const { data: realCampaigns = [], isPending: isCampaignPending } = useQuery({
     queryKey: ['performanceReportCampaigns'],
     queryFn: () => campaignList({ page: 1, limit: 100, filters: [] }),
     select: (res: any) => res?.data?.data?.result?.rows || [],
     enabled: needsCampaigns,
   });
+  const campaigns = realCampaigns.length ? realCampaigns : DUMMY_CAMPAIGNS;
 
   const { data: smsRows = [], isPending: isSmsPending } = useQuery({
     queryKey: ['performanceReportSmsLog', selectedRange],
@@ -150,7 +165,7 @@ const ReportsTab = ({ selectedRange }: { selectedRange: { from: string; to: stri
         isSampled: callStats.isQueueBreakdownSampled,
         agentStatsRows,
         campaigns,
-        aiResult: campaignAiLiveCallData?.data?.result,
+        aiResult: campaignAiLiveCallData?.data?.result || DUMMY_AI_RESULT,
         smsRows,
         contactLists,
       });

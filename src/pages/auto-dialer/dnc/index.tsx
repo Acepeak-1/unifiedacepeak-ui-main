@@ -10,6 +10,10 @@ import AlertConfirm from '@/components/custom/alert-confirm';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import UploadDnc from './uploadDnc';
+import { Plus, RefreshCcw, Search, Upload } from 'lucide-react';
+import useDebounce from '@/hooks/use-debounce';
+import './dnc-head.css';
+import './dnc-table.css';
 
 export const DNC_TABS = {
   DEFAULT: 'Default DNC',
@@ -58,6 +62,8 @@ export const DNC_TABS = {
 const DNC = () => {
   const [open, setOpen] = useState<boolean>(false);
   const [openUpload, setOpenUpload] = useState<boolean>(false);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
 
   const queryClient: any = useQueryClient();
   const [confirmModelState, setConfirmState] = useState<{
@@ -135,110 +141,76 @@ const DNC = () => {
   });
   return (
     <>
-      <section className="w-full bg-gray-200/15 flex flex-col overflow-x-auto overflow-y-hidden">
-        <div className="flex items-center justify-between p-3 border-b border-gray-200 min-h-[65px] bg-white">
-          <p className="text-gray-900 font-semibold text-lg flex items-center gap-1">
-            Do Not Contact List
-          </p>
+      <section className="w-full bg-[#e3e3e3] flex flex-col overflow-x-auto overflow-y-hidden">
+        <div className="flex items-center justify-between px-[26px] pt-5 pb-1 border-b border-gray-200 bg-white">
+          <div>
+            <div className="dnc-eyebrow">Activity</div>
+            <p className="dnc-title">Do not Contact List</p>
+          </div>
 
           <div className="flex gap-2 filters">
             <Button
-              onClick={() => setOpen(true)}
-              className="cursor-pointer min-h-9"
+              onClick={() => setOpenUpload(true)}
+              className="cursor-pointer min-h-9 rounded-full gap-1.5 hover:bg-transparent"
+              style={{ borderWidth: 1, borderStyle: 'solid', borderColor: '#fecaca', color: '#171717' }}
               variant={'outline'}
               type="button"
             >
-              Add DNC
+              <Upload className="w-4 h-4" style={{ color: '#f87171' }} />
+              Upload DNC
             </Button>
             <Button
-              onClick={() => setOpenUpload(true)}
-              className="cursor-pointer min-h-9"
-              variant={'outline'}
+              onClick={() => setOpen(true)}
+              variant="dark"
+              className="cursor-pointer min-h-9 rounded-full gap-1.5"
+              style={{ backgroundColor: '#171717', borderColor: '#171717', color: '#ffffff' }}
               type="button"
             >
-              Upload DNC
+              <Plus className="w-4 h-4" style={{ color: '#ffffff' }} />
+              Add DNC
             </Button>
           </div>
         </div>
-        <div className="w-full flex items-center justify-between p-3 border-b border-gray-200 min-h-[65px] ">
-          {/* <Tabs value={tabName} onValueChange={handleTabChange} className="flex w-full">
+        <section className="w-full bg-[#e3e3e3] flex flex-col overflow-x-auto overflow-y-hidden  h-full">
             <div className="w-full">
-              <TabsList className="flex text-sm font-semibold text-center  p-0 rounded-none bg-transparent min-h-10 ">
-                <TabsTrigger
-                  value={DNC_TABS.DEFAULT}
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:text-primary border-b-2 px-6  text-gray-700 cursor-pointer h-full rounded-none w-2/4 m-auto relative flex gap-1 bg-transparent font-semibold data-[state=active]:shadow-2xs"
-                >
-                  {DNC_TABS.DEFAULT}
-                </TabsTrigger>
-                <TabsTrigger
-                  value={DNC_TABS.PERSONAL}
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:text-primary border-b-2 px-6  text-gray-700 cursor-pointer h-full rounded-none w-2/4 m-auto relative flex gap-1 bg-transparent font-semibold data-[state=active]:shadow-2xs"
-                >
-                  {DNC_TABS.PERSONAL}
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            <TabsContent value={DNC_TABS.DEFAULT}>
-              <section className="w-full bg-gray-200/15 flex flex-col overflow-x-auto overflow-y-hidden  h-full">
-                <div className="w-full  p-3 flex flex-col gap-2 ">
-                  <TableManager
-                    {...{
-                      columns,
-                      fetcherKey: 'getDNCComplaintsList',
-                      fetcherFn: getDNCComplaintsList,
-                      select: (data) => data?.data?.data?.result || [],
-                      emptyTablePlaceholder: 'No DNC records found',
-                      descriptionEmptyTable: 'Numbers added to Do Not Call will appear here.',
-                    }}
-                  />
+              <div className="dnc-card">
+                <div className="dnc-toolbar">
+                  <div className="dnc-search">
+                    <span className="dnc-search-ico" aria-hidden="true">
+                      <Search />
+                    </span>
+                    <input
+                      placeholder="Search DNC"
+                      aria-label="Search DNC"
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="dnc-refresh"
+                    aria-label="Refresh DNC list"
+                    onClick={() =>
+                      queryClient.invalidateQueries({ queryKey: ['getPersonalDncList'] })
+                    }
+                  >
+                    <RefreshCcw className="w-4 h-4" />
+                  </button>
                 </div>
-              </section>
-            </TabsContent>
-            <TabsContent value={DNC_TABS.PERSONAL}>
-              <section className="w-full bg-gray-200/15 flex flex-col overflow-x-auto overflow-y-hidden  h-full">
-                <div className="w-full  p-3 flex flex-col gap-2 ">
-                  <TableManager
-                    {...{
-                      columns: columnsPersonal,
-                      fetcherKey: 'getPersonalDncList',
-                      fetcherFn: getDncCampaign,
-                      emptyTablePlaceholder: 'No DNC records found',
-                      descriptionEmptyTable: 'Numbers added to Do Not Call will appear here.',
-                    }}
-                  />
-                </div>
-                <AlertConfirm
+                <TableManager
                   {...{
-                    headerText:"Confirm Delete",
-                    apiLoading: isPendingDeleteGroup,
-                    onConfirm: () => {
-                      mutateDeleteGroup({ dncId: confirmModelState?.selectedId });
-                      queryClient.invalidateQueries(['getPersonalDncList'], { exact: true });
-                    },
-                    open: confirmModelState?.isModal,
-                    setOpen: () => {
-                      setConfirmState({
-                        isModal: false,
-                        selectedId: '',
-                      });
-                    },
-                    descriptionTextComp:"Are you sure, you want to delete this DNC ?"
+                    columns: columnsPersonal,
+                    fetcherKey: 'getPersonalDncList',
+                    fetcherFn: getDncCampaign,
+                    search: debouncedSearch,
+                    clientSideSearch: true,
+                    emptyTablePlaceholder: 'No DNC records found',
+                    descriptionEmptyTable: 'Numbers added to Do Not Call will appear here.',
+                    hideFooterRefresh: true,
+                    pagerAccentClassName: 'bg-red-600 text-white border-red-600',
                   }}
                 />
-              </section>
-            </TabsContent>
-          </Tabs> */}
-          <section className="w-full bg-gray-200/15 flex flex-col overflow-x-auto overflow-y-hidden  h-full">
-            <div className="w-full flex flex-col gap-2 ">
-              <TableManager
-                {...{
-                  columns: columnsPersonal,
-                  fetcherKey: 'getPersonalDncList',
-                  fetcherFn: getDncCampaign,
-                  emptyTablePlaceholder: 'No DNC records found',
-                  descriptionEmptyTable: 'Numbers added to Do Not Call will appear here.',
-                }}
-              />
+              </div>
             </div>
             <AlertConfirm
               {...{
@@ -258,7 +230,6 @@ const DNC = () => {
               }}
             />
           </section>
-        </div>
       </section>
       <AddDncModal modalState={open} setModalState={setOpen} />
       <UploadDnc drawerState={openUpload} setDrawerState={setOpenUpload} />
