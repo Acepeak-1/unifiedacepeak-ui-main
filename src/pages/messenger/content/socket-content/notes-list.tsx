@@ -97,7 +97,7 @@ const NotesList = ({ selectedChat, setActiveState }: any) => {
         </div>
         {chatAccess?.create_note && (
           <div
-            className="cursor-pointer w-9 h-9 rounded-full flex items-center justify-center bg-gray-100 hover:bg-primary hover:text-white"
+            className="mcm-chat-iconbtn"
             onClick={() => {
               setAddNotes(true);
               setCurrentNote({ title: 'Untitled Note', content: defaultEditorValue });
@@ -112,13 +112,14 @@ const NotesList = ({ selectedChat, setActiveState }: any) => {
 
       {addNotes && (
         <div className="flex-1 w-full bg-white lg:bg-[var(--color-bg-gray-50)] p-4 flex flex-col min-h-0 overflow-hidden">
-          <div className="w-full h-full flex flex-col justify-between bg-white rounded-xl pb-3">
-            <div className="w-full flex flex-col gap-2 ">
+          <div className="mcm-notes-card flex h-full w-full flex-col justify-between rounded-xl border border-slate-200 bg-white shadow-[0_1px_3px_rgba(17,17,17,0.06)]">
+            <div className="flex w-full flex-col">
               {isEditingTitle ? (
-                <div className="flex flex-col gap-1 border-b border-gray-200 relative">
+                <div className="relative flex flex-col border-b border-slate-200">
                   <input
                     autoFocus
-                    className="text-sm font-semibold border-b border-gray-300 focus:border-gray-200 rounded-lg outline-none px-4 py-2 h-10 rounded-none border-t-none border-r-none border-l-none"
+                    placeholder="Note title"
+                    className="h-11 w-full border-0 bg-transparent pl-4 pr-16 text-sm font-semibold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-400"
                     value={currentNote?.title}
                     maxLength={100}
                     onChange={(e) =>
@@ -132,19 +133,20 @@ const NotesList = ({ selectedChat, setActiveState }: any) => {
                       }
                     }}
                   />
-                  <span className="text-xs text-gray-400 absolute right-2 bottom-3">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums text-slate-400">
                     {currentNote?.title?.length ?? 0}/100
                   </span>
                 </div>
               ) : (
                 <h2
-                  className="text-md font-semibold cursor-pointer border-b border-gray-200 h-10 min-h-10 px-4 flex items-center text-sm text-primary text-ellipsis overflow-hidden whitespace-nowrap"
+                  className="flex h-11 min-h-11 cursor-text items-center overflow-hidden text-ellipsis whitespace-nowrap border-b border-slate-200 px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
                   onClick={() => setIsEditingTitle(true)}
+                  title="Click to rename"
                 >
                   {currentNote?.title || 'Untitled Note'}
                 </h2>
               )}
-              <div className="w-full px-4">
+              <div className="mcm-notes-editor w-full px-3 pt-3">
                 <TextEditor
                   initialValue={currentNote?.content || defaultEditorValue}
                   onChange={(val: any) =>
@@ -154,9 +156,10 @@ const NotesList = ({ selectedChat, setActiveState }: any) => {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 px-3">
+            <div className="mcm-notes-foot flex justify-end gap-2 border-t border-slate-100 px-3 py-3">
               <Button
                 variant="transparent"
+                className="mcm-notes-btn"
                 onClick={() => {
                   setAddNotes(false);
                   setCurrentNote(null);
@@ -164,7 +167,11 @@ const NotesList = ({ selectedChat, setActiveState }: any) => {
               >
                 Cancel
               </Button>
-              <Button variant="outline" onClick={() => handleSave()}>
+              <Button
+                variant="primary"
+                className="mcm-notes-btn is-primary"
+                onClick={() => handleSave()}
+              >
                 {isEdit ? 'Update' : 'Create'}
               </Button>
             </div>
@@ -181,7 +188,11 @@ const NotesList = ({ selectedChat, setActiveState }: any) => {
                   return (
                     <div
                       key={JSON.stringify(note)}
-                      className={`flex flex-col gap-2 p-3 border rounded-sm   ${noteId === note?._id ? 'bg-yellow-50' : 'bg-white hover:bg-ucass-active-bg'} `}
+                      className={`flex flex-col gap-2 rounded-xl border p-3 transition-colors ${
+                        noteId === note?._id
+                          ? 'border-amber-200 bg-amber-50'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                      }`}
                     >
                       <div className="flex gap-2 justify-between items-center">
                         <div className="flex gap-2 items-start w-[calc(100%-70px)]">
