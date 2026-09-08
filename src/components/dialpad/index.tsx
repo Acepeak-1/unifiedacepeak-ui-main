@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MAX_DIAL_LENGTH } from './constants';
 import type { CallerIdOption } from './types';
 import { isDialpadInput } from './utils';
-import { cn } from '@/lib/utils';
+import { cn, handleAlert } from '@/lib/utils';
 import { useDialpad } from '@/hooks/use-dialpad';
 import { useDialpadCallerIdOptions } from '@/hooks/use-dialpad-caller-id-options';
 import {
@@ -16,7 +16,7 @@ import DialpadMicroFrame from './components/dialpad-micro-frame';
 import DialpadMiniFrame from './components/dialpad-mini-frame';
 import DialpadTranscriptManager from './components/dialpad-transcript-manager';
 import { useQueryClient } from '@tanstack/react-query';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { isExtensionDialTarget } from '@/lib/extension-utility';
 import { getDialpadSessionDisplayInfo, getHeaderFirstValue } from './session-display';
 
@@ -53,6 +53,7 @@ const Dialpad = ({
 }: DialpadProps) => {
   const queryClient = useQueryClient();
   const location = useLocation();
+  const navigate = useNavigate();
   const isPhoneRoute = location.pathname.startsWith('/phone');
   const buttonCursorClass =
     '[&_button:not(:disabled)]:cursor-pointer [&_button:disabled]:cursor-not-allowed';
@@ -99,6 +100,13 @@ const Dialpad = ({
   const [isCallerIdOpen, setIsCallerIdOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [dialpadScreen, setDialpadScreen] = useState<DialpadScreenState>('idle');
+  /* After "Call again", stay on the ringing screen for a minute even if the
+     session reports failed straight away — a switch that rejects instantly
+     otherwise flicks the window back to the ended screen before the person has
+     let go of the button. Connecting, hanging up, or the minute elapsing all
+     release it. */
+  const callAgainHoldUntilRef = useRef(0);
+  const [callAgainHoldAt, setCallAgainHoldAt] = useState(0);
   const [localMaxiTabOverride, setLocalMaxiTabOverride] = useState<DialpadMaxiTab | null>(null);
   const [, setActiveMaxiTab] = useState<DialpadMaxiTab>('call-history');
   const [routeModalSizeOverride, setRouteModalSizeOverride] = useState<'mini' | 'maxi' | null>(
@@ -371,7 +379,10 @@ const Dialpad = ({
     const didStartCall = makeCall(typedNumber, {
       extraHeaders: [`X-CallerId: ${manualCallerId}`],
     });
-    if (!didStartCall) return;
+    if (!didStartCall) {
+      handleAlert({ text: `Could not start the call to ${typedNumber}.`, type: 'error' });
+      return;
+    }
     setDialpadScreen('connected');
   }, [
     dialpadScreen,
@@ -401,6 +412,10 @@ const Dialpad = ({
   }, [activeSession, activeSessionId, isMuted, muteCall, unmuteCall]);
 
   const handleHangup = useCallback(() => {
+    /* Hanging up is a deliberate exit, so it releases the call-again hold
+       rather than leaving a minute of phantom ringing behind it. */
+    callAgainHoldUntilRef.current = 0;
+    setCallAgainHoldAt(0);
     if (activeSessionId) {
       endCall(activeSessionId);
     }
@@ -489,17 +504,35 @@ const Dialpad = ({
     [endCall],
   );
 
+  /* Every branch here used to return silently, so a blocked redial looked
+     exactly like a dead button: nothing happened and nothing said why. Each
+     one now reports itself. */
   const handleCallAgain = useCallback(() => {
-    if (!isRegistered) return;
+    if (!isRegistered) {
+      handleAlert({
+        text: 'Your phone is not registered yet — check the station status on the dialer.',
+        type: 'error',
+      });
+      return;
+    }
 
     const callbackTarget =
       activeSession?.remoteNumber && activeSession?.remoteNumber !== '-'
         ? activeSession?.remoteNumber
         : activeSession?.extension;
 
-    if (selectedCallerId?.id === 'no-caller-id' && !callbackTarget) return;
+    if (!callbackTarget) {
+      handleAlert({ text: 'This call has no number to dial back.', type: 'error' });
+      return;
+    }
 
-    if (!callbackTarget) return;
+    if (selectedCallerId?.id === 'no-caller-id') {
+      handleAlert({
+        text: 'Pick a caller ID before calling back — the switch will reject a call with none set.',
+        type: 'error',
+      });
+      return;
+    }
 
     if (activeSession?.id) {
       clearSession(activeSession.id);
@@ -516,7 +549,15 @@ const Dialpad = ({
         `X-CallerId: ${callbackTarget?.length <= 4 ? '' : callbackCallerId}`,
       ],
     });
-    if (!didStartCall) return;
+    if (!didStartCall) {
+      handleAlert({ text: `Could not start the call to ${callbackTarget}.`, type: 'error' });
+      return;
+    }
+
+    /* Hold the ringing screen for a minute so an instant rejection does not
+       snap straight back to the ended screen. */
+    callAgainHoldUntilRef.current = Date.now() + 60000;
+    setCallAgainHoldAt(Date.now());
     setDialpadScreen('connected');
   }, [
     activeSession?.extension,
@@ -528,9 +569,19 @@ const Dialpad = ({
     selectedCallerId?.id,
   ]);
 
+  /* Notes for a finished call belong on the phone page, against the number
+     that call was with — writing them in this floating window left no trace of
+     who they were about. Hand the number over and let the console open its own
+     Notes panel with the contact already resolved. */
   const handleAddNotes = useCallback(() => {
-    handleOpenMaxiTab('notes');
-  }, [handleOpenMaxiTab]);
+    const number = String(activeSession?.remoteNumber || '').trim();
+    if (!number) {
+      handleOpenMaxiTab('notes');
+      return;
+    }
+    closeDialpad();
+    navigate(`/phone?panel=notes&number=${encodeURIComponent(number)}`);
+  }, [activeSession?.remoteNumber, closeDialpad, handleOpenMaxiTab, navigate]);
 
   const handleCloseDialpadFromHeader = useCallback(() => {
     // setCampaignContactCards(null);
@@ -550,14 +601,22 @@ const Dialpad = ({
   }, [activeSession?.id, allSessions.length, clearSession, closeDialpad, resolvedModalSize]);
 
   useEffect(() => {
+    if (!callAgainHoldAt) return;
+    const remaining = Math.max(0, callAgainHoldUntilRef.current - Date.now());
+    const timer = window.setTimeout(() => setCallAgainHoldAt(0), remaining);
+    return () => window.clearTimeout(timer);
+  }, [callAgainHoldAt]);
+
+  useEffect(() => {
     if (!activeSession) {
       setDialpadScreen('idle');
       return;
     }
 
+    const isHoldingRing = callAgainHoldUntilRef.current > Date.now();
     const endedStatuses = new Set(['ended', 'failed']);
     if (endedStatuses.has(activeSession.status)) {
-      setDialpadScreen('ended');
+      setDialpadScreen(isHoldingRing ? 'ringing' : 'ended');
       return;
     }
 
@@ -566,8 +625,11 @@ const Dialpad = ({
       return;
     }
 
+    /* A real connection beats the hold — nothing should keep "ringing" on
+       screen once the two ends are actually talking. */
+    callAgainHoldUntilRef.current = 0;
     setDialpadScreen('connected');
-  }, [activeSession, ringingSession]);
+  }, [activeSession, ringingSession, callAgainHoldAt]);
 
   useEffect(() => {
     const previousSessionCount = previousSessionCountRef.current;
@@ -657,23 +719,11 @@ const Dialpad = ({
             )}
           >
             {hasAnySession && !isMiniOnlyForActiveSession ? (
+              /* Mini and micro only. The floating window is a fixed 380x536 now,
+                 and maxi expanded it to fill the screen — which is what the
+                 /phone page is for, not a window sitting over another page. The
+                 route-mode switcher still offers maxi. */
               <div className="inline-flex items-center gap-1 rounded-xl bg-[#fef2f2] p-1">
-                {!isMaxiRestrictedForActiveSession ? (
-                  <button
-                    type="button"
-                    onClick={() => setModalSize('maxi')}
-                    aria-label="Switch to maxi view"
-                    title="Maxi"
-                    className={cn(
-                      'inline-flex h-7 w-7 items-center justify-center rounded-lg text-[#36557f] transition',
-                      resolvedModalSize === 'maxi'
-                        ? 'bg-primary text-white shadow-[0_4px_10px_rgba(220,38,38,0.28)]'
-                        : 'hover:bg-[#fef2f2]',
-                    )}
-                  >
-                    <AppWindowIcon className="h-3.5 w-3.5" />
-                  </button>
-                ) : null}
                 <button
                   type="button"
                   onClick={() => setModalSize('mini')}

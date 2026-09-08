@@ -239,6 +239,14 @@ const Greetings = () => {
           .acepeak-greetings .rounded-xl.border-gray-200 {
             border-color: #E5E7EB !important;
             box-shadow: none !important;
+            /* Margin (not padding) so this added space stays outside the
+               card's own white background — it reads as gray page
+               background, just a little less of it than before, rather
+               than growing the visible white card. */
+            margin-bottom: 64px;
+            max-width: calc(100% - 64px);
+            margin-left: auto;
+            margin-right: auto;
           }
           /* Compact row divider — only added when CommonGreetingNotification
              is rendered with acepeakTheme, so every other caller of that
@@ -259,6 +267,25 @@ const Greetings = () => {
           .acepeak-greetings .acepeak-greeting-icon.is-active {
             color: #DC2626 !important;
           }
+          /* Helper text beside each row's title, matching the Media
+             section's own description ("The audio callers hear...") font
+             size/weight/colour exactly — same values as mcm-page.css's
+             .mcm-fsec-d, minus that rule's own margin-top, which was
+             meant for a description stacked on its own line below a
+             title rather than sitting inline beside one on the same
+             line. Font family is already Inter from this page's own root
+             rule above. */
+          .acepeak-greetings .acepeak-greeting-row-desc {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ink-3);
+            line-height: 1.45;
+            /* Extra space before the description only — the icon-to-title
+               gap is the row's own flex "gap-1" (4px), shared by every
+               child in that row; adding margin here instead of raising
+               that shared gap keeps the icon/title spacing untouched. */
+            margin-left: 12px;
+          }
           /* The play/upload icon buttons next to each dropdown — the shared
              Button's own "outline" variant rides the app-wide --primary
              token (border + text), reading as this tenant's default blue
@@ -275,6 +302,18 @@ const Greetings = () => {
             background: #F9FAFB !important;
             border-color: #D1D5DB !important;
             color: #171717 !important;
+          }
+          /* Shared react-select control's height (2.5rem) is set inside
+             index.css's @layer base with !important. Cascade layers
+             outrank specificity for !important declarations — an unlayered
+             !important here, even with a more specific selector, loses to
+             that layered one. Re-declaring inside the same base layer
+             lets normal specificity decide instead, scoped to this page. */
+          @layer base {
+            .acepeak-greetings .custom-react-select__control {
+              height: 36px !important;
+              min-height: 36px !important;
+            }
           }
           /* The "Upload File" drawer — rendered inline (not portaled), so it
              stays a real DOM descendant of .acepeak-greetings and can be
@@ -393,9 +432,6 @@ const Greetings = () => {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <p className="text-xs text-gray-400">
-              My Account <span className="mx-1 text-gray-300">&gt;</span> Greetings
-            </p>
           </div>
         </div>
         <div className=" p-4 gap-4 flex flex-col h-full">
@@ -405,7 +441,7 @@ const Greetings = () => {
               className="w-full h-full flex flex-col gap-3 justify-between"
             >
               <GreetingNotification
-                customClass="h-[calc(100vh_-_13rem)]"
+                customClass="max-h-[calc(100vh_-_13rem)]"
                 selectMenuPortalTarget={selectPortalNode}
                 acepeakTheme
               />

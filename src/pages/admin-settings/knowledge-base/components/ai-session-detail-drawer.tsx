@@ -1,6 +1,7 @@
 import { getSessionChat } from '@/services/api';
+import { SentimentAnalysisCard } from '@/components/custom/hover-portal-card';
 import { useQuery } from '@tanstack/react-query';
-import { Copy, Download, Loader2, X } from 'lucide-react';
+import { Copy, Download, Loader2, MessageSquare, Phone, Sparkles, X } from 'lucide-react';
 
 type SessionIntent = { label: string; summary: string };
 type SentimentKey = 'positive' | 'neutral' | 'negative';
@@ -10,9 +11,9 @@ const sentimentScoreRows: Array<{
   label: string;
   colorClass: string;
 }> = [
-  { key: 'positive', label: 'Positive', colorClass: 'bg-emerald-500' },
-  { key: 'neutral', label: 'Neutral', colorClass: 'bg-amber-400' },
-  { key: 'negative', label: 'Negative', colorClass: 'bg-rose-500' },
+  { key: 'positive', label: 'Positive', colorClass: 'bg-green-500' },
+  { key: 'negative', label: 'Negative', colorClass: 'bg-red-600' },
+  { key: 'neutral', label: 'Neutral', colorClass: 'bg-neutral-400' },
 ];
 
 const safeNumber = (value: any) => {
@@ -151,14 +152,6 @@ const getSentimentScores = (session: any) => {
   }));
 };
 
-const getSentimentEmoji = (session: any) => {
-  const sentiment = getSentimentLabel(session);
-  if (sentiment === 'positive') return '😊';
-  if (sentiment === 'negative') return '😞';
-  if (sentiment === 'neutral') return '😐';
-  return '–';
-};
-
 const getOutcome = (session: any) => {
   if (session?.status === 'active') return 'Active';
   if (session?.handoff) return 'Handoff';
@@ -167,11 +160,11 @@ const getOutcome = (session: any) => {
 };
 
 const getOutcomeClass = (outcome: string) => {
-  if (outcome === 'Resolved') return 'bg-emerald-100 text-emerald-700';
-  if (outcome === 'Handoff') return 'bg-amber-100 text-amber-800';
-  if (outcome === 'Callback') return 'bg-blue-100 text-blue-700';
-  if (outcome === 'Active') return 'bg-slate-100 text-slate-700';
-  return 'bg-rose-100 text-rose-700';
+  if (outcome === 'Resolved') return 'bg-green-50 text-green-700';
+  if (outcome === 'Handoff') return 'bg-amber-50 text-amber-700';
+  if (outcome === 'Callback') return 'bg-neutral-100 text-neutral-700';
+  if (outcome === 'Active') return 'bg-red-50 text-red-600';
+  return 'bg-red-50 text-red-600';
 };
 
 const getContactTitle = (session: any) => {
@@ -230,85 +223,18 @@ const copyText = async (text: string) => {
   await navigator.clipboard.writeText(text);
 };
 
-const ChannelPill = ({
-  channel,
-  isSessionLabel = false,
-}: {
-  channel: string;
-  isSessionLabel?: boolean;
-}) => {
-  const isCall = channel === 'call';
-  const icon = isCall ? '📞' : '💬';
-  const label = isCall
-    ? isSessionLabel
-      ? 'Voice call'
-      : 'Voice'
-    : isSessionLabel
-      ? 'Chat session'
-      : 'Chat';
-
-  return (
-    <span
-      className={`inline-flex w-fit items-center gap-1.5 rounded-full px-[9px] py-1 text-[11.5px] font-bold ${
-        isCall ? 'bg-indigo-50 text-indigo-700' : 'bg-cyan-50 text-cyan-700'
-      }`}
-    >
-      <span className="text-[13px] leading-none">{icon}</span>
-      {label}
-    </span>
-  );
-};
-
-const SentimentGraph = ({ session }: { session: any }) => {
-  const score = getSentimentScore(session);
-  const sentimentScores = getSentimentScores(session);
-  const hasScores = sentimentScores.some((item) => item.score > 0);
-
-  return (
-    <div className="group relative flex w-fit items-center gap-[7px]">
-      <span className="text-sm">{getSentimentEmoji(session)}</span>
-      <div className="h-1.5 w-[70px] overflow-hidden rounded-full bg-slate-200">
-        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${score}%` }} />
-      </div>
-      <div className="pointer-events-none absolute right-0 top-6 z-30 hidden w-[190px] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-xl group-hover:block">
-        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-slate-500">
-          Sentiment scores
-        </div>
-        {hasScores ? (
-          <div className="space-y-2">
-            {sentimentScores.map((item) => (
-              <div key={item.key}>
-                <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-slate-700">
-                  <span>{item.label}</span>
-                  <span>{item.score}/100</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className={`h-full rounded-full ${item.colorClass}`}
-                    style={{ width: `${item.score}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-xs font-semibold text-slate-500">Not analyzed</div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 const DetailItem = ({
   label,
   value,
   className = '',
+  wrapperClassName = '',
 }: {
   label: string;
   value: any;
   className?: string;
+  wrapperClassName?: string;
 }) => (
-  <div>
+  <div className={wrapperClassName}>
     <div className="text-[11px] font-medium text-slate-500">{label}</div>
     <div
       className={`mt-0.5 flex items-center gap-1.5 text-[13px] font-bold text-slate-950 ${className}`}
@@ -349,28 +275,31 @@ const AiSessionDetailDrawer = ({
   const transcriptText = makeSessionText(selectedMessages);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/45">
-      <div className="flex h-full w-full max-w-[560px] flex-col bg-slate-50 shadow-2xl">
-        <div className="flex items-start gap-3 border-b border-slate-200 bg-white px-5 py-4">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-base font-extrabold text-slate-950">
-                {session ? getContactTitle(session) : 'AI session'}
-              </h2>
-              {session ? <ChannelPill channel={session?.channel} isSessionLabel /> : null}
-            </div>
-            <p className="mt-1 truncate text-xs text-slate-500">
-              {session
-                ? `${getContactSubText(session)} · ${getAgentName(session, agentById)} · ${formatStarted(
-                    session?.startedAt || session?.createdAt,
-                  )}`
-                : 'Loading session details...'}
-            </p>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/45 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[88vh] w-[600px] max-w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 border-b border-neutral-200 bg-white px-5 py-4">
+          <div className="flex min-w-0 items-center gap-2">
+            {session ? (
+              session.channel === 'call' ? (
+                <Phone className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.5} />
+              ) : (
+                <MessageSquare className="h-4 w-4 shrink-0 text-neutral-600" strokeWidth={2.5} />
+              )
+            ) : null}
+            <h2 className="truncate text-base font-bold text-neutral-900">
+              {session ? getContactTitle(session) : 'AI session'}
+            </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-full text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600"
             aria-label="Close session"
           >
             <X className="h-4 w-4" />
@@ -378,7 +307,7 @@ const AiSessionDetailDrawer = ({
         </div>
 
         {isLoading ? (
-          <div className="flex flex-1 items-center justify-center text-slate-500">
+          <div className="flex flex-1 items-center justify-center text-neutral-500">
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             Loading session...
           </div>
@@ -388,15 +317,28 @@ const AiSessionDetailDrawer = ({
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto px-5 py-[18px]">
-              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3.5">
-                <div className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.04em] text-slate-500">
-                  Session details
+            <div className="flex-1 overflow-y-auto bg-white pl-8 pr-5 py-[18px]">
+              <div className="pb-4">
+                <div className="mb-2.5 border-b border-red-100 pb-2">
+                  <span className="text-[14px] font-bold uppercase tracking-[0.04em] text-neutral-900">
+                    Session details
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2">
                   <DetailItem
                     label="Channel"
-                    value={session?.channel === 'call' ? '📞 Voice' : '💬 Chat'}
+                    value={
+                      session?.channel === 'call' ? (
+                        <span className="flex items-center gap-1.5">
+                          <Phone className="h-3.5 w-3.5 text-red-600" strokeWidth={2.5} /> Voice
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          <MessageSquare className="h-3.5 w-3.5 text-neutral-600" strokeWidth={2.5} />{' '}
+                          Chat
+                        </span>
+                      )
+                    }
                   />
                   <DetailItem label="Agent" value={getAgentName(session, agentById)} />
                   <DetailItem
@@ -405,28 +347,41 @@ const AiSessionDetailDrawer = ({
                   />
                   <DetailItem label="Duration" value={formatDuration(session?.durationMs)} />
                   <DetailItem
+                    label="Contact"
+                    className="items-start"
+                    value={
+                      <div className="flex flex-col gap-0.5">
+                        <span>{getContactTitle(session)}</span>
+                        <span className="text-[11px] font-medium text-neutral-500">
+                          {getContactSubText(session)}
+                        </span>
+                      </div>
+                    }
+                  />
+                  <DetailItem
                     label="Cost"
                     className="items-start"
                     value={
                       <div className="flex flex-col gap-0.5">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-emerald-700">
+                          <span className="text-green-700">
                             {hasSessionCost(session) ? formatCost(session?.totalCostUSD) : '-'}
                           </span>
                           {getCostBasis(session) ? (
-                            <span className="text-[11px] font-medium text-slate-500">
+                            <span className="text-[11px] font-medium text-neutral-500">
                               · {getCostBasis(session)}
                             </span>
                           ) : null}
                         </div>
                         {getCostDeductionLabel(session) ? (
-                          <span className="text-[11px] font-semibold text-slate-500">
+                          <span className="text-[11px] font-semibold text-neutral-500">
                             {getCostDeductionLabel(session)}
                           </span>
                         ) : null}
                       </div>
                     }
                   />
+                  <DetailItem label="Intent" value={selectedIntents[0]?.label || 'Not analyzed'} />
                   <DetailItem
                     label="Outcome"
                     value={
@@ -439,25 +394,12 @@ const AiSessionDetailDrawer = ({
                       </span>
                     }
                   />
-                  <DetailItem label="Intent" value={selectedIntents[0]?.label || 'Not analyzed'} />
-                  <DetailItem
-                    label="Sentiment"
-                    value={
-                      getSentimentScore(session) ? (
-                        <div className="flex items-center gap-2">
-                          <SentimentGraph session={session} />
-                          <span>{getSentimentScore(session)}/100</span>
-                        </div>
-                      ) : (
-                        'Not analyzed'
-                      )
-                    }
-                  />
                   <DetailItem
                     label="CSAT"
+                    wrapperClassName="sm:col-span-2"
                     value={
                       safeNumber(session?.csat?.score) ? (
-                        <span className="text-[#F59E0B]">
+                        <span className="text-amber-500">
                           {'★'.repeat(Math.round(session.csat.score))}
                           {'☆'.repeat(Math.max(0, 5 - Math.round(session.csat.score)))} ·{' '}
                           {session.csat.score}/5
@@ -470,11 +412,27 @@ const AiSessionDetailDrawer = ({
                 </div>
               </div>
 
-              <div className="mt-3.5 rounded-xl border border-slate-200 bg-white px-4 py-3.5">
-                <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-slate-500">
-                  ✨ AI summary
+              <div className="border-t border-neutral-100 py-4">
+                <div className="mb-2.5 border-b border-red-100 pb-2">
+                  <span className="text-[14px] font-bold uppercase tracking-[0.04em] text-neutral-900">
+                    Sentiment analysis
+                  </span>
                 </div>
-                <p className="mt-2.5 text-[13px] leading-relaxed text-slate-700">
+                {getSentimentScore(session) ? (
+                  <SentimentAnalysisCard scores={getSentimentScores(session)} bare />
+                ) : (
+                  <div className="text-[13px] text-neutral-500">Not analyzed</div>
+                )}
+              </div>
+
+              <div className="border-t border-neutral-100 py-4">
+                <div className="mb-2.5 flex items-center gap-1.5 border-b border-red-100 pb-2">
+                  <Sparkles className="h-3.5 w-3.5 shrink-0 text-red-600" strokeWidth={2.5} />
+                  <span className="text-[14px] font-bold uppercase tracking-[0.04em] text-neutral-900">
+                    AI summary
+                  </span>
+                </div>
+                <p className="mt-2.5 text-[13px] leading-relaxed text-neutral-700">
                   {String(session?.summary || '').trim() ||
                     'No summary available for this session.'}
                 </p>
@@ -483,7 +441,7 @@ const AiSessionDetailDrawer = ({
                     {selectedIntents.map((intent) => (
                       <span
                         key={intent.label}
-                        className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
+                        className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600"
                       >
                         {intent.label}
                       </span>
@@ -492,12 +450,14 @@ const AiSessionDetailDrawer = ({
                 ) : null}
               </div>
 
-              <div className="mt-3.5 rounded-xl border border-slate-200 bg-white px-4 py-3.5">
-                <div className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.04em] text-slate-500">
-                  Transcript
+              <div className="border-t border-neutral-100 pt-4">
+                <div className="mb-2.5 border-b border-red-100 pb-2">
+                  <span className="text-[14px] font-bold uppercase tracking-[0.04em] text-neutral-900">
+                    Transcript
+                  </span>
                 </div>
                 {isLoadingMessages ? (
-                  <div className="flex min-h-[180px] items-center justify-center text-slate-500">
+                  <div className="flex min-h-[180px] items-center justify-center text-neutral-500">
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Loading transcript...
                   </div>
@@ -516,35 +476,35 @@ const AiSessionDetailDrawer = ({
                       return (
                         <div
                           key={`${message?.at || index}-${message?.role}`}
-                          className="border-b border-slate-100 py-2.5 first:pt-0 last:border-b-0 last:pb-0"
+                          className="border-b border-neutral-100 py-2.5 first:pt-0 last:border-b-0 last:pb-0"
                         >
                           <div className="flex gap-2.5">
                             <div
                               className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ${
-                                isUser ? 'bg-slate-400' : 'bg-indigo-600'
+                                isUser ? 'bg-neutral-400' : 'bg-neutral-900'
                               }`}
                             >
                               {getInitials(displayName)}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-[11px] font-bold text-slate-500">
+                                <span className="text-[11px] font-bold text-neutral-500">
                                   {displayName}
                                 </span>
                                 {offset ? (
-                                  <span className="text-[11px] font-medium text-slate-400">
+                                  <span className="text-[11px] font-medium text-neutral-400">
                                     {offset}
                                   </span>
                                 ) : null}
                                 {!isUser &&
                                 message?.responseTimeMs !== null &&
                                 message?.responseTimeMs !== undefined ? (
-                                  <span className="text-[11px] font-medium text-slate-400">
+                                  <span className="text-[11px] font-medium text-neutral-400">
                                     Response {formatResponseTime(message.responseTimeMs)}
                                   </span>
                                 ) : null}
                               </div>
-                              <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-slate-800">
+                              <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-neutral-800">
                                 {message?.data}
                               </p>
                             </div>
@@ -554,35 +514,33 @@ const AiSessionDetailDrawer = ({
                     })}
                   </div>
                 ) : (
-                  <div className="py-12 text-center text-slate-500">No transcript available.</div>
+                  <div className="py-12 text-center text-neutral-500">No transcript available.</div>
                 )}
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-white px-5 py-3">
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    downloadTextFile(
-                      `${session?.sessionId || 'session'}-transcript.txt`,
-                      transcriptText,
-                    )
-                  }
-                  className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-slate-400"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Download
-                </button>
-                <button
-                  type="button"
-                  onClick={() => copyText(transcriptText)}
-                  className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-slate-400"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  Copy
-                </button>
-              </div>
+            <div className="flex flex-wrap items-center gap-2 border-t border-neutral-200 bg-white px-5 py-3">
+              <button
+                type="button"
+                onClick={() => copyText(transcriptText)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 text-xs font-semibold text-neutral-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copy
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  downloadTextFile(
+                    `${session?.sessionId || 'session'}-transcript.txt`,
+                    transcriptText,
+                  )
+                }
+                className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-full bg-neutral-900! px-3.5 text-xs font-semibold text-white! transition-colors hover:bg-neutral-800!"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download
+              </button>
             </div>
           </>
         )}

@@ -524,7 +524,7 @@ const NewContact: FC = () => {
           open={drawerState?.addContact}
           onOpenChange={(val) => !val && setDrawerState((prev) => ({ ...prev, addContact: false }))}
         >
-          <DialogContent className="flex w-[92vw] max-w-[640px] max-h-[85vh] flex-col gap-0 overflow-hidden p-0">
+          <DialogContent className="contact-create-dialog flex w-[92vw] max-w-[640px] max-h-[85vh] flex-col gap-0 overflow-hidden p-0">
             <DialogTitle className="dir-serif-heading px-5 py-4 text-gray-900">
               {drawerState?.selectedContact
                 ? `Update Contact (${drawerState?.selectedContact?.name?.first || ''} ${drawerState?.selectedContact?.name?.last || ''})`

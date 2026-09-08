@@ -138,6 +138,19 @@
   --mcm-surface: #ffffff;
   --mcm-surface-2: #fafafa;
   --mcm-surface-3: #eeeeee;
+
+  /* Width of the right-hand detail panel — the phone console's call panel
+     and the chat page's contact-info panel. One value so the two pages cannot
+     drift apart. */
+  --mcm-side-panel-w: 460px;
+
+  /* Width of the left listing column — the phone console's call list and the
+     chat page's conversation list. Shared so the two pages stay level. */
+  --mcm-list-panel-w: 440px;
+
+  /* The visitor profile sits as a third column beside the queue and the
+     conversation, so it is narrower than the two-column detail panels. */
+  --mcm-profile-panel-w: 340px;
   --mcm-ink: #0d1526;
   --mcm-ink-2: #3d4a63;
   --mcm-ink-3: #6b7891;
@@ -180,7 +193,7 @@
   --mcm-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --radius: 0.625rem;
-  --background: #eef1f8;
+  --background: #efefef;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
