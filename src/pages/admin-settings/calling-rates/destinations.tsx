@@ -13,6 +13,7 @@
  * blank price reads as free.
  */
 
+import { Info } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import CustomTooltip from '@/components/custom/custom-tooltip';
@@ -195,7 +196,7 @@ const Destinations = () => {
                 className="mcm-tooltip-info"
                 text="Everywhere you can call, with its dialling code and what a call there costs."
               >
-                <span className="mcm-intpage-info">i</span>
+                <Info className="mcm-intpage-info" />
               </CustomTooltip>
             </div>
 
