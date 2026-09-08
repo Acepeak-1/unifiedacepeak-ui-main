@@ -22,7 +22,7 @@ import GreetingNotification from './greetings';
 import Spin from '@/components/spin';
 import moment from 'moment';
 import { buildCampaignUpsertPayload, mapCampaignToFormDefaults } from './campaign-mappers';
-import { Eye, Gauge, X, Zap } from 'lucide-react';
+import { ChevronRight, Eye, Gauge, X, Zap } from 'lucide-react';
 import './campaign-form.css';
 
 /** One icon per dialling mode, keyed by the values the form already stores. */
@@ -376,7 +376,7 @@ const AddEditCampaign: FC<any> = ({ setDrawerState, selectedCampaign }) => {
               return (
                 <CustomTooltip
                   key={index}
-                  side="bottom"
+                  side="top"
                   text={item.description}
                   className="bg-gray-500 text-white"
                 >
@@ -403,38 +403,30 @@ const AddEditCampaign: FC<any> = ({ setDrawerState, selectedCampaign }) => {
             })}
           </RadioGroup>
 
-          {/* Chain stepper: a numbered circle per step on one continuous
-              track, the red fill reaching exactly as far as the active
-              step. Still drives the same handleTabChange, so the
-              validation gate on moving forward is unchanged. */}
-          <div className="acp-steps" role="tablist">
-            <div className="acp-steps-track">
-              <span
-                className="acp-steps-track-fill"
-                style={{
-                  width: `${(TABS_ORDER.indexOf(activeTab) / (TABS_ORDER.length - 1)) * 100}%`,
-                }}
-              />
-            </div>
+          {/* Breadcrumb-style step nav: step names in a single trail,
+              separated by a chevron, current step bolded. Still drives the
+              same handleTabChange, so the validation gate on moving
+              forward is unchanged. */}
+          <nav className="acp-crumbs" role="tablist" aria-label="Campaign steps">
             {TABS_ORDER.map((value, index) => {
               const current = TABS_ORDER.indexOf(activeTab);
               const state = index === current ? 'on' : index < current ? 'done' : 'off';
               return (
-                <div className={`acp-step-item is-${state}`} key={value}>
+                <span className={`acp-crumb-item is-${state}`} key={value}>
+                  {index > 0 && <ChevronRight className="acp-crumb-sep" size={14} />}
                   <button
                     type="button"
                     role="tab"
                     aria-selected={index === current}
-                    className="acp-step-btn"
+                    className="acp-crumb-btn"
                     onClick={() => handleTabChange(value)}
                   >
-                    {index + 1}
+                    {value}
                   </button>
-                  <span className="acp-step-l">{value}</span>
-                </div>
+                </span>
               );
             })}
-          </div>
+          </nav>
 
           <FormProvider {...formInstance}>
             <form onSubmit={formInstance.handleSubmit(onSubmit)} className="acp-formbody">

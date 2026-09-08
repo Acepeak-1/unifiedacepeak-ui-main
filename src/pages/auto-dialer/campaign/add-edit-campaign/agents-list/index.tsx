@@ -2,6 +2,7 @@ import { Icon } from '@/assets/icons/icon';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import CustomSelect from '@/components/custom/custom-select';
 import TableManager from '@/components/custom/table-manager';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { ISELECTVALUE } from '@/interfaces/api-interfaces';
@@ -75,6 +76,16 @@ const useToggleMember = (memberData: IMEMBER) => {
   return { isSelected, toggle };
 };
 
+const MemberCheckboxCell = memo(({ data }: { data: IMEMBER }) => {
+  const { isSelected, toggle } = useToggleMember(data);
+  return (
+    <div onClick={(event) => event.stopPropagation()}>
+      <Checkbox checked={isSelected} onCheckedChange={() => toggle()} aria-label="Select member" />
+    </div>
+  );
+});
+MemberCheckboxCell.displayName = 'MemberCheckboxCell';
+
 // Name + email, compact — the whole cell is the click target for
 // selecting/deselecting this member, same behaviour the checkbox used to
 // drive.
@@ -139,6 +150,13 @@ const AgentsList: FC<any> = ({ scriptList = [], dialMethod = DIALER_TYPE.PREVIEW
 
   const columns: ColumnDef<IMEMBER>[] = useMemo(
     () => [
+      {
+        header: 'Member',
+        id: 'select',
+        enableSorting: false,
+        cell: ({ row }: any) => <MemberCheckboxCell data={row?.original} />,
+        meta: { textAlign: 'left' },
+      },
       {
         header: 'Name',
         accessorKey: 'first_name',
@@ -246,7 +264,7 @@ const AgentsList: FC<any> = ({ scriptList = [], dialMethod = DIALER_TYPE.PREVIEW
         </div>
       )}
 
-      <div className="mt-3 flex-grow">
+      <div className="mt-3 flex-grow acp-agents-table">
         <TableManager
           {...{
             columns,

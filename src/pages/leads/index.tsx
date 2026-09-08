@@ -1,4 +1,5 @@
 import { Icon } from '@/assets/icons/icon';
+import { RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { handleAlert, normalizeSearchText } from '@/lib/utils';
 import { deleteContact, deleteLeadGroup } from '@/services/api';
@@ -23,6 +24,7 @@ import { useCompanyFeatures } from '@/hooks/rbac.tsx';
 import CreateContactNew from '../new-contact/create-new-contact.tsx';
 import LeadContactLogs from './lead-contact-logs/index.tsx';
 import '@/components/mcm/mcm-page.css';
+import './all-leads-list/leads-table.css';
 
 // export interface IContact {
 //   groupId: any;
@@ -164,7 +166,7 @@ const Leads: FC = () => {
   };
   return (
     <>
-      <section className="mcm-page mcm-admin w-full bg-gray-200/15 flex flex-col overflow-x-auto overflow-y-hidden">
+      <section className="mcm-page mcm-admin leads-page-root w-full bg-gray-200/15 flex flex-col overflow-x-auto overflow-y-hidden">
         {selectedGroupForContactLogs ? (
           <LeadContactLogs
             groupData={selectedGroupForContactLogs}
@@ -175,30 +177,38 @@ const Leads: FC = () => {
           />
         ) : (
           <>
-            <div className="flex flex-col gap-3 border-b border-gray-200 bg-white px-2 py-2 md:min-h-[65px] md:flex-row md:items-center md:justify-between md:px-3 md:py-0">
+            <div className="leads-page-head grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+              <div>
+                <div className="leads-eyebrow">Activity</div>
+                <div className="leads-page-head-title-row">
+                  <h1>Leads</h1>
+                </div>
+              </div>
               <Tabs
                 value={tabName}
                 onValueChange={handleTabChange}
-                className="flex w-full md:w-auto"
+                className="col-start-2 w-auto justify-self-center"
               >
-                <div className="h-full w-full">
-                  <TabsList className="flex h-full w-full rounded-none bg-transparent p-0 text-center text-sm font-semibold md:w-auto">
-                    <TabsTrigger
-                      value={LEAD_TABS_CONST.LEAD_LIST}
-                      className="relative m-auto flex min-h-12 w-2/4 gap-1 rounded-none border-b-2 bg-transparent px-3 text-xs font-semibold text-gray-700 shadow-none cursor-pointer data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:text-primary data-[state=active]:shadow-2xs sm:min-h-14 sm:px-4 sm:text-sm lg:min-h-16 lg:px-6"
-                    >
-                      {LEAD_TABS_CONST.LEAD_LIST}
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value={LEAD_TABS_CONST.LEAD_GROUP_LIST}
-                      className="relative m-auto flex min-h-12 w-2/4 gap-1 rounded-none border-b-2 bg-transparent px-3 text-xs font-semibold text-gray-700 shadow-none cursor-pointer data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:text-primary data-[state=active]:shadow-2xs sm:min-h-14 sm:px-4 sm:text-sm lg:min-h-16 lg:px-6"
-                    >
-                      {LEAD_TABS_CONST.LEAD_GROUP_LIST}
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
+                <TabsList className="leads-tabs-list inline-flex h-auto w-fit items-center gap-1 rounded-full border border-gray-200 bg-gray-100 p-1">
+                  <TabsTrigger
+                    value={LEAD_TABS_CONST.LEAD_LIST}
+                    className="leads-tab-trigger cursor-pointer rounded-full px-4 py-1.5 text-xs font-semibold text-gray-500 shadow-none sm:text-sm"
+                  >
+                    {LEAD_TABS_CONST.LEAD_LIST}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value={LEAD_TABS_CONST.LEAD_GROUP_LIST}
+                    className="leads-tab-trigger cursor-pointer rounded-full px-4 py-1.5 text-xs font-semibold text-gray-500 shadow-none sm:text-sm"
+                  >
+                    {LEAD_TABS_CONST.LEAD_GROUP_LIST}
+                  </TabsTrigger>
+                </TabsList>
               </Tabs>
-              <div className="filters flex w-full items-center gap-2 md:w-auto md:flex-nowrap md:justify-end">
+              <div />
+            </div>
+            <div className="leads-card">
+              <div className="flex flex-col gap-3 border-b border-gray-200 bg-white px-2 py-2 md:min-h-[65px] md:flex-row md:items-center md:justify-end md:px-3 md:py-0">
+              <div className="filters flex w-full items-center gap-2 md:flex-nowrap">
                 {/* {selectedLeads && selectedLeads?.length && tabName === LEAD_TABS_CONST.LEAD_LIST ? (
                   <CustomSelect
                     options={[LEAD_CREATE_TYPE.ADD_NEW, LEAD_CREATE_TYPE.ADD_IN_EXISTING].map(
@@ -220,15 +230,30 @@ const Leads: FC = () => {
                 <div className="min-w-0 flex-1 md:w-[240px] md:flex-none lg:w-[280px]">
                   <Input
                     placeholder="Search"
-                    className="min-h-9 rounded-lg pl-10"
+                    className="min-h-9 rounded-full pl-11 focus:!border-[#fca5a5] hover:!border-[#fca5a5]"
                     IconPosition="left-0 inset-y-0 pl-2"
                     value={search}
                     onChange={(e) => {
                       setSearch(e.target.value);
                     }}
-                    Icon={<SearchLine className=" text-gray-700" />}
+                    Icon={
+                      <span className="flex items-center justify-center w-[22px] h-[22px] rounded-full bg-[#fef2f2]">
+                        <SearchLine className="text-[#f87171] !w-3 !h-3" />
+                      </span>
+                    }
                   />
                 </div>
+                <button
+                  type="button"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:text-gray-900"
+                  aria-label="Refresh"
+                  onClick={() => {
+                    queryClient.invalidateQueries({ queryKey: ['getGroupContactsById'], exact: false });
+                    queryClient.invalidateQueries({ queryKey: ['getGroupList'], exact: false });
+                  }}
+                >
+                  <RefreshCcw className="w-4 h-4" />
+                </button>
                 {/* <CustomSelect
                   placeholder="Select lead group"
                   isClearable
@@ -244,40 +269,44 @@ const Leads: FC = () => {
                   value={leadGroup}
                   inputClass="team_chat"
                 /> */}
-                <Button
-                  className="flex h-9 w-9 shrink-0 max-h-9 max-w-9 min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border border-primary bg-white text-primary hover:bg-primary hover:text-white"
-                  type="button"
-                  onClick={() => setDrawerState((prev) => ({ ...prev, updateContacts: true }))}
-                  title="Upload Contacts"
-                >
-                  <Icon name="UploadLineIcon" className="w-5 h-5" />
-                </Button>
-                {tabName === LEAD_TABS_CONST.LEAD_LIST && (
-                  <>
-                    <Button
-                      className="flex h-9 w-9 shrink-0 max-h-9 max-w-9 min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border border-primary bg-white text-primary hover:bg-primary hover:text-white"
-                      type="button"
-                      onClick={() => setDrawerState((prev) => ({ ...prev, exportContacts: true }))}
-                      title="Export Contacts"
-                    >
-                      <Icon name="DownloadLine" className="w-5 h-5" />
-                    </Button>
-                  </>
-                )}
-
-                {leadsAccess?.add && (
+                <div className="flex items-center gap-2 md:ml-auto">
                   <Button
                     className="flex h-9 w-9 shrink-0 max-h-9 max-w-9 min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border border-primary bg-white text-primary hover:bg-primary hover:text-white"
                     type="button"
-                    onClick={() =>
-                      tabName === LEAD_TABS_CONST.LEAD_GROUP_LIST
-                        ? handleAddLeadGroup()
-                        : handleAddLead()
-                    }
+                    onClick={() => setDrawerState((prev) => ({ ...prev, updateContacts: true }))}
+                    title="Upload Contacts"
                   >
-                    <Icon name="Plus" className="w-3 h-3" />
+                    <Icon name="UploadLineIcon" className="w-5 h-5" />
                   </Button>
-                )}
+                  {tabName === LEAD_TABS_CONST.LEAD_LIST && (
+                    <>
+                      <Button
+                        className="flex h-9 w-9 shrink-0 max-h-9 max-w-9 min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border border-primary bg-white text-primary hover:bg-primary hover:text-white"
+                        type="button"
+                        onClick={() =>
+                          setDrawerState((prev) => ({ ...prev, exportContacts: true }))
+                        }
+                        title="Export Contacts"
+                      >
+                        <Icon name="DownloadLine" className="w-5 h-5" />
+                      </Button>
+                    </>
+                  )}
+
+                  {leadsAccess?.add && (
+                    <Button
+                      className="flex h-9 w-9 shrink-0 max-h-9 max-w-9 min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border border-primary bg-white text-primary hover:bg-primary hover:text-white"
+                      type="button"
+                      onClick={() =>
+                        tabName === LEAD_TABS_CONST.LEAD_GROUP_LIST
+                          ? handleAddLeadGroup()
+                          : handleAddLead()
+                      }
+                    >
+                      <Icon name="Plus" className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             <div className="w-full flex flex-col gap-2">
@@ -311,6 +340,7 @@ const Leads: FC = () => {
                     return <AllLeadsList {...{ setDrawerState, setShowDeleteConfirmation }} />;
                 }
               })()}
+            </div>
             </div>
           </>
         )}
