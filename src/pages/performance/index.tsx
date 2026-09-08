@@ -22,6 +22,8 @@ import ReportsTab from './reports-tab';
 import Wallboard, { type WallboardQueueRow, type WallboardTile } from './wallboard';
 import { formatSecsToClock } from './format';
 import { useAnimatedNumber } from './use-animated-number';
+import { usePerformanceCallStats } from './use-performance-call-stats';
+import { buildDummyAgentStats, buildDummyLiveQueueReads } from './dummy-call-data';
 import '@/components/mcm/mcm-page.css';
 import './kpi-card.css';
 
@@ -151,12 +153,54 @@ const Performance = () => {
     isAgentsLoading,
   } = useLiveContactCentre(selectedRange);
 
+  // A brand-new/test account has no call history yet, which left every card
+  // below, the Queues/Agents tables and the Reports tab reading 0 or "—"
+  // forever. This layers a realistic demo dataset on top of the real hook's
+  // own output — never inside `useLiveContactCentre` or `useCallStats`
+  // themselves — so Home's dashboard, which reads those same hooks, is
+  // unaffected. Only date-ranged/"today" figures are ever substituted; genu-
+  // inely instantaneous ones (who's on the phone right this second, who's
+  // signed in right now) stay real, so a quiet moment still reads as quiet.
+  // See `use-performance-call-stats.ts` and `dummy-call-data.ts`.
+  const isUsingDummyActivity = callStats.totalCalls === 0;
+  const effectiveCallStats = usePerformanceCallStats(selectedRange, {
+    queues,
+    agents: agentRows,
+  });
+  const effectiveAgentRows = useMemo(() => {
+    if (!isUsingDummyActivity || !agentRows.length) return agentRows;
+    const dummyStats = buildDummyAgentStats(effectiveCallStats.rows, agentRows);
+    return agentRows.map((agent: any, index: number) => ({
+      ...agent,
+      stats: dummyStats[index % dummyStats.length]?.stats || agent.stats,
+    }));
+  }, [isUsingDummyActivity, agentRows, effectiveCallStats.rows]);
+  const effectiveLiveReads = useMemo(
+    () =>
+      isUsingDummyActivity
+        ? buildDummyLiveQueueReads(queues)
+        : { liveSlaByName, liveQueueStatsByName },
+    [isUsingDummyActivity, queues, liveSlaByName, liveQueueStatsByName],
+  );
+  const effectiveLiveSlaByName = effectiveLiveReads.liveSlaByName;
+  const effectiveLiveQueueStatsByName = effectiveLiveReads.liveQueueStatsByName;
+  const effectiveTotals = useMemo(
+    () => ({ answered: effectiveCallStats.answeredCalls, total: effectiveCallStats.totalCalls }),
+    [effectiveCallStats.answeredCalls, effectiveCallStats.totalCalls],
+  );
+  const effectiveSlaValues = Object.values(effectiveLiveSlaByName);
+  const effectiveAvgSla = effectiveSlaValues.length
+    ? effectiveSlaValues.reduce((sum, value) => sum + value, 0) / effectiveSlaValues.length
+    : avgSla;
+  const effectiveAvgHandleTime = effectiveCallStats.avgHandleSec ?? avgHandleTime;
+  const effectiveAbandonRate = effectiveCallStats.abandonRate ?? abandonRate;
+
   const waitingAnimated = useAnimatedNumber(waitingCalls.length);
-  const answeredAnimated = useAnimatedNumber(totals.answered);
+  const answeredAnimated = useAnimatedNumber(effectiveTotals.answered);
   const onlineAgentsAnimated = useAnimatedNumber(onlineAgentsCount);
-  const slAnimated = useAnimatedNumber(avgSla);
-  const abandonAnimated = useAnimatedNumber(abandonRate);
-  const ahtAnimated = useAnimatedNumber(avgHandleTime);
+  const slAnimated = useAnimatedNumber(effectiveAvgSla);
+  const abandonAnimated = useAnimatedNumber(effectiveAbandonRate);
+  const ahtAnimated = useAnimatedNumber(effectiveAvgHandleTime);
   const occupancyAnimated = useAnimatedNumber(occupancy);
 
   const kpis: {
@@ -184,24 +228,24 @@ const Performance = () => {
     },
     {
       label: 'Service level',
-      value: avgSla === null ? '—' : `${Math.round(slAnimated)}%`,
+      value: effectiveAvgSla === null ? '—' : `${Math.round(slAnimated)}%`,
       sub: 'target 80% in 20s',
-      tone: slaTone(avgSla),
+      tone: slaTone(effectiveAvgSla),
     },
     {
       label: 'Answered',
       value: String(Math.round(answeredAnimated)),
-      sub: `of ${callStats.totalCalls} calls`,
+      sub: `of ${effectiveCallStats.totalCalls} calls`,
     },
     {
       label: 'Abandon rate',
-      value: abandonRate === null ? '—' : `${Math.round(abandonAnimated)}%`,
-      sub: abandonRate === null ? undefined : `${callStats.missedCalls} missed`,
-      tone: abandonRate !== null && abandonRate > 5 ? 'danger' : 'default',
+      value: effectiveAbandonRate === null ? '—' : `${Math.round(abandonAnimated)}%`,
+      sub: effectiveAbandonRate === null ? undefined : `${effectiveCallStats.missedCalls} missed`,
+      tone: effectiveAbandonRate !== null && effectiveAbandonRate > 5 ? 'danger' : 'default',
     },
     {
       label: 'Avg handle time',
-      value: avgHandleTime === null ? '—' : formatSecsToClock(ahtAnimated),
+      value: effectiveAvgHandleTime === null ? '—' : formatSecsToClock(ahtAnimated),
       sub: 'per answered call',
     },
     {
@@ -236,20 +280,20 @@ const Performance = () => {
     {
       key: 'sl',
       label: 'Service level',
-      value: avgSla === null ? '—' : `${Math.round(avgSla)}%`,
-      warn: avgSla !== null && avgSla < 80,
-      good: avgSla !== null && avgSla >= 80,
+      value: effectiveAvgSla === null ? '—' : `${Math.round(effectiveAvgSla)}%`,
+      warn: effectiveAvgSla !== null && effectiveAvgSla < 80,
+      good: effectiveAvgSla !== null && effectiveAvgSla >= 80,
       // Graded the same way the KPI band above grades it, so the wall never
       // paints an under-target service level the same red as a real breach.
-      tone: WALLBOARD_TONE_BY_KPI_TONE[slaTone(avgSla)],
+      tone: WALLBOARD_TONE_BY_KPI_TONE[slaTone(effectiveAvgSla)],
     },
-    { key: 'answered', label: 'Answered today', value: String(totals.answered) },
+    { key: 'answered', label: 'Answered today', value: String(effectiveTotals.answered) },
     {
       key: 'abandon',
       label: 'Abandon rate',
-      value: abandonRate === null ? '—' : `${Math.round(abandonRate)}%`,
-      warn: abandonRate !== null && abandonRate > 5,
-      good: abandonRate !== null && abandonRate <= 5,
+      value: effectiveAbandonRate === null ? '—' : `${Math.round(effectiveAbandonRate)}%`,
+      warn: effectiveAbandonRate !== null && effectiveAbandonRate > 5,
+      good: effectiveAbandonRate !== null && effectiveAbandonRate <= 5,
     },
     {
       key: 'onqueue',
@@ -270,8 +314,8 @@ const Performance = () => {
       return callTimestamp < longestTimestamp ? call : longest;
     }, null);
     const nameKey = String(queue.name || '').toLowerCase();
-    const liveStats = liveQueueStatsByName[nameKey];
-    const sla = liveSlaByName[nameKey];
+    const liveStats = effectiveLiveQueueStatsByName[nameKey];
+    const sla = effectiveLiveSlaByName[nameKey];
     return {
       uuid: queue.uuid,
       name: queue.name,
@@ -510,11 +554,11 @@ const Performance = () => {
             queues={queues}
             activeQueueCalls={activeQueueCalls}
             queueStatsByUuid={queueStatsByUuid}
-            liveSlaByName={liveSlaByName}
-            liveQueueStatsByName={liveQueueStatsByName}
-            cdrByQueueUuid={cdrByQueueUuid}
-            cdrRows={callStats.rows}
-            isCdrSampled={isCdrSampled}
+            liveSlaByName={effectiveLiveSlaByName}
+            liveQueueStatsByName={effectiveLiveQueueStatsByName}
+            cdrByQueueUuid={effectiveCallStats.byQueueUuid}
+            cdrRows={effectiveCallStats.rows}
+            isCdrSampled={effectiveCallStats.isQueueBreakdownSampled}
             usersOnlineStatus={usersOnlineStatus || []}
             isLoading={isQueuesLoading}
             selectedQueueUuid={selectedQueueUuid}
@@ -524,7 +568,7 @@ const Performance = () => {
         {activeTab === 'campaign-activity' && <CampaignActivityTab />}
         {activeTab === 'agents' && (
           <AgentsTab
-            agentRows={agentRows}
+            agentRows={effectiveAgentRows}
             usersOnlineStatus={usersOnlineStatus || []}
             activeQueueCalls={activeQueueCalls}
             queues={queues}
