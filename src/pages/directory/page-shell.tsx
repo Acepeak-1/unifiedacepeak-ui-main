@@ -63,8 +63,8 @@ export const DirectoryPage = ({
     </div>
     {stats ? <div className="kpis kpi-grid">{stats}</div> : null}
     {note ? <div className="page-caveat">{note}</div> : null}
-    {filters ? <div className="tbar">{filters}</div> : null}
     <div className="panel-card">
+      {filters ? <div className="tbar tbar-in-card">{filters}</div> : null}
       <div className="tbl-wrap">{children}</div>
     </div>
   </div>
@@ -140,7 +140,7 @@ export const SearchChip = ({
   onChange: (value: string) => void;
   placeholder: string;
 }) => (
-  <label className="fchip" style={{ flex: '1 1 220px', maxWidth: 320 }}>
+  <label className="fchip search-fchip" style={{ flex: '1 1 220px', maxWidth: 320 }}>
     <Ic n="search" size={13} />
     <input
       value={value}

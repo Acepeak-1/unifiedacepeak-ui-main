@@ -1,6 +1,6 @@
 import { FC, useEffect, useMemo, useState } from 'react';
 import { CAMPAIGN_UPSERT_TAB_CONSTANT } from '../const';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import BasicInformation from './basic-info';
 import Settings from './settings';
@@ -15,13 +15,24 @@ import { handleAlert } from '@/lib/utils';
 import { useGetGroupList, useGetSite } from '@/hooks/common';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import DispositionModal from '../../dispositions/add-edit-dispositions';
+import CustomTooltip from '@/components/custom/custom-tooltip';
 import SettingsAndPermission from './settings-and-permission';
 import { useUser } from '@/hooks/use-user';
 import GreetingNotification from './greetings';
 import Spin from '@/components/spin';
 import moment from 'moment';
 import { buildCampaignUpsertPayload, mapCampaignToFormDefaults } from './campaign-mappers';
+import { Eye, Gauge, X, Zap } from 'lucide-react';
+import './campaign-form.css';
 
+/** One icon per dialling mode, keyed by the values the form already stores. */
+const TYPE_ICON: Record<string, typeof Eye> = {
+  [DIALER_TYPE.PREVIEW]: Eye,
+  [DIALER_TYPE.NORMAL]: Gauge,
+  [DIALER_TYPE.PREDICTIVE]: Zap,
+};
+
+/** Step order the wizard pages through, one at a time, behind Next/Prev. */
 const TABS_ORDER = [
   CAMPAIGN_UPSERT_TAB_CONSTANT.BASIC_INFORMATION,
   CAMPAIGN_UPSERT_TAB_CONSTANT.SETTING_PERMISSION,
@@ -57,7 +68,6 @@ const AddEditCampaign: FC<any> = ({ setDrawerState, selectedCampaign }) => {
   const { data: dataSiteList = [] } = useGetSite();
   const { data: groupList = [] } = useGetGroupList({ type: 'LEAD', generatedBy: null });
   const [dialMethod, setDialMethod] = useState<string>();
-  console.log(dialMethod, 'dialMethoddialMethod');
 
   const [schemaContext, setSchemaContext] = useState(null);
   const [modalState, setModalState] = useState<boolean>(false);
@@ -327,7 +337,28 @@ const AddEditCampaign: FC<any> = ({ setDrawerState, selectedCampaign }) => {
           isFetchingCampaignDetail
         }
       >
-        <div className="flex h-full w-full flex-col gap-4 justify-between">
+        <div className="acp-form">
+          <div className="acp-head">
+            <div className="min-w-0">
+              <DialogTitle className="acp-title">
+                {isEditMode ? 'Update Campaign' : 'Add Campaign'}
+              </DialogTitle>
+              {isEditMode && (
+                <DialogDescription className="acp-sub">
+                  {`Editing ${selectedCampaign?.name || 'this campaign'}.`}
+                </DialogDescription>
+              )}
+            </div>
+            <button
+              type="button"
+              className="acp-close"
+              aria-label="Close"
+              onClick={() => setDrawerState(false)}
+            >
+              <X size={15} />
+            </button>
+          </div>
+
           <RadioGroup
             value={dialMethod}
             disabled={isEditMode}
@@ -336,58 +367,91 @@ const AddEditCampaign: FC<any> = ({ setDrawerState, selectedCampaign }) => {
               setValue('dialMethod', val);
               setValue('script', { label: '', value: '' });
             }}
-            className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-4"
+            className="acp-types"
           >
             {CAMPAIGN_TYPE_LIST.map((item, index) => {
               const id = `dial-option-${index}`;
+              const Icon = TYPE_ICON[item.value] || Eye;
+              const isOn = dialMethod === item?.value;
               return (
-                <label
+                <CustomTooltip
                   key={index}
-                  htmlFor={id}
-                  className={`w-full flex items-start justify-between gap-2 px-4 py-3 border rounded-xl ${isEditMode ? 'pointer-events-none opacity-50' : 'cursor-pointer'} ${
-                    dialMethod === item?.value
-                      ? 'border-gray-200 bg-gray-100'
-                      : 'border-gray-200 bg-white'
-                  }`}
+                  side="bottom"
+                  text={item.description}
+                  className="bg-gray-500 text-white"
                 >
-                  <div className="flex flex-col gap-1">
-                    <h3 className="text-gray-900 font-semibold text-md">{item.label}</h3>
-                    <p className="text-gray-500 font-normal text-sm">{item.description}</p>
-                  </div>
-                  <RadioGroupItem id={id} value={item.value} className="peer cursor-pointer" />
-                </label>
+                  <label
+                    htmlFor={id}
+                    className={`acp-type${isOn ? ' is-on' : ''}${
+                      isEditMode ? ' is-locked' : ' cursor-pointer'
+                    }`}
+                  >
+                    <span className="acp-type-ico">
+                      <Icon size={17} />
+                    </span>
+                    <span className="acp-type-body">
+                      <span className="acp-type-title block">{item.label}</span>
+                    </span>
+                    <RadioGroupItem
+                      id={id}
+                      value={item.value}
+                      className="peer mt-0.5 cursor-pointer"
+                    />
+                  </label>
+                </CustomTooltip>
               );
             })}
           </RadioGroup>
 
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="flex w-full">
-            <div className="w-full overflow-x-auto border-b border-gray-200">
-              <TabsList className="flex min-h-10 min-w-max rounded-none bg-transparent p-0 text-center text-sm font-semibold sm:min-w-full">
-                {Object.entries(CAMPAIGN_UPSERT_TAB_CONSTANT).map(([key, value]) => (
-                  <TabsTrigger
-                    className="relative flex h-full flex-none gap-1 rounded-none border-b-2 bg-transparent px-4 text-xs font-semibold text-gray-700 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:text-primary data-[state=active]:shadow-2xs sm:flex-1 sm:justify-center sm:px-6 sm:text-sm"
-                    key={key}
-                    value={value}
-                  >
-                    {value}{' '}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+          {/* Chain stepper: a numbered circle per step on one continuous
+              track, the red fill reaching exactly as far as the active
+              step. Still drives the same handleTabChange, so the
+              validation gate on moving forward is unchanged. */}
+          <div className="acp-steps" role="tablist">
+            <div className="acp-steps-track">
+              <span
+                className="acp-steps-track-fill"
+                style={{
+                  width: `${(TABS_ORDER.indexOf(activeTab) / (TABS_ORDER.length - 1)) * 100}%`,
+                }}
+              />
             </div>
-          </Tabs>
+            {TABS_ORDER.map((value, index) => {
+              const current = TABS_ORDER.indexOf(activeTab);
+              const state = index === current ? 'on' : index < current ? 'done' : 'off';
+              return (
+                <div className={`acp-step-item is-${state}`} key={value}>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={index === current}
+                    className="acp-step-btn"
+                    onClick={() => handleTabChange(value)}
+                  >
+                    {index + 1}
+                  </button>
+                  <span className="acp-step-l">{value}</span>
+                </div>
+              );
+            })}
+          </div>
+
           <FormProvider {...formInstance}>
-            <form
-              onSubmit={formInstance.handleSubmit(onSubmit)}
-              className="flex h-full w-full flex-col gap-4 justify-between"
-            >
-              {stepLookUp?.[activeTab]}
-              <div className="flex flex-row items-center justify-between gap-2">
-                <Button variant={'transparent'} type="button" onClick={() => setDrawerState(false)}>
+            <form onSubmit={formInstance.handleSubmit(onSubmit)} className="acp-formbody">
+              <div className="acp-scroll">{stepLookUp?.[activeTab]}</div>
+              <div className="acp-actions flex flex-row items-center justify-between gap-2">
+                <Button
+                  variant={'transparent'}
+                  className="acp-cancel"
+                  type="button"
+                  onClick={() => setDrawerState(false)}
+                >
                   Cancel
                 </Button>
                 <div className="flex flex-row items-center gap-2">
                   <Button
                     variant={'outline'}
+                    className="acp-prev"
                     type="button"
                     onClick={handlePrev}
                     disabled={activeTab === TABS_ORDER[0]}
@@ -395,12 +459,22 @@ const AddEditCampaign: FC<any> = ({ setDrawerState, selectedCampaign }) => {
                     Prev
                   </Button>
                   {activeTab !== CAMPAIGN_UPSERT_TAB_CONSTANT.MEDIA && (
-                    <Button variant={'outline'} type="button" onClick={handleNext}>
+                    <Button
+                      variant={'primary'}
+                      className="acp-next"
+                      type="button"
+                      onClick={handleNext}
+                    >
                       Next
                     </Button>
                   )}
                   {activeTab === CAMPAIGN_UPSERT_TAB_CONSTANT.MEDIA && (
-                    <Button variant={'primary'} type="submit" disabled={isPendingAddCampaign}>
+                    <Button
+                      variant={'primary'}
+                      className="acp-next"
+                      type="submit"
+                      disabled={isPendingAddCampaign}
+                    >
                       {isPendingAddCampaign ? 'Submitting...' : 'Submit'}
                     </Button>
                   )}

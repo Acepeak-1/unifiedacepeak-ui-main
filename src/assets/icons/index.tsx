@@ -7843,3 +7843,123 @@ export const Disc = ({ className }: IconProps) => (
     <circle cx="12" cy="12" r="4" />
   </svg>
 );
+
+/* ---- Admin Hub sidebar: thin outline set ----
+   A handful of the Admin nav's group icons (Captain, Company, People,
+   AI Tools, Integration) were drawn as small solid-fill glyphs (14-16px
+   native viewBox) instead of true strokes — fine at their original size,
+   but upscaled to the sidebar's ~20-22px display size that thickened their
+   shapes and blurred their edges, next to genuinely stroke-based icons
+   (Numbers, My Account, Phone System) that stay crisp at any size because
+   the stroke scales with the artwork instead of being baked into a fill.
+   These five match that stroke construction (24x24 viewBox, 2px stroke) —
+   same technique as GlobeIcon/Disc above. */
+export const HeadsetLineIcon = ({ className }: IconProps) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z" />
+    <path d="M21 16v2a4 4 0 0 1-4 4h-5" />
+  </svg>
+);
+
+export const BuildingLineIcon = ({ className }: IconProps) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+    <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
+    <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
+    <path d="M10 6h4" />
+    <path d="M10 10h4" />
+    <path d="M10 14h4" />
+    <path d="M10 18h4" />
+  </svg>
+);
+
+export const UsersOutlineIcon = ({ className }: IconProps) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <path d="M16 3.128a4 4 0 0 1 0 7.744" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+    <circle cx="9" cy="7" r="4" />
+  </svg>
+);
+
+export const BrainCircuitLineIcon = ({ className }: IconProps) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
+    <path d="M9 13a4.5 4.5 0 0 0 3-4" />
+    <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" />
+    <path d="M3.477 10.896a4 4 0 0 1 .585-.396" />
+    <path d="M6 18a4 4 0 0 1-1.967-.516" />
+    <path d="M12 13h4" />
+    <path d="M12 18h6a2 2 0 0 1 2 2v1" />
+    <path d="M12 8h8" />
+    <path d="M16 8V5a2 2 0 0 1 2-2" />
+    <circle cx="16" cy="13" r=".5" />
+    <circle cx="18" cy="3" r=".5" />
+    <circle cx="20" cy="21" r=".5" />
+    <circle cx="20" cy="8" r=".5" />
+  </svg>
+);
+
+export const PlugLineIcon = ({ className }: IconProps) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M12 22v-5" />
+    <path d="M9 8V2" />
+    <path d="M15 8V2" />
+    <path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />
+  </svg>
+);

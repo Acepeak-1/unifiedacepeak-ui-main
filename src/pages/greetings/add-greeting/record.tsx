@@ -6,6 +6,7 @@ import Recorder from '../recorder';
 import moment from 'moment';
 import { useFormContext } from 'react-hook-form';
 import ReadyAudio from '@/components/custom/ready-audio';
+import { RecordCircle } from '@/assets/icons';
 
 const Record: FC = () => {
   const { watch, setValue } = useFormContext();
@@ -84,6 +85,7 @@ const Record: FC = () => {
           <div className="flex flex-col gap-2 justify-center w-full items-center">
             {!recording && !WatchUploadFile && (
               <Button variant={'outline'} type="button" onClick={handleStartRecording}>
+                <RecordCircle className="h-4 w-4 text-red-500" />
                 Start Recording
               </Button>
             )}

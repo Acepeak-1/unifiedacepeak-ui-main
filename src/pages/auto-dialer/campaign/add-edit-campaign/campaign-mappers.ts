@@ -132,6 +132,9 @@ const buildSettingsPayload = (formValues: any) => {
     operational_hours: {
       value: operational_hours?.value || CUSTOM_HOURS_SCHEDULE_OPTIONS,
       holidays: operational_hours?.holidays?.length ? operational_hours.holidays : [],
+      /* One-off date overrides (a half-day, a special shift) — separate
+         from holidays, which just close the day entirely. */
+      overrides: Array.isArray(operational_hours?.overrides) ? operational_hours.overrides : [],
       regional: {
         override: operational_hours?.regional?.override ?? false,
         country: operational_hours?.regional?.country,
@@ -184,6 +187,12 @@ const buildDialerSettingsPayload = (dialerSetting: any) => {
       enable: toBoolean(autoAnswering?.enabled ?? autoAnswering?.enable, false),
       timeout: autoAnswering?.timeout ?? 2,
     },
+    manual_review_required: toBoolean(dialerSetting?.manual_review_required, true),
+    require_disposition: toBoolean(dialerSetting?.require_disposition, true),
+    agent_availability_percent: dialerSetting?.agent_availability_percent ?? null,
+    dialing_ratio: dialerSetting?.dialing_ratio ?? null,
+    max_concurrent_calls: dialerSetting?.max_concurrent_calls ?? null,
+    abandon_rate_percent: dialerSetting?.abandon_rate_percent ?? null,
   };
 };
 
@@ -339,6 +348,16 @@ export const mapCampaignToFormDefaults = ({
         enabled: toBoolean(autoAnswering?.enabled ?? autoAnswering?.enable, false),
         timeout: autoAnswering?.timeout ?? 2,
       },
+      agent_contact_limit: selectedCampaign?.dialerSetting?.agent_contact_limit ?? null,
+      manual_review_required: toBoolean(
+        selectedCampaign?.dialerSetting?.manual_review_required,
+        true,
+      ),
+      require_disposition: toBoolean(selectedCampaign?.dialerSetting?.require_disposition, true),
+      agent_availability_percent: selectedCampaign?.dialerSetting?.agent_availability_percent ?? 80,
+      dialing_ratio: selectedCampaign?.dialerSetting?.dialing_ratio ?? 2,
+      max_concurrent_calls: selectedCampaign?.dialerSetting?.max_concurrent_calls ?? 10,
+      abandon_rate_percent: selectedCampaign?.dialerSetting?.abandon_rate_percent ?? 3,
     },
     greetings: {
       hold: {

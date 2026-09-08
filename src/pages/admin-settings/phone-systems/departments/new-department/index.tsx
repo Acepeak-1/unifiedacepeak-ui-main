@@ -543,7 +543,12 @@ const NewDepartment = ({ rowData, setDrawerState, setTabData }: any) => {
                     Prev
                   </Button>
                   {currentStep !== DEPARTMENT_TAB_CONSTANT.GREETING_NOTIFICATION && (
-                    <Button variant={'outline'} type="button" onClick={handleNext}>
+                    <Button
+                      variant={'outline'}
+                      type="button"
+                      className="grp-next-btn"
+                      onClick={handleNext}
+                    >
                       Next
                     </Button>
                   )}
@@ -578,7 +583,7 @@ const NewDepartment = ({ rowData, setDrawerState, setTabData }: any) => {
                       variant={'outline'}
                       type="button"
                       onClick={handleNext}
-                      className="shrink-0"
+                      className="grp-next-btn shrink-0"
                     >
                       Next
                     </Button>

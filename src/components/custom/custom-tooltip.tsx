@@ -6,6 +6,8 @@ const CustomTooltip = ({
   children,
   side = 'right',
   className = '',
+  sideOffset,
+  align,
   openOnMount = false,
   openOnMountDuration = 1600,
 }: {
@@ -13,6 +15,10 @@ const CustomTooltip = ({
   children: React.ReactNode;
   side?: 'top' | 'right' | 'bottom' | 'left';
   className?: string;
+  /** Gap between trigger and tooltip; defaults to the base 4px. */
+  sideOffset?: number;
+  /** Edge alignment along `side`; Radix defaults to 'center'. */
+  align?: 'start' | 'center' | 'end';
   /** Shows the tooltip once, unprompted, right after mount — so a hover
       affordance that isn't obviously interactive (an info icon, say) gets
       noticed once instead of relying on someone finding it by accident. It
@@ -36,7 +42,7 @@ const CustomTooltip = ({
   return (
     <Tooltip {...(openOnMount ? { open, onOpenChange: setOpen } : {})}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side={side} className={className}>
+      <TooltipContent side={side} align={align} className={className} sideOffset={sideOffset}>
         {text}
       </TooltipContent>
     </Tooltip>
