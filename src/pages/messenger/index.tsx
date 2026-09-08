@@ -10,7 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { useSocketEvents } from '@/hooks/use-socket-events';
 import { useUser } from '@/hooks/use-user';
 import moment from 'moment';
@@ -24,7 +23,6 @@ import {
   Plus,
   Star,
   StarOff,
-  XIcon,
   LucideUser,
   Loader2,
 } from 'lucide-react';
@@ -51,7 +49,16 @@ type ChatTab = 'all' | 'team' | 'direct' | 'favorites';
 type MessageStatus = 'all' | 'unread';
 type MessengerMode = 'messenger' | 'agent-chat';
 type MessengerChatType =
-  '' | 'whatsapp' | 'instagram' | 'facebook' | 'messenger' | 'telegram' | 'chat' | 'website' | 'captain' | 'all_channels';
+  | ''
+  | 'whatsapp'
+  | 'instagram'
+  | 'facebook'
+  | 'messenger'
+  | 'telegram'
+  | 'chat'
+  | 'website'
+  | 'captain'
+  | 'all_channels';
 type DraftRecord = Record<
   string,
   { message?: any; messageItemAction?: { action?: string }; updatedAt?: number }
@@ -362,8 +369,11 @@ const ListItem = ({
   // Handle available user case
   if (chat?.isAvailableUser) {
     return (
-      <div className="flex hover:bg-gray cursor-pointer" onClick={() => onChatSelect(chat)}>
-        <div className="flex items-center w-full px-3 h-16 gap-2">
+      <div
+        className="flex cursor-pointer border-b border-[var(--mcm-line-2)] hover:bg-[#fff1f2]"
+        onClick={() => onChatSelect(chat)}
+      >
+        <div className="flex items-center w-full px-[14px] py-[11px] min-h-[60px] gap-2">
           <div className="relative">
             <CustomAvatar
               name={`${otherUserData?.first_name} ${otherUserData?.last_name}`}
@@ -376,14 +386,14 @@ const ListItem = ({
             <div className="flex justify-between gap-2">
               <div className="flex items-center gap-1 w-full ">
                 <LucideUser className="w-4 min-w-4 h-4 text-gray-700" />
-                <p className="text-gray-900 truncate font-medium">
+                <p className="text-gray-900 truncate text-[13px] font-bold tracking-[-0.01em]">
                   {otherUserData?.first_name}&nbsp;
                   {otherUserData?.last_name}
                 </p>
               </div>
             </div>
             <div className="flex justify-between">
-              <p className="text-primary truncate pr-12 text-xs">Click to start a new chat</p>
+              <p className="text-primary truncate pr-12 text-[12.5px]">Click to start a new chat</p>
               {/* <div className="flex gap-0.5 justify-end items-center">
                 <span className="bg-ucass-active text-white text-xs px-2 py-1 rounded-full">
                   New
@@ -451,8 +461,11 @@ const ListItem = ({
     >
       <div className="w-full flex flex-col gap-1 ">
         <div
-          className={`flex justify-between w-full items-center pl-3 pr-2 min-h-[60px] group relative  transition-all border-b border-gray-200 duration-200 
-             ${isChatOpened ? 'bg-gray-100  ' : 'bg-transparent hover:bg-gray-100 '}`}
+          className={`flex justify-between w-full items-center px-[14px] py-[11px] min-h-[60px] group relative transition-all border-b border-[var(--mcm-line-2)] duration-200 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:content-[''] hover:bg-[#fff1f2] hover:before:bg-[var(--primary)] ${
+            isChatOpened
+              ? 'bg-[var(--mcm-surface-3)] before:bg-[var(--mcm-ink-4)]'
+              : 'bg-transparent before:bg-transparent'
+          }`}
         >
           <div className="flex w-full min-w-0 items-center gap-2">
             <div className="text-xs font-medium flex items-center gap-1">
@@ -466,7 +479,9 @@ const ListItem = ({
             </div>
             <div className="flex w-full min-w-0 flex-col gap-1">
               <div className="flex min-w-0 items-center gap-2 text-sm">
-                <div className=" min-w-0 truncate">{nameToShow || ''}</div>
+                <div className="min-w-0 truncate text-[13px] font-bold tracking-[-0.01em]">
+                  {nameToShow || ''}
+                </div>
                 {isFavorited ? (
                   <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 shrink-0" />
                 ) : null}
@@ -610,7 +625,7 @@ const SidebarContent = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const [statusFilter, setStatusFilter] = useState<MessageStatus>('all');
+  const [statusFilter] = useState<MessageStatus>('all');
   const {
     allChats = [],
     chatWindows,
@@ -945,7 +960,9 @@ const SidebarContent = ({
         },
         {
           id: 3,
-          label: 'Chats',
+          /* No header on the catch-all bucket — 'Chats' inside the Chat panel
+             said nothing. Favorites and Team still label themselves. */
+          label: '',
           shouldVisible: directMessages.length > 0 || availableUsers.length > 0,
           data: [
             ...sortByPinnedAndTime(filterByStatus(filterByName(directMessages))),
@@ -964,7 +981,9 @@ const SidebarContent = ({
       direct: [
         {
           id: 1,
-          label: 'Chats',
+          /* No header on the catch-all bucket — 'Chats' inside the Chat panel
+             said nothing. Favorites and Team still label themselves. */
+          label: '',
           shouldVisible: directMessages.length > 0 || availableUsers.length > 0,
           data: [
             ...sortByPinnedAndTime(filterByStatus(filterByName(directMessages))),
@@ -1071,43 +1090,57 @@ const SidebarContent = ({
 
   return (
     <div className="w-full h-full min-h-0 bg-white flex flex-col">
-      <div className="min-h-16 flex items-center px-3 sm:px-4 justify-between border-b border-gray-200">
+      <div className="mcm-chat-head flex items-center justify-between border-b border-[var(--mcm-line)]">
         <div className="flex gap-3 w-full">
-          {searchOpen ? (
-            <div className="w-full h-full flex items-center justify-between gap-2">
-              <Input
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search member"
-                className="border-none min-h-14 h-full w-full focus-visible:ring-0 px-0"
-              />
-              <button
-                className="flex cursor-pointer text-gray-700"
-                onClick={() => {
-                  setSearchOpen(false);
-                  setSearchQuery('');
-                }}
-                aria-label="Close search"
-              >
-                <XIcon width={16} height={16} />
-              </button>
+          <div className="flex items-center justify-between gap-2 w-full">
+            <div
+              className="w-full min-w-0 truncate text-[27px] font-normal italic leading-[1.5] text-gray-900"
+              style={{ fontFamily: "'Instrument Serif', Georgia, 'Times New Roman', serif" }}
+            >
+              {pageTitle}
             </div>
-          ) : (
-            <div className="flex items-center justify-between gap-2 w-full">
-              <div className="text-xl font-semibold w-full min-w-0 truncate text-gray-900">
-                {pageTitle}
-              </div>
+            <div className="flex gap-2 shrink-0 items-center">
+              {/* Search collapses to an icon and expands in place, as on the
+                    phone console's call list. */}
+              {searchOpen ? (
+                <input
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onBlur={() => {
+                    if (!searchQuery.trim()) setSearchOpen(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setSearchQuery('');
+                      setSearchOpen(false);
+                    }
+                  }}
+                  placeholder="Search chats…"
+                  aria-label="Search chats"
+                  className="h-[34px] w-[190px] max-w-[46vw] rounded-[9px] border border-[var(--mcm-accent-edge)] bg-white px-3 text-[13px] text-gray-900 outline-none shadow-[0_1px_3px_rgba(17,17,17,0.06)] placeholder:text-[var(--mcm-ink-4)]"
+                />
+              ) : (
+                <button
+                  type="button"
+                  aria-label="Search"
+                  title="Search"
+                  onClick={() => setSearchOpen(true)}
+                  className="mcm-chat-iconbtn"
+                >
+                  <SearchLine className="w-[15px] h-[15px]" />
+                </button>
+              )}
               {!isAgentChat ? (
-                <div className="flex gap-2 shrink-0">
+                <>
                   {chatAccess?.access?.DIRECT_MESSAGE || chatAccess?.access?.TEAM_MESSAGE ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
-                          className="flex items-center justify-center cursor-pointer w-10 h-10 rounded-full bg-gray-100 text-gray-700 hover:bg-primary hover:text-white"
+                          className="mcm-chat-iconbtn"
                           aria-label="Add"
                         >
-                          <Plus width={18} height={18} />
+                          <Plus width={15} height={15} />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
@@ -1136,16 +1169,16 @@ const SidebarContent = ({
                     </DropdownMenu>
                   ) : (
                     <button
-                      className="flex items-center justify-center cursor-pointer w-10 h-10 rounded-full bg-gray-100 text-gray-700 hover:bg-primary hover:text-white"
+                      className="mcm-chat-iconbtn"
                       aria-label="Add"
                     >
-                      <Plus width={18} height={18} />
+                      <Plus width={15} height={15} />
                     </button>
                   )}
                   <DropdownMenu>
                     <DropdownMenuTrigger>
-                      <div className="cursor-pointer flex items-center justify-center rounded-full w-10 h-10 bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white">
-                        <FilterIcon className="w-6 h-6" />
+                      <div className="mcm-chat-iconbtn">
+                        <FilterIcon className="w-[15px] h-[15px]" />
                       </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
@@ -1178,63 +1211,36 @@ const SidebarContent = ({
                         : null}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </div>
+                </>
               ) : null}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
+      {/* Same element carries the rule and the scroll, so a tab's -mb-px
+          underline lands on it — as .panel-tabs does on the phone console. */}
       {!isAgentChat ? (
-        <div className="border-b border-gray-200 px-2">
-          <div className="flex min-h-10 items-center gap-2 overflow-x-auto">
-            {tabOptions.map((tab) => (
-              <button
-                key={tab.value}
-                className={`px-2 py-3 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
-                  activeTab === tab.value
-                    ? 'text-primary border-primary'
-                    : 'text-gray-700 border-transparent hover:text-primary'
-                }`}
-                onClick={() => {
-                  setActiveTab(tab.value);
-                  setSearchParams((prev) => {
-                    const next = new URLSearchParams(prev);
-                    next.set('type', tab.value);
-                    next.delete('chatId');
-                    return next;
-                  });
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <div className="mcm-chat-tabs flex shrink-0 gap-0 overflow-x-auto border-b border-[var(--mcm-line)]">
+          {tabOptions.map((tab) => (
+            <button
+              key={tab.value}
+              className={activeTab === tab.value ? 'on' : ''}
+              onClick={() => {
+                setActiveTab(tab.value);
+                setSearchParams((prev) => {
+                  const next = new URLSearchParams(prev);
+                  next.set('type', tab.value);
+                  next.delete('chatId');
+                  return next;
+                });
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       ) : null}
-
-      <div className="px-3 py-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-b border-gray-100">
-        <Input
-          Icon={<SearchLine className="text-gray-500" />}
-          IconPosition="left-0 pl-3 inset-y-0"
-          className="pl-9"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search..."
-        />
-        {!isAgentChat ? (
-          <div className="w-full sm:min-w-28 sm:w-28">
-            <select
-              className="border border-gray-300 rounded-xl px-3 min-h-10 text-sm w-full text-gray-700 bg-white"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as MessageStatus)}
-            >
-              <option value="all">All</option>
-              <option value="unread">Unread</option>
-            </select>
-          </div>
-        ) : null}
-      </div>
 
       <div className="w-full flex-1 min-h-0 overflow-auto">
         {emptyMessenger ? (
@@ -1261,9 +1267,9 @@ const SidebarContent = ({
             {groupList.map((group: any) => {
               if (!group?.shouldVisible || !group?.data?.length) return null;
               return (
-                <div key={group?.label} className="w-full">
+                <div key={group?.id} className="w-full">
                   {group?.label && !isAgentChat ? (
-                    <div className="text-xs uppercase tracking-wider font-medium text-gray-500 flex gap-2 py-0 items-center bg-transparent min-h-9 justify-start max-h-9 px-2">
+                    <div className="flex items-center gap-2 px-[14px] pt-3 pb-1.5 text-xs font-bold text-[var(--mcm-ink-3)]">
                       {group?.label}
                     </div>
                   ) : null}
@@ -1388,7 +1394,13 @@ const Messenger = ({ mode = 'messenger' }: { mode?: MessengerMode }) => {
       return;
     }
 
-    if (chatType !== 'chat' && chatType !== 'website' && chatType !== 'captain' && chatType !== 'all_channels' && !canUseOmniChannel(omniAccess, chatType)) {
+    if (
+      chatType !== 'chat' &&
+      chatType !== 'website' &&
+      chatType !== 'captain' &&
+      chatType !== 'all_channels' &&
+      !canUseOmniChannel(omniAccess, chatType)
+    ) {
       setSelectedChat(null);
       setselectedChannelType(null);
       setChatType('chat');
@@ -1462,7 +1474,7 @@ const Messenger = ({ mode = 'messenger' }: { mode?: MessengerMode }) => {
           <>
             <section
               className={cn(
-                'h-full min-h-0 border-r border-gray-200 bg-white lg:w-[22rem] lg:min-w-[22rem] lg:max-w-[22rem]',
+                'h-full min-h-0 border-r border-gray-200 bg-white lg:w-[var(--mcm-list-panel-w)] lg:min-w-[var(--mcm-list-panel-w)] lg:max-w-[var(--mcm-list-panel-w)]',
                 activeChatId ? 'hidden lg:block' : 'w-full',
               )}
             >
@@ -1492,7 +1504,7 @@ const Messenger = ({ mode = 'messenger' }: { mode?: MessengerMode }) => {
           <>
             <section
               className={cn(
-                'h-full min-h-0 border-r border-gray-200 bg-white lg:max-w-[19rem] lg:min-w-[19rem] xl:max-w-[22rem] xl:min-w-[22rem]',
+                'h-full min-h-0 border-r border-gray-200 bg-white lg:w-[var(--mcm-list-panel-w)] lg:min-w-[var(--mcm-list-panel-w)] lg:max-w-[var(--mcm-list-panel-w)]',
                 selectedChat ? 'hidden lg:block' : 'block w-full',
               )}
             >

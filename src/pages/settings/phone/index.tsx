@@ -670,6 +670,78 @@ const IncomingCalls = () => {
           background-color: #DC2626 !important;
           border-color: #DC2626 !important;
         }
+        /* Card titles ("Forward All Calls" / "Incoming Calls" / "Outgoing
+           Calls") — .mcm-rule-t is the flex row holding the status dot,
+           the title itself, the "Checked first" / "Saved, not applied
+           yet" rank pill, and any error tooltip. The pill already carries
+           its own explicit smaller font-size, so raising the row's own
+           size only grows the title text (which has none of its own,
+           just inheriting the row's), not the pill. */
+        .acepeak-myphone .mcm-rule-t {
+          font-size: 15px;
+        }
+        /* Content inside each card's expanded body — the description
+           sentence, the Type/Value Select controls, and the voicemail
+           radio labels. */
+        .acepeak-myphone .mcm-rule-b p,
+        .acepeak-myphone .mcm-rule-b [data-slot='label'],
+        .acepeak-myphone .mcm-rule-b [data-slot='input'] {
+          font-size: 13px;
+        }
+        /* The Select controls' own font-size is set inside index.css's
+           @layer base with !important (see this page's own comment near
+           the top of this style block about that same layer fight for
+           dropdown option colours) — an unlayered override here, even
+           with !important, would still lose to that layered rule, so
+           it's declared inside the same base layer instead. */
+        @layer base {
+          .acepeak-myphone .mcm-rule-b .custom-react-select__control {
+            font-size: 13px !important;
+          }
+        }
+        /* Incoming Calls specifically: its expanded body is a plain
+           "flex flex-col gap-4" div in the shared component's own
+           markup, not .mcm-rule-b like the other two cards — so none of
+           the rules above ever reached it.
+
+           Scoped to ":nth-child(4)", verified by reading the actual
+           source (call-rules/index.tsx) from the true top of its render
+           tree rather than assumed: with compactDescriptions=true (what
+           this page passes), the ".mcm-fsec-h" block there doesn't
+           render, so the real sibling order under its shared parent is
+           1) .mcm-callsummary, 2) the "Coming soon" .mcm-setrow-note
+           paragraph, 3) Forward All Calls' .mcm-rule, 4) Incoming Calls'
+           .mcm-rule, 5) Outgoing Calls' .mcm-rule. An earlier version of
+           this rule used ":nth-child(2)", which is actually that
+           .mcm-setrow-note paragraph — lacking the .mcm-rule class, the
+           compound selector matched nothing at all, which is why nothing
+           visibly changed before.
+
+           Covers the device table's row text, the "If Busy / Unanswered
+           / Unreachable" sub-label (an <h6>, unlike every other title on
+           this page), and the ring-mode/fallback Select controls. */
+        .acepeak-myphone .mcm-rule:nth-child(4) p,
+        .acepeak-myphone .mcm-rule:nth-child(4) h6,
+        .acepeak-myphone .mcm-rule:nth-child(4) [data-slot='label'],
+        .acepeak-myphone .mcm-rule:nth-child(4) [data-slot='input'] {
+          font-size: 13px;
+        }
+        /* The device table's own header row ("Name" / "Ring For" /
+           "Status") shares the exact same classes as the data cells
+           below it — the only thing distinguishing it structurally is
+           its own grey background — so it's targeted here, overriding
+           the broader 13px rule above with its own distinct table-header
+           treatment instead. */
+        .acepeak-myphone .mcm-rule:nth-child(4) .bg-gray-100 p {
+          font-size: 12px;
+          text-transform: uppercase;
+          color: oklch(0.556 0 0);
+        }
+        @layer base {
+          .acepeak-myphone .mcm-rule:nth-child(4) .custom-react-select__control {
+            font-size: 13px !important;
+          }
+        }
       `}</style>
       <div className="flex shrink-0 items-center justify-between gap-2 px-4 py-3 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-1.5">
