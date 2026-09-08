@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Ic, McmIconSprite } from '@/components/mcm/icons';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import CustomSelect from '@/components/custom/custom-select';
 
 /**
  * The shape every Directory page takes.
@@ -29,6 +30,7 @@ export const DirectoryPage = ({
   actions,
   filters,
   stats,
+  footer,
   children,
 }: {
   /* ReactNode rather than plain string so a page can put an icon beside its
@@ -50,6 +52,10 @@ export const DirectoryPage = ({
   /* A row of at-a-glance counts above the filter bar. Optional — only pages
      that pass it get the band. */
   stats?: ReactNode;
+  /* The per-page/record-count/pager row, pinned under the table instead of
+     scrolling with it. Optional — a page that passes none renders exactly as
+     before. Build it with `TableFooter` below. */
+  footer?: ReactNode;
   children: ReactNode;
 }) => (
   <div className="page">
@@ -66,9 +72,103 @@ export const DirectoryPage = ({
     <div className="panel-card">
       {filters ? <div className="tbar tbar-in-card">{filters}</div> : null}
       <div className="tbl-wrap">{children}</div>
+      {footer}
     </div>
   </div>
 );
+
+/**
+ * Per-page / record-count / pager row shown under a Directory table, matching
+ * the pattern the rest of the console already uses (see TableManager). Plain
+ * client-side paging over an already-fetched array — every Directory page
+ * pages through its own filtered `visible` list rather than re-querying the
+ * API per page.
+ */
+export const TableFooter = ({
+  page,
+  perPage,
+  total,
+  onPageChange,
+  onPerPageChange,
+  perPageOptions = [10, 25, 50, 100],
+}: {
+  page: number;
+  perPage: number;
+  total: number;
+  onPageChange: (page: number) => void;
+  onPerPageChange: (perPage: number) => void;
+  perPageOptions?: number[];
+}) => {
+  const pageCount = Math.max(1, Math.ceil(total / perPage));
+  const pagerBtn =
+    'flex h-7 w-7 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500';
+
+  return (
+    <div className="tbl-foot">
+      <div className="tbl-foot__left">
+        <span className="tbl-foot__perpage">
+          <span className="tbl-foot__perpage-select">
+            <CustomSelect
+              options={perPageOptions.map((n) => ({ label: String(n), value: n }))}
+              value={{ label: String(perPage), value: perPage }}
+              handleChange={(option: any) => {
+                onPerPageChange(option.value);
+                onPageChange(1);
+              }}
+              isClearable={false}
+              isSearchable={false}
+              menuPlacement="top"
+              menuPortalTarget={false}
+            />
+          </span>
+          per page
+        </span>
+        <span className="tbl-foot__count">{total} record(s)</span>
+      </div>
+      <div className="tbl-foot__pager">
+        <button
+          type="button"
+          onClick={() => onPageChange(1)}
+          disabled={page <= 1}
+          aria-label="First page"
+          className={pagerBtn}
+        >
+          <ChevronsLeft className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page <= 1}
+          aria-label="Previous page"
+          className={pagerBtn}
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        <span className="tbl-foot__current" aria-current="page">
+          {page}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= pageCount}
+          aria-label="Next page"
+          className={pagerBtn}
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onPageChange(pageCount)}
+          disabled={page >= pageCount}
+          aria-label="Last page"
+          className={pagerBtn}
+        >
+          <ChevronsRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 /** One at-a-glance count for the `stats` band, e.g. "Total people: 12". */
 export const Kpi = ({
@@ -117,11 +217,8 @@ export const FilterChip = ({
       {options.map((option) => (
         <DropdownMenuItem
           key={option}
-          className={cn(
-            'cursor-pointer',
-            option === value && 'font-semibold',
-            tone === 'red' && 'focus:bg-[#fef2f2] focus:text-[#171717]',
-          )}
+          className="cursor-pointer"
+          data-selected={option === value}
           onSelect={() => onChange(option)}
         >
           {option}
@@ -141,12 +238,14 @@ export const SearchChip = ({
   placeholder: string;
 }) => (
   <label className="fchip search-fchip" style={{ flex: '1 1 220px', maxWidth: 320 }}>
-    <Ic n="search" size={13} />
+    <span className="search-fchip__icon">
+      <Ic n="search" size={13} />
+    </span>
     <input
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      style={{ border: 0, background: 'transparent', width: '100%', outline: 'none' }}
+      style={{ border: 0, background: 'transparent', width: '100%', outline: 'none', boxShadow: 'none' }}
     />
   </label>
 );

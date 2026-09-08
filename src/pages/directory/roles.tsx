@@ -8,7 +8,7 @@ import SideDrawer from '@/components/custom/side-drawer';
 import AlertConfirm from '@/components/custom/alert-confirm';
 import AddNewRole from '@/pages/admin-settings/roles/add-new-role';
 import AssignUsersModal from '@/pages/admin-settings/roles/assign-users-modal';
-import { DirectoryPage, EmptyRow, SearchChip } from './page-shell';
+import { DirectoryPage, EmptyRow, SearchChip, TableFooter } from './page-shell';
 import { InfoIcon, MoreVertical } from 'lucide-react';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import {
@@ -64,7 +64,7 @@ const Roles = () => {
   const [assigning, setAssigning] = useState<Role | null>(null);
   const [deleting, setDeleting] = useState<Role | null>(null);
 
-  const { data: roles = [], isPending } = useQuery({
+  const { data: roles = [], isPending, refetch } = useQuery({
     queryKey: ['rolesList', 'directoryRoles'],
     queryFn: () => userRolesList({ page: 1, limit: 200 }),
     select: (res: any) => res?.data?.data?.result?.rows || [],
@@ -95,9 +95,24 @@ const Roles = () => {
     queryClient.invalidateQueries({ queryKey: ['rolesList'] });
   };
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
+  const pagedRows = visible.slice((page - 1) * perPage, page * perPage);
+  if (page > pageCount) setPage(pageCount);
+
   return (
     <div className="rol-theme">
       <DirectoryPage
+        footer={
+          <TableFooter
+            page={page}
+            perPage={perPage}
+            total={visible.length}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+          />
+        }
         titleClassName="dir-serif-heading"
         title={
           <span className="flex items-center gap-2">
@@ -110,8 +125,8 @@ const Roles = () => {
                   and how many people hold each role.
                 </>
               }
-              side="top"
-              className="!bg-gray-300 !text-black whitespace-normal text-left"
+              side="right"
+              className="whitespace-normal text-left"
             >
               <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
             </CustomTooltip>
@@ -128,6 +143,15 @@ const Roles = () => {
         filters={
           <>
             <SearchChip value={search} onChange={setSearch} placeholder="Search roles" />
+            <button
+              type="button"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+              title="Refresh"
+              aria-label="Refresh roles"
+              onClick={() => refetch()}
+            >
+              <Ic n="refresh" size={15} />
+            </button>
             <span className="fchip live" style={{ marginLeft: 'auto' }}>
               {visible.length} of {roles.length}
             </span>
@@ -146,8 +170,8 @@ const Roles = () => {
           <tbody>
             {isPending ? (
               <EmptyRow span={4} message="Loading roles…" />
-            ) : visible.length ? (
-              visible.map((role: Role) => {
+            ) : pagedRows.length ? (
+              pagedRows.map((role: Role) => {
                 const system = isSystemRole(role);
                 return (
                   <tr key={role?.uuid || role?.role_uuid || role?.name} className="tbl__row">
