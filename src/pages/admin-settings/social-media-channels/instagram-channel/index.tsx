@@ -1,4 +1,6 @@
-import { ConnectIcon, InstagramLineIcon, SettingsLine, Warning } from '@/assets/icons';
+import { InstagramLineIcon } from '@/assets/icons';
+import ChannelCard from '../channel-card';
+import { DEMO_CHANNELS } from '../constants';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,13 +9,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
 import { useState } from 'react';
 import { connectMetaChannel, handleAlert } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSocialMediaChannelList, changeOmniStatus, deleteOmniChannel } from '@/services/api';
-import Loader from '@/components/custom/loader';
-import { CircleCheckIcon, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 import { useUser } from '@/hooks/use-user';
 
@@ -65,105 +65,26 @@ const InstagramChannel = () => {
 
   return (
     <div>
-      <div
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setIsInstagramModalOpen(true);
+      <ChannelCard
+        icon={<InstagramLineIcon className="w-6 h-6" />}
+        tone="instagram"
+        name="Instagram"
+        description="Handle direct messages, comments and story replies from your Instagram Business account."
+        /* DEMO fallback — remove with DEMO_CHANNELS before release. */
+        isConnected={isInstagramConnected || DEMO_CHANNELS.instagram.connected}
+        account={DEMO_CHANNELS.instagram.account}
+        capabilities={DEMO_CHANNELS.instagram.capabilities}
+        isLoading={isLodingChannelList}
+        onConnect={() => setIsInstagramModalOpen(true)}
+        onManage={handleConnect}
+        onDelete={() => setIsDeleteModalOpen(true)}
+        switchChecked={instagramData ? instagramData.status === 1 : Boolean(DEMO_CHANNELS.instagram.enabled)}
+        onSwitchChange={(checked) => {
+          if (instagramData?.uuid) {
+            mutateStatusChange({ uuid: instagramData.uuid, status: checked ? 1 : 0 });
           }
         }}
-        className="w-full bg-white rounded-xl p-4 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] hover:decoration flex flex-col gap-4 text-left "
-      >
-        <div className={`w-full flex flex-col gap-4`}>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex gap-3 items-center text-sm">
-              <div className="w-9 h-9 flex items-center justify-center p-2 rounded-full bg-pink-100 text-pink-800">
-                <InstagramLineIcon className="w-8 h-8" />
-              </div>
-              <h6 className={`font-medium`}>Instagram</h6>
-            </div>
-          </div>
-          <p className="text-gray-700 text-sm">
-            Connect your Instagram Business account and set up chat on your page.
-          </p>
-
-          {isLodingChannelList ? (
-            <div className="p-3">
-              <Loader variant="blue" />
-            </div>
-          ) : (
-            <div
-              className={`flex items-center gap-2 p-3 rounded-lg ${isInstagramConnected ? 'bg-green-50' : 'bg-yellow-50'}`}
-            >
-              <div className={isInstagramConnected ? 'text-green-600' : 'text-yellow-600'}>
-                {isInstagramConnected ? (
-                  <CircleCheckIcon className="w-5 h-5" />
-                ) : (
-                  <Warning className="w-4 h-4" />
-                )}
-              </div>
-
-              <p
-                className={`font-medium text-sm leading-relaxed ${
-                  isInstagramConnected ? 'text-green-600' : 'text-yellow-600'
-                }`}
-              >
-                {isInstagramConnected ? 'Instagram is connected' : 'Setup required'}
-              </p>
-            </div>
-          )}
-          <div className="flex items-center justify-between gap-2">
-            {!isInstagramConnected ? (
-              <div
-                className="flex gap-1 items-center text-primary text-sm cursor-pointer"
-                onClick={() => setIsInstagramModalOpen(true)}
-              >
-                <ConnectIcon className="w-5 h-5" />
-                <h6 className={`font-medium`}>Connect Account </h6>
-              </div>
-            ) : (
-              <div className="flex gap-3 items-center">
-                <div
-                  className="flex gap-1 items-center text-primary text-sm cursor-pointer"
-                  onClick={handleConnect}
-                >
-                  <SettingsLine className="w-5 h-5" />
-                  <h6 className={`font-medium`}>Manage Settings </h6>
-                </div>
-                <div
-                  className="flex gap-1 items-center text-red-500 hover:text-red-600 text-sm cursor-pointer"
-                  onClick={() => setIsDeleteModalOpen(true)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <h6 className={`font-medium`}>Delete</h6>
-                </div>
-              </div>
-            )}
-
-            <div
-              className="flex items-center gap-2"
-              onClick={(e) => e.stopPropagation()}
-              onDoubleClick={(e) => e.stopPropagation()}
-            >
-              <p className="text-gray-500 text-sm">Active</p>
-              <Switch
-                disabled={!isInstagramConnected}
-                checked={instagramData?.status === 1}
-                onCheckedChange={(checked) => {
-                  if (instagramData?.uuid) {
-                    mutateStatusChange({
-                      uuid: instagramData.uuid,
-                      status: checked ? 1 : 0,
-                    });
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      />
 
       <Dialog open={isInstagramModalOpen} onOpenChange={setIsInstagramModalOpen}>
         <DialogContent className="w-[680px] max-w-[95vw] max-h-[90vh] overflow-y-auto p-0 border-gray-200">

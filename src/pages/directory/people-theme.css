@@ -1,0 +1,727 @@
+/* People page — black & red theme.
+   Scoped under .ppl-red-theme so it only touches this page, not the rest of
+   Directory or Admin Settings (Groups/Roles/Captain/Company/etc. share the
+   same .mcm-page tokens). No new transitions/animations added beyond what the
+   shared .btn/.mini/dropdown-menu primitives already carry platform-wide. */
+.ppl-red-theme {
+  /* .mcm-page sizes its content via flexbox (flex-direction: column; the
+     page itself scrolls internally via `.page`'s own flex:1/overflow-y).
+     That relies on `.page` being a DIRECT flex child of `.mcm-page` — this
+     wrapper div sits between them, so without `display: contents` it becomes
+     the flex item instead (with no height of its own), and `.page` inside it
+     just grows to full content height and gets clipped by `.mcm-page`'s
+     `overflow: hidden` instead of scrolling. `display: contents` drops this
+     div's own box so `.page` is still `.mcm-page`'s direct flex child, while
+     descendant selectors like `.ppl-red-theme .foo` keep working. */
+  display: contents;
+  --accent: #171717; /* primary button bg */
+  --accent-ink: #000000; /* primary button hover */
+  --accent-wash: #fef2f2; /* fchip trigger hover wash */
+  --accent-edge: #fca5a5; /* fchip trigger hover outline */
+  /* A separate shared rule (.mcm-admin table tbody tr:hover) reads this same
+     variable and otherwise wins on specificity with its default light-blue —
+     overriding the variable itself, rather than fighting that rule's
+     specificity, is what actually changes the row hover colour. */
+  --surface-2: #fef8f8;
+}
+
+/* No red on hover here — .fchip's base hover reads --accent-edge, which
+   this page sets to a light red for other uses (the "Filters" dropdown's
+   own trigger colouring), but a red outline on hover read as an error
+   state on the search box and the Filters button itself. */
+.mcm-page .ppl-red-theme .fchip:hover {
+  border-color: var(--line);
+  color: #171717;
+}
+
+/* Filters needs to actually look like a button — a plain .fchip is easy to
+   mistake for inert text once its border matches the page background. */
+.ppl-red-theme .fchip-select {
+  background: #fff;
+  border-color: #d1d5db;
+}
+
+/* Search box was reading small next to the Filters button and the "N
+   available" chip — a touch taller and wider so it's clearly the primary
+   control on this row. */
+.ppl-red-theme .search-fchip {
+  height: 36px;
+  max-width: 360px !important;
+}
+
+/* Search icon: small red circular badge instead of a bare glyph. */
+.ppl-red-theme .fchip .ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 9999px;
+  background: #fde2e2;
+  color: #dc2626;
+}
+
+/* The page canvas behind the cards (`.mcm-page`'s own background) is an
+   ancestor of .ppl-red-theme, not a descendant — a CSS variable set on
+   .ppl-red-theme can't reach upward to repaint it. `.mcm-admin-people` is set
+   directly on that wrapper (from admin-settings/index.tsx and directory/
+   index.tsx, only on the People route) rather than via a `:has()` selector,
+   which some rendering engines don't support and would silently drop this
+   rule entirely. Everything else (cards, table, buttons) keeps white. */
+.mcm-admin-people {
+  background: #efefef;
+}
+
+/* Same italic serif treatment on both "People" and the "Invite people"
+   dialog title (.ppl-serif-heading, applied where that dialog is built in
+   people.tsx). */
+.ppl-red-theme .page-head h1,
+.ppl-serif-heading {
+  font-family: 'Instrument Serif', Georgia, 'Times New Roman', Times, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 27px;
+  line-height: 41px;
+  color: #171717;
+}
+
+.ppl-red-theme .btn.ghost .ic,
+.ppl-red-theme .fchip-select svg,
+.ppl-red-theme .ppl-row-menu-trigger svg {
+  color: #dc2626;
+}
+
+/* KPI band: one bordered card sharing dividers between cells, per the
+   .kpi-grid/.kpi-card spec used on the analytics "OVERVIEW" band. */
+.ppl-red-theme .kpis.kpi-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  margin-bottom: 16px;
+}
+@media (min-width: 640px) {
+  .ppl-red-theme .kpis.kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .ppl-red-theme .kpis.kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.ppl-red-theme .kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+@media (min-width: 640px) {
+  .ppl-red-theme .kpi-card {
+    border-bottom: 0;
+    border-right: 1px solid #f1f5f9;
+  }
+}
+.ppl-red-theme .kpi-card:last-child {
+  border-bottom: 0;
+  border-right: 0;
+}
+.ppl-red-theme .kpi-card__label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #4b5563;
+  white-space: nowrap;
+}
+.ppl-red-theme .kpi-card__value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.ppl-red-theme .kpi-card__value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: #171717;
+}
+.ppl-red-theme .btn.ghost {
+  background: #fff;
+  border-color: transparent;
+  color: #171717;
+}
+.ppl-red-theme .btn.ghost:hover {
+  background: #fff;
+  border-color: transparent;
+}
+.ppl-red-theme .btn.primary:hover {
+  border-color: #fca5a5;
+}
+
+.ppl-red-theme .panel-card {
+  border-color: transparent;
+}
+
+/* Background stays white; only hover picks up #FEF8F8. */
+.ppl-red-theme tbody tr:hover {
+  background: #fef8f8;
+}
+
+/* The scrolling body: enough height to need a scrollbar once dummy rows are
+   in, header stays put while rows scroll under it. */
+.ppl-red-theme .tbl-wrap {
+  max-height: 560px;
+  overflow-y: auto;
+}
+/* A shared rule (.mcm-admin table thead th) also reads --surface-2 and outranks
+   a plain .ppl-red-theme selector on specificity, so it's matched here too. */
+.ppl-red-theme thead th,
+.mcm-admin .ppl-red-theme thead th {
+  position: sticky;
+  top: 0;
+  background: #e5e7eb;
+  color: #171717;
+  font-size: 12.5px;
+  z-index: 1;
+}
+
+.ppl-row-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--surface);
+  color: var(--ink-3);
+}
+.ppl-row-menu-trigger:hover,
+.ppl-row-menu-trigger[data-state='open'] {
+  border-color: #fca5a5;
+  background: #fde2e2;
+  color: #dc2626;
+}
+
+.ppl-row-menu-item.ppl-row-menu-item {
+  gap: 8px;
+}
+.ppl-row-menu-item.ppl-row-menu-item:focus,
+.ppl-row-menu-item.ppl-row-menu-item[data-highlighted] {
+  background: #fde2e2;
+  color: #171717;
+}
+.ppl-row-menu-item.ppl-row-menu-item[data-variant='destructive']:focus {
+  background: #fee2e2;
+}
+
+/* ============================================================
+   Invite-person drawer — compact, black/red redesign.
+   Everything below is scoped to `.ppl-invite-theme`, which only wraps this
+   page's own <SideDrawer> instance. The shared AddUsers component (also used
+   by Billing > License Management) is never edited — only retargeted by CSS,
+   and only inside this wrapper. Selectors reach `.mcm-page.mcm-invite`
+   directly (rather than relying on inheritance from `.ppl-invite-theme`)
+   because that class re-declares the platform's colour tokens on itself —
+   same reasoning as the People page background fix above.
+   ============================================================ */
+/* No focus ring/outline anywhere in this modal — inputs, buttons, selects. */
+.ppl-invite-theme *:focus,
+.ppl-invite-theme *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.ppl-invite-theme {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 0 20px 16px;
+}
+/* Every icon in this form reads red — labels/buttons stay black, icons are
+   the one consistent accent colour throughout. */
+.ppl-invite-theme svg {
+  color: #dc2626;
+}
+
+.ppl-invite-theme .mcm-page.mcm-invite {
+  --accent: #171717;
+  --accent-ink: #000000;
+  /* Inputs, selects and the stepper all read --primary for their hover/focus
+     accent (see custom-react-select rules in index.css) — red here, not
+     black, is the "dark text + light-red accent" the redesign asks for. */
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --color-ucass-primary-200: #fef2f2;
+}
+.ppl-invite-theme .mcm-invite .btn.ghost {
+  background: #fff;
+  border-color: transparent;
+  color: #171717;
+}
+.ppl-invite-theme .mcm-invite .btn.ghost:hover {
+  background: #fde2e2;
+  border-color: #fca5a5;
+}
+
+/* Thin, unobtrusive scrollbars wherever this drawer scrolls. */
+.ppl-invite-theme .mcm-invite ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.ppl-invite-theme .mcm-invite ::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 99px;
+}
+.ppl-invite-theme .mcm-invite ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* shadcn's DialogContent uses `bg-background`, which is the app-wide ground
+   colour (#eef1f8) now — that's right for a page, but this dialog (and the
+   gutters around its cards) wants plain white. */
+.ppl-invite-dialog {
+  background: #fff;
+}
+
+/* Stepper: sits right under the dialog title now, tighter padding, smaller
+   circles/text, narrower and left-anchored instead of centred so the two
+   steps sit closer together. */
+.ppl-invite-theme .mcm-invite {
+  /* Positioning context for .ppl-invite-actions below, which floats up onto
+     this same row rather than taking a row of its own. */
+  position: relative;
+  /* .mcm-page paints the app-wide ground colour (#eef1f8) by default — this
+     dialog wants plain white throughout instead. */
+  background: #fff;
+}
+.ppl-invite-theme .mcm-invite > div:first-child {
+  padding: 2px 16px 4px;
+}
+.ppl-invite-theme .mcm-invite ol {
+  max-width: 380px;
+  margin-left: 0;
+  margin-right: auto;
+}
+.ppl-invite-theme .mcm-invite ol .rounded-full {
+  width: 24px;
+  height: 24px;
+}
+.ppl-invite-theme .mcm-invite ol p {
+  font-size: 12.5px;
+}
+.ppl-invite-theme .mcm-invite ol li {
+  min-height: unset !important;
+}
+
+/* Add User / Branches used to be pulled out of the document flow onto the
+   breadcrumb's own row via absolute positioning (top: 4px) — every time that
+   row's own height shrank (it kept needing to), the fixed offset went stale
+   and the buttons drifted out of alignment. Left in normal flow instead: a
+   compact row of their own, right-aligned, right above the KPI cards. */
+.ppl-invite-theme .mcm-invite .ppl-invite-actions {
+  margin-bottom: 6px;
+}
+.ppl-invite-theme .ppl-invite-btn {
+  background: #171717 !important;
+  border: 1px solid #171717 !important;
+  color: #fff !important;
+}
+.ppl-invite-theme .ppl-invite-btn:hover {
+  background: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+}
+.ppl-invite-theme .ppl-invite-btn svg {
+  color: #fff !important;
+}
+
+/* Save & Continue / Submit — same reasoning: the shadcn Button underneath
+   ships its own colour utilities, which don't reliably lose to a plain class
+   override, so this is pinned with !important rather than left to depend on
+   cascade order. */
+.ppl-invite-theme .mcm-invite .btn.primary {
+  background: #171717 !important;
+  border-color: #171717 !important;
+  color: #fff !important;
+}
+.ppl-invite-theme .mcm-invite .btn.primary:hover {
+  background: #000 !important;
+  border-color: #000 !important;
+}
+
+/* License / summary block above the user rows: tighter vertical rhythm. */
+.ppl-invite-theme .mcm-invite p.text-center {
+  margin-top: 1px;
+  margin-bottom: 1px;
+}
+.ppl-invite-theme .mcm-invite .gap-1.mt-3 {
+  gap: 3px;
+  margin-top: 3px;
+}
+.ppl-invite-theme .mcm-invite .my-2.gap-3 {
+  margin-top: 4px;
+  margin-bottom: 4px;
+  gap: 6px;
+}
+
+/* License stat cards (Available to purchase / Unused / New purchased):
+   smaller, tighter version of the same .kpi/.kpis pattern the People list
+   page uses up top. */
+.ppl-invite-theme .mcm-invite .kpis {
+  margin-bottom: 6px;
+  gap: 10px;
+  background: transparent;
+  border: 0;
+}
+.ppl-invite-theme .mcm-invite .kpi {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.ppl-invite-theme .mcm-invite .kpi .k {
+  font-size: 10.5px;
+  color: #4b5563;
+}
+.ppl-invite-theme .mcm-invite .kpi .v {
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+/* Each invitee card: force the clean First/Last, Email/Phone, Role/Extension
+   pairs the redesign asks for, regardless of viewport width — the shared
+   component's own 3-column breakpoint would otherwise misalign those pairs
+   once this drawer is narrower than the full-width flow it also renders in. */
+.ppl-invite-theme .mcm-invite .mcm-invitee {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px;
+}
+/* Smaller labels/inputs to match — the fields were sized for a much wider
+   full-page layout than this modal now uses. */
+.ppl-invite-theme .mcm-invite .mcm-invitee label {
+  font-size: 12px;
+}
+.ppl-invite-theme .mcm-invite .mcm-invitee input:not(.form-control) {
+  font-size: 12.5px;
+  min-height: 34px !important;
+  height: 34px !important;
+}
+/* Phone field kept at its natural height and font-size — shrinking it
+   distorted the flag icon's proportions (the sprite's crop math assumes the
+   library's own height), which is what made it look off. */
+.ppl-invite-theme .mcm-invite .mcm-invitee .custom-react-select__control {
+  min-height: 34px !important;
+}
+
+/* No colour change on hover — the base Input component turns the border the
+   tenant's accent colour on hover, which read as a stray outline here. */
+.ppl-invite-theme .mcm-invite input:hover {
+  border-color: #d1d5db;
+}
+
+/* Role dropdown: light red hover/selected instead of blue or a solid red
+   fill — this menu renders inline now (see menuPortalTarget={false} in
+   add-user-info/index.tsx), so it's reachable here.
+
+   The rule this overrides (index.css) is itself !important *inside*
+   `@layer base` — per the CSS cascade-layers spec, an !important declaration
+   in a named layer beats an !important declaration in unlayered CSS no
+   matter its specificity. Matching it inside the same `base` layer puts the
+   fight back to ordinary specificity, where the extra `.ppl-invite-theme`
+   class here wins. */
+@layer base {
+  /* Outline: neutral grey border, not the page's red accent, on the closed
+     control (hovered / focused / menu open) and the open menu panel. */
+  .ppl-invite-theme .custom-react-select__control,
+  .ppl-invite-theme .custom-react-select__control:hover,
+  .ppl-invite-theme .custom-react-select__control--is-focused,
+  .ppl-invite-theme .custom-react-select__control--menu-is-open {
+    border-color: #e5e7eb !important;
+  }
+  .ppl-invite-theme .custom-react-select__menu {
+    border-color: #e5e7eb !important;
+  }
+
+  /* Only a genuine mouse hover gets the light-red fill — react-select also
+     marks the keyboard-navigated AND the already-selected option as
+     "focused"/"selected", which is why those kept showing colour even with
+     nothing under the cursor. */
+  .ppl-invite-theme .custom-react-select__option:hover {
+    background-color: #fde2e2 !important;
+    color: #171717 !important;
+  }
+  .ppl-invite-theme .custom-react-select__option--is-selected,
+  .ppl-invite-theme .custom-react-select__option--is-focused {
+    background-color: transparent !important;
+    color: #171717 !important;
+  }
+
+  /* Phone field's error-state outline (react-phone-input-2's .phone-error) —
+     also !important inside this same base layer, same fix as above. */
+  .ppl-invite-theme .phone-error.react-tel-input .form-control,
+  .ppl-invite-theme .phone-error.react-tel-input .flag-dropdown {
+    border-color: #e5e7eb !important;
+  }
+
+  /* The flag-dropdown segment has no border-colour rule of its own in the
+     base layer (only the text side does), so it was falling back to the
+     phone-input library's own default grey — visibly different from the text
+     side's border and making the field look like two mismatched pieces. */
+  .ppl-invite-theme .react-tel-input .form-control,
+  .ppl-invite-theme .react-tel-input .flag-dropdown {
+    border-color: #d1d5db !important;
+  }
+}
+@media (max-width: 640px) {
+  .ppl-invite-theme .mcm-invite .mcm-invitee {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Inputs / selects: one consistent radius. Colour already comes from
+   --primary above; react-select's own menu portals to <body> so its open
+   option list keeps the platform default there, same as the closed control
+   everywhere else in this scope. */
+.ppl-invite-theme .mcm-invite input,
+.ppl-invite-theme .mcm-invite .custom-react-select__control {
+  border-radius: 10px !important;
+}
+
+/* Footer: Cancel / Save & Continue already stay fixed at the bottom (the
+   shared component's own layout — only the body scrolls). Reset sits
+   directly beneath as its own always-visible row, without reaching into
+   that shared footer's markup. */
+.ppl-invite-theme .mcm-invite > form > div:last-child {
+  background: #fff;
+}
+.ppl-invite-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #fff;
+  color: #171717;
+  font-size: 13px;
+  font-weight: 700;
+}
+.ppl-invite-reset-btn:hover {
+  background: #fde2e2;
+  border-color: #fca5a5;
+}
+.ppl-invite-reset-btn .ic {
+  color: #dc2626;
+}
+
+/* People table skin: matches the .tbl/.tbl__* row/pill spec used on the
+   analytics tables (avatar+name+subtitle cell, uppercase header, status
+   pill with dot). Scoped to this page only. */
+.ppl-red-theme .tbl-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+}
+.ppl-red-theme .tbl {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.ppl-red-theme .tbl__head-row {
+  /* Sticky on the row itself, not just its cells — pinning only the `th`s
+     (see the `thead th` rule above, still kept as a fallback) left this row's
+     own background scrolling away independently, which is what let the row
+     scrolling underneath show/blend through as a ghost overlap. */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+}
+.ppl-red-theme .tbl__th {
+  /* Solid, not transparent: this cell is part of the sticky header row above
+     — a transparent background let scrolled rows show through it instead of
+     staying hidden underneath. */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fafafa;
+  padding: 13px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #737373;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ppl-red-theme .tbl__th:first-child {
+  padding-left: 18px;
+}
+.ppl-red-theme .tbl__th--left {
+  text-align: left;
+}
+.ppl-red-theme .tbl__th--center {
+  text-align: center;
+}
+.ppl-red-theme .tbl__th--right {
+  text-align: right;
+}
+.ppl-red-theme .tbl__row {
+  background: #ffffff;
+  transition: background-color 0.15s ease;
+  height: 52.67px;
+}
+.ppl-red-theme .tbl__row:hover {
+  background: #fafafa;
+}
+.ppl-red-theme .tbl__td {
+  background: transparent;
+  padding: 8px 18px;
+  height: auto;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+.ppl-red-theme .tbl__td--left {
+  text-align: left;
+}
+.ppl-red-theme .tbl__td--center {
+  text-align: center;
+}
+.ppl-red-theme .tbl__td--right {
+  text-align: right;
+}
+.ppl-red-theme .tbl__agent {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+.ppl-red-theme .tbl__agent-meta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.ppl-red-theme .tbl__name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25rem;
+  color: #020617;
+}
+.ppl-red-theme .tbl__subtitle {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1rem;
+  color: #737373;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ppl-red-theme .tbl__pill {
+  display: inline-flex;
+  height: 24px;
+  min-width: 64px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.ppl-red-theme .tbl__pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: currentColor;
+}
+.ppl-red-theme .tbl__pill--live {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+.ppl-red-theme .tbl__pill--draft {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #d97706;
+}
+.ppl-red-theme .tbl__pill--paused {
+  background: #f5f5f5;
+  border-color: #e5e5e5;
+  color: #737373;
+}
+.ppl-red-theme .tbl__pill--busy {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+.ppl-red-theme .tbl__value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #020617;
+}
+.ppl-red-theme .tbl__value--muted {
+  font-weight: 400;
+  color: #334155;
+}
+.ppl-red-theme .tbl__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Payment step (@/components/payment, shared with Billing/Signup/Renew — not
+   edited directly, only re-sized here) reads full-size defaults everywhere:
+   text-sm labels, min-h-10 fields. Scoped smaller to match the rest of this
+   invite dialog. Attribute-selector hooks stand in for the class names the
+   shared component doesn't expose to its callers. */
+.ppl-invite-theme [role='tablist'] {
+  min-height: 34px;
+}
+.ppl-invite-theme [role='tab'] {
+  padding-left: 14px;
+  padding-right: 14px;
+  font-size: 12.5px;
+}
+.ppl-invite-theme p[class*='text-sm'][class*='leading-none'] {
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+.ppl-invite-theme .stripe-element,
+.ppl-invite-theme input[placeholder='Name'] {
+  min-height: 32px !important;
+  padding: 6px 10px !important;
+  font-size: 12.5px;
+}
+.ppl-invite-theme label[for] {
+  font-size: 12.5px;
+}

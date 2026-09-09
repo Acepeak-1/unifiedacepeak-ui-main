@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { cloneElement, isValidElement, useState } from 'react';
 import { ChevronIcon } from '@/assets/icons';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import AcepeakLogo from '@/assets/images/Logo.svg';
+import AcepeakLogoIcon from '@/assets/images/LogoIcon.svg';
 
 const PageSidebarLayout = ({
   title = '',
@@ -120,39 +124,34 @@ const PageSidebarLayout = ({
           // different DOM node instead of transitioning an existing one, so
           // no CSS transition could ever smooth it. This can't jump because
           // there's nothing to jump: only opacity changes.
-          <div className="relative mcm-adminnav-headerwrap border-b border-gray-200">
-            <button
-              type="button"
-              onClick={() => setCollapsed(!collapsed)}
-              className="mcm-adminnav-header-collapsed absolute inset-0 flex cursor-pointer flex-col items-center justify-center text-center leading-tight"
-              aria-label="Expand sidebar"
-            >
-              {title.split(' ').map((word) => (
-                <span
-                  key={word}
-                  className="text-[10px] font-bold uppercase tracking-wide text-gray-500"
-                >
-                  {word}
-                </span>
-              ))}
-            </button>
-            <div
-              className="mcm-adminnav-header-expanded absolute inset-0 flex cursor-pointer items-center justify-center gap-2 p-3"
-              role="button"
-              tabIndex={0}
-              onClick={() => setCollapsed(!collapsed)}
-              aria-label="Collapse sidebar"
-            >
-              <div className={`flex items-center gap-1 ${headerCustomClass}`}>
-                <span>{icon}</span>
-                <h4 className="text-gray-900 font-semibold text-lg">{title}</h4>
-              </div>
-              <ChevronIcon className="w-4 h-4 rotate-90 text-gray-400" />
+          <div className="relative mcm-adminnav-headerwrap">
+            <CustomTooltip text={title} side="right">
+              <button
+                type="button"
+                onClick={() => setCollapsed(!collapsed)}
+                className="mcm-adminnav-header-collapsed absolute inset-0 flex cursor-pointer items-center justify-center"
+                aria-label="Expand sidebar"
+              >
+                <img src={AcepeakLogoIcon} alt="Acepeak" className="h-7 w-7 object-contain" />
+              </button>
+            </CustomTooltip>
+            <div className="mcm-adminnav-header-expanded absolute inset-0 flex items-center justify-center p-3 pr-10">
+              <img src={AcepeakLogo} alt="Acepeak" className="h-10 w-auto" />
               {action && (
-                <div className="absolute right-3 flex items-center" onClick={(e) => e.stopPropagation()}>
-                  {action}
-                </div>
+                <div className="absolute right-12 flex items-center">{action}</div>
               )}
+              <button
+                type="button"
+                onClick={() => setCollapsed(!collapsed)}
+                className="absolute right-3 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {collapsed ? (
+                  <PanelLeftOpen className="w-4.5 h-4.5" />
+                ) : (
+                  <PanelLeftClose className="w-4.5 h-4.5" />
+                )}
+              </button>
             </div>
           </div>
         ) : (
@@ -186,7 +185,11 @@ const PageSidebarLayout = ({
           )}
           onMouseEnter={() => setHovered(true)}
         >
-          {collapsed && !isAdminResponsiveTopbar ? null : content}
+          {collapsed && !isAdminResponsiveTopbar
+            ? null
+            : isAdminResponsiveTopbar && isValidElement(content)
+              ? cloneElement(content as any, { collapsed })
+              : content}
         </div>
       </div>
     </section>

@@ -4,6 +4,7 @@ import { useUser } from '@/hooks/use-user';
 import TableManager from '@/components/custom/table-manager';
 import PerfStatCard from './stat-card';
 import { formatSecsToClock } from './format';
+import { DUMMY_AI_RESULT, DUMMY_AI_AGENTS } from './dummy-tab-data';
 
 /** Sentiment tone, on the shared status tokens rather than raw colours. */
 const toneColor = (value: number) =>
@@ -40,7 +41,8 @@ const SpeechTextTab = () => {
     );
   }, [canRefresh]);
 
-  const result = campaignAiLiveCallData?.data?.result;
+  // No live AI socket data yet on a fresh account — see `dummy-tab-data.ts`.
+  const result = campaignAiLiveCallData?.data?.result || DUMMY_AI_RESULT;
   const avgSentiment = typeof result?.avg_sentiment === 'number' ? result.avg_sentiment : null;
   const totalAiCalls = typeof result?.total_ai_calls === 'number' ? result.total_ai_calls : 0;
   const containmentPercent =
@@ -74,7 +76,8 @@ const SpeechTextTab = () => {
   const topTopic = topics[0];
   const topicsTotal = topics.reduce((sum, t) => sum + t.count, 0);
 
-  const agents = aiLiveWallboardData?.data?.result?.agents;
+  const realAgents = aiLiveWallboardData?.data?.result?.agents;
+  const agents = Array.isArray(realAgents) && realAgents.length ? realAgents : DUMMY_AI_AGENTS;
   const agentRows = useMemo(
     () =>
       (Array.isArray(agents) ? agents : []).map((agent: any) => ({

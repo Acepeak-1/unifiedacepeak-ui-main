@@ -4,14 +4,80 @@ import ErrorTooltip from '@/components/custom/error-tooltip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ISELECTVALUE } from '@/interfaces/api-interfaces';
 import { getDispositions, getGreetings } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
-import { FC } from 'react';
+import {
+  AlertTriangle,
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Gauge,
+  MessageCircle,
+  MessageSquare,
+  PhoneCall,
+  PhoneMissed,
+  PhoneOff,
+  RefreshCw,
+  Smile,
+  Sparkles,
+  Tag,
+  ThumbsDown,
+  ThumbsUp,
+  Users,
+  Voicemail,
+  Zap,
+} from 'lucide-react';
+import { FC, ReactNode } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { DEFAULT_RETRY_PERIOD_TYPE, DIALER_TYPE, MAX_ATTEMPTS, TIME_LIST } from '../consts';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+/** Same icon per mode as the type picker above this step, so the settings
+    card reads as a continuation of the choice the user already made. */
+const MODE_ICON: Record<string, typeof Eye> = {
+  [DIALER_TYPE.PREVIEW]: Eye,
+  [DIALER_TYPE.NORMAL]: Gauge,
+  [DIALER_TYPE.PREDICTIVE]: Zap,
+};
+
+const MODE_COPY: Record<string, { title: string; desc: string }> = {
+  [DIALER_TYPE.PREVIEW]: {
+    title: 'Preview Settings',
+    desc: 'Agents review each lead before the call connects — kept lightweight for manual dialing.',
+  },
+  [DIALER_TYPE.NORMAL]: {
+    title: 'Progressive Dialing Settings',
+    desc: 'One lead is dialed per available agent, at a steady pace.',
+  },
+  [DIALER_TYPE.PREDICTIVE]: {
+    title: 'Predictive Dialing Settings',
+    desc: 'The dialer predicts agent availability and dials ahead of it for maximum efficiency.',
+  },
+};
+
+/** Best-effort icon per disposition, matched on its name — purely
+    cosmetic, falls back to a plain message icon for anything unmatched. */
+const DISPOSITION_ICON_RULES: [RegExp, typeof MessageCircle][] = [
+  [/not\s*interested/i, ThumbsDown],
+  [/interested/i, ThumbsUp],
+  [/sale|closed|deal|won/i, Tag],
+  [/feedback/i, MessageSquare],
+  [/happy|satisf/i, Smile],
+  [/call\s*back|callback|follow/i, PhoneCall],
+  [/resolved|complete/i, CheckCircle2],
+  [/voicemail|vm\b/i, Voicemail],
+  [/no\s*answer|missed/i, PhoneMissed],
+  [/busy/i, PhoneOff],
+];
+const getDispositionIcon = (name: string) => {
+  const match = DISPOSITION_ICON_RULES.find(([pattern]) => pattern.test(name || ''));
+  return match ? match[1] : MessageCircle;
+};
+
+const isLocked = (campaignStatus: string) => campaignStatus !== '' && campaignStatus !== 'NEW';
 
 const Settings: FC<any> = ({ dialMethod, setModalState, campaignStatus }) => {
   const { data: voicemailList = [] } = useQuery({
@@ -34,6 +100,8 @@ const Settings: FC<any> = ({ dialMethod, setModalState, campaignStatus }) => {
     setValue,
     watch,
   } = useFormContext();
+  const disabled = isLocked(campaignStatus);
+  const dialerErrors = (errors as any)?.dialerSetting;
 
   const { data: dispositionsList = [] } = useQuery({
     queryKey: ['getDispositionsList'],
@@ -60,335 +128,470 @@ const Settings: FC<any> = ({ dialMethod, setModalState, campaignStatus }) => {
     return (watch('agentDisposition') || []).some((d: any) => d._id === item?._id);
   };
 
-  return (
-    <>
-      <div className="flex h-[calc(100vh_-_22.5rem)] flex-col gap-6 overflow-auto pr-1 ">
-        <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-5">
-          {dialMethod === DIALER_TYPE.PREVIEW ? (
-            <CustomSelect
-              isDisabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-              label={'Preview Time'}
-              placeholder="Select Option"
-              options={TIME_LIST.map((item) => ({
-                label: item,
-                value: item,
-              }))}
-              handleChange={(e: ISELECTVALUE | null) => {
-                setValue(`dialerSetting.preview_time`, e?.value || '', {
-                  shouldValidate: true,
-                });
-              }}
-              value={{
-                value: watch('dialerSetting.preview_time'),
-                label: watch('dialerSetting.preview_time'),
-              }}
-              error={(errors as any)?.dialerSetting?.preview_time?.message}
-              menuPlacement="auto"
-            />
-          ) : dialMethod === DIALER_TYPE.PREDICTIVE ? (
-            <CustomSelect
-              label={'Ringing Agent Time'}
-              placeholder="Select Option"
-              isDisabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-              options={TIME_LIST.map((item) => ({
-                label: item,
-                value: item,
-              }))}
-              handleChange={(e: ISELECTVALUE | null) => {
-                setValue(`dialerSetting.ringing_agent_time`, e?.value || '', {
-                  shouldValidate: true,
-                });
-              }}
-              value={{
-                value: watch('dialerSetting.ringing_agent_time'),
-                label: watch('dialerSetting.ringing_agent_time'),
-              }}
-              error={(errors as any)?.dialerSetting?.ringing_agent_time?.message}
-              menuPlacement="auto"
-            />
-          ) : null}
+  /* ---- small building blocks shared across all three modes ---- */
 
+  /** The icon rides inside the field's own label, so every field keeps
+      using the label prop CustomSelect/Input already render — no second,
+      duplicate label bolted on top. */
+  const fieldLabel = (LabelIcon: typeof Clock, text: string) => (
+    <span className="acp-field-card-label">
+      <LabelIcon size={12} />
+      {text}
+    </span>
+  );
+
+  const FieldCard = ({ children }: { children: ReactNode }) => (
+    <div className="acp-field-card">{children}</div>
+  );
+
+  const TimeField = ({
+    path,
+    label,
+    icon = Clock,
+  }: {
+    path: string;
+    label: string;
+    icon?: typeof Clock;
+  }) => (
+    <FieldCard>
+      <CustomSelect
+        label={fieldLabel(icon, label)}
+        isDisabled={disabled}
+        placeholder="Select Option"
+        options={TIME_LIST.map((item) => ({ label: item, value: item }))}
+        handleChange={(e: ISELECTVALUE | null) =>
+          setValue(path, e?.value || '', { shouldValidate: true })
+        }
+        value={{ value: watch(path), label: watch(path) }}
+        error={path.split('.').reduce((acc: any, k) => acc?.[k], errors as any)?.message}
+        menuPlacement="auto"
+      />
+    </FieldCard>
+  );
+
+  const RetryIntervalField = ({
+    label,
+    icon: LabelIcon = RefreshCw,
+  }: {
+    label: string;
+    icon?: typeof Clock;
+  }) => (
+    <FieldCard>
+      <div className="relative flex flex-col gap-1.5 w-full">
+        <Label className="text-sm font-medium leading-none">{fieldLabel(LabelIcon, label)}</Label>
+        <div className="flex gap-1">
+          <div className="w-full relative">
+            <Input
+              disabled={disabled}
+              placeholder="Enter value"
+              type="number"
+              {...register('dialerSetting.default_retry_period')}
+            />
+            <span className="absolute top-[-20px] right-0">
+              {dialerErrors?.default_retry_period?.message && (
+                <ErrorTooltip text={dialerErrors?.default_retry_period?.message} />
+              )}
+            </span>
+          </div>
           <CustomSelect
-            label={'Wrap-up time'}
-            isDisabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-            placeholder="Select Option"
-            options={TIME_LIST.map((item) => ({
-              label: item,
-              value: item,
+            className="max-w-[100px]"
+            isDisabled={disabled}
+            placeholder="Unit"
+            options={DEFAULT_RETRY_PERIOD_TYPE.map((item) => ({
+              label: item?.label,
+              value: item?.value,
             }))}
-            handleChange={(e: ISELECTVALUE | null) => {
-              setValue(`dialerSetting.wrapup_time`, e?.value || '', {
+            handleChange={(e: ISELECTVALUE | null) =>
+              setValue('dialerSetting.default_retry_period_type', e || '', {
                 shouldValidate: true,
-              });
-            }}
-            value={{
-              value: watch('dialerSetting.wrapup_time'),
-              label: watch('dialerSetting.wrapup_time'),
-            }}
-            error={(errors?.dialerSetting as any)?.wrapup_time?.message}
+              })
+            }
+            value={watch('dialerSetting.default_retry_period_type')}
+            error={dialerErrors?.default_retry_period_type?.message}
             menuPlacement="auto"
           />
-
-          {dialMethod === DIALER_TYPE.PREDICTIVE ? (
-            <CustomSelect
-              label={'Max ring time'}
-              placeholder="Select Option"
-              isDisabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-              options={TIME_LIST.map((item) => ({
-                label: item,
-                value: item,
-              }))}
-              handleChange={(e: ISELECTVALUE | null) => {
-                setValue(`dialerSetting.max_ring_time`, e?.value || '', {
-                  shouldValidate: true,
-                });
-              }}
-              value={{
-                value: watch('dialerSetting.max_ring_time'),
-                label: watch('dialerSetting.max_ring_time'),
-              }}
-              error={(errors?.dialerSetting as any)?.max_ring_time?.message}
-              menuPlacement="auto"
-            />
-          ) : null}
-          <div className="relative flex flex-col gap-1.5 w-full">
-            <Label className="text-sm font-medium leading-none">Default retry period</Label>
-            <div className="flex gap-1">
-              <div className="w-full relative">
-                <Input
-                  // label="Default retry period"
-                  disabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-                  placeholder="Enter default retry period"
-                  type="number"
-                  {...register('dialerSetting.default_retry_period')}
-                  // error={(errors?.dialerSetting as any)?.default_retry_period?.message}
-                />
-                <span className="absolute top-[-20px] right-0">
-                  {(errors as any)?.dialerSetting?.default_retry_period?.message && (
-                    <ErrorTooltip
-                      text={(errors as any)?.dialerSetting?.default_retry_period?.message}
-                    />
-                  )}
-                </span>
-              </div>
-
-              <CustomSelect
-                // label={'Default retry period type'}
-                className="max-w-[100px]  "
-                isDisabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-                placeholder="Select Option"
-                options={DEFAULT_RETRY_PERIOD_TYPE.map((item) => ({
-                  label: item?.label,
-                  value: item?.value,
-                }))}
-                handleChange={(e: ISELECTVALUE | null) => {
-                  setValue(`dialerSetting.default_retry_period_type`, e || '', {
-                    shouldValidate: true,
-                  });
-                }}
-                value={watch('dialerSetting.default_retry_period_type')}
-                error={(errors?.dialerSetting as any)?.default_retry_period_type?.message}
-                menuPlacement="auto"
-              />
-            </div>
-          </div>
-
-          <CustomSelect
-            label={'Max attempts per record'}
-            placeholder="Select Option"
-            isDisabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-            options={MAX_ATTEMPTS.map((item) => ({
-              label: item,
-              value: item,
-            }))}
-            handleChange={(e: ISELECTVALUE | null) => {
-              setValue(`dialerSetting.max_attempt_per_record`, e?.value || '', {
-                shouldValidate: true,
-              });
-            }}
-            value={{
-              value: watch('dialerSetting.max_attempt_per_record'),
-              label: watch('dialerSetting.max_attempt_per_record'),
-            }}
-            error={(errors?.dialerSetting as any)?.max_attempt_per_record?.message}
-            menuPlacement="auto"
-          />
-
-          {/* <Input label="Name" placeholder="Enter campaign name" /> */}
-        </div>
-
-        {dialMethod === DIALER_TYPE.PREDICTIVE ? (
-          <>
-            <div className="w-full flex items-start flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <p className="text-gray-900 font-medium text-sm">Automatic Answer</p>
-                <Switch
-                  disabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-                  onCheckedChange={(checked) => {
-                    setValue(`dialerSetting.auto_answering.enabled`, checked, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    });
-                  }}
-                  checked={Boolean(watch('dialerSetting.auto_answering.enabled'))}
-                />
-              </div>
-              {/* {watch('dialerSetting.auto_answering.enabled') && (
-                <div className="flex items-center gap-2">
-                  <Input
-                    disabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-                    placeholder="Timeout in seconds"
-                    type="number"
-                    {...register('dialerSetting.auto_answering.timeout')}
-                    error={(errors?.dialerSetting as any)?.auto_answering?.timeout?.message}
-                    min={2}
-                    max={30}
-                  />
-                </div>
-              )} */}
-            </div>
-            <div className="w-full flex items-start gap-2 flex-col">
-              <div className="flex items-center gap-2">
-                <p className="text-gray-900 font-medium text-sm">Answering Machine Detection</p>
-                <Switch
-                  disabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-                  onCheckedChange={(checked) => {
-                    setValue(`dialerSetting.answering_detection_machine.enabled`, checked);
-                  }}
-                  checked={watch('dialerSetting.answering_detection_machine.enabled')}
-                />
-              </div>
-              {watch('dialerSetting.answering_detection_machine.enabled') ? (
-                <div className="flex w-full gap-4 h-10">
-                  <div className="flex w-full gap-4 items-end">
-                    <div className="flex gap-8 items-center ">
-                      <Label>Select Action:</Label>
-                      <RadioGroup
-                        disabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-                        className="flex items-center gap-4 h-10"
-                        value={watch('dialerSetting.answering_detection_machine.type')}
-                        onValueChange={(value) =>
-                          setValue('dialerSetting.answering_detection_machine.type', value)
-                        }
-                      >
-                        <div className="flex items-center gap-2 cursor-pointer">
-                          <RadioGroupItem value="HANGUP" id="HANGUP" />
-                          <Label htmlFor="HANGUP" className="cursor-pointer">
-                            Hangup
-                          </Label>
-                        </div>
-                        <div className="flex items-center gap-2 cursor-pointer">
-                          <RadioGroupItem value="VOICEMAIL" id="VOICEMAIL" />
-                          <Label htmlFor="VOICEMAIL" className="cursor-pointer">
-                            Voicemail Message
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                    <>
-                      {watch('dialerSetting.answering_detection_machine.type') === 'VOICEMAIL' && (
-                        <div className="flex gap-1.5 relative flex-row">
-                          <CustomSelect
-                            isDisabled={campaignStatus !== '' && campaignStatus !== 'NEW'}
-                            options={
-                              voicemailList?.length > 0
-                                ? voicemailList?.map((item: { name: string; uuid: string }) => ({
-                                    label: item?.name,
-                                    value: item?.uuid,
-                                  }))
-                                : [{ label: 'No record found!', value: '', disabled: true }]
-                            }
-                            handleChange={(e: ISELECTVALUE | null) => {
-                              setValue('dialerSetting.answering_detection_machine.value', e, {
-                                shouldValidate: true,
-                              });
-                            }}
-                            value={watch('dialerSetting.answering_detection_machine.value') || {}}
-                            error={
-                              (errors?.dialerSetting as any)?.answering_detection_machine?.value
-                                ?.value?.message
-                            }
-                            menuPlacement="auto"
-                          />
-                        </div>
-                      )}
-                    </>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </>
-        ) : null}
-
-        <div
-          className={`w-full flex gap-6 ${campaignStatus !== '' && campaignStatus !== 'NEW' ? 'pointer-events-none opacity-50' : ''}`}
-        >
-          <div className="w-full">
-            <div className="w-full flex items-center gap-2 mb-2">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-1">
-                  <h3 className="text-gray-900 font-semibold text-md">Agent Disposition</h3>
-                  {(errors as any)?.agentDisposition?.message && (
-                    <ErrorTooltip text={(errors as any)?.agentDisposition?.message} />
-                  )}
-                </div>
-                <Button
-                  className="shadow-none"
-                  variant="secondary"
-                  type="button"
-                  onClick={() => setModalState(true)}
-                >
-                  <Icon name="Plus" className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-            {/* <div
-              className={`w-full h-full grid grid-cols-2 gap-2 overflow-y-auto ${dialMethod === 'PREDICTIVE' ? 'max-h-[calc(100vh_-_41rem)]' : 'max-h-[calc(100vh_-_30rem)]'}  pr-1`}
-            > */}
-            <div className={`w-full h-full grid grid-cols-2 gap-2 overflow-y-auto `}>
-              {dispositionsList && dispositionsList?.length
-                ? dispositionsList
-                    ?.filter((item: any) => item?.dispositionType?.toLowerCase() === 'agent')
-                    ?.map((item: any) => (
-                      <div
-                        className="w-full  flex items-center justify-between gap-3"
-                        key={`${item?.disposition?.name}`}
-                      >
-                        <div className="w-full p-2 border border-gray-200 rounded-lg flex items-center justify-between gap-2  min-h-[62px]">
-                          <div className="flex items-center gap-3">
-                            <Switch
-                              id={item?._id}
-                              onCheckedChange={(checked) => {
-                                handleDispositionCheck(checked, item);
-                              }}
-                              checked={isDispositionChecked(item)}
-                            />
-                            <label
-                              htmlFor={item?._id}
-                              className="text-gray-900/80 font-semibold text-sm"
-                            >
-                              {item?.disposition?.name}
-                            </label>
-                          </div>
-                        </div>
-                        {/* <Button
-                        className="shadow-none min-w-[70px]"
-                        variant={'secondary'}
-                        type="submit"
-                      >
-                        Retry
-                      </Button> */}
-                      </div>
-                    ))
-                : null}
-              {/* items */}
-
-              {/* ---- */}
-            </div>
-          </div>
         </div>
       </div>
-    </>
+    </FieldCard>
+  );
+
+  const MaxAttemptsField = ({
+    label,
+    icon = BarChart3,
+  }: {
+    label: string;
+    icon?: typeof Clock;
+  }) => (
+    <FieldCard>
+      <CustomSelect
+        label={fieldLabel(icon, label)}
+        placeholder="Select Option"
+        isDisabled={disabled}
+        options={MAX_ATTEMPTS.map((item) => ({ label: item, value: item }))}
+        handleChange={(e: ISELECTVALUE | null) =>
+          setValue('dialerSetting.max_attempt_per_record', e?.value || '', {
+            shouldValidate: true,
+          })
+        }
+        value={{
+          value: watch('dialerSetting.max_attempt_per_record'),
+          label: watch('dialerSetting.max_attempt_per_record'),
+        }}
+        error={dialerErrors?.max_attempt_per_record?.message}
+        menuPlacement="auto"
+      />
+    </FieldCard>
+  );
+
+  const PercentField = ({
+    path,
+    label,
+    icon = Users,
+  }: {
+    path: string;
+    label: string;
+    icon?: typeof Clock;
+  }) => (
+    <FieldCard>
+      <Input
+        label={fieldLabel(icon, label)}
+        type="number"
+        min={0}
+        max={100}
+        disabled={disabled}
+        placeholder="0–100"
+        {...register(path)}
+        error={path.split('.').reduce((acc: any, k) => acc?.[k], errors as any)?.message}
+      />
+    </FieldCard>
+  );
+
+  const NumberField = ({
+    path,
+    label,
+    icon = PhoneCall,
+    placeholder,
+    min,
+    max,
+  }: {
+    path: string;
+    label: string;
+    icon?: typeof Clock;
+    placeholder?: string;
+    min?: number;
+    max?: number;
+  }) => (
+    <FieldCard>
+      <Input
+        label={fieldLabel(icon, label)}
+        type="number"
+        min={min}
+        max={max}
+        disabled={disabled}
+        placeholder={placeholder}
+        {...register(path)}
+        error={path.split('.').reduce((acc: any, k) => acc?.[k], errors as any)?.message}
+      />
+    </FieldCard>
+  );
+
+  const SwitchRow = ({
+    path,
+    title,
+    hint,
+    icon: RowIcon,
+  }: {
+    path: string;
+    title: string;
+    hint: string;
+    icon: typeof Clock;
+  }) => {
+    const checked = Boolean(watch(path));
+    return (
+      <div className={`acp-switch-row${checked ? ' is-on' : ''}`}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="acp-switch-row-ico">
+            <RowIcon size={14} />
+          </span>
+          <div className="min-w-0">
+            <p>{title}</p>
+            <span className="hint">{hint}</span>
+          </div>
+        </div>
+        <Switch
+          disabled={disabled}
+          onCheckedChange={(next) => setValue(path, next, { shouldDirty: true })}
+          checked={checked}
+        />
+      </div>
+    );
+  };
+
+  const AnsweringMachineField = () => (
+    <div className={`acp-switch-row acp-switch-row-tall${watch('dialerSetting.answering_detection_machine.enabled') ? ' is-on' : ''}`}>
+      <div className="w-full flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="acp-switch-row-ico">
+              <Voicemail size={14} />
+            </span>
+            <p>Answering Machine Handling</p>
+          </div>
+          <Switch
+            disabled={disabled}
+            onCheckedChange={(checked) =>
+              setValue('dialerSetting.answering_detection_machine.enabled', checked)
+            }
+            checked={watch('dialerSetting.answering_detection_machine.enabled')}
+          />
+        </div>
+        {watch('dialerSetting.answering_detection_machine.enabled') ? (
+          <div className="flex w-full flex-wrap gap-3 items-center pl-[34px]">
+            <RadioGroup
+              disabled={disabled}
+              className="flex items-center gap-4"
+              value={watch('dialerSetting.answering_detection_machine.type')}
+              onValueChange={(value) =>
+                setValue('dialerSetting.answering_detection_machine.type', value)
+              }
+            >
+              <div className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem value="HANGUP" id="HANGUP" />
+                <Label htmlFor="HANGUP" className="cursor-pointer">
+                  Hangup
+                </Label>
+              </div>
+              <div className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem value="VOICEMAIL" id="VOICEMAIL" />
+                <Label htmlFor="VOICEMAIL" className="cursor-pointer">
+                  Voicemail Message
+                </Label>
+              </div>
+            </RadioGroup>
+            {watch('dialerSetting.answering_detection_machine.type') === 'VOICEMAIL' && (
+              <div className="min-w-[180px]">
+                <CustomSelect
+                  isDisabled={disabled}
+                  options={
+                    voicemailList?.length > 0
+                      ? voicemailList?.map((item: { name: string; uuid: string }) => ({
+                          label: item?.name,
+                          value: item?.uuid,
+                        }))
+                      : [{ label: 'No record found!', value: '', disabled: true }]
+                  }
+                  handleChange={(e: ISELECTVALUE | null) =>
+                    setValue('dialerSetting.answering_detection_machine.value', e, {
+                      shouldValidate: true,
+                    })
+                  }
+                  value={watch('dialerSetting.answering_detection_machine.value') || {}}
+                  error={dialerErrors?.answering_detection_machine?.value?.value?.message}
+                  menuPlacement="auto"
+                />
+              </div>
+            )}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const CallingHoursNote = () => (
+    <p className="acp-note">
+      Calling hours are set on the <strong>Setting &amp; Permission</strong> step — the campaign
+      only dials leads inside the window configured there.
+    </p>
+  );
+
+  /* ---- the mode-specific section: only one of these renders at a time ---- */
+
+  const renderModeFields = () => {
+    if (dialMethod === DIALER_TYPE.PREVIEW) {
+      return (
+        <>
+          <div className="acp-field-grid">
+            <TimeField path="dialerSetting.preview_time" label="Preview time" icon={Clock} />
+            <TimeField path="dialerSetting.wrapup_time" label="Wrap-up time" icon={Clock} />
+            <RetryIntervalField label="Retry preference" icon={RefreshCw} />
+            <MaxAttemptsField label="Maximum attempts" icon={BarChart3} />
+          </div>
+          <div className="acp-field-grid">
+            <SwitchRow
+              path="dialerSetting.manual_review_required"
+              title="Manual dialing"
+              hint="Agent reviews the lead and starts each call by hand."
+              icon={Users}
+            />
+            <SwitchRow
+              path="dialerSetting.require_disposition"
+              title="Require call disposition"
+              hint="Agent must log an outcome before moving to the next lead."
+              icon={PhoneCall}
+            />
+          </div>
+        </>
+      );
+    }
+
+    if (dialMethod === DIALER_TYPE.NORMAL) {
+      return (
+        <>
+          <div className="acp-field-grid">
+            <PercentField
+              path="dialerSetting.agent_availability_percent"
+              label="Agent availability (%)"
+              icon={Users}
+            />
+            <NumberField
+              path="dialerSetting.agent_contact_limit"
+              label="Calls per agent"
+              icon={PhoneCall}
+              placeholder="e.g. 1"
+              min={1}
+            />
+            <MaxAttemptsField label="Retry attempts" icon={BarChart3} />
+            <RetryIntervalField label="Retry interval" icon={RefreshCw} />
+          </div>
+          <AnsweringMachineField />
+          <CallingHoursNote />
+        </>
+      );
+    }
+
+    // PREDICTIVE — same building blocks, more of them, denser grid.
+    return (
+      <>
+        <div className="acp-field-grid acp-field-grid-3">
+          <NumberField
+            path="dialerSetting.dialing_ratio"
+            label="Dialing ratio"
+            icon={Gauge}
+            placeholder="e.g. 2"
+            min={1}
+            max={10}
+          />
+          <NumberField
+            path="dialerSetting.max_concurrent_calls"
+            label="Max concurrent calls"
+            icon={PhoneCall}
+            placeholder="e.g. 10"
+            min={1}
+          />
+          <PercentField
+            path="dialerSetting.agent_availability_percent"
+            label="Agent availability (%)"
+            icon={Users}
+          />
+          <PercentField
+            path="dialerSetting.abandon_rate_percent"
+            label="Abandon rate (%)"
+            icon={AlertTriangle}
+          />
+          <TimeField
+            path="dialerSetting.ringing_agent_time"
+            label="Ringing agent time"
+            icon={Clock}
+          />
+          <TimeField path="dialerSetting.max_ring_time" label="Max ring time" icon={Clock} />
+          <TimeField path="dialerSetting.wrapup_time" label="Wrap-up time" icon={Clock} />
+          <MaxAttemptsField label="Retry attempts" icon={BarChart3} />
+          <RetryIntervalField label="Retry interval" icon={RefreshCw} />
+        </div>
+        <div className="acp-field-grid">
+          <SwitchRow
+            path="dialerSetting.auto_answering.enabled"
+            title="Automatic answer"
+            hint="Connect the agent the instant a call is answered."
+            icon={CheckCircle2}
+          />
+        </div>
+        <AnsweringMachineField />
+        <CallingHoursNote />
+      </>
+    );
+  };
+
+  const ModeIcon = MODE_ICON[dialMethod as string] || Eye;
+  const copy = MODE_COPY[dialMethod as string] || MODE_COPY[DIALER_TYPE.PREVIEW];
+  const modeClass =
+    dialMethod === DIALER_TYPE.NORMAL
+      ? 'acp-mode-normal'
+      : dialMethod === DIALER_TYPE.PREDICTIVE
+        ? 'acp-mode-predictive'
+        : 'acp-mode-preview';
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className={`acp-mode-card ${modeClass}`}>
+        <div className="acp-mode-card-head">
+          <span className="acp-mode-card-ico">
+            <ModeIcon size={16} />
+          </span>
+          <div className="min-w-0">
+            <h3 className="acp-mode-card-title">{copy.title}</h3>
+            <p className="acp-mode-card-desc">{copy.desc}</p>
+          </div>
+          {dialMethod === DIALER_TYPE.PREDICTIVE && (
+            <span className="acp-mode-badge">
+              <Sparkles size={10} />
+              Advanced
+            </span>
+          )}
+        </div>
+        <div className={`acp-mode-card-body ${disabled ? 'pointer-events-none opacity-50' : ''}`}>
+          {renderModeFields()}
+        </div>
+      </div>
+
+      <div className={`acp-card ${disabled ? 'pointer-events-none opacity-50' : ''}`}>
+        <div className="acp-card-head">
+          <div className="flex items-center gap-1">
+            <h3 className="acp-card-title">Agent Disposition</h3>
+            {(errors as any)?.agentDisposition?.message && (
+              <ErrorTooltip text={(errors as any)?.agentDisposition?.message} />
+            )}
+          </div>
+          <Button
+            className="shadow-none"
+            variant="secondary"
+            type="button"
+            onClick={() => setModalState(true)}
+          >
+            <Icon name="Plus" className="w-3 h-3" />
+          </Button>
+        </div>
+        <div className="acp-disposition-grid">
+          {dispositionsList && dispositionsList?.length
+            ? dispositionsList
+                ?.filter((item: any) => item?.dispositionType?.toLowerCase() === 'agent')
+                ?.map((item: any) => {
+                  const name = item?.disposition?.name || '';
+                  const DispIcon = getDispositionIcon(name);
+                  const checked = isDispositionChecked(item);
+                  return (
+                    <div
+                      key={`${name}`}
+                      className={`acp-disposition-card${checked ? ' is-on' : ''}`}
+                    >
+                      <span className="acp-disposition-ico">
+                        <DispIcon size={13} />
+                      </span>
+                      <label htmlFor={item?._id} className="acp-disposition-label">
+                        {name}
+                      </label>
+                      <Switch
+                        id={item?._id}
+                        onCheckedChange={(next) => handleDispositionCheck(next, item)}
+                        checked={checked}
+                      />
+                    </div>
+                  );
+                })
+            : null}
+        </div>
+      </div>
+    </div>
   );
 };
 

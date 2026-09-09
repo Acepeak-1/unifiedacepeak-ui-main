@@ -206,10 +206,10 @@ function CreateNewLeadGroup({
 
   return (
     <Dialog open={modalState} onOpenChange={setModalState}>
-      <DialogContent className="sm:w-1/2 md:w-1/3 w-full p-4 max-h-[99%] ">
+      <DialogContent className="sm:w-1/2 md:w-1/3 w-full p-4 max-h-[99%] bg-white">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
           {/* HEADER */}
-          <div className="flex justify-between font-semibold">
+          <div className="dir-serif-heading flex justify-between">
             {group?._id ? 'Update Group' : 'Add Group'}
             {/* <div onClick={() => setModalState(false)} className="cursor-pointer">
               <CloseIcon className="w-3 h-3" />
@@ -266,7 +266,11 @@ function CreateNewLeadGroup({
               <Button variant="transparent" type="button" onClick={() => setModalState(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="border-[#171717] bg-[#171717] text-white hover:bg-black hover:text-white"
+              >
                 {isPending ? 'Saving...' : 'Save'}
               </Button>
             </div>
@@ -363,6 +367,7 @@ const ContactSelectionList = React.memo(({ isLeadList, selectedIds, onSelect }: 
             </p>
             <Button
               type="button"
+              className="border-[#171717] bg-[#171717] text-white hover:bg-black hover:text-white"
               onClick={(e) => {
                 e.preventDefault();
                 setShowCreateContact(true);

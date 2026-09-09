@@ -629,7 +629,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
         )}
 
         <div className="flex gap-4 flex-col">
-          <div className="flex gap-4 flex-wrap">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label={'First Name'}
               {...register('first_name')}
@@ -650,7 +650,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
               maxLength={50}
             />
           </div>
-          <div className="flex gap-4 flex-wrap">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               {...register('email')}
               placeholder="Enter email"
@@ -679,7 +679,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
               </div>
             </div>
           </div>
-          <div className="flex gap-4 flex-wrap">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <CustomSelect
               label={'Gender'}
               options={genderOptions}
@@ -709,7 +709,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
               />
             </div>
           </div>
-          <div className="flex gap-4 flex-wrap">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               placeholder="Enter company"
               {...register('company')}
@@ -727,7 +727,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
               maxLength={150}
             />
           </div>
-          <div className="flex gap-4 flex-wrap">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               placeholder="Enter title"
               {...register('title')}
@@ -746,7 +746,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
             />
           </div>
 
-          <div className="flex gap-4 flex-wrap">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               placeholder="Enter facebook ID"
               {...register('facebook')}
@@ -767,7 +767,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
               `social` map as the profiles above — the server takes whatever
               keys it is given — so Directory can offer a real action per
               channel instead of only dialling a number. */}
-          <div className="flex gap-4 flex-wrap">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               placeholder="e.g. +1 256 808 1010"
               {...register('whatsapp')}
@@ -796,7 +796,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
 
           <div className="flex flex-col w-full gap-4">
             <p className="font-semibold text-gray-900">Address Information</p>
-            <div className="flex gap-4 flex-wrap">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 placeholder="Enter street"
                 {...register('street')}
@@ -814,7 +814,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
                 maxLength={50}
               />
             </div>
-            <div className="flex gap-4 flex-wrap">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 placeholder="Enter state"
                 {...register('state')}
@@ -832,7 +832,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
                 maxLength={10}
               />
             </div>
-            <div className="flex gap-4 flex-wrap relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative">
               <CustomSelect
                 label={'Country'}
                 options={countryList?.map((country: any) => ({
@@ -847,10 +847,8 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
                 error={errors?.country?.message}
                 isDisabled={isDisable}
               />
-            </div>
 
-            {!isSystemGenerated && (
-              <div className="flex gap-4 flex-wrap relative">
+              {!isSystemGenerated && (
                 <div className="flex flex-col gap-1.5 w-full">
                   <div className="flex items-center justify-between">
                     <Label>Select Group</Label>
@@ -921,8 +919,8 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
                     />
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
           {/* <div className="flex flex-col w-full gap-4">
             <p className="font-semibold text-gray-900">Notes Information</p>
@@ -965,6 +963,7 @@ const CreateContactNew: React.FC<CreateNewContactProps> = ({
           <Button
             variant={'primary'}
             type="submit"
+            className="contact-submit-btn"
             disabled={showLoader || PendingAddContact || PendingUpdateContact || PendingImageUpload}
           >
             {PendingAddContact || PendingUpdateContact || PendingImageUpload || showLoader ? (

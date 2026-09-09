@@ -97,7 +97,9 @@ const DialpadMicroFrame = ({
               type="button"
               onClick={onCallAgain}
               aria-label="Call again"
-              className="flex h-9 items-center justify-center gap-1 rounded-xl bg-primary px-2 text-[11px] font-semibold text-white transition max-[380px]:h-8 max-[380px]:text-[10px] sm:h-10 sm:gap-1.5 sm:px-2.5 sm:text-xs md:h-11 md:px-3 hover:bg-primary"
+              /* Green, like every other "start a call" control — red is the
+                 colour that ends one, and this button sits beside Close. */
+              className="flex h-9 items-center justify-center gap-1 rounded-xl bg-[#16a34a] px-2 text-[11px] font-semibold text-white transition-colors hover:bg-[#15803d] max-[380px]:h-8 max-[380px]:text-[10px] sm:h-10 sm:gap-1.5 sm:px-2.5 sm:text-xs md:h-11 md:px-3"
             >
               <FaPhone className="-scale-x-100 h-3.5 w-3.5 max-[380px]:h-3 max-[380px]:w-3 sm:h-4 sm:w-4" />
               Call Again

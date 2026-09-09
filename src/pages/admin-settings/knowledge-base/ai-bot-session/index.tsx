@@ -1,5 +1,6 @@
 import { getAIReceptionistList, getChatAgentList, getSessionList } from '@/services/api';
 import AiSessionDetailDrawer from '@/pages/admin-settings/knowledge-base/components/ai-session-detail-drawer';
+import { HoverPortalCard, SentimentAnalysisCard } from '@/components/custom/hover-portal-card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,6 @@ import {
   ChevronsRight,
   Circle,
   Download,
-  History,
   Loader2,
   MessageSquare,
   Phone,
@@ -54,9 +54,9 @@ const sentimentScoreRows: Array<{
   label: string;
   colorClass: string;
 }> = [
-  { key: 'positive', label: 'Positive', colorClass: 'bg-emerald-500' },
-  { key: 'neutral', label: 'Neutral', colorClass: 'bg-amber-400' },
-  { key: 'negative', label: 'Negative', colorClass: 'bg-rose-500' },
+  { key: 'positive', label: 'Positive', colorClass: 'bg-green-500' },
+  { key: 'negative', label: 'Negative', colorClass: 'bg-red-600' },
+  { key: 'neutral', label: 'Neutral', colorClass: 'bg-neutral-400' },
 ];
 
 const cx = (...classes: Array<string | false | null | undefined>) =>
@@ -339,39 +339,22 @@ const SentimentGraph = ({ session }: { session: any }) => {
   const sentimentScores = getSentimentScores(session);
   const hasScores = sentimentScores.some((item) => item.score > 0);
 
+  const pill = (
+    <span
+      className={`inline-flex w-fit items-center justify-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold capitalize ${getSentimentPillClass(session)}`}
+    >
+      {label} · {Math.round(score)}
+    </span>
+  );
+
+  if (!hasScores) {
+    return pill;
+  }
+
   return (
-    <div className="group relative flex w-fit items-center">
-      <span
-        className={`inline-flex w-fit items-center justify-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold capitalize ${getSentimentPillClass(session)}`}
-      >
-        {label} · {Math.round(score)}
-      </span>
-      <div className="pointer-events-none absolute right-0 top-7 z-30 hidden w-[190px] rounded-2xl border border-neutral-200 bg-white p-3 text-left shadow-[0_8px_24px_rgba(0,0,0,.08)] group-hover:block">
-        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-red-600">
-          Sentiment scores
-        </div>
-        {hasScores ? (
-          <div className="space-y-2">
-            {sentimentScores.map((item) => (
-              <div key={item.key}>
-                <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-slate-700">
-                  <span>{item.label}</span>
-                  <span>{item.score}/100</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className={`h-full rounded-full ${item.colorClass}`}
-                    style={{ width: `${item.score}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-xs font-semibold text-slate-500">Not analyzed</div>
-        )}
-      </div>
-    </div>
+    <HoverPortalCard trigger={pill}>
+      <SentimentAnalysisCard scores={sentimentScores} />
+    </HoverPortalCard>
   );
 };
 
@@ -693,26 +676,39 @@ const AiBotSession = () => {
 
   return (
     <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#eef1f8] text-neutral-900">
-      <div className="flex min-h-[72px] items-center justify-between border-b border-neutral-200 bg-white px-7">
+      <div className="flex min-h-[92px] items-center justify-between border-b border-neutral-200 bg-white px-7">
         <div className="flex items-center gap-3">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-red-50 p-1.5">
-            <span className="flex h-full w-full items-center justify-center rounded-xl border-2 border-red-200 bg-white text-red-600">
-              <History className="h-5 w-5" strokeWidth={2.25} />
-            </span>
-          </span>
           <div>
-            <div className="flex items-center gap-2 text-base font-medium text-neutral-500">
-              <button
-                type="button"
-                onClick={() => navigate('/admin-settings/knowledge/ai-agent')}
-                className="transition-colors hover:text-neutral-900"
-              >
-                AI Agents
-              </button>
-              <span>/</span>
-              <span className="text-neutral-900">Sessions</span>
+            <button
+              type="button"
+              onClick={() => navigate('/admin-settings/knowledge/ai-agent')}
+              className="block transition-colors hover:text-neutral-700"
+              style={{
+                fontFamily: '"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',
+                fontStyle: 'normal',
+                fontWeight: 800,
+                fontSize: '12px',
+                lineHeight: '18px',
+                letterSpacing: '0.04em',
+                color: 'rgb(220, 38, 38)',
+                textTransform: 'uppercase',
+              }}
+            >
+              AI Tools
+            </button>
+            <div
+              style={{
+                fontFamily: '"Instrument Serif", Georgia, serif',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                fontSize: '27px',
+                lineHeight: '41px',
+                color: 'rgb(23, 23, 23)',
+              }}
+            >
+              Sessions
             </div>
-            <p className="mt-0.5 text-xs font-normal text-neutral-400">
+            <p className="-mt-1 text-xs font-normal text-neutral-400">
               Every AI receptionist call &amp; AI chatbot conversation — with transcripts,
               sentiment &amp; outcomes.
             </p>
@@ -723,7 +719,7 @@ const AiBotSession = () => {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="inline-flex h-10 min-w-[140px] shrink-0 items-center gap-1.5 rounded-full border! border-neutral-200! bg-white! px-4 text-sm font-semibold text-neutral-700! shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-colors hover:border-red-300!"
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border! border-neutral-200! bg-white! px-2.5 text-sm font-semibold text-neutral-700! shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-colors hover:border-red-300!"
               >
                 {dateRangeOptions.find((option) => option.value === dateRange)?.label ||
                   'Date range'}
@@ -754,7 +750,7 @@ const AiBotSession = () => {
           <button
             type="button"
             onClick={exportCsv}
-            className="inline-flex h-10 items-center gap-1.5 rounded-full border! border-neutral-200! bg-white! px-4 text-sm font-semibold text-neutral-700! shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-colors hover:border-red-200! hover:bg-red-50! hover:text-red-600!"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-neutral-900! px-2.5 text-sm font-semibold text-white! shadow-none transition-colors hover:bg-neutral-800!"
           >
             <Download className="h-4 w-4 shrink-0" />
             <span>Export CSV</span>
@@ -802,8 +798,8 @@ const AiBotSession = () => {
 
         <div className="overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
           <div className="flex flex-col gap-3 border-b border-neutral-200 bg-white px-[18px] py-3 sm:flex-row sm:items-center">
-            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border! border-neutral-200! bg-white! pl-2 pr-3 shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-all focus-within:border-red-300! focus-within:shadow-[0_0_0_4px_rgba(220,38,38,.1)]!">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border! border-neutral-200! bg-white! pl-2 pr-3 shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-all focus-within:border-neutral-400!">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-red-600">
                 <Search className="h-3.5 w-3.5" />
               </span>
               <input

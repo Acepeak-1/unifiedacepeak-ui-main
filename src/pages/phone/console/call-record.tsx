@@ -1,15 +1,17 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { AuthenticatedAudio } from '@/components/custom/authenticated-media';
 import { handleDownloadFile, MEDIA_URL } from '@/lib/utils';
+import { fetchAuthenticatedMedia } from '@/hooks/use-authenticated-media';
 import { useGetExtensions } from '@/hooks/common';
 import { useCompanyFeatures } from '@/hooks/rbac';
 import { useUser } from '@/hooks/use-user';
 import { getUserNameByExtension } from '@/lib/extension-utility';
 import { Ic } from './icons';
-import { DialNumber, useConsoleDialer } from './dial-number';
+import { DialNumber, rememberDialLabel, useConsoleDialer } from './dial-number';
 import { initialsOf, isNumberLike } from './copilot-adapter';
+import { demoRecordLegs } from './demo-data';
 import type { ConsoleCallRow } from './call-list-column';
 
 /**
@@ -43,13 +45,6 @@ export type RecordLeg = {
   viaDid: string;
   recordingUrl: string;
   transcriptUrl: string;
-  /* Set on demo/sample rows: a directly-playable URL used instead of the
-     authenticated media path, so the demo lists actually play. */
-  audioUrl?: string;
-  demo?: boolean;
-  /* Inline transcript turns (used by demo rows; real rows open the side
-     panel via onOpenTranscript instead). */
-  transcript?: TranscriptTurn[];
 };
 
 type TranscriptTurn = {
@@ -59,115 +54,17 @@ type TranscriptTurn = {
   text: string;
 };
 
-const DEMO_TRANSCRIPT: TranscriptTurn[] = [
-  { who: 'caller', speaker: 'Caller', time: '00:02', text: 'Hi, I’m calling about my recent order — it hasn’t arrived yet.' },
-  { who: 'agent', speaker: 'Agent', time: '00:09', text: 'I’m sorry to hear that. Could you share your order number so I can check?' },
-  { who: 'caller', speaker: 'Caller', time: '00:18', text: 'Sure, it’s 48213-A.' },
-  { who: 'agent', speaker: 'Agent', time: '00:24', text: 'Thanks. I can see it shipped yesterday and is out for delivery today.' },
-  { who: 'caller', speaker: 'Caller', time: '00:37', text: 'Oh great, that’s a relief. Thank you for the quick help!' },
-  { who: 'agent', speaker: 'Agent', time: '00:42', text: 'You’re welcome. Is there anything else I can help you with?' },
-];
-
-/* --- Demo/sample data so Calls, Recordings and Voicemails all show content
-   even when the real call has no stored media. Mirrors the demo rows used in
-   the call list; the audio points at small public sample clips. --- */
-const SAMPLE_AUDIO = [
-  'https://download.samplelib.com/mp3/sample-6s.mp3',
-  'https://download.samplelib.com/mp3/sample-9s.mp3',
-  'https://download.samplelib.com/mp3/sample-12s.mp3',
-  'https://download.samplelib.com/mp3/sample-15s.mp3',
-];
-
-const demoLeg = (o: Partial<RecordLeg> & { id: string }): RecordLeg => ({
-  raw: {},
-  direction: 'in',
-  when: '—',
-  duration: '00:00',
-  by: '—',
-  viaDid: '',
-  recordingUrl: '',
-  transcriptUrl: '',
-  demo: true,
-  ...o,
-});
-
-const DEMO_CALLS: RecordLeg[] = [
-  demoLeg({
-    id: 'demo-call-1',
-    direction: 'out',
-    when: '3 Sep 2026, 6:12 PM',
-    duration: '02:14',
-    viaDid: '+1 (415) 555-0132',
-  }),
-  demoLeg({
-    id: 'demo-call-2',
-    direction: 'in',
-    when: '2 Sep 2026, 11:40 AM',
-    duration: '00:47',
-    viaDid: '+1 (415) 555-0132',
-  }),
-  demoLeg({
-    id: 'demo-call-3',
-    direction: 'miss',
-    when: '1 Sep 2026, 9:05 AM',
-    duration: '00:00',
-    viaDid: '+1 (415) 555-0132',
-  }),
-];
-
-const DEMO_RECORDINGS: RecordLeg[] = [
-  demoLeg({
-    id: 'demo-rec-1',
-    direction: 'in',
-    when: '4 Sep 2026, 4:22 PM',
-    duration: '03:00',
-    viaDid: '+1 (415) 555-0132',
-    recordingUrl: SAMPLE_AUDIO[0],
-    audioUrl: SAMPLE_AUDIO[0],
-    transcript: DEMO_TRANSCRIPT,
-  }),
-  demoLeg({
-    id: 'demo-rec-2',
-    direction: 'out',
-    when: '4 Sep 2026, 1:18 PM',
-    duration: '01:36',
-    viaDid: '+1 (415) 555-0132',
-    recordingUrl: SAMPLE_AUDIO[1],
-    audioUrl: SAMPLE_AUDIO[1],
-    transcript: DEMO_TRANSCRIPT,
-  }),
-  demoLeg({
-    id: 'demo-rec-3',
-    direction: 'in',
-    when: '3 Sep 2026, 10:05 AM',
-    duration: '04:41',
-    viaDid: '+1 (415) 555-0132',
-    recordingUrl: SAMPLE_AUDIO[2],
-    audioUrl: SAMPLE_AUDIO[2],
-    transcript: DEMO_TRANSCRIPT,
-  }),
-];
-
-const DEMO_VOICEMAILS: RecordLeg[] = [
-  demoLeg({
-    id: 'demo-vm-1',
-    direction: 'in',
-    when: '3 Sep 2026, 8:02 AM',
-    duration: '00:22',
-    viaDid: '+1 (415) 555-0132',
-    raw: { voicemail_file_url: 'demo-voicemail-1.mp3' },
-    audioUrl: SAMPLE_AUDIO[2],
-  }),
-  demoLeg({
-    id: 'demo-vm-2',
-    direction: 'in',
-    when: '31 Aug 2026, 7:44 PM',
-    duration: '00:38',
-    viaDid: '+1 (415) 555-0132',
-    raw: { voicemail_file_url: 'demo-voicemail-2.mp3' },
-    audioUrl: SAMPLE_AUDIO[3],
-  }),
-];
+/* Fallback summary when the call has no stored one: open with the caller's
+   first turn and close with the agent's last, which is what a short call
+   usually boils down to. */
+const deriveSummary = (turns: TranscriptTurn[]): string[] => {
+  const firstCaller = turns.find((t) => t.who === 'caller');
+  const lastAgent = [...turns].reverse().find((t) => t.who === 'agent');
+  return [
+    firstCaller ? `Caller: ${firstCaller.text}` : '',
+    lastAgent ? `Agent: ${lastAgent.text}` : '',
+  ].filter(Boolean);
+};
 
 /* Deterministic waveform bar heights (0.15–1) so the wave looks organic but
    never jitters on re-render. */
@@ -280,8 +177,14 @@ const WaveformPlayer = ({ src, onDownload }: { src: string; onDownload?: () => v
         <option value={1.5}>1.5x</option>
         <option value={2}>2x</option>
       </select>
-      <button type="button" className="wave-dl" onClick={onDownload}>
-        <Ic n="dl" size={14} /> Download
+      <button
+        type="button"
+        className="wave-dl"
+        title="Download recording"
+        aria-label="Download recording"
+        onClick={onDownload}
+      >
+        <Ic n="dl" size={14} />
       </button>
     </div>
   );
@@ -316,10 +219,13 @@ const CallRecord = ({
   row,
   onBack,
   onOpenTranscript,
+  initialTab = 'calls',
 }: {
   row: ConsoleCallRow;
   onBack: () => void;
   onOpenTranscript: (leg: any) => void;
+  /** which history the left column was showing when this row was picked */
+  initialTab?: 'calls' | 'recordings' | 'voicemails';
 }) => {
   const { user } = useUser();
   const { features } = useCompanyFeatures();
@@ -335,8 +241,11 @@ const CallRecord = ({
   const [downloading, setDownloading] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'all' | 'in' | 'out' | 'miss'>('all');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [tab, setTab] = useState<'calls' | 'recordings' | 'voicemails'>('calls');
+  const [tab, setTab] = useState<'calls' | 'recordings' | 'voicemails'>(initialTab);
   const [transcriptId, setTranscriptId] = useState<string | null>(null);
+  /* Which view the open transcript panel is showing — the Transcript and
+     Summary buttons flip between the two in the same space. */
+  const [panelView, setPanelView] = useState<'transcript' | 'summary'>('transcript');
 
   const companyUuid = String(user?.company_info?.uuid || '').trim();
   const reportsActionAccess = features?.plan_features?.reports?.action;
@@ -386,14 +295,13 @@ const CallRecord = ({
     });
   }, [row, extensionList, companyUuid]);
 
-  /* History summary — reflects the calls actually shown (real + demo). */
+  /* History summary for this number, from its real call legs. */
   const summary = useMemo(() => {
-    const all = [...legs, ...DEMO_CALLS];
-    const outgoing = all.filter((l) => l.direction === 'out').length;
-    const incoming = all.filter((l) => l.direction !== 'out').length;
+    const outgoing = legs.filter((l) => l.direction === 'out').length;
+    const incoming = legs.filter((l) => l.direction !== 'out').length;
     const stamp = row.raw?.start_stamp || legs[0]?.raw?.start_stamp;
     const lastCall = stamp && moment(stamp).isValid() ? moment(stamp).fromNow() : '—';
-    return { total: all.length, outgoing, incoming, lastCall };
+    return { total: legs.length, outgoing, incoming, lastCall };
   }, [legs, row]);
 
   const dateLabel = (leg: RecordLeg) => {
@@ -412,7 +320,16 @@ const CallRecord = ({
   ];
   const filterLabel = FILTERS.find((f) => f.key === filter)?.label ?? 'All calls';
 
-  const recordingLegs = useMemo(() => legs.filter((l) => l.recordingUrl), [legs]);
+  /* A missed call never connected, so it has nothing to record — those legs
+     stay out of the recording list even if the log carries a stray file, and
+     so does anything with no talk time (a zero-length file plays as silence). */
+  const recordingLegs = useMemo(
+    () =>
+      legs.filter(
+        (l) => l.recordingUrl && l.direction !== 'miss' && l.duration !== '00:00',
+      ),
+    [legs],
+  );
   const voicemailLegs = useMemo(
     () => legs.filter((l) => isMeaningful((l.raw as any)?.voicemail_file_url)),
     [legs],
@@ -426,14 +343,259 @@ const CallRecord = ({
   const sectionTitle =
     tab === 'recordings' ? 'Recording History' : tab === 'voicemails' ? 'Voicemail History' : 'Call History';
 
-  const shown = useMemo(() => {
-    if (tab === 'recordings') return recordingLegs.length ? recordingLegs : DEMO_RECORDINGS;
-    if (tab === 'voicemails') return voicemailLegs.length ? voicemailLegs : DEMO_VOICEMAILS;
-    const base = filter === 'all' ? legs : legs.filter((l) => l.direction === filter);
-    const demoCalls =
-      filter === 'all' ? DEMO_CALLS : DEMO_CALLS.filter((l) => l.direction === filter);
-    return [...base, ...demoCalls];
+  const realShown = useMemo(() => {
+    if (tab === 'recordings') return recordingLegs;
+    if (tab === 'voicemails') return voicemailLegs;
+    return filter === 'all' ? legs : legs.filter((l) => l.direction === filter);
   }, [tab, legs, filter, recordingLegs, voicemailLegs]);
+
+  /* Nothing of this kind on the contact: show samples rather than an empty
+     list. Never mixed in with real legs, and chipped where they render. */
+  const isDemo = realShown.length === 0;
+  const shown: RecordLeg[] = useMemo(() => {
+    if (!isDemo) return realShown;
+    return demoRecordLegs(tab)
+      .filter((l) => tab !== 'calls' || filter === 'all' || l.direction === filter)
+      .map((l) => ({
+        ...l,
+        raw: {},
+        recordingUrl: '',
+        transcriptUrl: '',
+      }));
+  }, [isDemo, realShown, tab, filter]);
+
+  /* Picking a row in the left column lands on the matching history here: the
+     Recordings list for a recording, Voicemails for a voicemail, Calls
+     otherwise — and the leg that was clicked opens and scrolls into view. */
+  const focusId = String(
+    row.raw?.uuid || row.raw?.sipcall_id || row.raw?.xml_cdr_uuid || '',
+  ).trim();
+  useEffect(() => {
+    setTab(initialTab);
+    setTranscriptId(null);
+    setPlayingId(initialTab === 'calls' ? null : focusId || null);
+  }, [initialTab, focusId]);
+
+  const focusRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!focusId || tab === 'calls') return;
+    const t = window.setTimeout(
+      () => focusRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
+      60,
+    );
+    return () => window.clearTimeout(t);
+  }, [focusId, tab, shown]);
+
+  /* Stored transcripts, fetched on demand and cached per leg. A real call has
+     no inline turns — only a transcript file — so without this the Transcript
+     and Summary panel could never appear at all. The file is the
+     same JSON the call log's TranscriptInfo reads: { speaker: [...], summary }. */
+  const [storedPanels, setStoredPanels] = useState<
+    Record<string, { turns: TranscriptTurn[]; summary: string[]; state: 'loading' | 'done' | 'error' }>
+  >({});
+
+  useEffect(() => {
+    if (!transcriptId) return;
+    const leg = shown.find((l) => l.id === transcriptId);
+    if (!leg || !leg.transcriptUrl) return;
+    if (storedPanels[transcriptId]) return;
+
+    let active = true;
+    setStoredPanels((prev) => ({
+      ...prev,
+      [transcriptId]: { turns: [], summary: [], state: 'loading' },
+    }));
+    fetchAuthenticatedMedia(leg.transcriptUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        return res.json();
+      })
+      .then((data: any) => {
+        if (!active) return;
+        const items: any[] = Array.isArray(data?.speaker) ? data.speaker : [];
+        const turns: TranscriptTurn[] = items.map((item, i) => {
+          const role = String(item?.speakerDetails?.role || '').toLowerCase();
+          const isAgent = role === 'agent' || String(item?.speaker ?? '') === '0';
+          return {
+            who: isAgent ? 'agent' : 'caller',
+            speaker:
+              String(item?.speakerDetails?.userName || '').trim() ||
+              (isAgent ? 'Agent' : 'Caller'),
+            time: String(item?.start_time || '').trim() || fmtSecs(i),
+            text: String(item?.text || '').trim(),
+          };
+        });
+        const summaryText = String(data?.summary || '').trim();
+        setStoredPanels((prev) => ({
+          ...prev,
+          [transcriptId]: {
+            turns: turns.filter((t) => t.text),
+            summary: summaryText
+              ? summaryText.split(/(?<=[.!?])\s+/).filter(Boolean)
+              : deriveSummary(turns),
+            state: 'done',
+          },
+        }));
+      })
+      .catch(() => {
+        if (!active) return;
+        setStoredPanels((prev) => ({
+          ...prev,
+          [transcriptId]: { turns: [], summary: [], state: 'error' },
+        }));
+      });
+    return () => {
+      active = false;
+    };
+  }, [transcriptId, shown, storedPanels]);
+
+  /**
+   * The one media card used by both the Recordings and the Voicemails list.
+   *
+   * Everything it shows — player, download, Transcript and Summary — comes off
+   * the leg itself, never off which list opened it, so the same recording looks
+   * and behaves identically wherever it is reached from.
+   */
+  const renderMediaCard = (leg: RecordLeg) => {
+    const vmFile = String((leg.raw as any)?.voicemail_file_url ?? '').trim();
+    const src =
+      leg.recordingUrl ||
+      (vmFile && companyUuid ? `${MEDIA_URL}/${companyUuid}/recording/${vmFile}` : '');
+    const open = playingId === leg.id;
+    const canPlayRec = canListen;
+    const stored = storedPanels[leg.id];
+    const turns = stored?.turns ?? [];
+    /* The card is the same everywhere, so the Transcript / Summary button is
+       always there: whether it has content is a property of the call, not of
+       the list it was opened from. A call with no transcript says so. */
+    const panelOpen = transcriptId === leg.id;
+    const summaryBullets = stored?.summary ?? deriveSummary(turns);
+    const doDownload = () =>
+      handleDownloadFile({
+        fileUrl: src,
+        name: `${row.name || row.number}-${leg.when}`,
+        setLoading: (value: any) =>
+          setDownloading((prev) => ({
+            ...prev,
+            [leg.id]: typeof value === 'function' ? value(prev[leg.id]) : value,
+          })),
+      });
+
+    return (
+      <div
+        className={`rec-card ${open ? 'open' : ''}`}
+        key={leg.id}
+        ref={leg.id === focusId ? focusRef : undefined}
+      >
+        <div className="rec-card-row">
+          <span className={`rec-line-ic ${leg.direction === 'miss' ? 'miss' : leg.direction}`}>
+            <Ic
+              n={
+                leg.direction === 'out'
+                  ? 'arrow-out'
+                  : leg.direction === 'miss'
+                    ? 'x'
+                    : 'arrow-in'
+              }
+              size={15}
+            />
+          </span>
+          <div className="rec-card-title">
+            <div className={`rec-line-title ${leg.direction === 'miss' ? 'miss' : leg.direction}`}>
+              {dirTitle(leg.direction)}
+            </div>
+            {leg.viaDid ? (
+              <div className="rec-line-sub">
+                Via DID: <span className="num">{leg.viaDid}</span>
+              </div>
+            ) : null}
+          </div>
+          <div className="rec-line-when">
+            <span>
+              <Ic n="cal" size={13} /> {dateLabel(leg)}
+            </span>
+            <span>
+              <Ic n="clock" size={13} /> <span className="num">{leg.duration}</span>
+            </span>
+          </div>
+          <div className="rec-card-acts">
+            <button
+              type="button"
+              className={`rec-act ${open ? 'on' : ''}`}
+              title={
+                !canPlayRec
+                  ? 'Your plan does not allow listening'
+                  : open
+                    ? 'Hide player'
+                    : 'Play'
+              }
+              disabled={!canPlayRec || !src}
+              onClick={() => setPlayingId(open ? null : leg.id)}
+            >
+              <Ic n={open ? 'pause' : 'play'} size={14} />
+            </button>
+            <button
+              type="button"
+              className={`rec-act ${transcriptId === leg.id ? 'on' : ''}`}
+              title="Transcript"
+              onClick={() => setTranscriptId(transcriptId === leg.id ? null : leg.id)}
+            >
+              <Ic n="book" size={14} />
+            </button>
+          </div>
+        </div>
+        {open && src ? <WaveformPlayer src={src} onDownload={doDownload} /> : null}
+        {panelOpen ? (
+          <div className="rec-transcript">
+            <div className="rec-transcript-col">
+              <div className="rec-panel-tabs" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={panelView === 'transcript'}
+                  className={`rec-panel-tab ${panelView === 'transcript' ? 'on' : ''}`}
+                  onClick={() => setPanelView('transcript')}
+                >
+                  <Ic n="book" size={14} /> Transcript
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={panelView === 'summary'}
+                  className={`rec-panel-tab ${panelView === 'summary' ? 'on' : ''}`}
+                  onClick={() => setPanelView('summary')}
+                >
+                  <Ic n="list" size={14} /> Summary
+                </button>
+              </div>
+              {stored?.state === 'loading' ? (
+                <p className="rec-turn">Loading transcript…</p>
+              ) : panelView === 'transcript' ? (
+                turns.length ? (
+                  turns.map((t, ti) => (
+                    <p className={`rec-turn rt-${t.who}`} key={ti}>
+                      <span className="rec-turn-time num">{t.time}</span>
+                      <span className="rec-turn-who">{t.speaker}:</span> {t.text}
+                    </p>
+                  ))
+                ) : (
+                  <p className="rec-turn">No transcript for this call.</p>
+                )
+              ) : summaryBullets.length ? (
+                <ul className="rec-summary-list">
+                  {summaryBullets.map((s, si) => (
+                    <li key={si}>{s}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="rec-turn">No summary for this call.</p>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <div className="record-view">
@@ -459,7 +621,10 @@ const CallRecord = ({
             type="button"
             className="rec-callback"
             disabled={!row.number}
-            onClick={() => dial(row.number)}
+            onClick={() => {
+              rememberDialLabel(row.number, row.name);
+              dial(row.number);
+            }}
           >
             <Ic n="phone" size={15} />
             Call back
@@ -553,154 +718,35 @@ const CallRecord = ({
 
         <div className="rec-sec-body">
           {shown.length ? (
-            tab === 'recordings' ? (
+            tab === 'recordings' || tab === 'voicemails' ? (
+              /* One media list for both tabs — same card, same player, same
+                 Transcript / Summary panel. What differs is only the audio
+                 source (a recording file vs a voicemail file) and the noun in
+                 the group header; nothing about the UI depends on where the
+                 user came from. */
               groupByDay(shown).map((g) => (
                 <div className="rec-group" key={g.key}>
                   <div className="rec-group-head">
                     <span className="rec-group-lbl">
                       <b>{g.label}</b>
                       <span>
-                        {g.items.length} recording{g.items.length > 1 ? 's' : ''}
+                        {g.items.length} {tab === 'voicemails' ? 'voicemail' : 'recording'}
+                        {g.items.length > 1 ? 's' : ''}
                       </span>
                     </span>
                     <span className="rec-group-date">{g.date}</span>
                   </div>
-                  {g.items.map((leg) => {
-                    const src = leg.audioUrl || leg.recordingUrl;
-                    const open = playingId === leg.id;
-                    const canPlayRec = leg.demo || canListen;
-                    const doDownload = () =>
-                      handleDownloadFile({
-                        fileUrl: leg.audioUrl || leg.recordingUrl,
-                        name: `${row.name || row.number}-${leg.when}`,
-                        setLoading: (value: any) =>
-                          setDownloading((prev) => ({
-                            ...prev,
-                            [leg.id]:
-                              typeof value === 'function' ? value(prev[leg.id]) : value,
-                          })),
-                      });
-                    return (
-                      <div className={`rec-card ${open ? 'open' : ''}`} key={leg.id}>
-                        <div className="rec-card-row">
-                          <span
-                            className={`rec-line-ic ${leg.direction === 'miss' ? 'miss' : leg.direction}`}
-                          >
-                            <Ic
-                              n={
-                                leg.direction === 'out'
-                                  ? 'arrow-out'
-                                  : leg.direction === 'miss'
-                                    ? 'x'
-                                    : 'arrow-in'
-                              }
-                              size={15}
-                            />
-                          </span>
-                          <div className="rec-card-title">
-                            <div
-                              className={`rec-line-title ${leg.direction === 'miss' ? 'miss' : leg.direction}`}
-                            >
-                              {dirTitle(leg.direction)}
-                            </div>
-                            {leg.viaDid ? (
-                              <div className="rec-line-sub">
-                                Via DID: <span className="num">{leg.viaDid}</span>
-                              </div>
-                            ) : null}
-                          </div>
-                          <div className="rec-card-who">
-                            <span className="rec-card-who-ic">
-                              <Ic n="user" size={14} />
-                            </span>
-                            <div className="rec-card-who-txt">
-                              <div className="rec-card-num num">
-                                <DialNumber number={row.number} />
-                              </div>
-                              {row.name && !isNumberLike(row.name) ? (
-                                <div className="rec-card-name">{row.name}</div>
-                              ) : null}
-                            </div>
-                          </div>
-                          <div className="rec-line-when">
-                            <span>
-                              <Ic n="cal" size={13} /> {dateLabel(leg)}
-                            </span>
-                            <span>
-                              <Ic n="clock" size={13} /> <span className="num">{leg.duration}</span>
-                            </span>
-                          </div>
-                          <div className="rec-card-acts">
-                            <button
-                              type="button"
-                              className={`rec-act ${open ? 'on' : ''}`}
-                              title={
-                                !canPlayRec
-                                  ? 'Your plan does not allow listening'
-                                  : open
-                                    ? 'Hide player'
-                                    : 'Play recording'
-                              }
-                              disabled={!canPlayRec}
-                              onClick={() => setPlayingId(open ? null : leg.id)}
-                            >
-                              <Ic n={open ? 'pause' : 'play'} size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              className="rec-act"
-                              title="Download recording"
-                              disabled={downloading[leg.id]}
-                              onClick={doDownload}
-                            >
-                              <Ic n="dl" size={14} />
-                            </button>
-                            {leg.transcript?.length || (leg.transcriptUrl && canTranscribe) ? (
-                              <button
-                                type="button"
-                                className={`rec-act ${transcriptId === leg.id ? 'on' : ''}`}
-                                title="Transcript"
-                                onClick={() => {
-                                  if (leg.transcript?.length) {
-                                    setTranscriptId(transcriptId === leg.id ? null : leg.id);
-                                  } else {
-                                    onOpenTranscript(leg.raw);
-                                  }
-                                }}
-                              >
-                                <Ic n="book" size={14} />
-                              </button>
-                            ) : null}
-                          </div>
-                        </div>
-                        {open && src ? <WaveformPlayer src={src} onDownload={doDownload} /> : null}
-                        {transcriptId === leg.id && leg.transcript?.length ? (
-                          <div className="rec-transcript">
-                            <div className="rec-transcript-head">
-                              <Ic n="book" size={14} /> Transcript
-                            </div>
-                            {leg.transcript.map((t, ti) => (
-                              <p className={`rec-turn rt-${t.who}`} key={ti}>
-                                <span className="rec-turn-time num">{t.time}</span>
-                                <span className="rec-turn-who">{t.speaker}:</span>{' '}
-                                {t.text}
-                              </p>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
+                  {g.items.map((leg) => renderMediaCard(leg))}
                 </div>
               ))
             ) : (
             shown.map((leg) => {
               const vmFile = String((leg.raw as any)?.voicemail_file_url ?? '').trim();
-              const vmUrl = vmFile
-                ? leg.audioUrl ||
-                  (companyUuid ? `${MEDIA_URL}/${companyUuid}/recording/${vmFile}` : '')
-                : '';
-              const canPlayRec = leg.demo || canListen;
+              const vmUrl =
+                vmFile && companyUuid
+                  ? `${MEDIA_URL}/${companyUuid}/recording/${vmFile}`
+                  : '';
+              const canPlayRec = canListen;
               const vmKey = `vm-${leg.id}`;
               const recPlaying = playingId === leg.id;
               const vmPlaying = playingId === vmKey;
@@ -761,7 +807,7 @@ const CallRecord = ({
                               disabled={downloading[leg.id]}
                               onClick={() =>
                                 handleDownloadFile({
-                                  fileUrl: leg.audioUrl || leg.recordingUrl,
+                                  fileUrl: leg.recordingUrl,
                                   name: `${row.name || row.number}-${leg.when}`,
                                   setLoading: (value: any) =>
                                     setDownloading((prev) => ({
@@ -816,25 +862,17 @@ const CallRecord = ({
 
                   {recPlaying && leg.recordingUrl ? (
                     <div className="leg-audio">
-                      {leg.audioUrl ? (
-                        <audio src={leg.audioUrl} controls autoPlay preload="metadata" />
-                      ) : (
-                        <AuthenticatedAudio
-                          src={leg.recordingUrl}
-                          controls
-                          autoPlay
-                          preload="metadata"
-                        />
-                      )}
+                      <AuthenticatedAudio
+                        src={leg.recordingUrl}
+                        controls
+                        autoPlay
+                        preload="metadata"
+                      />
                     </div>
                   ) : null}
                   {vmPlaying && vmUrl ? (
                     <div className="leg-audio">
-                      {leg.audioUrl ? (
-                        <audio src={leg.audioUrl} controls autoPlay preload="metadata" />
-                      ) : (
-                        <AuthenticatedAudio src={vmUrl} controls autoPlay preload="metadata" />
-                      )}
+                      <AuthenticatedAudio src={vmUrl} controls autoPlay preload="metadata" />
                     </div>
                   ) : null}
                 </div>

@@ -13,84 +13,54 @@
      - @keyframes are prefixed `mcmc-`.
    ============================================================ */
 
+/* The console draws its palette from the app's own design tokens (the
+   --mcm-* set in index.css, which flips with the app's `.dark` class) so the
+   phone page and the rest of the app stay in step. The accent follows
+   --primary, which the shell sets from the tenant's primary_color. */
 .mcm-console {
-  --ground: #f5f5f5;
-  --surface: #ffffff;
-  --surface-2: #fafafa;
-  --surface-3: #eeeeee;
-  --ink: #0d1526;
-  --ink-2: #3d4a63;
-  --ink-3: #6b7891;
-  --ink-4: #93a0b8;
-  --line: #e5e5e5;
-  --line-2: #efefef;
+  --ground: var(--mcm-ground);
+  --surface: var(--mcm-surface);
+  --surface-2: var(--mcm-surface-2);
+  --surface-3: var(--mcm-surface-3);
+  --ink: var(--mcm-ink);
+  --ink-2: var(--mcm-ink-2);
+  --ink-3: var(--mcm-ink-3);
+  --ink-4: var(--mcm-ink-4);
+  --line: var(--mcm-line);
+  --line-2: var(--mcm-line-2);
 
-  --accent: #dc2626;
-  --accent-ink: #b91c1c;
-  --accent-wash: #fef2f2;
-  --accent-edge: #fecaca;
+  --accent: var(--primary, var(--mcm-accent));
+  --accent-ink: var(--mcm-accent-ink);
+  --accent-wash: var(--mcm-accent-wash);
+  --accent-edge: var(--mcm-accent-edge);
 
-  /* AI gets its own hue on purpose: machine output must never be
-     mistaken for system truth. Violet = "generated, verify me". */
-  --ai: #7c3aed;
-  --ai-ink: #6428d4;
-  --ai-wash: #f2ecff;
-  --ai-edge: #ddccff;
+  --ai: var(--mcm-ai);
+  --ai-ink: var(--mcm-ai-ink);
+  --ai-wash: var(--mcm-ai-wash);
+  --ai-edge: var(--mcm-ai-edge);
 
-  --live: #0d9488;
-  --live-wash: #dcf5f1;
-  --warn: #c2670a;
-  --warn-wash: #fdf0dc;
-  --crit: #d32f2f;
-  --crit-wash: #fde9e9;
-  --hold: #0e7490;
-  --hold-wash: #dcf1f7;
+  --live: var(--mcm-live);
+  --live-wash: var(--mcm-live-wash);
+  --warn: var(--mcm-warn);
+  --warn-wash: var(--mcm-warn-wash);
+  --crit: var(--mcm-crit);
+  --crit-wash: var(--mcm-crit-wash);
+  --hold: var(--mcm-hold);
+  --hold-wash: var(--mcm-hold-wash);
 
-  --shadow-sm: 0 1px 2px rgba(13, 21, 38, 0.06), 0 1px 1px rgba(13, 21, 38, 0.04);
-  --shadow: 0 4px 14px rgba(13, 21, 38, 0.07), 0 1px 3px rgba(13, 21, 38, 0.05);
-  --shadow-lg: 0 18px 44px rgba(13, 21, 38, 0.14), 0 3px 10px rgba(13, 21, 38, 0.07);
-  --r: 12px;
-  --r-sm: 8px;
-  --r-lg: 18px;
-  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  /* 'Twemoji Country Flags' is what renders flag emoji as flags rather than
-     the bare letter pair ('IN', 'US'). The app's body stack includes it for
-     exactly that reason; the console defined its own stack and dropped it,
-     so the dialler's country flag showed as text. */
-  --sans:
-    'Plus Jakarta Sans', 'Twemoji Country Flags', ui-sans-serif, system-ui, -apple-system,
-    'Segoe UI', sans-serif;
-}
-.dark .mcm-console {
-  --ground: #0a0a0a;
-  --surface: #171717;
-  --surface-2: #1f1f1f;
-  --surface-3: #262626;
-  --ink: #eef2f9;
-  --ink-2: #c3cddf;
-  --ink-3: #93a1ba;
-  --ink-4: #6b7a96;
-  --line: #333333;
-  --line-2: #292929;
-  --accent: #f87171;
-  --accent-ink: #fca5a5;
-  --accent-wash: #3a1414;
-  --accent-edge: #7f1d1d;
-  --ai: #a97fff;
-  --ai-ink: #c0a3ff;
-  --ai-wash: #231a3d;
-  --ai-edge: #3c2d66;
-  --live: #2dd4bf;
-  --live-wash: #0f2f2c;
-  --warn: #f0a24b;
-  --warn-wash: #33240f;
-  --crit: #f87171;
-  --crit-wash: #361618;
-  --hold: #38bdf8;
-  --hold-wash: #0d2a3a;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.6);
+  --shadow-sm: var(--mcm-shadow-sm);
+  --shadow: var(--mcm-shadow);
+  --shadow-lg: var(--mcm-shadow-lg);
+  --r: var(--mcm-r);
+  --r-sm: var(--mcm-r-sm);
+  --r-lg: var(--mcm-r-lg);
+  --mono: var(--mcm-mono);
+  --sans: var(--mcm-sans);
+
+  /* Width of the Notes/Transcript/Summary slide-over. The stage pads itself
+     by exactly this much when the panel is open, so the two must stay equal —
+     hence one token rather than two literals. */
+  --csp-w: var(--mcm-side-panel-w, 460px);
 }
 .mcm-console * {
   box-sizing: border-box;
@@ -480,7 +450,7 @@
   /* Two zones: a fixed call list and the dialer stage taking the rest.
      The intelligence/Copilot panel was removed to keep the dialer the focus. */
   display: grid;
-  grid-template-columns: 384px minmax(420px, 1fr);
+  grid-template-columns: var(--mcm-list-panel-w) minmax(420px, 1fr);
   height: 100%;
   overflow: hidden;
 }
@@ -518,26 +488,39 @@
   font-weight: 400;
   letter-spacing: 0;
 }
+/* Independent chips rather than a tray with a sliding white pill: each
+   filter reads as its own control, and the row wraps instead of squeezing
+   four equal columns into the panel width. */
 .mcm-console .seg {
   display: flex;
-  gap: 2px;
-  background: var(--surface-3);
-  padding: 2px;
-  border-radius: 9px;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
 }
 .mcm-console .seg button {
-  flex: 1;
-  padding: 5px 8px;
-  border-radius: 7px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--ink-3);
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748b;
+  background: #f5f5f5;
   white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
+.mcm-console .seg button:hover:not(.on) {
+  color: var(--accent);
+  background: var(--accent-wash);
+}
+/* The selected filter is a solid dark pill — the one high-contrast thing in
+   the row, so which filter is on reads at a glance rather than by tint. */
 .mcm-console .seg button.on {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--shadow-sm);
+  color: #ffffff;
+  background: #0b1220;
 }
 .mcm-console .search-mini {
   position: relative;
@@ -620,7 +603,7 @@
 }
 .mcm-console .cr-av.out {
   background: #e8efff;
-  color: #2563eb;
+  color: var(--accent);
 }
 .mcm-console .cr-av.miss {
   background: var(--crit-wash);
@@ -681,7 +664,7 @@
   color: #16a34a;
 }
 .mcm-console .cr-dir.out {
-  color: #2563eb;
+  color: var(--accent);
 }
 .mcm-console .cr-dir.miss {
   color: var(--crit);
@@ -757,9 +740,15 @@
   background: var(--live-wash);
   border-color: transparent;
 }
+/* Hover glows the phone glyph itself rather than filling the circle. */
 .mcm-console .cr-act.call:hover {
-  background: var(--live);
-  color: #fff;
+  background: var(--live-wash);
+  color: var(--live);
+}
+.mcm-console .cr-act.call:hover svg {
+  fill: var(--live);
+  stroke: var(--live);
+  filter: drop-shadow(0 0 5px var(--live));
 }
 .mcm-console .cr-top {
   display: flex;
@@ -1000,10 +989,11 @@
 /* Right-side slide-over for Notes / Transcript. */
 .mcm-console .call-sidepanel {
   position: fixed;
-  top: 0;
+  /* clears the app header (pt-16 = 64px in auth-layout) */
+  top: 64px;
   right: 0;
-  height: 100vh;
-  width: 380px;
+  height: calc(100vh - 64px);
+  width: var(--csp-w);
   max-width: 88vw;
   background: #fff;
   border-left: 1px solid var(--line);
@@ -1020,24 +1010,34 @@
 .mcm-console .csp-head {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 16px 16px 0;
+  gap: 6px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--line);
 }
+/* Pills rather than an underlined tab strip: the panel is a sidebar, not a
+   page, and a filled chip reads as "which view" at this width without a rule
+   running the whole way across. */
 .mcm-console .csp-tab {
   background: transparent;
   border: 0;
-  padding: 4px 2px 12px;
-  font-size: 15px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--ink-3);
+  color: var(--ink-2);
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+.mcm-console .csp-tab:hover {
+  color: var(--accent);
+  background: var(--accent-wash);
 }
 .mcm-console .csp-tab.on {
   color: var(--accent);
-  border-bottom-color: var(--accent);
+  background: var(--accent-wash);
 }
 .mcm-console .csp-close {
   margin-left: auto;
@@ -1093,7 +1093,9 @@
 /* Floating tab to reopen the panel. */
 .mcm-console .csp-fab {
   position: fixed;
-  top: 96px;
+  /* sits level with the Calls / Recordings / Voicemails tab row:
+     64 app header + 68 contact head + 44 stats bar + borders */
+  top: 177px;
   right: 0;
   z-index: 59;
   width: 42px;
@@ -1580,7 +1582,7 @@
 }
 .mcm-console .ptab {
   padding: 12px 11px 10px;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 700;
   color: #111111;
   border-bottom: 2px solid transparent;
@@ -2834,9 +2836,12 @@
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+/* Two children, so two tracks. This used to declare a third — left over
+   from the removed intelligence panel — whose 360-400px reserved a gutter for
+   a column that does not exist and squeezed the stage to its floor. */
 @media (max-width: 1240px) {
   .mcm-console .phone-grid {
-    grid-template-columns: 280px minmax(380px, 1fr) minmax(360px, 400px);
+    grid-template-columns: var(--mcm-list-panel-w) minmax(380px, 1fr);
   }
 }
 @media (max-width: 900px) {
@@ -3394,18 +3399,6 @@
   display: none;
 }
 
-/* live indicator on a row whose call is the one currently connected */
-.mcm-console .call-row.live-now::after {
-  content: '';
-  position: absolute;
-  right: 12px;
-  top: 14px;
-  width: 7px;
-  height: 7px;
-  border-radius: 99px;
-  background: var(--live);
-  box-shadow: 0 0 0 3px var(--live-wash);
-}
 @media (max-width: 900px) {
   .mcm-console {
     overflow: auto;
@@ -3458,7 +3451,7 @@
 /* When the Notes/Transcript slide-over is open, shift the call card left so it
    centers in the space that's still visible beside the panel. */
 .mcm-console .col.stage.panel-open .stage-inner {
-  padding-right: 380px;
+  padding-right: var(--csp-w);
 }
 /* Compact, centered dialer card to match the reference. */
 .mcm-console .col.stage .stage-inner > .card {
@@ -4394,24 +4387,25 @@
   border: 1px solid transparent;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
-.mcm-console .rec-callback {
-  background: #2563eb;
+/* Both read like the dialer's Call pill: black, white label, fully rounded. */
+.mcm-console .rec-callback,
+.mcm-console .rec-message {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: #111111;
   color: #fff;
+  border-color: #111111;
+  box-shadow: var(--shadow-sm);
 }
-.mcm-console .rec-callback:hover {
-  background: #1d4ed8;
+.mcm-console .rec-callback:hover,
+.mcm-console .rec-message:hover {
+  background: #000000;
+  border-color: #000000;
 }
 .mcm-console .rec-callback:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-.mcm-console .rec-message {
-  background: #f3f4f6;
-  color: #111827;
-  border-color: #e5e7eb;
-}
-.mcm-console .rec-message:hover {
-  background: #e5e7eb;
 }
 
 /* ---- compact stats bar ---- */
@@ -4448,7 +4442,7 @@
   color: #16a34a;
 }
 .mcm-console .rec-stat-ic.in {
-  color: #2563eb;
+  color: var(--accent);
 }
 .mcm-console .rec-stat-ic.time {
   color: #9ca3af;
@@ -4501,7 +4495,7 @@
 }
 .mcm-console .rec-sec-head h4 {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #111827;
 }
@@ -4569,7 +4563,7 @@
   font-weight: 600;
 }
 .mcm-console .rec-filter-item svg {
-  color: #2563eb;
+  color: var(--accent);
 }
 
 .mcm-console .rec-sec-body {
@@ -4607,7 +4601,7 @@
   color: #16a34a;
 }
 .mcm-console .rec-line-ic.out {
-  color: #2563eb;
+  color: var(--accent);
 }
 .mcm-console .rec-line-ic.miss {
   color: #ef4444;
@@ -4617,7 +4611,7 @@
   min-width: 0;
 }
 .mcm-console .rec-line-title {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #111827;
 }
@@ -4625,14 +4619,14 @@
   color: #0f9d63;
 }
 .mcm-console .rec-line-title.out {
-  color: #2563eb;
+  color: var(--accent);
 }
 .mcm-console .rec-line-title.miss {
   color: #ef4444;
 }
 .mcm-console .rec-line-sub {
   margin-top: 2px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: #6b7280;
 }
 .mcm-console .rec-line-acts {
@@ -4655,13 +4649,12 @@
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .mcm-console .rec-act:hover {
-  background: #16a34a;
-  border-color: #16a34a;
-  color: #fff;
+  background: var(--surface-2);
+  border-color: var(--ink-4);
 }
 .mcm-console .rec-act.on {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 .mcm-console .rec-act:disabled {
@@ -4679,7 +4672,7 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: #6b7280;
   white-space: nowrap;
 }
@@ -4754,7 +4747,7 @@
   gap: 8px;
 }
 .mcm-console .rec-group-lbl b {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #111827;
 }
@@ -4785,8 +4778,11 @@
   padding: 8px 12px;
 }
 .mcm-console .rec-card-title {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-width: 150px;
+}
+.mcm-console .rec-card-row > .rec-line-when {
+  margin-left: auto;
 }
 .mcm-console .rec-card-who {
   flex: 1 1 auto;
@@ -4831,8 +4827,8 @@
   gap: 6px;
 }
 .mcm-console .rec-card-acts .rec-act.on {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 .mcm-console .rec-card-acts .rec-more {
@@ -4863,17 +4859,23 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: none;
-  background: #2563eb;
-  color: #fff;
+  border: 1px solid #111111;
+  background: #ffffff;
+  color: #111111;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
+/* Hover is the only place red appears: the edge and the glyph turn red. */
 .mcm-console .wave-play:hover {
-  background: #1d4ed8;
+  background: #ffffff;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .mcm-console .wave-mid {
   flex: 1 1 auto;
@@ -4896,7 +4898,7 @@
   transition: background 0.1s ease;
 }
 .mcm-console .wave-bar.on {
-  background: #2563eb;
+  background: var(--accent);
 }
 .mcm-console .wave-cursor {
   position: absolute;
@@ -4909,9 +4911,9 @@
   top: 50%;
   transform: translateY(-50%);
   border-radius: 50%;
-  background: #2563eb;
+  background: var(--accent);
   border: 2px solid #fff;
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.4);
   pointer-events: none;
 }
 .mcm-console .wave-times {
@@ -4930,17 +4932,19 @@
 }
 .mcm-console .wave-vol input[type='range'] {
   width: 84px;
-  accent-color: #2563eb;
+  /* three shades lighter than the accent, so the slider reads as a control
+     rather than competing with the waveform */
+  accent-color: #f87171;
   cursor: pointer;
 }
 .mcm-console .wave-rate {
   flex: 0 0 auto;
   height: 32px;
   padding: 0 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
-  color: #374151;
+  background: var(--surface);
+  color: var(--ink-2);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -4949,19 +4953,18 @@
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 32px;
   height: 32px;
-  padding: 0 12px;
-  border: 1px solid #e5e7eb;
+  padding: 0;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
-  color: #374151;
-  font-size: 12.5px;
-  font-weight: 600;
+  background: var(--surface);
+  color: var(--ink-2);
   cursor: pointer;
 }
 .mcm-console .wave-dl:hover {
-  background: #f9fafb;
+  background: var(--surface-2);
 }
 
 @media (max-width: 860px) {
@@ -4988,26 +4991,85 @@
 
 /* ---- inline transcript (recording cards) ---- */
 .mcm-console .rec-transcript {
-  border-top: 1px solid #eef0f3;
-  background: #fbfcfe;
-  padding: 8px 12px;
+  border-top: 1px solid var(--line-2);
+  background: var(--surface-2);
+  padding: 10px 12px;
   display: flex;
-  flex-direction: column;
-  gap: 0;
+  align-items: stretch;
+  gap: 12px;
+}
+/* Transcript and Summary read as their own cards, matching the recording /
+   voicemail cards in the same list. */
+.mcm-console .rec-transcript-col,
+.mcm-console .rec-summary-col {
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.mcm-console .rec-transcript-col {
+  flex: 1 1 0;
+}
+/* Transcript / Summary switch at the top of the open panel. */
+.mcm-console .rec-panel-tabs {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line-2);
+}
+.mcm-console .rec-panel-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 6px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  cursor: pointer;
+}
+.mcm-console .rec-panel-tab svg {
+  color: inherit;
+}
+.mcm-console .rec-panel-tab:hover {
+  color: var(--accent);
+}
+.mcm-console .rec-panel-tab.on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.mcm-console .rec-summary-list {
+  margin: 0;
+  padding: 0 0 0 16px;
+  list-style: disc;
+}
+.mcm-console .rec-summary-list li {
+  margin: 0;
+  padding: 2px 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--ink-2);
 }
 .mcm-console .rec-transcript-head {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 2px;
+  margin-bottom: 6px;
   font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: #6b7280;
+  color: var(--ink-3);
 }
 .mcm-console .rec-transcript-head svg {
-  color: #9ca3af;
+  color: var(--ink-4);
 }
 /* transcript as plain text — one line per turn, no container. Modifier
    classes are prefixed (rt-) so they don't collide with the dialer's own
@@ -5019,20 +5081,374 @@
   font-size: 12.5px;
   line-height: 1.5;
   text-align: left;
-  color: #374151;
+  color: var(--ink-2);
 }
 .mcm-console .rec-turn-time {
   margin-right: 8px;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--ink-4);
 }
 .mcm-console .rec-turn-who {
   font-weight: 700;
-  color: #111827;
+  color: var(--ink);
 }
 .mcm-console .rec-turn.rt-agent .rec-turn-who {
-  color: #1d4ed8;
+  color: var(--accent-ink);
 }
 .mcm-console .rec-turn.rt-caller .rec-turn-who {
-  color: #16a34a;
+  color: var(--live);
+}
+
+/* ---- hover feedback for the buttons that had none -------------------
+   Everything clickable on the phone page should answer the pointer the way
+   the Calls / Recordings / Voicemails tabs do. */
+.mcm-console .seg button {
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.mcm-console .seg button:hover:not(.on) {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+.mcm-console .scopebtn {
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.mcm-console .scopebtn:hover:not(.on) {
+  border-color: var(--ai-edge);
+  background: var(--ai-wash);
+  color: var(--ai-ink);
+}
+.mcm-console .wave-rate {
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.mcm-console .wave-rate:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-4);
+}
+.mcm-console .btn.answer:hover {
+  filter: brightness(0.94);
+}
+
+/* Every button on the page answers the pointer the same way: its label turns
+   the accent red on hover and goes back to normal on leave. Buttons that are
+   already a solid colour block (white label on a filled pill) are left alone —
+   red-on-red would be unreadable. */
+/* The extra :not() clauses are there for specificity: several buttons define
+   their own :hover colour (.record-tab, .rec-panel-tab, .cr-act …), and the
+   rule has to outrank those to be the single hover behaviour on the page. */
+.mcm-console button:not(:disabled):not([data-keep-hover]):hover {
+  color: var(--accent);
+}
+.mcm-console button.primary:not(:disabled):not([data-x]):hover,
+.mcm-console button.danger:not(:disabled):not([data-x]):hover,
+.mcm-console button.answer:not(:disabled):not([data-x]):hover,
+.mcm-console button.ai:not(:disabled):not([data-x]):hover,
+.mcm-console .call-end-pill:not(:disabled):not([data-x]):hover,
+.mcm-console .call-hangup:not(:disabled):not([data-x]):hover,
+.mcm-console .scopebtn.on:not(:disabled):not([data-x]):hover,
+.mcm-console .rec-act.on:not(:disabled):not([data-x]):hover,
+.mcm-console .rec-callback:not(:disabled):not([data-x]):hover,
+.mcm-console .rec-message:not(:disabled):not([data-x]):hover {
+  color: #fff;
+}
+/* the row's call button keeps its green glow */
+.mcm-console .cr-act.call:not(:disabled):not([data-x]):hover {
+  color: var(--live);
+}
+
+/* ---- left column / record view: line up the horizontal rules ---------
+   The two panes stack different rows (Phone title vs contact header +
+   stats bar), so their dividers used to sit at different heights and the
+   seam between the columns looked broken. Fixed row heights on both sides
+   make each rule continue straight across: 113px header, then a 40px tab
+   strip on both. */
+.mcm-console .col.calls .col-head {
+  padding: 0;
+  gap: 0;
+  border-bottom: 0;
+}
+.mcm-console .col.calls .col-title {
+  height: 113px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+.mcm-console .col.calls .panel-tabs {
+  height: 40px;
+  padding: 0 14px !important;
+  margin: 0 !important;
+  align-items: stretch;
+}
+.mcm-console .col.calls .panel-tabs {
+  gap: 24px;
+}
+/* No side padding on the tab itself, so the first label starts at the column's
+   own 14px inset (level with the title) and the gap does the spacing. */
+.mcm-console .col.calls .panel-tabs .ptab {
+  height: 40px;
+  padding: 0;
+  font-size: 14px;
+  align-items: center;
+}
+.mcm-console .col.calls .seg {
+  margin: 10px 14px;
+}
+.mcm-console .record-view .record-head {
+  height: 68px;
+  padding: 0 18px;
+}
+.mcm-console .record-view .record-statsbar {
+  height: 44px;
+  padding: 0 18px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.mcm-console .record-view .record-tabs {
+  height: 40px;
+  padding: 0 18px;
+  align-items: stretch;
+}
+.mcm-console .record-view .record-tab {
+  height: 40px;
+  padding: 0 2px;
+  display: inline-flex;
+  align-items: center;
+}
+@media (max-width: 1100px) {
+  /* narrow: the header wraps, so let the rows size to content again */
+  .mcm-console .col.calls .col-title,
+  .mcm-console .record-view .record-head,
+  .mcm-console .record-view .record-statsbar {
+    height: auto;
+    padding: 12px 14px;
+  }
+}
+
+/* The record view's tabs are the left column's .ptab, exactly: same size,
+   weight, colour and padding — only the active underline separates them. */
+.mcm-console .record-view .record-tab {
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111111;
+}
+.mcm-console .record-view .record-tab.on {
+  color: #111111;
+  font-weight: 700;
+  border-bottom-color: var(--accent);
+}
+
+/* Buttons rest in the normal ink colour (not grey) so the red hover reads as
+   the one state change. */
+.mcm-console .cr-act,
+.mcm-console .rec-act,
+.mcm-console .rec-filter-btn,
+.mcm-console .csp-tab {
+  color: var(--ink);
+}
+
+/* note header: who the call was with, and when the note was written */
+.mcm-console .csp-note-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 11.5px;
+}
+.mcm-console .csp-note-who {
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mcm-console .csp-note-at {
+  flex: none;
+  color: var(--ink-4);
+}
+/* who the note being written is about */
+.mcm-console .csp-note-for {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+/* The Copilot tab hands the whole panel body to the ask dock: it brings its
+   own scrolling thread and composer, so .csp-body's padding would double up. */
+.mcm-console .csp-copilot {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.mcm-console .csp-copilot .pscroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px;
+}
+.mcm-console .csp-copilot .askdock {
+  flex: none;
+  border-top: 1px solid var(--line);
+}
+
+/* ---- the call panel as a real column, not an overlay ----
+   On a wide screen there is room to sit the Copilot / Notes / Transcript panel
+   *beside* the stage rather than floating it over the top: same top edge as
+   the call list and the dialer, no drop shadow, nothing underneath it to peer
+   at. Below this width there isn't room for three columns, so the rules above
+   still apply and it stays a slide-over. */
+@media (min-width: 1100px) {
+  .mcm-console .col.stage {
+    flex-direction: row;
+  }
+  .mcm-console .call-sidepanel {
+    position: relative;
+    top: auto;
+    right: auto;
+    height: auto;
+    align-self: stretch;
+    flex: none;
+    width: var(--csp-w);
+    max-width: 46%;
+    box-shadow: none;
+    transform: none;
+    transition: none;
+    display: none;
+  }
+  .mcm-console .call-sidepanel.open {
+    display: flex;
+  }
+  /* In flow it takes its own width, so the stage no longer pads around it. */
+  .mcm-console .col.stage.panel-open .stage-inner {
+    padding-right: 18px;
+  }
+  /* The floating opener is only for the overlay; in column form the panel is
+     either there or dismissed by its own X. */
+  .mcm-console .col.stage.panel-open .csp-fab {
+    display: none;
+  }
+}
+
+/* The selected filter chip does not react to hover at all.
+   `.col.calls button:…:hover` above paints every clickable thing in that
+   column red, which was repainting the active pill's white label on the way
+   past. This pins it: same colours hovered as at rest. */
+.mcm-console .col.calls .seg button.on,
+.mcm-console .col.calls .seg button.on:hover,
+.mcm-console .col.calls .seg button.on:hover svg,
+.mcm-console .seg button.on:hover {
+  color: #ffffff;
+  background: #0b1220;
+}
+
+/* ---- call row: coloured disc, name, number + talk time, clock time right ---- */
+.mcm-console .cr-av-init {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  user-select: none;
+}
+/* The clock time sits against the right edge, clear of the hover actions. */
+.mcm-console .cr-time-right {
+  flex: none;
+  align-self: center;
+  margin-left: auto;
+  padding-left: 10px;
+  font-size: 12px;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+.mcm-console .call-row:hover .cr-time-right,
+.mcm-console .call-row:focus-within .cr-time-right {
+  display: none;
+}
+/* The sub-line now carries a clock glyph, so give it the muted tone too. */
+.mcm-console .cr-sub > svg {
+  color: var(--ink-4);
+  flex: none;
+}
+.mcm-console .cr-sub .cr-rec-ic {
+  color: var(--crit);
+}
+
+/* The hover actions are taken out of flow. At `opacity: 0` they still occupied
+   width, and rows that also offer "Add contact" reserved a third button's
+   worth — which shunted their timestamp left and left the column ragged. */
+.mcm-console .call-row .cr-actions {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+/* One column for the time, so every row's clock lands on the same edge. */
+.mcm-console .cr-time-right {
+  min-width: 46px;
+  text-align: right;
+}
+
+/* ---- KPI tiles under the Phone title ---- */
+.mcm-console .cr-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 0 14px 12px;
+  flex: none;
+}
+.mcm-console .cr-kpi {
+  background: #ebedf0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+.mcm-console .cr-kpi-l {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mcm-console .cr-kpi-v {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.mcm-console .cr-kpi-s {
+  font-size: 11px;
+  color: var(--ink-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The title block is a fixed 113px; with the tiles below it the head needs to
+   size to its content instead. */
+.mcm-console .col.calls .col-title {
+  height: auto;
+  padding: 12px 14px;
+  /* The KPI tiles sit directly beneath, so a rule here only cut the header in
+     half — the head's own bottom border still closes the block. */
+  border-bottom: 0;
 }

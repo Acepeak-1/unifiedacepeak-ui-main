@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Ic } from '@/components/mcm/icons';
 import SideDrawer from '@/components/custom/side-drawer';
 import UpdateForwarding from '@/pages/admin-settings/people/update-forwarding';
-import { DirectoryDrawer, DirectoryPage, EmptyRow, FilterChip, SearchChip } from './page-shell';
+import { DirectoryDrawer, DirectoryPage, EmptyRow, Kpi, SearchChip } from './page-shell';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import { useConsoleDialer } from '@/pages/phone/console/dial-number';
 import { useInstantMeeting } from '@/hooks/use-instant-meeting';
-import { usePeopleRows, type PersonRow } from './people-rows';
+import { usePeopleRows, type PersonRow, type PresenceTone } from './people-rows';
 import { useDirectoryFavourites } from './use-directory-favourites';
 import { useUser } from '@/hooks/use-user';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -28,6 +28,25 @@ import AssignCallerIdModal from '@/pages/admin-settings/people/add-users/assign-
 import AddUsers from '@/pages/admin-settings/people/add-users';
 import { invalidateNumberLists } from '@/lib/number-list-cache';
 import { buildRosterCsv, rosterFileName, toExportRow } from '@/lib/user-roster-export';
+import {
+  Check,
+  ChevronDown,
+  Filter as FilterIcon,
+  InfoIcon,
+  MoreVertical,
+} from 'lucide-react';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import MultipleAssignNumber from '@/pages/admin-settings/people/add-users/multiple-assign-number';
+import './people-theme.css';
 
 /**
  * Directory ▸ People — the organisation roster.
@@ -49,11 +68,63 @@ const TONE_CLASS: Record<string, string> = {
   idle: 'tag neu',
 };
 
+/* Same tones, mapped onto the .tbl__pill-- variants used by the roster table. */
+const TONE_PILL_CLASS: Record<string, string> = {
+  good: 'tbl__pill--live',
+  busy: 'tbl__pill--busy',
+  warn: 'tbl__pill--draft',
+  idle: 'tbl__pill--paused',
+};
+
+/* Sample roster so the page has enough rows to demonstrate scrolling. Ids are
+   prefixed 'dummy-' and never sent to the API — remove this block once real
+   accounts fill the list out. */
+const DUMMY_PRESENCE_TONE: Record<string, PresenceTone> = {
+  Available: 'good',
+  'On Call': 'busy',
+  Busy: 'busy',
+  Offline: 'idle',
+};
+const DUMMY_PEOPLE_SEED = [
+  { name: 'Sara Mitchell', role: 'Agent', department: 'Sales', location: 'New York HQ', city: 'New York, USA', presence: 'Available', extension: '2001', skills: ['Billing'] },
+  { name: 'James Carter', role: 'Agent', department: 'Support', location: 'London Office', city: 'London, UK', presence: 'Offline', extension: '2002', skills: [] },
+  { name: 'Priya Nair', role: 'Manager', department: 'Sales', location: 'Mumbai Office', city: 'Mumbai, India', presence: 'On Call', extension: '2003', skills: ['VIP Support'] },
+  { name: 'Daniel Wu', role: 'Agent', department: 'Engineering', location: 'New York HQ', city: 'New York, USA', presence: 'Available', extension: '2004', skills: [] },
+  { name: 'Emma Davis', role: 'Support Rep', department: 'Support', location: 'London Office', city: 'London, UK', presence: 'Busy', extension: '2005', skills: ['Technical'] },
+  { name: 'Michael Chen', role: 'Agent', department: 'Marketing', location: 'Toronto Office', city: 'Toronto, Canada', presence: 'Offline', extension: '2006', skills: [] },
+  { name: 'Olivia Brown', role: 'Manager', department: 'Marketing', location: 'Toronto Office', city: 'Toronto, Canada', presence: 'Available', extension: '2007', skills: ['Campaigns'] },
+  { name: 'Liam Wilson', role: 'Agent', department: 'Engineering', location: 'Mumbai Office', city: 'Mumbai, India', presence: 'Offline', extension: '2008', skills: [] },
+  { name: 'Sophia Martinez', role: 'Support Rep', department: 'Support', location: 'New York HQ', city: 'New York, USA', presence: 'Available', extension: '2009', skills: ['Billing', 'Technical'] },
+  { name: 'Noah Anderson', role: 'Agent', department: 'Sales', location: 'London Office', city: 'London, UK', presence: 'On Call', extension: '2010', skills: [] },
+  { name: 'Ava Thompson', role: 'Agent', department: 'Engineering', location: 'Toronto Office', city: 'Toronto, Canada', presence: 'Available', extension: '2011', skills: [] },
+  { name: 'Ethan Rodriguez', role: 'Manager', department: 'Support', location: 'Mumbai Office', city: 'Mumbai, India', presence: 'Busy', extension: '2012', skills: ['VIP Support'] },
+] as const;
+const DUMMY_PEOPLE_ROWS: PersonRow[] = DUMMY_PEOPLE_SEED.map((seed, index) => ({
+  uuid: `dummy-${index + 1}`,
+  name: seed.name,
+  initials: seed.name.split(' ').map((part) => part[0]).join(''),
+  email: `${seed.name.toLowerCase().replace(/\s+/g, '.')}@mcmbpo.com`,
+  role: seed.role,
+  department: seed.department,
+  extension: seed.extension,
+  location: seed.location,
+  locationPlace: seed.city,
+  jobTitle: seed.role,
+  phone: '',
+  callerId: '',
+  skills: [...seed.skills],
+  presence: seed.presence,
+  availability: seed.presence === 'Available' ? 'online' : 'offline',
+  tone: DUMMY_PRESENCE_TONE[seed.presence] || 'idle',
+  raw: { uuid: `dummy-${index + 1}`, first_name: seed.name, is_dummy: true },
+}));
+
 const People = () => {
   const navigate = useNavigate();
   const { dial } = useConsoleDialer();
   const { startVideoCall, isStarting } = useInstantMeeting();
-  const { rows, isLoading } = usePeopleRows();
+  const { rows: apiRows, isLoading, refetch: refetchRoster } = usePeopleRows();
+  const rows = useMemo(() => [...apiRows, ...DUMMY_PEOPLE_ROWS], [apiRows]);
 
   const { user } = useUser();
   const { setMyPresence, isPending: isSettingPresence, myUuid } = useMyPresenceControl();
@@ -116,7 +187,16 @@ const People = () => {
 
   const [changingRole, setChangingRole] = useState<PersonRow | null>(null);
   const [assigningCallerId, setAssigningCallerId] = useState<PersonRow | null>(null);
+  /* Assign Caller ID can hand off into a bulk "assign multiple numbers" step
+     of its own (see assign-caller-id-modal.tsx's onOpenMultipleAssignModal) —
+     this is that step's own dialog. */
+  const [showMultipleAssignModal, setShowMultipleAssignModal] = useState(false);
+  const [multipleAssignUsers, setMultipleAssignUsers] = useState<any[]>([]);
   const [inviting, setInviting] = useState(false);
+  /* Bumping this remounts <AddUsers> from scratch — the simplest reliable way
+     to reset its internal form/stepper state without reaching into a
+     component shared with License Management's own Add Users flow. */
+  const [inviteFormKey, setInviteFormKey] = useState(0);
 
   const [search, setSearch] = useState('');
   const [department, setDepartment] = useState('All');
@@ -166,6 +246,9 @@ const People = () => {
   }, [rows, search, department, presence, location]);
 
   const onQueue = rows.filter((row) => row.tone === 'good').length;
+  const activeFilterCount = [department !== 'All', location !== 'All', presence !== 'Any'].filter(
+    Boolean,
+  ).length;
 
   /* Take the roster away as a spreadsheet.
    *
@@ -199,10 +282,34 @@ const People = () => {
   };
 
   return (
-    <>
+    <div className="ppl-red-theme">
       <DirectoryPage
-        title="People"
-        description="Everyone in the organisation, with live presence, skills and one-click contact."
+        title={
+          <span className="flex items-center gap-2">
+            People
+            <CustomTooltip
+              text={
+                <>
+                  Everyone in the organisation, with live presence,
+                  <br />
+                  skills and one-click contact.
+                </>
+              }
+              side="top"
+              className="!bg-gray-300 !text-black"
+            >
+              <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+            </CustomTooltip>
+          </span>
+        }
+        stats={
+          <>
+            <Kpi label="Total people" value={rows.length} />
+            <Kpi label="Available" value={onQueue} />
+            <Kpi label="Offline" value={rows.length - onQueue} />
+            <Kpi label="Groups" value={Math.max(departments.length - 1, 0)} />
+          </>
+        }
         actions={
           <>
             <button
@@ -233,7 +340,7 @@ const People = () => {
             {canInvite ? (
               <button
                 type="button"
-                className="btn primary soft-accent"
+                className="btn primary"
                 onClick={() => setInviting(true)}
               >
                 <Ic n="plus" />
@@ -244,25 +351,81 @@ const People = () => {
         }
         filters={
           <>
-            <FilterChip
-              label="Groups"
-              value={department}
-              options={departments}
-              onChange={setDepartment}
-            />
-            <FilterChip
-              label="Location"
-              value={location}
-              options={locations}
-              onChange={setLocation}
-            />
-            <FilterChip
-              label="Presence"
-              value={presence}
-              options={presences}
-              onChange={setPresence}
-            />
             <SearchChip value={search} onChange={setSearch} placeholder="Search people" />
+            <button
+              type="button"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+              title="Refresh"
+              aria-label="Refresh the roster"
+              onClick={() => refetchRoster()}
+            >
+              <Ic n="refresh" size={15} />
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="fchip fchip-select">
+                  <FilterIcon size={13} />
+                  Filters
+                  {activeFilterCount ? ` (${activeFilterCount})` : ''}
+                  <ChevronDown size={12} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[220px] border-transparent">
+                <DropdownMenuLabel className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-900">
+                  <Ic n="users" size={16} />
+                  Groups
+                </DropdownMenuLabel>
+                {departments.map((option) => (
+                  <DropdownMenuItem
+                    key={`department-${option}`}
+                    className="ppl-row-menu-item justify-between"
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      setDepartment(option);
+                    }}
+                  >
+                    {option}
+                    {option === department ? <Check size={14} /> : null}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-900">
+                  <Ic n="globe" size={16} />
+                  Location
+                </DropdownMenuLabel>
+                {locations.map((option) => (
+                  <DropdownMenuItem
+                    key={`location-${option}`}
+                    className="ppl-row-menu-item justify-between"
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      setLocation(option);
+                    }}
+                  >
+                    {option}
+                    {option === location ? <Check size={14} /> : null}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-900">
+                  <Ic n="bolt" size={16} />
+                  Presence
+                </DropdownMenuLabel>
+                {presences.map((option) => (
+                  <DropdownMenuItem
+                    key={`presence-${option}`}
+                    className="ppl-row-menu-item justify-between"
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      setPresence(option);
+                    }}
+                  >
+                    {option}
+                    {option === presence ? <Check size={14} /> : null}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <span className="fchip live" style={{ marginLeft: 'auto' }}>
               <span className="num">{onQueue}</span> available
             </span>
@@ -274,17 +437,17 @@ const People = () => {
             everything is done, so an established account never sees it. */}
         <SetupGuide companyInfo={user?.company_info} />
 
-        <table>
+        <table className="tbl">
           <thead>
-            <tr>
-              <th>Person</th>
-              <th>Role</th>
-              <th>Groups</th>
-              <th>Location</th>
-              <th>Numbers</th>
-              <th>ACD skills</th>
-              <th>Presence</th>
-              <th>Contact</th>
+            <tr className="tbl__head-row">
+              <th className="tbl__th tbl__th--left">Person</th>
+              <th className="tbl__th tbl__th--left">Role</th>
+              <th className="tbl__th tbl__th--left">Groups</th>
+              <th className="tbl__th tbl__th--left">Location</th>
+              <th className="tbl__th tbl__th--left">Numbers</th>
+              <th className="tbl__th tbl__th--left">ACD skills</th>
+              <th className="tbl__th tbl__th--center">Presence</th>
+              <th className="tbl__th tbl__th--center">Contact</th>
             </tr>
           </thead>
           <tbody>
@@ -292,43 +455,33 @@ const People = () => {
               <EmptyRow span={8} message="Loading the roster…" />
             ) : visible.length ? (
               visible.map((row: PersonRow) => (
-                <tr key={row.uuid}>
-                  <td>
-                    <span className="flex items-center gap-2.5">
+                <tr key={row.uuid} className="tbl__row">
+                  <td className="tbl__td tbl__td--left">
+                    <span className="tbl__agent">
                       <CustomAvatar name={row.name} image={row.image} size="30" />
-                      <span style={{ minWidth: 0 }}>
-                        <span style={{ fontWeight: 700, display: 'block' }}>{row.name}</span>
-                        {row.jobTitle ? (
-                          <span style={{ fontSize: 11, color: 'var(--ink-3)', display: 'block' }}>
-                            {row.jobTitle}
-                          </span>
-                        ) : null}
-                        {row.email ? (
-                          <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>{row.email}</span>
-                        ) : null}
+                      <span className="tbl__agent-meta">
+                        <span className="tbl__name">{row.name}</span>
+                        {row.jobTitle ? <span className="tbl__subtitle">{row.jobTitle}</span> : null}
+                        {row.email ? <span className="tbl__subtitle">{row.email}</span> : null}
                       </span>
                     </span>
                   </td>
-                  <td>{row.role}</td>
-                  <td>{row.department}</td>
-                  <td>
-                    <span style={{ display: 'block' }}>{row.location}</span>
+                  <td className="tbl__td tbl__td--left tbl__value">{row.role}</td>
+                  <td className="tbl__td tbl__td--left tbl__value--muted">{row.department}</td>
+                  <td className="tbl__td tbl__td--left">
+                    <span className="tbl__value">{row.location}</span>
                     {row.locationPlace ? (
-                      <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>
-                        {row.locationPlace}
-                      </span>
+                      <span className="tbl__subtitle">{row.locationPlace}</span>
                     ) : null}
                   </td>
                   {/* Extension is the internal number, caller ID the outbound
                       one people outside the org actually see. Both belong here;
                       the personal phone stays in the drawer. */}
-                  <td className="num">
-                    <span style={{ display: 'block' }}>{row.extension || '—'}</span>
-                    {row.callerId ? (
-                      <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>{row.callerId}</span>
-                    ) : null}
+                  <td className="tbl__td tbl__td--left num">
+                    <span className="tbl__value">{row.extension || '—'}</span>
+                    {row.callerId ? <span className="tbl__subtitle">{row.callerId}</span> : null}
                   </td>
-                  <td>
+                  <td className="tbl__td tbl__td--left tbl__value--muted">
                     {row.skills.length ? (
                       row.skills.join(', ')
                     ) : (
@@ -338,8 +491,11 @@ const People = () => {
                   {/* Your own row gets a control; everyone else's shows only the
                       live state. Availability is yours to set and nobody else's,
                       so there is nothing to display or imply on their rows. */}
-                  <td onClick={(event) => event.stopPropagation()}>
-                    <span className={TONE_CLASS[row.tone] || 'tag neu'}>{row.presence}</span>
+                  <td className="tbl__td tbl__td--center" onClick={(event) => event.stopPropagation()}>
+                    <span className={`tbl__pill ${TONE_PILL_CLASS[row.tone] || 'tbl__pill--paused'}`}>
+                      <span className="tbl__pill-dot" />
+                      {row.presence}
+                    </span>
                     {row.uuid === myUuid ? (
                       <select
                         className="mcm-presence-set"
@@ -356,131 +512,121 @@ const People = () => {
                       </select>
                     ) : null}
                   </td>
-                  <td>
-                    <span className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        className={`mini${isFavourite('person', row.uuid) ? ' mcm-fav-on' : ''}`}
-                        title={
-                          isFavourite('person', row.uuid)
-                            ? `Remove ${row.name} from favourites`
-                            : `Add ${row.name} to favourites`
-                        }
-                        aria-label={
-                          isFavourite('person', row.uuid)
-                            ? `Remove ${row.name} from favourites`
-                            : `Add ${row.name} to favourites`
-                        }
-                        aria-pressed={isFavourite('person', row.uuid)}
-                        onClick={() => toggleFavourite('person', row.uuid)}
+                  <td className="tbl__td tbl__td--center" onClick={(event) => event.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="ppl-row-menu-trigger"
+                          title={`Actions for ${row.name}`}
+                          aria-label={`Actions for ${row.name}`}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="ppl-row-menu border-transparent"
                       >
-                        <Ic n="star" size={12} fill={isFavourite('person', row.uuid)} />
-                      </button>
-                      <button
-                        type="button"
-                        className="mini"
-                        title={`Call ${row.name}`}
-                        aria-label={`Call ${row.name}`}
-                        disabled={!row.extension}
-                        onClick={() =>
-                          row.extension && dial(row.extension, { forceRefreshContactInfo: true })
-                        }
-                      >
-                        <Ic n="phone" size={12} />
-                      </button>
-                      <button
-                        type="button"
-                        className="mini"
-                        title={`Message ${row.name}`}
-                        aria-label={`Message ${row.name}`}
-                        onClick={() => navigate(`/messenger?chatId=${row.uuid}&chatType=chat`)}
-                      >
-                        <Ic n="chat" size={12} />
-                      </button>
-                      <button
-                        type="button"
-                        className="mini"
-                        title={`Start video with ${row.name}`}
-                        aria-label={`Start video with ${row.name}`}
-                        disabled={isStarting}
-                        onClick={() =>
-                          startVideoCall(
-                            { user_uuid: row.uuid, name: row.name, email: row.email },
-                            `Call with ${row.name}`,
-                          )
-                        }
-                      >
-                        <Ic n="video" size={12} />
-                      </button>
-                      {canEdit ? (
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`Edit ${row.name}`}
-                          aria-label={`Edit ${row.name}`}
-                          onClick={() => setEditing(row)}
+                        <DropdownMenuItem
+                          onSelect={() => toggleFavourite('person', row.uuid)}
+                          className="ppl-row-menu-item"
                         >
-                          <Ic n="sliders" size={12} />
-                        </button>
-                      ) : null}
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`${row.name}'s activity`}
-                          aria-label={`${row.name}'s activity`}
-                          onClick={() => navigate(`/activity/${row.uuid}`)}
+                          <Ic n="star" size={14} fill={isFavourite('person', row.uuid)} />
+                          {isFavourite('person', row.uuid)
+                            ? 'Remove from favourites'
+                            : 'Add to favourites'}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={!row.extension}
+                          onSelect={() =>
+                            row.extension &&
+                            dial(row.extension, { forceRefreshContactInfo: true })
+                          }
+                          className="ppl-row-menu-item"
                         >
-                          <Ic n="clock" size={12} />
-                        </button>
-                      ) : null}
-                      {canChangeRoleOf(row) ? (
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`Change ${row.name}'s role`}
-                          aria-label={`Change ${row.name}'s role`}
-                          onClick={() => setChangingRole(row)}
+                          <Ic n="phone" size={14} />
+                          Call
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={() => navigate(`/messenger?chatId=${row.uuid}&chatType=chat`)}
+                          className="ppl-row-menu-item"
                         >
-                          <Ic n="shield" size={12} />
-                        </button>
-                      ) : null}
-                      {canAssignCallerId && row.callerId ? (
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`Remove ${row.name}'s caller ID`}
-                          aria-label={`Remove ${row.name}'s caller ID`}
-                          onClick={() => setUnassigning(row)}
+                          <Ic n="chat" size={14} />
+                          Message
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={isStarting}
+                          onSelect={() =>
+                            startVideoCall(
+                              { user_uuid: row.uuid, name: row.name, email: row.email },
+                              `Call with ${row.name}`,
+                            )
+                          }
+                          className="ppl-row-menu-item"
                         >
-                          <Ic n="x" size={12} />
-                        </button>
-                      ) : null}
-                      {/* Admins can remove a person; never yourself, and never
-                          another admin unless you are one. */}
-                      {canDelete && row.uuid !== myUuid ? (
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`Remove ${row.name}`}
-                          aria-label={`Remove ${row.name}`}
-                          onClick={() => setDeleting(row)}
-                        >
-                          <Ic n="trash" size={12} />
-                        </button>
-                      ) : null}
-                      {canAssignCallerId ? (
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`Assign a caller ID to ${row.name}`}
-                          aria-label={`Assign a caller ID to ${row.name}`}
-                          onClick={() => setAssigningCallerId(row)}
-                        >
-                          <Ic n="vm" size={12} />
-                        </button>
-                      ) : null}
-                    </span>
+                          <Ic n="video" size={14} />
+                          Start video
+                        </DropdownMenuItem>
+                        {canEdit ? (
+                          <DropdownMenuItem
+                            onSelect={() => setEditing(row)}
+                            className="ppl-row-menu-item"
+                          >
+                            <Ic n="sliders" size={14} />
+                            Edit
+                          </DropdownMenuItem>
+                        ) : null}
+                        {isAdmin ? (
+                          <DropdownMenuItem
+                            onSelect={() => navigate(`/activity/${row.uuid}`)}
+                            className="ppl-row-menu-item"
+                          >
+                            <Ic n="clock" size={14} />
+                            Activity
+                          </DropdownMenuItem>
+                        ) : null}
+                        {canChangeRoleOf(row) ? (
+                          <DropdownMenuItem
+                            onSelect={() => setChangingRole(row)}
+                            className="ppl-row-menu-item"
+                          >
+                            <Ic n="shield" size={14} />
+                            Change role
+                          </DropdownMenuItem>
+                        ) : null}
+                        {canAssignCallerId ? (
+                          <DropdownMenuItem
+                            onSelect={() => setAssigningCallerId(row)}
+                            className="ppl-row-menu-item"
+                          >
+                            <Ic n="vm" size={14} />
+                            Assign caller ID
+                          </DropdownMenuItem>
+                        ) : null}
+                        {canAssignCallerId && row.callerId ? (
+                          <DropdownMenuItem
+                            onSelect={() => setUnassigning(row)}
+                            className="ppl-row-menu-item"
+                          >
+                            <Ic n="x" size={14} />
+                            Remove caller ID
+                          </DropdownMenuItem>
+                        ) : null}
+                        {/* Admins can remove a person; never yourself, and never
+                            another admin unless you are one. */}
+                        {canDelete && row.uuid !== myUuid ? (
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => setDeleting(row)}
+                            className="ppl-row-menu-item"
+                          >
+                            <Ic n="trash" size={14} />
+                            Remove
+                          </DropdownMenuItem>
+                        ) : null}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))
@@ -613,14 +759,22 @@ const People = () => {
       {/* The platform's own add-user flow, opened in place rather than
           bouncing to Admin — the console keeps you in Directory. */}
       {inviting && (
-        <SideDrawer
-          isOpen={inviting}
-          title="Invite people"
-          width="min(1180px, 88vw)"
-          isTab={false}
-          handleClose={() => setInviting(false)}
-          content={<AddUsers setDrawerState={() => setInviting(false)} />}
-        />
+        <Dialog open={inviting} onOpenChange={(val) => !val && setInviting(false)}>
+          <DialogContent className="ppl-invite-dialog flex w-[92vw] max-w-[720px] max-h-[85vh] flex-col gap-0 overflow-hidden p-0">
+            <DialogTitle className="ppl-serif-heading flex items-center gap-2 px-5 py-3 text-xl text-gray-900">
+              Invite people
+            </DialogTitle>
+            <div className="ppl-invite-theme">
+              <div className="min-h-0 flex-1 flex flex-col">
+                <AddUsers
+                  key={inviteFormKey}
+                  setDrawerState={() => setInviting(false)}
+                  onReset={() => setInviteFormKey((key) => key + 1)}
+                />
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       <AlertConfirm
@@ -690,7 +844,36 @@ const People = () => {
             : null
         }
         onClose={() => setAssigningCallerId(null)}
+        onOpenMultipleAssignModal={(users) => {
+          setMultipleAssignUsers(users || []);
+          setShowMultipleAssignModal(true);
+        }}
       />
+
+      {showMultipleAssignModal && (
+        <Dialog
+          open={showMultipleAssignModal}
+          onOpenChange={(val) => {
+            setShowMultipleAssignModal(val);
+            if (!val) {
+              setMultipleAssignUsers([]);
+            }
+          }}
+        >
+          <DialogContent
+            className="md:w-3/6 p-3 max-h-[99%] overflow-y-auto"
+            showCloseButton={false}
+          >
+            <MultipleAssignNumber
+              users={multipleAssignUsers}
+              handleClose={() => {
+                setShowMultipleAssignModal(false);
+                setMultipleAssignUsers([]);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* An explicit width matters: without one SideDrawer falls back to
           `calc(100% - 21rem)`, which is ~1660px on a wide screen — far more
@@ -714,7 +897,7 @@ const People = () => {
           }
         />
       ) : null}
-    </>
+    </div>
   );
 };
 

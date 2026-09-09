@@ -56,25 +56,19 @@ const OrderSummary = ({
   return (
     <div className={`flex justify-end gap-4 ${mainCustomClass}`}>
       <div className={`border border-grey-200 p-3 rounded-xl ${customClass}`}>
-        <h5 className="font-semibold text-gray-900 truncate text-md border-b border-gray-200 pb-3">
+        <h5 className="font-semibold text-gray-900 truncate text-xs border-b border-gray-200 pb-3">
           Order Summary
         </h5>
 
-        <ul className="flex flex-col gap-2 pt-3 text-sm text-gray-800">
-          <li className="flex items-center justify-between gap-2">
+        <ul className="grid grid-cols-1 gap-x-10 gap-y-1 pt-3 text-xs text-gray-800 sm:grid-cols-2">
+          <li className="flex items-center gap-2 sm:col-span-2">
             <span className="font-semibold">Monthly License Cost:</span>
 
             {isLoading ? (
               <Skeleton className="h-3 w-[60px] bg-gray-200" />
             ) : (
-              <>${getTaxes?.plan_cost}</>
+              <>$ {getTaxes?.plan_cost}</>
             )}
-          </li>
-          <li className="flex items-center justify-between gap-2">
-            <span className="font-semibold">
-              Prorated Period ({today?.format('MMM D')} – {expirationDate?.format('MMM D')}):
-            </span>{' '}
-            {remainingDays} days
           </li>
           <li className="flex items-center justify-between gap-2">
             <span className="font-semibold">Prorated Charge for {totalPayableUnit} Licenses:</span>{' '}
@@ -97,6 +91,12 @@ const OrderSummary = ({
                 <span className="font-normal">({Number(getTaxes?.tax_percentage ?? 0) || 0}%)</span>
               </div>
             )}
+          </li>
+          <li className="flex items-center justify-between gap-2">
+            <span className="font-semibold">
+              Prorated Period ({today?.format('MMM D')} – {expirationDate?.format('MMM D')}):
+            </span>{' '}
+            {remainingDays} days
           </li>
           <li className="flex items-center justify-between gap-2">
             <span className="font-semibold">Total Amount:</span>

@@ -1,4 +1,6 @@
-import { ConnectIcon, SettingsLine, Warning, WhatsappLineIcon } from '@/assets/icons';
+import { WhatsappLineIcon } from '@/assets/icons';
+import ChannelCard from '../channel-card';
+import { DEMO_CHANNELS } from '../constants';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,14 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
 import MetaLogo from '@/assets/images/MetaLogo.png';
 import { useState } from 'react';
 import { connectMetaChannel, handleAlert } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSocialMediaChannelList, changeOmniStatus, deleteOmniChannel } from '@/services/api';
-import Loader from '@/components/custom/loader';
-import { CircleCheckIcon, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 import { useUser } from '@/hooks/use-user';
 
@@ -66,106 +66,26 @@ const WhatsappChannel = () => {
 
   return (
     <div>
-      <div
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setIsWhatsappModalOpen(true);
+      <ChannelCard
+        icon={<WhatsappLineIcon className="w-6 h-6" />}
+        tone="whatsapp"
+        name="WhatsApp"
+        description="Handle customer chats and media from your WhatsApp Business number."
+        /* DEMO fallback — remove with DEMO_CHANNELS before release. */
+        isConnected={isWhatsappConnected || DEMO_CHANNELS.whatsapp.connected}
+        account={DEMO_CHANNELS.whatsapp.account}
+        capabilities={DEMO_CHANNELS.whatsapp.capabilities}
+        isLoading={isLodingChannelList}
+        onConnect={() => setIsWhatsappModalOpen(true)}
+        onManage={handleConnect}
+        onDelete={() => setIsDeleteModalOpen(true)}
+        switchChecked={whatsappData ? whatsappData.status === 1 : Boolean(DEMO_CHANNELS.whatsapp.enabled)}
+        onSwitchChange={(checked) => {
+          if (whatsappData?.uuid) {
+            mutateStatusChange({ uuid: whatsappData.uuid, status: checked ? 1 : 0 });
           }
         }}
-        className="w-full bg-white rounded-xl p-4 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] hover:decoration flex flex-col gap-4 text-left "
-      >
-        <div className={`w-full flex flex-col gap-4 `}>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex gap-3 items-center text-sm">
-              <div className="w-9 h-9 flex items-center justify-center p-2 rounded-full bg-green-100 text-green-600">
-                <WhatsappLineIcon className="w-8 h-8" />
-              </div>
-              <h6 className={`font-medium`}>WhatsApp</h6>
-            </div>
-          </div>
-          <p className="text-gray-700 text-sm">
-            Create a WhatsApp Business Account with 360 dialog or Twilio and connect it.
-          </p>
-
-          {isLodingChannelList ? (
-            <div className="p-3">
-              <Loader variant="blue" />
-            </div>
-          ) : (
-            <div
-              className={`flex items-center gap-2 p-3 rounded-lg ${isWhatsappConnected ? 'bg-green-50' : 'bg-yellow-50'}`}
-            >
-              <div className={isWhatsappConnected ? 'text-green-600' : 'text-yellow-600'}>
-                {isWhatsappConnected ? (
-                  <CircleCheckIcon className="w-5 h-5" />
-                ) : (
-                  <Warning className="w-4 h-4" />
-                )}
-              </div>
-
-              <p
-                className={`font-medium text-sm leading-relaxed ${
-                  isWhatsappConnected ? 'text-green-600' : 'text-yellow-600'
-                }`}
-              >
-                {isWhatsappConnected ? 'WhatsApp is connected' : 'Setup required'}
-              </p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between gap-2">
-            {!isWhatsappConnected ? (
-              <div
-                className="flex gap-1 items-center text-primary text-sm cursor-pointer"
-                onClick={() => setIsWhatsappModalOpen(true)}
-              >
-                <ConnectIcon className="w-5 h-5" />
-                <h6 className={`font-medium`}>Connect Account </h6>
-              </div>
-            ) : (
-              <div className="flex gap-3 items-center">
-                <div
-                  className="flex gap-1 items-center text-primary text-sm cursor-pointer"
-                  onClick={handleConnect}
-                >
-                  <SettingsLine className="w-5 h-5" />
-                  <h6 className={`font-medium`}>Manage Settings </h6>
-                </div>
-                <div
-                  className="flex gap-1 items-center text-red-500 hover:text-red-600 text-sm cursor-pointer"
-                  onClick={() => setIsDeleteModalOpen(true)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <h6 className={`font-medium`}>Delete</h6>
-                </div>
-              </div>
-            )}
-
-            <div
-              className="flex items-center gap-2"
-              onClick={(e) => e.stopPropagation()}
-              onDoubleClick={(e) => e.stopPropagation()}
-            >
-              <p className="text-gray-500 text-sm">Active</p>
-              <Switch
-                disabled={!isWhatsappConnected}
-                checked={whatsappData?.status === 1}
-                onCheckedChange={(checked) => {
-                  if (whatsappData?.uuid) {
-                    mutateStatusChange({
-                      uuid: whatsappData.uuid,
-                      status: checked ? 1 : 0,
-                    });
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      />
 
       <Dialog open={isWhatsappModalOpen} onOpenChange={setIsWhatsappModalOpen}>
         <DialogContent className="w-[720px] max-w-[95vw] max-h-[90vh] overflow-y-auto p-0 border-gray-200">

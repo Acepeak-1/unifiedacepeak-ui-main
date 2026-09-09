@@ -1,0 +1,139 @@
+/* .mcm-page sizes .page via flexbox and relies on it being a direct flex
+   child; this wrapper div sits between them, so without `display: contents`
+   .page can't shrink/scroll and instead gets clipped by .mcm-page's
+   `overflow: hidden`. See people-theme.css's .ppl-red-theme rule for the
+   full explanation — same fix, every Directory page wrapper needs it. */
+.ext-theme {
+  display: contents;
+}
+
+/* The shared .fchip search/filter pills turn their border/text --accent-ink
+   on hover, which defaults to blue since this page sets no accent override —
+   kept black here instead. */
+.mcm-page .ext-theme .fchip:hover {
+  border-color: var(--line);
+  color: #171717;
+}
+
+/* External Contacts page — scoped to specific class names below so it only
+   touches this page. Specificity matches .mcm-page .btn.primary (3 classes)
+   so this actually wins instead of losing back to the default blue. */
+.mcm-page .btn.primary.ext-black-btn {
+  background: #171717;
+  color: #fff;
+}
+.mcm-page .btn.primary.ext-black-btn:hover {
+  background: #000;
+}
+
+/* External Contacts table skin: matches the .tbl/.tbl__* row spec used on
+   the analytics tables (avatar+name+subtitle cell, uppercase header). */
+.ext-theme .tbl-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+}
+.ext-theme .tbl {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.ext-theme .tbl__head-row {
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+}
+.ext-theme .tbl__th {
+  background: #fafafa;
+  padding: 13px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #737373;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ext-theme .tbl__th:first-child {
+  padding-left: 18px;
+}
+.ext-theme .tbl__th--left {
+  text-align: left;
+}
+.ext-theme .tbl__th--center {
+  text-align: center;
+}
+.ext-theme .tbl__row {
+  background: #ffffff;
+  transition: background-color 0.15s ease;
+  height: 52.67px;
+}
+.ext-theme .tbl__row:hover {
+  background: #fafafa;
+}
+.ext-theme .tbl__td {
+  background: transparent;
+  padding: 8px 10px;
+  height: auto;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ext-theme .tbl__td:first-child {
+  padding-left: 18px;
+}
+.ext-theme .tbl__td--left {
+  text-align: left;
+}
+.ext-theme .tbl__td--center {
+  text-align: center;
+}
+.ext-theme .tbl__agent {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+.ext-theme .tbl__agent-meta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.ext-theme .tbl__name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25rem;
+  color: #020617;
+}
+.ext-theme .tbl__subtitle {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1rem;
+  color: #737373;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ext-theme .tbl__value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #020617;
+}
+.ext-theme .tbl__value--muted {
+  font-weight: 400;
+  color: #334155;
+}

@@ -12,7 +12,6 @@ import { useOrganization } from '@/hooks/use-organisation';
 import { handleAlert } from '@/lib/utils';
 import { fetchAllPages } from '@/lib/fetch-all-pages';
 import Loader from '@/components/custom/loader';
-import SideDrawer from '@/components/custom/side-drawer';
 import UpdateForwarding from '@/pages/admin-settings/people/update-forwarding';
 import { Ic } from '@/components/mcm/icons';
 import { AdminPage } from '@/pages/admin-settings/page-shell';
@@ -27,6 +26,19 @@ import {
   type Coverage,
 } from '@/lib/call-standard';
 import { invalidateNumberLists } from '@/lib/number-list-cache';
+import {
+  Hash,
+  Users,
+  Voicemail,
+  X,
+  Wrench,
+  KeyRound,
+  Phone,
+  Sparkles,
+} from 'lucide-react';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import TableSearchHeader from '@/components/custom/table-search-header';
 import '@/components/mcm/mcm-page.css';
 
 /**
@@ -53,6 +65,11 @@ const STATE_CLASS: Record<Coverage['state'], string> = {
   gap: 'tag neg',
 };
 
+/* Shown as a tooltip off the title's info icon rather than a line under it —
+   see AdminPage's `titleSuffix` prop. */
+const PAGE_DESCRIPTION =
+  'Which numbers and extensions would drop a call right now, and what it takes to close each gap.';
+
 type Tab = 'numbers' | 'extensions' | 'greetings';
 
 const CallCoverage = () => {
@@ -60,6 +77,7 @@ const CallCoverage = () => {
   const [tab, setTab] = useState<Tab>('numbers');
   const [confirming, setConfirming] = useState<{ did: any; coverage: Coverage } | null>(null);
   const [onlyGaps, setOnlyGaps] = useState(true);
+  const [search, setSearch] = useState('');
   const [editingUser, setEditingUser] = useState<any>(null);
   const [generating, setGenerating] = useState<string | null>(null);
   const [, setGeneratedFor] = useState<string[]>([]);
@@ -83,19 +101,33 @@ const CallCoverage = () => {
      endpoints cap `limit` at 200 and reject anything larger outright, so a
      single oversized request fails instead of truncating. This screen audits
      the whole estate, so it genuinely needs all of it. */
-  const { data: numbers = [], isPending: numbersLoading } = useQuery({
+  const {
+    data: numbers = [],
+    isPending: numbersLoading,
+    refetch: refetchNumbers,
+    isRefetching: numbersRefetching,
+  } = useQuery({
     /* Shares the prefix the Numbers screens use, so applying the standard here
        refreshes those lists too. */
     queryKey: ['usedNumbersList', 'callCoverage'],
     queryFn: () => fetchAllPages(allNumbersList, { type: 'in_use' }),
   });
 
-  const { data: users = [], isPending: usersLoading } = useQuery({
+  const {
+    data: users = [],
+    isPending: usersLoading,
+    refetch: refetchUsers,
+    isRefetching: usersRefetching,
+  } = useQuery({
     queryKey: ['fetchUsersList', 'callCoverage'],
     queryFn: () => fetchAllPages(getUserList),
   });
 
-  const { data: greetings = [], refetch: refetchGreetings } = useQuery({
+  const {
+    data: greetings = [],
+    refetch: refetchGreetings,
+    isRefetching: greetingsRefetching,
+  } = useQuery({
     queryKey: ['greetingList', 'callCoverage'],
     queryFn: () => fetchAllPages(getGreetings, { search: '', type: 'voicemail' }),
   });
@@ -134,14 +166,43 @@ const CallCoverage = () => {
     };
   }, [tab, numberRows, userRows]);
 
-  const visibleNumbers = onlyGaps
-    ? numberRows.filter((row) => row.coverage.state !== 'covered')
-    : numberRows;
-  const visibleUsers = onlyGaps
-    ? userRows.filter((row) => row.coverage.state !== 'covered')
-    : userRows;
+  const searchTerm = search.trim().toLowerCase();
+
+  const visibleNumbers = (
+    onlyGaps ? numberRows.filter((row) => row.coverage.state !== 'covered') : numberRows
+  ).filter(
+    ({ did }) =>
+      !searchTerm ||
+      String(did?.did_number || '')
+        .toLowerCase()
+        .includes(searchTerm) ||
+      String(did?.did_name || '')
+        .toLowerCase()
+        .includes(searchTerm) ||
+      String(assignedNameOf(did) || '')
+        .toLowerCase()
+        .includes(searchTerm),
+  );
+  const visibleUsers = (
+    onlyGaps ? userRows.filter((row) => row.coverage.state !== 'covered') : userRows
+  ).filter(
+    ({ user: person }) =>
+      !searchTerm ||
+      `${person?.first_name || ''} ${person?.last_name || ''}`.toLowerCase().includes(searchTerm) ||
+      String(person?.extension || '')
+        .toLowerCase()
+        .includes(searchTerm),
+  );
 
   const isLoading = tab === 'numbers' ? numbersLoading : usersLoading;
+
+  const isTableRefreshing =
+    tab === 'numbers' ? numbersRefetching : tab === 'extensions' ? usersRefetching : greetingsRefetching;
+  const handleRefreshTable = () => {
+    if (tab === 'numbers') refetchNumbers();
+    else if (tab === 'extensions') refetchUsers();
+    else refetchGreetings();
+  };
 
   const confirmApply = () => {
     if (!confirming) return;
@@ -229,92 +290,165 @@ const CallCoverage = () => {
   );
 
   return (
-    <>
+    <div className="ident-coral-theme call-coverage-page flex min-h-0 w-full flex-1 flex-col">
       <AdminPage
         section="Numbers"
         title="Call coverage"
-        description="Which numbers and extensions would drop a call right now, and what it takes to close each gap."
-        filters={
+        titleSuffix={
+          <CustomTooltip
+            text={PAGE_DESCRIPTION}
+            side="right"
+            className="w-max max-w-[340px] whitespace-normal border-0 bg-[#fdf7f5] text-black shadow-[0_6px_20px_rgba(17,17,17,0.18)] [&_svg]:fill-[#fdf7f5]"
+          >
+            <span className="mcm-intpage-info">i</span>
+          </CustomTooltip>
+        }
+        headerTabs={
+          <nav className="mcm-segmented" role="group" aria-label="Call coverage views">
+            <button
+              type="button"
+              className={tab === 'numbers' ? 'is-active' : ''}
+              onClick={() => setTab('numbers')}
+            >
+              Numbers
+            </button>
+            <button
+              type="button"
+              className={tab === 'extensions' ? 'is-active' : ''}
+              onClick={() => setTab('extensions')}
+            >
+              Extensions
+            </button>
+            <button
+              type="button"
+              className={tab === 'greetings' ? 'is-active' : ''}
+              onClick={() => setTab('greetings')}
+            >
+              Voicemail greetings
+            </button>
+          </nav>
+        }
+        beforeTable={
           <>
-            <div className="ptabstrip">
-              <button
-                type="button"
-                className={tab === 'numbers' ? 'on' : ''}
-                onClick={() => setTab('numbers')}
-              >
-                Numbers
-              </button>
-              <button
-                type="button"
-                className={tab === 'extensions' ? 'on' : ''}
-                onClick={() => setTab('extensions')}
-              >
-                Extensions
-              </button>
-              <button
-                type="button"
-                className={tab === 'greetings' ? 'on' : ''}
-                onClick={() => setTab('greetings')}
-              >
-                Voicemail greetings
-              </button>
-            </div>
-            {tab === 'greetings' ? null : (
-              <label className="fchip">
-                <input
-                  type="checkbox"
-                  checked={onlyGaps}
-                  onChange={(event) => setOnlyGaps(event.target.checked)}
-                />
-                Only show gaps
-              </label>
-            )}
-            {tab === 'greetings' ? (
-              <>
-                <label className="fchip" style={{ flex: '1 1 260px', maxWidth: 340 }}>
-                  Company:
-                  <input
-                    value={companyName}
-                    onChange={(event) => rememberCompany(event.target.value)}
-                    placeholder={brandFromOrg || 'Spoken company name'}
-                    aria-label="Company name spoken in the greeting"
-                    style={{
-                      border: 0,
-                      background: 'transparent',
-                      width: '100%',
-                      outline: 'none',
-                      fontWeight: 700,
-                    }}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="btn primary"
-                  disabled={Boolean(generating) || !peopleNeedingGreeting.length}
-                  onClick={() => runGeneration(peopleNeedingGreeting)}
-                >
-                  {generating
-                    ? 'Generating…'
-                    : `Generate all missing (${peopleNeedingGreeting.length})`}
-                </button>
-                <span
-                  className={`fchip ${peopleNeedingGreeting.length ? 'bad' : 'live'}`}
-                  style={{ marginLeft: 'auto' }}
-                >
-                  <span className="num">{peopleNeedingGreeting.length}</span> without a greeting
-                </span>
-              </>
-            ) : (
-              <span
-                className={`fchip ${counts.gaps ? 'bad' : 'live'}`}
-                style={{ marginLeft: 'auto' }}
-              >
-                <span className="num">{counts.gaps}</span> of {counts.total} would drop a call
-              </span>
+            {/* Stats and search each render as their own separate card here
+                (outside `panel-card`), matching Identities & addresses —
+                the KPI row, the search/add bar and the tabs+table each read
+                as a distinct block instead of one merged container. A quick
+                census above the filters, built from `counts`, the same
+                numbers already driving the "N of M would drop a call" chip
+                below, not separate placeholder data. */}
+            {tab !== 'greetings' && (
+              <div className="ident-stats-row">
+                <div className="ident-stat-card">
+                  <div className="ident-stat-label">
+                    Total {tab === 'numbers' ? 'Numbers' : 'Extensions'}
+                  </div>
+                  <div className="ident-stat-value">{counts.total}</div>
+                  <div className="ident-stat-caption">
+                    Every {tab === 'numbers' ? 'number' : 'extension'} on this account
+                  </div>
+                </div>
+                <div className="ident-stat-card">
+                  <div className="ident-stat-label">Covered</div>
+                  <div className="ident-stat-value">{counts.total - counts.gaps}</div>
+                  <div className="ident-stat-caption">Answered by an extension or voicemail</div>
+                </div>
+                <div className="ident-stat-card">
+                  <div className="ident-stat-label">Would Drop a Call</div>
+                  <div className="ident-stat-value">{counts.gaps}</div>
+                  <div className="ident-stat-caption">Not connected to a person or box</div>
+                </div>
+                <div className="ident-stat-card">
+                  <div className="ident-stat-label">Fixable Now</div>
+                  <div className="ident-stat-value">{counts.fixable}</div>
+                  <div className="ident-stat-caption">One click away from covered</div>
+                </div>
+              </div>
             )}
           </>
         }
       >
+        {/* The view tabs now live in the head bar (see `headerTabs`) instead
+            of here beside the table. Search now sits inside this table's own
+            card, above its column headers — matching the AI Receptionist
+            list's table header format. */}
+        <div className="ident-table-card ident-table-card--plain w-full flex flex-col">
+        {/* Wrapped in the same border-b + px-3/py-2 padding TableManager
+            gives its own `customHeader` (see table-manager.tsx) — without
+            it the search pill sat flush against the card's edges instead
+            of inset like every other Numbers table's search bar. */}
+        <div className="border-b border-b-gray-200">
+        <div className="px-3 py-2">
+          <TableSearchHeader
+            value={search}
+            onChange={setSearch}
+            onRefresh={handleRefreshTable}
+            refreshing={isTableRefreshing}
+            placeholder="Search"
+            rightSlot={
+              tab === 'greetings' ? (
+                <>
+                  <label
+                    className="fchip"
+                    style={{ flex: '0 1 auto', minWidth: 260, border: '1px solid #f5a3a3' }}
+                  >
+                    Company:
+                    <input
+                      value={companyName}
+                      onChange={(event) => rememberCompany(event.target.value)}
+                      placeholder={brandFromOrg || 'Spoken company name'}
+                      aria-label="Company name spoken in the greeting"
+                      size={Math.max(companyName.length, 18)}
+                      style={{
+                        border: 0,
+                        background: 'transparent',
+                        outline: 'none',
+                        fontWeight: 700,
+                      }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="btn flex-none bg-black text-white hover:bg-gray-800"
+                    disabled={Boolean(generating) || !peopleNeedingGreeting.length}
+                    onClick={() => runGeneration(peopleNeedingGreeting)}
+                  >
+                    {generating
+                      ? 'Generating…'
+                      : `Generate all missing (${peopleNeedingGreeting.length})`}
+                  </button>
+                  <span
+                    className={`fchip ${peopleNeedingGreeting.length ? 'bad' : 'live'}`}
+                    style={{ marginLeft: 'auto', whiteSpace: 'nowrap', flex: 'none', marginRight: 8 }}
+                  >
+                    <span className="num">{peopleNeedingGreeting.length}</span> without a greeting
+                  </span>
+                </>
+              ) : (
+                <>
+                  <label
+                    className="fchip"
+                    style={{ marginLeft: 'auto', whiteSpace: 'nowrap', flex: 'none' }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={onlyGaps}
+                      onChange={(event) => setOnlyGaps(event.target.checked)}
+                    />
+                    Only show gaps
+                  </label>
+                  <span
+                    className={`fchip ${counts.gaps ? 'bad' : 'live'}`}
+                    style={{ whiteSpace: 'nowrap', flex: 'none', marginRight: 8 }}
+                  >
+                    <span className="num">{counts.gaps}</span> of {counts.total} would drop a call
+                  </span>
+                </>
+              )
+            }
+          />
+        </div>
+        </div>
         {isLoading ? (
           <div className="flex h-full w-full items-center justify-center p-8">
             <Loader variant="blue" size="lg" />
@@ -327,7 +461,7 @@ const CallCoverage = () => {
                 <th>Assigned to</th>
                 <th>Coverage</th>
                 <th>What a caller gets</th>
-                <th>Fix</th>
+                <th className="fix-col">Fix</th>
               </tr>
             </thead>
             <tbody>
@@ -353,22 +487,29 @@ const CallCoverage = () => {
                       )}
                     </td>
                     <td>
-                      <span className={STATE_CLASS[coverage.state]}>{coverage.headline}</span>
+                      <span className={STATE_CLASS[coverage.state]}>
+                        <Phone className="h-3 w-3" />
+                        {coverage.headline}
+                      </span>
                     </td>
                     <td style={{ maxWidth: 380 }}>{coverage.detail}</td>
-                    <td>
+                    <td className="fix-col">
                       {coverage.fixable ? (
                         <button
                           type="button"
-                          className="btn"
+                          className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-100"
                           onClick={() => setConfirming({ did, coverage })}
                           disabled={applying}
                         >
+                          <Wrench className="h-3.5 w-3.5" />
                           Apply standard
                         </button>
+                      ) : coverage.state === 'covered' ? (
+                        <span style={{ color: 'var(--ink-4)', fontSize: 12 }}>—</span>
                       ) : (
-                        <span style={{ color: 'var(--ink-4)', fontSize: 12 }}>
-                          {coverage.state === 'covered' ? '—' : 'Needs a decision'}
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-sm text-gray-500">
+                          <KeyRound className="h-3.5 w-3.5" />
+                          Needs a decision
                         </span>
                       )}
                     </td>
@@ -396,7 +537,7 @@ const CallCoverage = () => {
                 <th>Name</th>
                 <th>Coverage</th>
                 <th>What a caller gets</th>
-                <th>Fix</th>
+                <th className="w-20 text-center">Fix</th>
               </tr>
             </thead>
             <tbody>
@@ -411,10 +552,19 @@ const CallCoverage = () => {
                       <span className={STATE_CLASS[coverage.state]}>{coverage.headline}</span>
                     </td>
                     <td style={{ maxWidth: 420 }}>{coverage.detail}</td>
-                    <td>
-                      <button type="button" className="btn" onClick={() => setEditingUser(user)}>
-                        {coverage.state === 'covered' ? 'Call rules' : 'Set voicemail'}
-                      </button>
+                    <td className="w-20 text-center">
+                      <CustomTooltip
+                        text={coverage.state === 'covered' ? 'Call rules' : 'Set voicemail'}
+                        side="top"
+                      >
+                        <button
+                          type="button"
+                          className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-500 hover:text-white"
+                          onClick={() => setEditingUser(user)}
+                        >
+                          <Voicemail className="h-4 w-4" />
+                        </button>
+                      </CustomTooltip>
                     </td>
                   </tr>
                 ))
@@ -442,13 +592,14 @@ const CallCoverage = () => {
                 <th>Extension</th>
                 <th>Greeting</th>
                 <th>What the caller will hear</th>
-                <th>Generate</th>
+                <th className="text-center">Generate</th>
               </tr>
             </thead>
             <tbody>
               {(users as any[]).length ? (
                 (users as any[])
                   .filter((person) => personName(person))
+                  .filter((person) => !searchTerm || personName(person).toLowerCase().includes(searchTerm))
                   .map((person) => {
                     const has = greetingExistsFor(person);
                     const failure = failedFor[person.uuid];
@@ -470,15 +621,24 @@ const CallCoverage = () => {
                           {failure ||
                             voicemailScriptFor(personName(person), spokenCompany || undefined)}
                         </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn"
-                            disabled={Boolean(generating)}
-                            onClick={() => runGeneration([person])}
+                        <td className="text-center">
+                          <CustomTooltip
+                            text={busy ? 'Generating…' : has ? 'Regenerate' : 'Generate'}
+                            side="top"
                           >
-                            {busy ? 'Generating…' : has ? 'Regenerate' : 'Generate'}
-                          </button>
+                            <button
+                              type="button"
+                              className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-500 hover:text-white disabled:pointer-events-none disabled:opacity-50"
+                              disabled={Boolean(generating)}
+                              onClick={() => runGeneration([person])}
+                            >
+                              {busy ? (
+                                <Loader variant="blue" size="sm" />
+                              ) : (
+                                <Sparkles className="h-4 w-4" />
+                              )}
+                            </button>
+                          </CustomTooltip>
                         </td>
                       </tr>
                     );
@@ -518,50 +678,78 @@ const CallCoverage = () => {
             asked about.
           </div>
         ) : null}
+        </div>
       </AdminPage>
 
       {editingUser ? (
-        <SideDrawer
-          isOpen={Boolean(editingUser)}
-          title={`Call rules · ${`${editingUser?.first_name || ''} ${editingUser?.last_name || ''}`.trim() || 'Extension'}`}
-          width="min(1080px, 82vw)"
-          enableResponsive
-          responsiveWidth="96vw"
-          responsiveBreakpoint={1024}
-          handleClose={() => {
+        <Dialog
+          open={Boolean(editingUser)}
+          onOpenChange={(open) => {
+            if (open) return;
             setEditingUser(null);
             queryClient.invalidateQueries({ queryKey: ['fetchUsersList'] });
           }}
-          content={
-            <UpdateForwarding
-              drawerState
-              setDrawerState={() => {
-                setEditingUser(null);
-                queryClient.invalidateQueries({ queryKey: ['fetchUsersList'] });
-              }}
-              data={editingUser}
-              setTabData={() => undefined}
-            />
-          }
-        />
+        >
+          <DialogContent
+            showCloseButton={false}
+            onPointerDownOutside={(e) => e.preventDefault()}
+            className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-2xl lg:max-w-3xl"
+          >
+            <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
+              <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
+                <Users className="h-4 w-4 text-black" />
+                Call rules ·{' '}
+                {`${editingUser?.first_name || ''} ${editingUser?.last_name || ''}`.trim() ||
+                  'Extension'}
+              </DialogTitle>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingUser(null);
+                  queryClient.invalidateQueries({ queryKey: ['fetchUsersList'] });
+                }}
+                aria-label="Close"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </DialogHeader>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <UpdateForwarding
+                drawerState
+                setDrawerState={() => {
+                  setEditingUser(null);
+                  queryClient.invalidateQueries({ queryKey: ['fetchUsersList'] });
+                }}
+                data={editingUser}
+                setTabData={() => undefined}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {confirming ? (
-        <>
-          <div className="scrim" onClick={() => setConfirming(null)} aria-hidden />
-          <aside className="drw" role="dialog" aria-label="Apply standard call handling">
-            <div className="drw-h">
-              <h2>Apply standard call handling</h2>
+        <Dialog open={Boolean(confirming)} onOpenChange={(open) => !open && setConfirming(null)}>
+          <DialogContent
+            showCloseButton={false}
+            className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-md lg:max-w-lg"
+          >
+            <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
+              <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
+                <Hash className="h-4 w-4 text-black" />
+                Apply standard call handling
+              </DialogTitle>
               <button
                 type="button"
-                className="mini"
                 onClick={() => setConfirming(null)}
                 aria-label="Close"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
               >
-                <Ic n="x" size={12} />
+                <X className="h-4 w-4" />
               </button>
-            </div>
-            <div className="drw-b">
+            </DialogHeader>
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-0.5">
               <p style={{ color: 'var(--ink-2)' }}>
                 This writes call handling to <strong>{confirming.did.did_number}</strong>, which{' '}
                 {confirming.coverage.state === 'gap'
@@ -595,23 +783,27 @@ const CallCoverage = () => {
                 </li>
               </ul>
             </div>
-            <div className="drw-f">
-              <button type="button" className="btn" onClick={() => setConfirming(null)}>
+            <div className="flex flex-none items-center justify-end gap-2 border-t border-gray-200 pt-3">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-black hover:bg-gray-100"
+                onClick={() => setConfirming(null)}
+              >
                 Cancel
               </button>
               <button
                 type="button"
-                className="btn primary"
+                className="flex items-center gap-1.5 rounded-full border border-black bg-black px-5 py-2 text-sm font-medium text-white hover:bg-gray-800"
                 onClick={confirmApply}
                 disabled={applying}
               >
                 {applying ? 'Applying…' : 'Apply to this number'}
               </button>
             </div>
-          </aside>
-        </>
+          </DialogContent>
+        </Dialog>
       ) : null}
-    </>
+    </div>
   );
 };
 

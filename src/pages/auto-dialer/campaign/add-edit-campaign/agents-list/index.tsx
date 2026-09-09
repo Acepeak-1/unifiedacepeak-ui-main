@@ -2,7 +2,6 @@ import { Icon } from '@/assets/icons/icon';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import CustomSelect from '@/components/custom/custom-select';
 import TableManager from '@/components/custom/table-manager';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { ISELECTVALUE } from '@/interfaces/api-interfaces';
@@ -31,169 +30,100 @@ interface IMEMBER {
   profile?: string;
 }
 
-// Checkbox cell component with internal form subscription
-const MemberCheckboxCell = ({ memberData }: { memberData: IMEMBER }) => {
+/** Same add/remove-from-`members` logic the old checkbox column used —
+    just triggered by clicking the row's own cells now that there's no
+    dedicated checkbox column to click instead. */
+const useToggleMember = (memberData: IMEMBER) => {
   const { user } = useUser();
   const defaultDomain = user?.sip_credentials?.domain || '';
   const { control, setValue, clearErrors, watch } = useFormContext();
   const members = useWatch({ control, name: 'members', defaultValue: [] });
-  const isChecked =
+  const isSelected =
     Array.isArray(members) && members.some((item: any) => item?.value === memberData?.extension);
 
-  const handleCheckChange = useCallback(
-    (checked: boolean) => {
-      if (checked) {
-        const extensionValue = memberData?.extension ? memberData?.extension : memberData?.value;
-        const newValue = {
-          label: memberData?.last_name
-            ? `${memberData?.first_name} ${memberData?.last_name}`
-            : memberData?.label,
-          value: extensionValue,
-          first_name: memberData?.first_name || '',
-          last_name: memberData?.last_name || '',
-          extension: extensionValue || '',
-          email: memberData?.email,
-          role:
-            memberData?.custom_role_data?.name || memberData?.role_data?.name || memberData?.role,
-          domain: memberData?.domain || defaultDomain || '',
-          user_uuid: memberData?.user_uuid || memberData?.uuid || '',
-        };
-        setValue('members', [...(members || []), newValue], { shouldValidate: true });
-        clearErrors('members');
-      } else {
-        const filteredMembers = (members || []).filter(
-          (el: IMEMBER) => el.value !== memberData.extension,
-        );
-        setValue('members', filteredMembers, { shouldValidate: true });
-        const currentManager = watch('manager');
-        if (memberData.extension === currentManager?.value) {
-          setValue('manager', { value: '' });
-          clearErrors('manager');
-        }
+  const toggle = useCallback(() => {
+    if (!isSelected) {
+      const extensionValue = memberData?.extension ? memberData?.extension : memberData?.value;
+      const newValue = {
+        label: memberData?.last_name
+          ? `${memberData?.first_name} ${memberData?.last_name}`
+          : memberData?.label,
+        value: extensionValue,
+        first_name: memberData?.first_name || '',
+        last_name: memberData?.last_name || '',
+        extension: extensionValue || '',
+        email: memberData?.email,
+        role: memberData?.custom_role_data?.name || memberData?.role_data?.name || memberData?.role,
+        domain: memberData?.domain || defaultDomain || '',
+        user_uuid: memberData?.user_uuid || memberData?.uuid || '',
+      };
+      setValue('members', [...(members || []), newValue], { shouldValidate: true });
+      clearErrors('members');
+    } else {
+      const filteredMembers = (members || []).filter(
+        (el: IMEMBER) => el.value !== memberData.extension,
+      );
+      setValue('members', filteredMembers, { shouldValidate: true });
+      const currentManager = watch('manager');
+      if (memberData.extension === currentManager?.value) {
+        setValue('manager', { value: '' });
+        clearErrors('manager');
       }
-    },
-    [memberData, members, setValue, clearErrors, watch, defaultDomain],
-  );
+    }
+  }, [memberData, members, isSelected, setValue, clearErrors, watch, defaultDomain]);
 
-  return (
-    <div className="flex justify-center text-primary hover:text-primary/80 underline underline-offset-4 text-center">
-      <Checkbox checked={isChecked} onCheckedChange={handleCheckChange} />
-    </div>
-  );
+  return { isSelected, toggle };
 };
 
-MemberCheckboxCell.displayName = 'MemberCheckboxCell';
-
-// Memoized name cell component
+// Name + email, compact — the whole cell is the click target for
+// selecting/deselecting this member, same behaviour the checkbox used to
+// drive.
 const MemberNameCell = memo(({ data }: { data: IMEMBER }) => {
   const fullName = `${data?.first_name}${data?.last_name ? ` ${data?.last_name}` : ''}`;
+  const { toggle } = useToggleMember(data);
   return (
-    <div className="flex items-center gap-2 w-full">
-      <div className="flex ">
-        <CustomAvatar
-          name={fullName}
-          showPresence
-          extension={data?.extension}
-          image={data?.profile}
-        />
-      </div>
-      <div className="flex flex-col w-full">
-        <div className="flex items-center justify-between  gap-2">
-          <div className="flex flex-col items-start ">
-            <p className="capitalize">{fullName}</p>
-            <small className="text-primary text-[10px]">
-              {data?.custom_role_data?.name || data?.role_data?.name || data?.role}
-            </small>
-          </div>
-          <div className="flex items-center gap-1 text-gray-500">
-            <Icon name="Grid" className="w-4 h-4 " />
-            <div>{data?.extension}</div>
-          </div>
-        </div>
-        <p className="text-gray-500 flex justify-between">
-          <div>{data?.email}</div>
-        </p>
+    <div
+      className="flex items-center gap-2 w-full cursor-pointer"
+      onClick={toggle}
+      role="button"
+      tabIndex={0}
+    >
+      <CustomAvatar name={fullName} showPresence extension={data?.extension} image={data?.profile} />
+      <div className="min-w-0">
+        <p className="capitalize truncate leading-tight">{fullName}</p>
+        <p className="text-gray-500 text-[11px] truncate leading-tight">{data?.email}</p>
       </div>
     </div>
   );
 });
-
 MemberNameCell.displayName = 'MemberNameCell';
 
-const SelectAllHeader = ({ currentMembers }: { currentMembers: IMEMBER[] }) => {
-  const { user } = useUser();
-  const defaultDomain = user?.sip_credentials?.domain || '';
-  const { control, setValue, clearErrors, getValues } = useFormContext();
-  const members = useWatch({ control, name: 'members', defaultValue: [] });
-
-  const isAllChecked = useMemo(() => {
-    if (!currentMembers || currentMembers.length === 0) return false;
-    return currentMembers.every((member) =>
-      (members || []).some((m: any) => m.value === member.extension),
-    );
-  }, [currentMembers, members]);
-
-  const isIndeterminate = useMemo(() => {
-    if (!currentMembers || currentMembers.length === 0) return false;
-    const checkedCount = currentMembers.filter((member) =>
-      (members || []).some((m: any) => m.value === member.extension),
-    ).length;
-    return checkedCount > 0 && checkedCount < currentMembers.length;
-  }, [currentMembers, members]);
-
-  const handleSelectAllChange = useCallback(
-    (checked: boolean) => {
-      if (checked) {
-        const newMembers = [...(members || [])];
-        currentMembers.forEach((member) => {
-          const extensionValue = member.extension || member.value || '';
-          if (!newMembers.some((m: any) => m.value === extensionValue)) {
-            newMembers.push({
-              label: member?.last_name
-                ? `${member?.first_name} ${member?.last_name}`
-                : member?.label,
-              value: extensionValue,
-              first_name: member?.first_name || '',
-              last_name: member?.last_name || '',
-              extension: extensionValue || '',
-              email: member?.email,
-              role: member?.custom_role_data?.name || member?.role_data?.name || member?.role,
-              domain: member?.domain || defaultDomain || '',
-              user_uuid: member?.user_uuid || member?.uuid || '',
-            });
-          }
-        });
-        setValue('members', newMembers, { shouldValidate: true });
-        clearErrors('members');
-      } else {
-        const currentExtensions = currentMembers.map((m) => m.extension);
-        const filteredMembers = (members || []).filter(
-          (m: any) => !currentExtensions.includes(m.value),
-        );
-        setValue('members', filteredMembers, { shouldValidate: true });
-
-        const manager = getValues('manager');
-        if (manager && currentExtensions.includes(manager.value)) {
-          setValue('manager', { value: '' });
-          clearErrors('manager');
-        }
-      }
-    },
-    [currentMembers, members, setValue, clearErrors, getValues, defaultDomain],
-  );
-
+const MemberRoleCell = memo(({ data }: { data: IMEMBER }) => {
+  const role = data?.custom_role_data?.name || data?.role_data?.name || data?.role || '—';
+  const { toggle } = useToggleMember(data);
   return (
-    <div className="flex flex-col items-center gap-1">
-      <span className="text-xs font-semibold text-gray-500">Members</span>
-      <div className="flex justify-center text-primary">
-        <Checkbox
-          checked={isAllChecked ? true : isIndeterminate ? 'indeterminate' : false}
-          onCheckedChange={handleSelectAllChange}
-        />
-      </div>
+    <div className="cursor-pointer" onClick={toggle} role="button" tabIndex={0}>
+      <span className="acp-role-pill">{role}</span>
     </div>
   );
-};
+});
+MemberRoleCell.displayName = 'MemberRoleCell';
+
+const MemberDidCell = memo(({ data }: { data: IMEMBER }) => {
+  const { toggle } = useToggleMember(data);
+  return (
+    <div
+      className="flex items-center justify-end gap-1 text-gray-500 cursor-pointer"
+      onClick={toggle}
+      role="button"
+      tabIndex={0}
+    >
+      <Icon name="Grid" className="w-3.5 h-3.5" />
+      <span>{data?.extension}</span>
+    </div>
+  );
+});
+MemberDidCell.displayName = 'MemberDidCell';
 
 const AgentsList: FC<any> = ({ scriptList = [], dialMethod = DIALER_TYPE.PREVIEW }) => {
   const {
@@ -205,37 +135,45 @@ const AgentsList: FC<any> = ({ scriptList = [], dialMethod = DIALER_TYPE.PREVIEW
   const selectedSite = watch('siteId')?.value;
   const [searchKey, setSearchKey] = useState('');
   const debouncedSearchKey = useDebounce(searchKey, 500);
-  const [currentMembers, setCurrentMembers] = useState<IMEMBER[]>([]);
-
-  const handleSuccess = useCallback((tbldata: any) => {
-    const rows = tbldata?.data?.data?.result?.rows || [];
-    setCurrentMembers(rows);
-  }, []);
+  const members = watch('members') || [];
 
   const columns: ColumnDef<IMEMBER>[] = useMemo(
     () => [
       {
-        header: () => <SelectAllHeader currentMembers={currentMembers} />,
-        id: 'action',
-        accessorKey: 'company_uuid',
-        cell: ({ row }) => {
-          return <MemberCheckboxCell memberData={row?.original} />;
-        },
-      },
-
-      {
         header: 'Name',
         accessorKey: 'first_name',
-        cell: ({ row }: any) => {
-          return <MemberNameCell data={row?.original} />;
-        },
+        cell: ({ row }: any) => <MemberNameCell data={row?.original} />,
+      },
+      {
+        header: 'Role',
+        id: 'role',
+        cell: ({ row }: any) => <MemberRoleCell data={row?.original} />,
+        meta: { textAlign: 'left' },
+      },
+      {
+        header: 'DID',
+        id: 'did',
+        cell: ({ row }: any) => <MemberDidCell data={row?.original} />,
+        meta: { textAlign: 'right' },
       },
     ],
-    [currentMembers],
+    [],
   );
-  console.log('errors', errors?.script);
+
+  /* Selected rows get the same light-red wash the rest of the form uses
+     for an active state — the row itself is now the selection affordance,
+     so it needs to look clickable/selected without a checkbox to carry
+     that information. */
+  const getRowClassName = useCallback(
+    (row: any) => {
+      const isSelected = members.some((m: any) => m?.value === row?.original?.extension);
+      return isSelected ? 'acp-agent-row-selected' : '';
+    },
+    [members],
+  );
+
   return (
-    <div className="flex h-[calc(100vh_-_22.5rem)] flex-col overflow-auto">
+    <div className="flex flex-col">
       <div className="w-full">
         <div className="w-full flex flex-row items-end gap-6 flex-wrap ">
           {dialMethod === DIALER_TYPE.PREVIEW && (
@@ -289,13 +227,13 @@ const AgentsList: FC<any> = ({ scriptList = [], dialMethod = DIALER_TYPE.PREVIEW
 
           {/* Search Input on the right side */}
           <div className="relative w-full max-w-sm ml-auto pb-0.5">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <Input
               type="text"
               placeholder="Search by name, email, or extension..."
               value={searchKey}
               onChange={(e) => setSearchKey(e.target.value)}
-              className="pl-10 h-9 text-sm"
+              className="pl-9 h-9 text-sm rounded-lg"
             />
           </div>
         </div>
@@ -314,7 +252,6 @@ const AgentsList: FC<any> = ({ scriptList = [], dialMethod = DIALER_TYPE.PREVIEW
             columns,
             fetcherKey: 'forwardActionType',
             fetcherFn: forwardActionType,
-            onSuccess: handleSuccess,
             extraParams: {
               site_uuid: selectedSite,
               type: 'EXTENSION',
@@ -323,6 +260,7 @@ const AgentsList: FC<any> = ({ scriptList = [], dialMethod = DIALER_TYPE.PREVIEW
               search: debouncedSearchKey,
             },
             showPagination: false,
+            getRowClassName,
           }}
         />
       </div>

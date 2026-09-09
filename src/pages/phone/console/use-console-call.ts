@@ -54,11 +54,14 @@ export const useConsoleCall = () => {
   useEffect(() => {
     const prev = prevRef.current;
     const current = prev ? sessions?.[prev.id] : null;
-    if (prev && !isTerminalSession(prev) && isTerminalSession(current) && prev.hasAnswered) {
+    /* A finished call stays on screen — including one the far end hung up —
+       until the agent presses End call. Only then is the session cleared and
+       the stage falls back to the dialer. */
+    if (prev && !isTerminalSession(prev) && isTerminalSession(current)) {
       setWrapupId(prev.id);
     }
     prevRef.current = liveSession || (prev && sessions?.[prev.id]) || null;
-  }, [sessions, liveSession]);
+  }, [sessions, liveSession, dialpad]);
 
   /**
    * Resolve who is on the call.
@@ -96,10 +99,17 @@ export const useConsoleCall = () => {
 
   const wrapupSession = wrapupId ? sessions?.[wrapupId] || null : null;
 
+  /* End call: hang up if the call is still up, then drop the session so the
+     stage goes back to the dialer. Covers both presses — on a live call and
+     on one the far end already ended. */
   const endWrapup = useCallback(() => {
+    if (liveSession) {
+      dialpad.endCall(liveSession.id);
+      dialpad.clearSession(liveSession.id);
+    }
     if (wrapupId) dialpad.clearSession(wrapupId);
     setWrapupId(null);
-  }, [dialpad, wrapupId]);
+  }, [dialpad, wrapupId, liveSession]);
 
   const session = liveSession || wrapupSession;
 
