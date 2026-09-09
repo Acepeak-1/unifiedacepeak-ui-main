@@ -24,7 +24,11 @@
      - @keyframes are prefixed `mcmp-`.
    ============================================================ */
 
-.mcm-page {
+/* Dialogs portal to <body>, outside .mcm-page, so the token set is declared
+   on the modal root too -- otherwise every var() inside one falls back to
+   nothing: lines vanish, backgrounds go transparent, greys turn to Tailwind's. */
+.mcm-page,
+.mcm-modal {
   /* Hover edge for the portrait stat cards (Performance). */
   --stat-hover-line: #e9adc3;
   --ground: #efefef;
@@ -74,7 +78,8 @@
     'Plus Jakarta Sans', 'Twemoji Country Flags', ui-sans-serif, system-ui, -apple-system,
     'Segoe UI', sans-serif;
 }
-.dark .mcm-page {
+.dark .mcm-page,
+.dark .mcm-modal {
   --stat-hover-line: #6b3a4a;
   --ground: #0a0a0a;
   --surface: #171717;
@@ -6983,6 +6988,16 @@
 .mcm-admin .mcm-intstatus.setup i {
   background: #d97706;
 }
+/* Failed / rejected states (a TCR brand or campaign that carriers turned
+   down), the same red as the rest of the console rather than a new hex. */
+.mcm-admin .mcm-intstatus.danger {
+  border-color: var(--accent-edge);
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+.mcm-admin .mcm-intstatus.danger i {
+  background: var(--accent);
+}
 .mcm-admin .mcm-intcard-sync {
   font-size: 11.5px;
   color: var(--ink-4);
@@ -7442,9 +7457,19 @@
    vanished into the track. */
 .mcm-admin .mcm-chcard-switch [data-slot='switch'][data-state='checked'] {
   background-color: #dc2626 !important;
+  border-color: transparent !important;
 }
+/* Off is a filled grey track, not the component's default white-on-white:
+   the thumb below is forced white for the red track, so against a white
+   track it disappeared and the control read as an empty grey outline. */
+.mcm-admin .mcm-chcard-switch [data-slot='switch'][data-state='unchecked'] {
+  background-color: #d1d5db !important;
+  border-color: transparent !important;
+}
+/* Must target the thumb only — the track carries data-state too. */
 .mcm-admin .mcm-chcard-switch [data-slot='switch-thumb'] {
   background-color: #fff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.2);
 }
 /* Just the switch now: the status text to its left already reads
    Active/Paused, so the On/Off label was the same word twice and the pill
@@ -7880,17 +7905,87 @@
 
 /* Dialog copy: the one line that says what the dialog does, and the hint
    under a field that needs a format explaining. */
+/* ── Add / edit webhook dialog ────────────────────────────────────────────
+   Header, fields and actions as three bands with their own padding. The
+   dialog carried 12px all round, so the lede and the hint ran to within a few
+   pixels of the edge and the whole thing read as one cramped block. */
+/* The dialog's own 12px padding is dropped and each band pays for its own,
+   so the header rule and the footer rule can run the full width. Pulling the
+   form out with a negative margin instead made it wider than the dialog and
+   overflowed the page sideways. */
+[role='dialog']:has(> .mcm-modal),
+[role='dialog']:has(> div > .mcm-modal) {
+  padding: 0;
+  overflow: hidden;
+}
+.mcm-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.mcm-modal-head {
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--line-2);
+}
+.mcm-modal-titlerow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mcm-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.mcm-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-right: -6px;
+  border-radius: 999px;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.mcm-modal-close:hover {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+.mcm-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 22px 22px;
+  background: #fff;
+}
+.mcm-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--line-2);
+}
 .mcm-modal-lede {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 12.5px;
   line-height: 1.5;
   color: #6b7891;
 }
 .mcm-modal-hint {
-  margin: 6px 0 0;
+  margin: 7px 0 0;
   font-size: 11.5px;
   line-height: 1.45;
   color: #93a0b8;
+}
+/* Both actions are pills, like the console's other buttons. */
+.mcm-modal-foot button {
+  border-radius: 999px;
 }
 
 /* ── Destinations ─────────────────────────────────────────────────────────
@@ -8123,7 +8218,12 @@
   border-color: #fde68a;
   color: #d97706;
 }
-.mcm-admin .mcm-intpage .mcm-intstatus:not(.connected):not(.setup) {
+.mcm-admin .mcm-intpage .mcm-intstatus.danger {
+  background: var(--accent-wash);
+  border-color: var(--accent-edge);
+  color: var(--accent);
+}
+.mcm-admin .mcm-intpage .mcm-intstatus:not(.connected):not(.setup):not(.danger) {
   background: #f5f5f5;
   border-color: #e5e5e5;
   color: #737373;
