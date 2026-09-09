@@ -24,7 +24,11 @@
      - @keyframes are prefixed `mcmp-`.
    ============================================================ */
 
-.mcm-page {
+/* Dialogs portal to <body>, outside .mcm-page, so the token set is declared
+   on the modal root too -- otherwise every var() inside one falls back to
+   nothing: lines vanish, backgrounds go transparent, greys turn to Tailwind's. */
+.mcm-page,
+.mcm-modal {
   /* Hover edge for the portrait stat cards (Performance). */
   --stat-hover-line: #e9adc3;
   --ground: #efefef;
@@ -74,7 +78,8 @@
     'Plus Jakarta Sans', 'Twemoji Country Flags', ui-sans-serif, system-ui, -apple-system,
     'Segoe UI', sans-serif;
 }
-.dark .mcm-page {
+.dark .mcm-page,
+.dark .mcm-modal {
   --stat-hover-line: #6b3a4a;
   --ground: #0a0a0a;
   --surface: #171717;
@@ -6690,6 +6695,16 @@
 .mcm-admin .mcm-intstatus.setup i {
   background: #d97706;
 }
+/* Failed / rejected states (a TCR brand or campaign that carriers turned
+   down), the same red as the rest of the console rather than a new hex. */
+.mcm-admin .mcm-intstatus.danger {
+  border-color: var(--accent-edge);
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+.mcm-admin .mcm-intstatus.danger i {
+  background: var(--accent);
+}
 .mcm-admin .mcm-intcard-sync {
   font-size: 11.5px;
   color: var(--ink-4);
@@ -7149,9 +7164,19 @@
    vanished into the track. */
 .mcm-admin .mcm-chcard-switch [data-slot='switch'][data-state='checked'] {
   background-color: #dc2626 !important;
+  border-color: transparent !important;
 }
+/* Off is a filled grey track, not the component's default white-on-white:
+   the thumb below is forced white for the red track, so against a white
+   track it disappeared and the control read as an empty grey outline. */
+.mcm-admin .mcm-chcard-switch [data-slot='switch'][data-state='unchecked'] {
+  background-color: #d1d5db !important;
+  border-color: transparent !important;
+}
+/* Must target the thumb only — the track carries data-state too. */
 .mcm-admin .mcm-chcard-switch [data-slot='switch-thumb'] {
   background-color: #fff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.2);
 }
 /* Just the switch now: the status text to its left already reads
    Active/Paused, so the On/Off label was the same word twice and the pill
@@ -7587,17 +7612,87 @@
 
 /* Dialog copy: the one line that says what the dialog does, and the hint
    under a field that needs a format explaining. */
+/* ── Add / edit webhook dialog ────────────────────────────────────────────
+   Header, fields and actions as three bands with their own padding. The
+   dialog carried 12px all round, so the lede and the hint ran to within a few
+   pixels of the edge and the whole thing read as one cramped block. */
+/* The dialog's own 12px padding is dropped and each band pays for its own,
+   so the header rule and the footer rule can run the full width. Pulling the
+   form out with a negative margin instead made it wider than the dialog and
+   overflowed the page sideways. */
+[role='dialog']:has(> .mcm-modal),
+[role='dialog']:has(> div > .mcm-modal) {
+  padding: 0;
+  overflow: hidden;
+}
+.mcm-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.mcm-modal-head {
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--line-2);
+}
+.mcm-modal-titlerow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mcm-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.mcm-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-right: -6px;
+  border-radius: 999px;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.mcm-modal-close:hover {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+.mcm-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 22px 22px;
+  background: #fff;
+}
+.mcm-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--line-2);
+}
 .mcm-modal-lede {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 12.5px;
   line-height: 1.5;
   color: #6b7891;
 }
 .mcm-modal-hint {
-  margin: 6px 0 0;
+  margin: 7px 0 0;
   font-size: 11.5px;
   line-height: 1.45;
   color: #93a0b8;
+}
+/* Both actions are pills, like the console's other buttons. */
+.mcm-modal-foot button {
+  border-radius: 999px;
 }
 
 /* ── Destinations ─────────────────────────────────────────────────────────
@@ -7830,7 +7925,12 @@
   border-color: #fde68a;
   color: #d97706;
 }
-.mcm-admin .mcm-intpage .mcm-intstatus:not(.connected):not(.setup) {
+.mcm-admin .mcm-intpage .mcm-intstatus.danger {
+  background: var(--accent-wash);
+  border-color: var(--accent-edge);
+  color: var(--accent);
+}
+.mcm-admin .mcm-intpage .mcm-intstatus:not(.connected):not(.setup):not(.danger) {
   background: #f5f5f5;
   border-color: #e5e5e5;
   color: #737373;
@@ -8568,3 +8668,1086 @@
     border-color: #d92b2b !important;
   }
 }
+
+/* ── General Settings: where to go next ───────────────────────────────────
+   Two link cards under the credentials/steps cards — Zapier and Manage
+   Webhook are both reachable from here without going back to the nav.
+   Regression note: this block existed once and was lost during an earlier
+   edit that removed a section between it and its neighbour; re-added. */
+.mcm-admin .mcm-gsnext {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.mcm-admin .mcm-gsnext-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 0.15s ease;
+}
+.mcm-admin .mcm-gsnext-card:hover {
+  border-color: var(--accent-edge);
+}
+.mcm-admin .mcm-gsnext-card .mcm-gsicon {
+  align-self: center;
+  margin-top: 0;
+}
+.mcm-admin .mcm-gsnext-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.mcm-admin .mcm-gsnext-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.mcm-admin .mcm-gsnext-sub {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-gsnext-arrow {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-3);
+}
+.mcm-admin .mcm-gsnext-card:hover .mcm-gsnext-arrow {
+  color: var(--accent-ink);
+}
+@media (max-width: 900px) {
+  .mcm-admin .mcm-gsnext {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ══ Create 10DLC Brand drawer ════════════════════════════════════════════
+   Everything here is scoped to `.dlc-wizard-*`, which exists only on this
+   drawer. SideDrawer, Input, CustomSelect and Tabs are shared by twenty-odd
+   other screens, so none of them are restyled globally -- the scoping class
+   is what keeps this pass off every other drawer in the console. */
+
+/* -- Header ------------------------------------------------------------- */
+.dlc-wizard-header {
+  min-height: 64px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line-2);
+}
+/* The eyebrow every other screen in this section carries. Generated rather
+   than added to the markup because the <h5> lives inside the shared
+   SideDrawer, which this page has no business editing. */
+.dlc-wizard-header h5::before {
+  content: '10DLC Compliance';
+  display: block;
+  margin-bottom: 2px;
+  /* Upright: it sits inside the serif title's box and was inheriting its
+     italic, which turned a mono eyebrow into cursive. */
+  font-style: normal;
+  font-family: var(--mono, ui-monospace, monospace);
+  /* 12 / 27, the same pair every page head uses. */
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #dc2626;
+}
+.dlc-wizard-header h5 {
+  display: block;
+  font-family: 'Instrument Serif', Georgia, serif;
+  /* Italic, like every page title in the console; only the eyebrow above it
+     is upright. */
+  font-style: italic;
+  font-weight: 400;
+  font-size: 27px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+/* -- Step tabs ---------------------------------------------------------- */
+.dlc-wizard-tabs {
+  gap: 0;
+}
+.dlc-wizard-tabs-header {
+  padding: 0 20px;
+  border-bottom: 1px solid var(--line-2);
+}
+@layer base {
+  /* Beating the component's own baked-in Tailwind (bg-white, rounded-xl,
+     h-9, p-[3px] on the list; rounded-md, px-2, shadow on the trigger). A
+     layered !important outranks an unlayered one whatever its specificity,
+     so these have to sit in `base` alongside the utilities they undo. */
+  .dlc-wizard-tabs-list {
+    height: auto !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    align-items: center !important;
+    gap: 0;
+  }
+  /* A node in the stepper. No underline, no box -- the circle and the line
+     between the circles carry the state. */
+  .dlc-wizard-tab-trigger {
+    flex: 0 0 auto !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    height: auto !important;
+    padding: 14px 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--ink-4) !important;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .dlc-wizard-tab-trigger:hover,
+  .dlc-wizard-tab-trigger.is-done,
+  .dlc-wizard-tab-trigger[data-state='active'] {
+    color: var(--ink) !important;
+  }
+}
+/* The line between nodes. Grey ahead of you, red behind you. */
+.dlc-wizard-tab-line {
+  flex: 1 1 0;
+  height: 2px;
+  margin: 0 14px;
+  border-radius: 999px;
+  background: var(--line-2);
+  transition: background 0.2s;
+}
+.dlc-wizard-tab-trigger.is-done + .dlc-wizard-tab-line {
+  background: #dc2626;
+}
+/* The number carries the "step 2 of 3" reading the tab labels alone did not
+   -- these are sequential, not three interchangeable views. */
+.dlc-wizard-tab-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-4);
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+/* Current: the filled node. */
+.dlc-wizard-tab-trigger[data-state='active'] .dlc-wizard-tab-num {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #fff;
+}
+/* Done: red wash with a check, so it reads as passed rather than pending. */
+.dlc-wizard-tab-trigger.is-done .dlc-wizard-tab-num {
+  border-color: var(--accent-edge);
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+/* -- Form body ---------------------------------------------------------- */
+.dlc-wizard-form {
+  padding: 0 20px 18px;
+}
+.dlc-wizard-step-scroll {
+  padding-top: 18px;
+}
+.dlc-wizard label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+/* Fields follow the console's 10px corner and pick up the red focus edge
+   instead of the tenant colour the shared Input defaults to. */
+.dlc-wizard input:not([type='hidden']),
+.dlc-wizard .custom-react-select__control {
+  border-radius: 10px !important;
+}
+/* Same weight as the search bars: a single 1px line, no ring, no outline.
+   The shared Input adds a focus ring on top of its border, which read as a
+   thick dark red band around the field. Hover is the lighter edge, so only
+   the field you are actually in carries the full red. */
+.dlc-wizard input:not([type='hidden']):hover {
+  border-color: var(--accent-edge) !important;
+}
+.dlc-wizard input:not([type='hidden']):focus,
+.dlc-wizard input:not([type='hidden']):focus-visible {
+  border-width: 1px !important;
+  border-color: #dc2626 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+.dlc-wizard .custom-react-select__control:hover {
+  border-color: var(--accent-edge) !important;
+}
+.dlc-wizard .custom-react-select__control--is-focused,
+.dlc-wizard .custom-react-select__control--menu-is-open {
+  border-color: #dc2626 !important;
+  box-shadow: none !important;
+}
+
+/* Section headings inside the two-column field grid. Eighteen fields in
+   one undifferentiated grid was the wall; four short groups are not. */
+.dlc-wizard-section {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-2);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.dlc-wizard-section:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+/* Required mark on the label. The form marked three fields with a literal
+   " *" and left the other required ones unmarked, so you found out which
+   were required by pressing Next. */
+.dlc-wizard-req {
+  margin-left: 3px;
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* -- Footer ------------------------------------------------------------- */
+.dlc-wizard-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  align-self: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+.dlc-wizard-footer {
+  margin-top: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-2);
+}
+@layer base {
+  .dlc-wizard-footer-btn {
+    height: 38px;
+    border-radius: 999px !important;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  /* Black pill, the same CTA the rest of the console uses. */
+  .dlc-wizard-footer-btn--primary {
+    min-width: 104px;
+    border-color: #171717 !important;
+    background: #171717 !important;
+    color: #ffffff !important;
+  }
+  .dlc-wizard-footer-btn--primary:hover:not(:disabled) {
+    border-color: #2e2e2e !important;
+    background: #2e2e2e !important;
+  }
+  .dlc-wizard-footer-btn--primary:disabled {
+    border-color: var(--line) !important;
+    background: var(--surface-2) !important;
+    color: var(--ink-4) !important;
+  }
+}
+
+/* ══ Search inside the table card ═════════════════════════════════════════
+   The AI Receptionists pattern: search, refresh and the status filter sit in
+   a toolbar strip INSIDE the table's card, above its column headers -- not up
+   in the page head. The head keeps the title and the primary action only.
+
+   TableManager renders its toolbar (customHeader), the scrolling table and
+   the pager as three siblings, each carrying its own border and radius. This
+   wrapper makes them one card: it owns the border, and the three inside it
+   give theirs up. */
+.mcm-admin .mcm-tablecard--tm > div:first-child {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-2);
+}
+.mcm-admin .mcm-tablecard--tm > div:first-child > div {
+  padding: 0;
+}
+.mcm-admin .mcm-tablecard--tm > .table-scroll {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.mcm-admin .mcm-tablecard--tm > .z-10 {
+  border: 0;
+  border-top: 1px solid var(--line-2);
+  border-radius: 0;
+  box-shadow: none;
+}
+/* Hand-rolled tables (Destinations) get the same strip by markup. */
+.mcm-admin .mcm-tabletools {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-2);
+}
+/* The filter sits at the far right of the strip, as on the reference. */
+.mcm-admin .mcm-tabletools-right {
+  display: flex;
+  align-items: center;
+}
+@media (min-width: 640px) {
+  .mcm-admin .mcm-tabletools-right {
+    margin-left: auto;
+  }
+}
+
+
+/* ── Create 10DLC Brand as a dialog ───────────────────────────────────────
+   The form moved from the side panel into the same centred dialog shell as
+   New webhook (.mcm-modal head/body/foot). These sit outside .mcm-admin
+   because the dialog portals to <body>. */
+.mcm-modal-eyebrow {
+  margin-bottom: 2px;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #dc2626;
+}
+/* Says why a move was refused, directly under the stepper that refused --
+   a red band, so it registers as feedback from the click that just happened
+   rather than a note somewhere else on the dialog. */
+.dlc-wizard-blocked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 8px 11px;
+  border: 1px solid var(--accent-edge);
+  border-radius: 8px;
+  background: var(--accent-wash);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--accent);
+}
+
+/* The info icon, again without the `.mcm-admin` ancestor. `.mcm-admin
+   .mcm-intpage-info` sets it to 16px in grey, but this dialog portals to
+   <body> and never matches that selector, so the icon fell back to lucide's
+   own 24px and inherited the title's ink -- a large dark circle beside a
+   27px serif title. */
+.dlc-wizard .mcm-intpage-info {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #99a1af;
+  cursor: help;
+}
+.dlc-wizard .mcm-intpage-info:hover {
+  color: #dc2626;
+}
+
+/* The page head's pair exactly -- 12px mono eyebrow over a 27px italic
+   serif title in #171717. It was shrunk to 21px to buy header height, which
+   put the dialog out of step with every page behind it; the height came back
+   from moving the description into the info tip instead. */
+.dlc-wizard .mcm-modal-title {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 27px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: #171717;
+}
+/* The stepper lives in the header band now, under the lede; the band's own
+   rule separates it from the fields, so the stepper drops its own. */
+.dlc-wizard .dlc-wizard-tabs-header {
+  margin-top: 8px;
+  padding: 0;
+  border-bottom: 0;
+}
+@layer base {
+  .dlc-wizard .mcm-modal-head .dlc-wizard-tab-trigger {
+    padding: 4px 0 0 !important;
+  }
+}
+/* The whole band, tightened: it was 20/16 around a 27px title. */
+.dlc-wizard .mcm-modal-head {
+  padding: 14px 22px 12px;
+}
+/* The body band pays for the padding; the form and its scroller stop
+   carrying their own. The scroller is capped so the footer stays on screen. */
+.dlc-wizard .dlc-wizard-form {
+  padding: 0;
+}
+.dlc-wizard .mcm-modal-body {
+  padding: 16px 22px 18px;
+}
+/* Height is bounded at the dialog, not guessed at the scroller. The step
+   component carries `h-[calc(100vh-16rem)]`, which on a 768px laptop is
+   512px of fields on top of a ~95px header, a stepper and a footer -- past
+   the bottom of the screen. Capping the dialog and letting the scroller flex
+   into whatever is left keeps the footer on screen at any height. */
+[role='dialog']:has(.dlc-wizard) {
+  display: flex;
+  flex-direction: column;
+  max-height: 84vh;
+  overflow: hidden;
+}
+.dlc-wizard {
+  flex: 1;
+  min-height: 0;
+}
+.dlc-wizard .dlc-wizard-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.dlc-wizard .mcm-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.dlc-wizard .dlc-wizard-step-scroll {
+  height: 100%;
+  max-height: none;
+  overflow-y: auto;
+  padding-top: 0;
+  padding-right: 6px;
+}
+.dlc-wizard .mcm-modal-foot {
+  margin-top: 0;
+  /* Stated again at two-class specificity: the single-class rule above was
+     losing the hairline to Tailwind's own border colour, so the footer rule
+     drew a slightly different grey from the header's. */
+  border-top-color: var(--line-2);
+}
+
+/* The phone field's country button. react-phone-input-2 ships it as a grey
+   chip -- #f5f5f5 on a #cacaca border -- which against this dialog's white
+   fields reads as a raised, glossy button stuck to the front of the input.
+   Flattened so the flag sits inside the field as part of it. The flag itself
+   is a sprite PNG, so its own slight gloss is the library's and not
+   something CSS can take off. */
+.dlc-wizard .react-tel-input .flag-dropdown,
+.dlc-wizard .react-tel-input .flag-dropdown.open,
+.dlc-wizard .react-tel-input .flag-dropdown:hover,
+.dlc-wizard .react-tel-input .flag-dropdown:focus {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 10px 0 0 10px !important;
+}
+.dlc-wizard .react-tel-input .selected-flag,
+.dlc-wizard .react-tel-input .selected-flag:hover,
+.dlc-wizard .react-tel-input .selected-flag:focus,
+.dlc-wizard .react-tel-input .flag-dropdown.open .selected-flag {
+  background: transparent !important;
+  border-radius: 10px 0 0 10px !important;
+}
+
+/* Emoji flags instead of the library's sprite.
+   react-phone-input-2 draws each flag from one glossy PNG sprite -- the
+   shine is painted into the image, so no amount of CSS on the element
+   around it takes the gloss off. These are flat, and they are what the rest
+   of the console already uses: main.tsx runs polyfillCountryFlagEmojis()
+   and 'Twemoji Country Flags' is in the app font stack, which is what makes
+   them render on Windows. Scoped to this dialog; every other phone input in
+   the app keeps the sprite. */
+.dlc-wizard .react-tel-input .flag {
+  width: auto !important;
+  height: auto !important;
+  margin-top: -8px !important;
+  background-image: none !important;
+  font-family: 'Twemoji Country Flags', 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1;
+}
+.dlc-wizard .react-tel-input .flag::before {
+  display: block;
+}
+.dlc-wizard .react-tel-input .flag.ad::before{content:'\01F1E6\01F1E9'}
+.dlc-wizard .react-tel-input .flag.ae::before{content:'\01F1E6\01F1EA'}
+.dlc-wizard .react-tel-input .flag.af::before{content:'\01F1E6\01F1EB'}
+.dlc-wizard .react-tel-input .flag.ag::before{content:'\01F1E6\01F1EC'}
+.dlc-wizard .react-tel-input .flag.ai::before{content:'\01F1E6\01F1EE'}
+.dlc-wizard .react-tel-input .flag.al::before{content:'\01F1E6\01F1F1'}
+.dlc-wizard .react-tel-input .flag.am::before{content:'\01F1E6\01F1F2'}
+.dlc-wizard .react-tel-input .flag.ao::before{content:'\01F1E6\01F1F4'}
+.dlc-wizard .react-tel-input .flag.ar::before{content:'\01F1E6\01F1F7'}
+.dlc-wizard .react-tel-input .flag.as::before{content:'\01F1E6\01F1F8'}
+.dlc-wizard .react-tel-input .flag.at::before{content:'\01F1E6\01F1F9'}
+.dlc-wizard .react-tel-input .flag.au::before{content:'\01F1E6\01F1FA'}
+.dlc-wizard .react-tel-input .flag.aw::before{content:'\01F1E6\01F1FC'}
+.dlc-wizard .react-tel-input .flag.az::before{content:'\01F1E6\01F1FF'}
+.dlc-wizard .react-tel-input .flag.ba::before{content:'\01F1E7\01F1E6'}
+.dlc-wizard .react-tel-input .flag.bb::before{content:'\01F1E7\01F1E7'}
+.dlc-wizard .react-tel-input .flag.bd::before{content:'\01F1E7\01F1E9'}
+.dlc-wizard .react-tel-input .flag.be::before{content:'\01F1E7\01F1EA'}
+.dlc-wizard .react-tel-input .flag.bf::before{content:'\01F1E7\01F1EB'}
+.dlc-wizard .react-tel-input .flag.bg::before{content:'\01F1E7\01F1EC'}
+.dlc-wizard .react-tel-input .flag.bh::before{content:'\01F1E7\01F1ED'}
+.dlc-wizard .react-tel-input .flag.bi::before{content:'\01F1E7\01F1EE'}
+.dlc-wizard .react-tel-input .flag.bj::before{content:'\01F1E7\01F1EF'}
+.dlc-wizard .react-tel-input .flag.bm::before{content:'\01F1E7\01F1F2'}
+.dlc-wizard .react-tel-input .flag.bn::before{content:'\01F1E7\01F1F3'}
+.dlc-wizard .react-tel-input .flag.bo::before{content:'\01F1E7\01F1F4'}
+.dlc-wizard .react-tel-input .flag.bq::before{content:'\01F1E7\01F1F6'}
+.dlc-wizard .react-tel-input .flag.br::before{content:'\01F1E7\01F1F7'}
+.dlc-wizard .react-tel-input .flag.bs::before{content:'\01F1E7\01F1F8'}
+.dlc-wizard .react-tel-input .flag.bt::before{content:'\01F1E7\01F1F9'}
+.dlc-wizard .react-tel-input .flag.bw::before{content:'\01F1E7\01F1FC'}
+.dlc-wizard .react-tel-input .flag.by::before{content:'\01F1E7\01F1FE'}
+.dlc-wizard .react-tel-input .flag.bz::before{content:'\01F1E7\01F1FF'}
+.dlc-wizard .react-tel-input .flag.ca::before{content:'\01F1E8\01F1E6'}
+.dlc-wizard .react-tel-input .flag.cd::before{content:'\01F1E8\01F1E9'}
+.dlc-wizard .react-tel-input .flag.cf::before{content:'\01F1E8\01F1EB'}
+.dlc-wizard .react-tel-input .flag.cg::before{content:'\01F1E8\01F1EC'}
+.dlc-wizard .react-tel-input .flag.ch::before{content:'\01F1E8\01F1ED'}
+.dlc-wizard .react-tel-input .flag.ci::before{content:'\01F1E8\01F1EE'}
+.dlc-wizard .react-tel-input .flag.ck::before{content:'\01F1E8\01F1F0'}
+.dlc-wizard .react-tel-input .flag.cl::before{content:'\01F1E8\01F1F1'}
+.dlc-wizard .react-tel-input .flag.cm::before{content:'\01F1E8\01F1F2'}
+.dlc-wizard .react-tel-input .flag.cn::before{content:'\01F1E8\01F1F3'}
+.dlc-wizard .react-tel-input .flag.co::before{content:'\01F1E8\01F1F4'}
+.dlc-wizard .react-tel-input .flag.cr::before{content:'\01F1E8\01F1F7'}
+.dlc-wizard .react-tel-input .flag.cu::before{content:'\01F1E8\01F1FA'}
+.dlc-wizard .react-tel-input .flag.cv::before{content:'\01F1E8\01F1FB'}
+.dlc-wizard .react-tel-input .flag.cw::before{content:'\01F1E8\01F1FC'}
+.dlc-wizard .react-tel-input .flag.cy::before{content:'\01F1E8\01F1FE'}
+.dlc-wizard .react-tel-input .flag.cz::before{content:'\01F1E8\01F1FF'}
+.dlc-wizard .react-tel-input .flag.de::before{content:'\01F1E9\01F1EA'}
+.dlc-wizard .react-tel-input .flag.dj::before{content:'\01F1E9\01F1EF'}
+.dlc-wizard .react-tel-input .flag.dk::before{content:'\01F1E9\01F1F0'}
+.dlc-wizard .react-tel-input .flag.dm::before{content:'\01F1E9\01F1F2'}
+.dlc-wizard .react-tel-input .flag.do::before{content:'\01F1E9\01F1F4'}
+.dlc-wizard .react-tel-input .flag.dz::before{content:'\01F1E9\01F1FF'}
+.dlc-wizard .react-tel-input .flag.ec::before{content:'\01F1EA\01F1E8'}
+.dlc-wizard .react-tel-input .flag.ee::before{content:'\01F1EA\01F1EA'}
+.dlc-wizard .react-tel-input .flag.eg::before{content:'\01F1EA\01F1EC'}
+.dlc-wizard .react-tel-input .flag.er::before{content:'\01F1EA\01F1F7'}
+.dlc-wizard .react-tel-input .flag.es::before{content:'\01F1EA\01F1F8'}
+.dlc-wizard .react-tel-input .flag.et::before{content:'\01F1EA\01F1F9'}
+.dlc-wizard .react-tel-input .flag.fi::before{content:'\01F1EB\01F1EE'}
+.dlc-wizard .react-tel-input .flag.fj::before{content:'\01F1EB\01F1EF'}
+.dlc-wizard .react-tel-input .flag.fk::before{content:'\01F1EB\01F1F0'}
+.dlc-wizard .react-tel-input .flag.fm::before{content:'\01F1EB\01F1F2'}
+.dlc-wizard .react-tel-input .flag.fo::before{content:'\01F1EB\01F1F4'}
+.dlc-wizard .react-tel-input .flag.ga::before{content:'\01F1EC\01F1E6'}
+.dlc-wizard .react-tel-input .flag.gb::before{content:'\01F1EC\01F1E7'}
+.dlc-wizard .react-tel-input .flag.gd::before{content:'\01F1EC\01F1E9'}
+.dlc-wizard .react-tel-input .flag.ge::before{content:'\01F1EC\01F1EA'}
+.dlc-wizard .react-tel-input .flag.gf::before{content:'\01F1EC\01F1EB'}
+.dlc-wizard .react-tel-input .flag.gh::before{content:'\01F1EC\01F1ED'}
+.dlc-wizard .react-tel-input .flag.gi::before{content:'\01F1EC\01F1EE'}
+.dlc-wizard .react-tel-input .flag.gl::before{content:'\01F1EC\01F1F1'}
+.dlc-wizard .react-tel-input .flag.gm::before{content:'\01F1EC\01F1F2'}
+.dlc-wizard .react-tel-input .flag.gn::before{content:'\01F1EC\01F1F3'}
+.dlc-wizard .react-tel-input .flag.gp::before{content:'\01F1EC\01F1F5'}
+.dlc-wizard .react-tel-input .flag.gq::before{content:'\01F1EC\01F1F6'}
+.dlc-wizard .react-tel-input .flag.gr::before{content:'\01F1EC\01F1F7'}
+.dlc-wizard .react-tel-input .flag.gt::before{content:'\01F1EC\01F1F9'}
+.dlc-wizard .react-tel-input .flag.gu::before{content:'\01F1EC\01F1FA'}
+.dlc-wizard .react-tel-input .flag.gw::before{content:'\01F1EC\01F1FC'}
+.dlc-wizard .react-tel-input .flag.gy::before{content:'\01F1EC\01F1FE'}
+.dlc-wizard .react-tel-input .flag.hk::before{content:'\01F1ED\01F1F0'}
+.dlc-wizard .react-tel-input .flag.hn::before{content:'\01F1ED\01F1F3'}
+.dlc-wizard .react-tel-input .flag.hr::before{content:'\01F1ED\01F1F7'}
+.dlc-wizard .react-tel-input .flag.ht::before{content:'\01F1ED\01F1F9'}
+.dlc-wizard .react-tel-input .flag.hu::before{content:'\01F1ED\01F1FA'}
+.dlc-wizard .react-tel-input .flag.id::before{content:'\01F1EE\01F1E9'}
+.dlc-wizard .react-tel-input .flag.ie::before{content:'\01F1EE\01F1EA'}
+.dlc-wizard .react-tel-input .flag.il::before{content:'\01F1EE\01F1F1'}
+.dlc-wizard .react-tel-input .flag.in::before{content:'\01F1EE\01F1F3'}
+.dlc-wizard .react-tel-input .flag.io::before{content:'\01F1EE\01F1F4'}
+.dlc-wizard .react-tel-input .flag.iq::before{content:'\01F1EE\01F1F6'}
+.dlc-wizard .react-tel-input .flag.ir::before{content:'\01F1EE\01F1F7'}
+.dlc-wizard .react-tel-input .flag.is::before{content:'\01F1EE\01F1F8'}
+.dlc-wizard .react-tel-input .flag.it::before{content:'\01F1EE\01F1F9'}
+.dlc-wizard .react-tel-input .flag.je::before{content:'\01F1EF\01F1EA'}
+.dlc-wizard .react-tel-input .flag.jm::before{content:'\01F1EF\01F1F2'}
+.dlc-wizard .react-tel-input .flag.jo::before{content:'\01F1EF\01F1F4'}
+.dlc-wizard .react-tel-input .flag.jp::before{content:'\01F1EF\01F1F5'}
+.dlc-wizard .react-tel-input .flag.ke::before{content:'\01F1F0\01F1EA'}
+.dlc-wizard .react-tel-input .flag.kg::before{content:'\01F1F0\01F1EC'}
+.dlc-wizard .react-tel-input .flag.kh::before{content:'\01F1F0\01F1ED'}
+.dlc-wizard .react-tel-input .flag.ki::before{content:'\01F1F0\01F1EE'}
+.dlc-wizard .react-tel-input .flag.km::before{content:'\01F1F0\01F1F2'}
+.dlc-wizard .react-tel-input .flag.kn::before{content:'\01F1F0\01F1F3'}
+.dlc-wizard .react-tel-input .flag.kp::before{content:'\01F1F0\01F1F5'}
+.dlc-wizard .react-tel-input .flag.kr::before{content:'\01F1F0\01F1F7'}
+.dlc-wizard .react-tel-input .flag.kw::before{content:'\01F1F0\01F1FC'}
+.dlc-wizard .react-tel-input .flag.ky::before{content:'\01F1F0\01F1FE'}
+.dlc-wizard .react-tel-input .flag.kz::before{content:'\01F1F0\01F1FF'}
+.dlc-wizard .react-tel-input .flag.la::before{content:'\01F1F1\01F1E6'}
+.dlc-wizard .react-tel-input .flag.lb::before{content:'\01F1F1\01F1E7'}
+.dlc-wizard .react-tel-input .flag.lc::before{content:'\01F1F1\01F1E8'}
+.dlc-wizard .react-tel-input .flag.li::before{content:'\01F1F1\01F1EE'}
+.dlc-wizard .react-tel-input .flag.lk::before{content:'\01F1F1\01F1F0'}
+.dlc-wizard .react-tel-input .flag.lr::before{content:'\01F1F1\01F1F7'}
+.dlc-wizard .react-tel-input .flag.ls::before{content:'\01F1F1\01F1F8'}
+.dlc-wizard .react-tel-input .flag.lt::before{content:'\01F1F1\01F1F9'}
+.dlc-wizard .react-tel-input .flag.lu::before{content:'\01F1F1\01F1FA'}
+.dlc-wizard .react-tel-input .flag.lv::before{content:'\01F1F1\01F1FB'}
+.dlc-wizard .react-tel-input .flag.ly::before{content:'\01F1F1\01F1FE'}
+.dlc-wizard .react-tel-input .flag.ma::before{content:'\01F1F2\01F1E6'}
+.dlc-wizard .react-tel-input .flag.mc::before{content:'\01F1F2\01F1E8'}
+.dlc-wizard .react-tel-input .flag.md::before{content:'\01F1F2\01F1E9'}
+.dlc-wizard .react-tel-input .flag.me::before{content:'\01F1F2\01F1EA'}
+.dlc-wizard .react-tel-input .flag.mf::before{content:'\01F1F2\01F1EB'}
+.dlc-wizard .react-tel-input .flag.mg::before{content:'\01F1F2\01F1EC'}
+.dlc-wizard .react-tel-input .flag.mh::before{content:'\01F1F2\01F1ED'}
+.dlc-wizard .react-tel-input .flag.mk::before{content:'\01F1F2\01F1F0'}
+.dlc-wizard .react-tel-input .flag.ml::before{content:'\01F1F2\01F1F1'}
+.dlc-wizard .react-tel-input .flag.mm::before{content:'\01F1F2\01F1F2'}
+.dlc-wizard .react-tel-input .flag.mn::before{content:'\01F1F2\01F1F3'}
+.dlc-wizard .react-tel-input .flag.mo::before{content:'\01F1F2\01F1F4'}
+.dlc-wizard .react-tel-input .flag.mp::before{content:'\01F1F2\01F1F5'}
+.dlc-wizard .react-tel-input .flag.mq::before{content:'\01F1F2\01F1F6'}
+.dlc-wizard .react-tel-input .flag.mr::before{content:'\01F1F2\01F1F7'}
+.dlc-wizard .react-tel-input .flag.ms::before{content:'\01F1F2\01F1F8'}
+.dlc-wizard .react-tel-input .flag.mt::before{content:'\01F1F2\01F1F9'}
+.dlc-wizard .react-tel-input .flag.mu::before{content:'\01F1F2\01F1FA'}
+.dlc-wizard .react-tel-input .flag.mv::before{content:'\01F1F2\01F1FB'}
+.dlc-wizard .react-tel-input .flag.mw::before{content:'\01F1F2\01F1FC'}
+.dlc-wizard .react-tel-input .flag.mx::before{content:'\01F1F2\01F1FD'}
+.dlc-wizard .react-tel-input .flag.my::before{content:'\01F1F2\01F1FE'}
+.dlc-wizard .react-tel-input .flag.mz::before{content:'\01F1F2\01F1FF'}
+.dlc-wizard .react-tel-input .flag.na::before{content:'\01F1F3\01F1E6'}
+.dlc-wizard .react-tel-input .flag.nc::before{content:'\01F1F3\01F1E8'}
+.dlc-wizard .react-tel-input .flag.ne::before{content:'\01F1F3\01F1EA'}
+.dlc-wizard .react-tel-input .flag.nf::before{content:'\01F1F3\01F1EB'}
+.dlc-wizard .react-tel-input .flag.ng::before{content:'\01F1F3\01F1EC'}
+.dlc-wizard .react-tel-input .flag.ni::before{content:'\01F1F3\01F1EE'}
+.dlc-wizard .react-tel-input .flag.no::before{content:'\01F1F3\01F1F4'}
+.dlc-wizard .react-tel-input .flag.np::before{content:'\01F1F3\01F1F5'}
+.dlc-wizard .react-tel-input .flag.nr::before{content:'\01F1F3\01F1F7'}
+.dlc-wizard .react-tel-input .flag.nu::before{content:'\01F1F3\01F1FA'}
+.dlc-wizard .react-tel-input .flag.nz::before{content:'\01F1F3\01F1FF'}
+.dlc-wizard .react-tel-input .flag.om::before{content:'\01F1F4\01F1F2'}
+.dlc-wizard .react-tel-input .flag.pa::before{content:'\01F1F5\01F1E6'}
+.dlc-wizard .react-tel-input .flag.pe::before{content:'\01F1F5\01F1EA'}
+.dlc-wizard .react-tel-input .flag.pf::before{content:'\01F1F5\01F1EB'}
+.dlc-wizard .react-tel-input .flag.pg::before{content:'\01F1F5\01F1EC'}
+.dlc-wizard .react-tel-input .flag.ph::before{content:'\01F1F5\01F1ED'}
+.dlc-wizard .react-tel-input .flag.pk::before{content:'\01F1F5\01F1F0'}
+.dlc-wizard .react-tel-input .flag.pl::before{content:'\01F1F5\01F1F1'}
+.dlc-wizard .react-tel-input .flag.pm::before{content:'\01F1F5\01F1F2'}
+.dlc-wizard .react-tel-input .flag.pr::before{content:'\01F1F5\01F1F7'}
+.dlc-wizard .react-tel-input .flag.ps::before{content:'\01F1F5\01F1F8'}
+.dlc-wizard .react-tel-input .flag.pt::before{content:'\01F1F5\01F1F9'}
+.dlc-wizard .react-tel-input .flag.pw::before{content:'\01F1F5\01F1FC'}
+.dlc-wizard .react-tel-input .flag.py::before{content:'\01F1F5\01F1FE'}
+.dlc-wizard .react-tel-input .flag.qa::before{content:'\01F1F6\01F1E6'}
+.dlc-wizard .react-tel-input .flag.re::before{content:'\01F1F7\01F1EA'}
+.dlc-wizard .react-tel-input .flag.ro::before{content:'\01F1F7\01F1F4'}
+.dlc-wizard .react-tel-input .flag.rs::before{content:'\01F1F7\01F1F8'}
+.dlc-wizard .react-tel-input .flag.ru::before{content:'\01F1F7\01F1FA'}
+.dlc-wizard .react-tel-input .flag.rw::before{content:'\01F1F7\01F1FC'}
+.dlc-wizard .react-tel-input .flag.sa::before{content:'\01F1F8\01F1E6'}
+.dlc-wizard .react-tel-input .flag.sb::before{content:'\01F1F8\01F1E7'}
+.dlc-wizard .react-tel-input .flag.sc::before{content:'\01F1F8\01F1E8'}
+.dlc-wizard .react-tel-input .flag.sd::before{content:'\01F1F8\01F1E9'}
+.dlc-wizard .react-tel-input .flag.se::before{content:'\01F1F8\01F1EA'}
+.dlc-wizard .react-tel-input .flag.sg::before{content:'\01F1F8\01F1EC'}
+.dlc-wizard .react-tel-input .flag.sh::before{content:'\01F1F8\01F1ED'}
+.dlc-wizard .react-tel-input .flag.si::before{content:'\01F1F8\01F1EE'}
+.dlc-wizard .react-tel-input .flag.sk::before{content:'\01F1F8\01F1F0'}
+.dlc-wizard .react-tel-input .flag.sl::before{content:'\01F1F8\01F1F1'}
+.dlc-wizard .react-tel-input .flag.sm::before{content:'\01F1F8\01F1F2'}
+.dlc-wizard .react-tel-input .flag.sn::before{content:'\01F1F8\01F1F3'}
+.dlc-wizard .react-tel-input .flag.so::before{content:'\01F1F8\01F1F4'}
+.dlc-wizard .react-tel-input .flag.sr::before{content:'\01F1F8\01F1F7'}
+.dlc-wizard .react-tel-input .flag.ss::before{content:'\01F1F8\01F1F8'}
+.dlc-wizard .react-tel-input .flag.st::before{content:'\01F1F8\01F1F9'}
+.dlc-wizard .react-tel-input .flag.sv::before{content:'\01F1F8\01F1FB'}
+.dlc-wizard .react-tel-input .flag.sx::before{content:'\01F1F8\01F1FD'}
+.dlc-wizard .react-tel-input .flag.sy::before{content:'\01F1F8\01F1FE'}
+.dlc-wizard .react-tel-input .flag.sz::before{content:'\01F1F8\01F1FF'}
+.dlc-wizard .react-tel-input .flag.tc::before{content:'\01F1F9\01F1E8'}
+.dlc-wizard .react-tel-input .flag.td::before{content:'\01F1F9\01F1E9'}
+.dlc-wizard .react-tel-input .flag.tg::before{content:'\01F1F9\01F1EC'}
+.dlc-wizard .react-tel-input .flag.th::before{content:'\01F1F9\01F1ED'}
+.dlc-wizard .react-tel-input .flag.tj::before{content:'\01F1F9\01F1EF'}
+.dlc-wizard .react-tel-input .flag.tk::before{content:'\01F1F9\01F1F0'}
+.dlc-wizard .react-tel-input .flag.tl::before{content:'\01F1F9\01F1F1'}
+.dlc-wizard .react-tel-input .flag.tm::before{content:'\01F1F9\01F1F2'}
+.dlc-wizard .react-tel-input .flag.tn::before{content:'\01F1F9\01F1F3'}
+.dlc-wizard .react-tel-input .flag.to::before{content:'\01F1F9\01F1F4'}
+.dlc-wizard .react-tel-input .flag.tr::before{content:'\01F1F9\01F1F7'}
+.dlc-wizard .react-tel-input .flag.tt::before{content:'\01F1F9\01F1F9'}
+.dlc-wizard .react-tel-input .flag.tv::before{content:'\01F1F9\01F1FB'}
+.dlc-wizard .react-tel-input .flag.tw::before{content:'\01F1F9\01F1FC'}
+.dlc-wizard .react-tel-input .flag.tz::before{content:'\01F1F9\01F1FF'}
+.dlc-wizard .react-tel-input .flag.ua::before{content:'\01F1FA\01F1E6'}
+.dlc-wizard .react-tel-input .flag.ug::before{content:'\01F1FA\01F1EC'}
+.dlc-wizard .react-tel-input .flag.us::before{content:'\01F1FA\01F1F8'}
+.dlc-wizard .react-tel-input .flag.uy::before{content:'\01F1FA\01F1FE'}
+.dlc-wizard .react-tel-input .flag.uz::before{content:'\01F1FA\01F1FF'}
+.dlc-wizard .react-tel-input .flag.va::before{content:'\01F1FB\01F1E6'}
+.dlc-wizard .react-tel-input .flag.vc::before{content:'\01F1FB\01F1E8'}
+.dlc-wizard .react-tel-input .flag.ve::before{content:'\01F1FB\01F1EA'}
+.dlc-wizard .react-tel-input .flag.vg::before{content:'\01F1FB\01F1EC'}
+.dlc-wizard .react-tel-input .flag.vi::before{content:'\01F1FB\01F1EE'}
+.dlc-wizard .react-tel-input .flag.vn::before{content:'\01F1FB\01F1F3'}
+.dlc-wizard .react-tel-input .flag.vu::before{content:'\01F1FB\01F1FA'}
+.dlc-wizard .react-tel-input .flag.wf::before{content:'\01F1FC\01F1EB'}
+.dlc-wizard .react-tel-input .flag.ws::before{content:'\01F1FC\01F1F8'}
+.dlc-wizard .react-tel-input .flag.xk::before{content:'\01F1FD\01F1F0'}
+.dlc-wizard .react-tel-input .flag.ye::before{content:'\01F1FE\01F1EA'}
+.dlc-wizard .react-tel-input .flag.za::before{content:'\01F1FF\01F1E6'}
+.dlc-wizard .react-tel-input .flag.zm::before{content:'\01F1FF\01F1F2'}
+.dlc-wizard .react-tel-input .flag.zw::before{content:'\01F1FF\01F1FC'}
+
+/* The campaign wizard's four steps have no inner `dlc-wizard-step-scroll`
+   the way the brand form does -- they are plain field stacks -- so the body
+   band is the scroller for them. Without this they inherit the shared
+   `overflow: hidden` above and the later steps simply get cut off. */
+.dlc-wizard .mcm-modal-body.dlc-wizard-step-content {
+  overflow-y: auto;
+}
+
+/* Four steps with names as long as "Carrier Terms Preview" need more width
+   than three do, and the row is `flex: 0 0 auto` nodes -- past its container
+   it clips rather than wraps, so the last step disappears. Narrow, only the
+   step you are on keeps its name; the rest stay as numbered circles, which
+   is enough to show how far along you are. */
+@media (max-width: 900px) {
+  .dlc-wizard .dlc-wizard-tab-trigger:not([data-state='active']) .dlc-wizard-tab-label {
+    display: none;
+  }
+}
+
+/* ── Carrier terms acknowledgement ────────────────────────────────────────
+   Rides the wizard's own head/body/foot shell so the dialog that opens on
+   top of the wizard looks like it belongs to it. Only two things differ: it
+   has no stepper to size around, and its one paragraph is the whole point of
+   the dialog rather than a subtitle, so it is read at body size instead of
+   the 12.5px grey a lede normally gets. */
+.dlc-terms .mcm-modal-body {
+  overflow-y: auto;
+}
+.dlc-terms .mcm-modal-lede {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* Prev, once it is enabled. The shared `outline` variant draws in the tenant
+   red, which put a red-outlined pill immediately beside the black Next pill
+   and read as the more urgent of the two. Secondary actions are neutral
+   here, the same as everywhere else in the console; red is reserved for the
+   accent and for things that went wrong. */
+@layer base {
+  .dlc-wizard-footer-btn:not(.dlc-wizard-footer-btn--primary):not(:disabled) {
+    border-color: var(--line) !important;
+    background: #ffffff !important;
+    color: var(--ink-2) !important;
+  }
+  .dlc-wizard-footer-btn:not(.dlc-wizard-footer-btn--primary):not(:disabled):hover {
+    border-color: var(--line-2) !important;
+    background: var(--surface-2) !important;
+    color: var(--ink) !important;
+  }
+}
+
+/* Long-text fields. They were `border-gray-200` + `rounded-xl` inline, which
+   is a different grey and a different corner from the inputs sitting beside
+   them in the same grid -- two field styles in one form. This is the input
+   rule above, applied to a textarea. */
+.dlc-wizard-textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+  resize: none;
+}
+.dlc-wizard-textarea::placeholder {
+  color: var(--ink-4);
+}
+.dlc-wizard-textarea:hover {
+  border-color: var(--accent-edge);
+}
+.dlc-wizard-textarea:focus,
+.dlc-wizard-textarea:focus-visible {
+  border-color: #dc2626;
+  box-shadow: none;
+  outline: none;
+}
+.dlc-wizard-textarea.is-invalid {
+  border-color: #dc2626;
+}
+/* The character minimum, under the field it applies to. */
+.dlc-wizard-hint {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--ink-4);
+}
+
+/* ── Payment step ─────────────────────────────────────────────────────────
+   The charges table and the agreement row. Both were bare bordered divs. */
+.dlc-terms-para {
+  margin: 10px 0 0;
+}
+.dlc-costtable {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.dlc-costrow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink);
+}
+.dlc-costrow:first-child {
+  border-top: 0;
+}
+/* The header band the console's tables use, not another body row in a
+   slightly darker grey. */
+.dlc-costrow--head {
+  background: var(--surface-2);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.dlc-costrow-price {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+/* The agreement. A checkbox floating on the page background gave the one
+   thing standing between you and a $20 charge no more weight than a form
+   label; in a bordered row it reads as a decision. */
+.dlc-agree {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.dlc-agree:hover {
+  border-color: var(--accent-edge);
+}
+.dlc-agree label {
+  cursor: pointer;
+}
+
+/* ── Carrier terms step ───────────────────────────────────────────────────
+   One card per mobile network operator: a name band you tick, and its six
+   terms below it. It was a grey chip welded to a bordered box with six
+   centred stacks in it, which put the carrier's name and its verdicts at the
+   same visual weight. */
+.dlc-mno {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.dlc-mno-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.dlc-mno-head:hover {
+  background: var(--accent-wash);
+}
+.dlc-mno-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+.dlc-mno-terms {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line-2);
+}
+@media (min-width: 560px) {
+  .dlc-mno-terms {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 860px) {
+  .dlc-mno-terms {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+/* Hairlines come from the grid gap over a tinted ground, so the cells stay
+   flush however many fit per row. */
+.dlc-mno-term {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: var(--surface);
+}
+.dlc-mno-term-label {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+/* Yes and No differ by more than the word, so the row can be read at a
+   glance instead of one label at a time. */
+.dlc-mno-term-val {
+  font-size: 13px;
+  font-weight: 600;
+}
+.dlc-mno-term-val.is-yes {
+  color: var(--ink);
+}
+.dlc-mno-term-val.is-no {
+  color: var(--ink-4);
+}
+
+/* ══ AI Agents → Settings ═════════════════════════════════════════════════
+   One table: a row per channel, a column per mode. Two mirrored cards meant
+   every channel name appeared twice and the two lists could never be the
+   same height -- the shorter one padded itself out with blank card while the
+   longer one hid its last row. */
+.mcm-aitable {
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+.mcm-aitable-head,
+.mcm-aitable-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+}
+/* The header band the console's other tables use. */
+.mcm-aitable-head {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+/* What each mode does is a tip on its column heading -- as a paragraph under
+   a card title it was two sentences you read once and then scrolled past
+   forever. */
+.mcm-aitable-col {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mcm-aitable-row + .mcm-aitable-row,
+.mcm-aitable-head + .mcm-aitable-row {
+  border-top: 1px solid var(--line);
+}
+.mcm-aitable-head + .mcm-aitable-row {
+  border-top: 0;
+}
+.mcm-aitable-row:hover {
+  background: var(--surface-2);
+}
+.mcm-aitable-cell {
+  min-width: 0;
+}
+/* A channel with no unattended mode, said rather than left blank. */
+.mcm-aitable-na {
+  font-size: 12.5px;
+  color: var(--ink-4);
+}
+.mcm-airow-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+/* One box for every channel glyph, so Messenger's circle and Telegram's
+   paper plane set their labels at the same x. */
+.mcm-aiicon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+.mcm-aiselect {
+  width: 100%;
+}
+.mcm-aifoot {
+  margin: 10px 2px 0;
+  font-size: 12px;
+  color: var(--ink-4);
+}
+
+/* Narrow: the grid stops being a grid. Each channel becomes its own block
+   with the column headings repeated inline, since a three-column row cannot
+   hold two selects at a usable width on a phone. */
+@media (max-width: 720px) {
+  .mcm-aitable-head {
+    display: none;
+  }
+  .mcm-aitable-row {
+    display: block;
+    padding: 14px 16px;
+  }
+  .mcm-aitable-cell {
+    margin-top: 10px;
+  }
+  .mcm-aitable-cell::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 5px;
+    font-family: var(--mono, ui-monospace, monospace);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-4);
+  }
+}
+
