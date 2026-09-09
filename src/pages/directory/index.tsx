@@ -32,7 +32,9 @@ const Directory = () => {
   const view = String(getParam('view') || 'people');
 
   return (
-    <div className="mcm-page">
+    <div
+      className={`mcm-page${view === 'people' ? ' mcm-admin-people' : ''}${view === 'groups' ? ' grp-canvas' : ''}`}
+    >
       <Suspense
         fallback={
           <div className="flex h-full items-center justify-center">

@@ -6,6 +6,7 @@ import Recorder from '../recorder';
 import moment from 'moment';
 import { useFormContext } from 'react-hook-form';
 import ReadyAudio from '@/components/custom/ready-audio';
+import { RecordCircle } from '@/assets/icons';
 
 const Record: FC = () => {
   const { watch, setValue } = useFormContext();

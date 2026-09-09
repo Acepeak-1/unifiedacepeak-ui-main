@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ic } from '@/components/mcm/icons';
-import SideDrawer from '@/components/custom/side-drawer';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import AlertConfirm from '@/components/custom/alert-confirm';
 import NewSiteSteps from '@/pages/admin-settings/company/new-site-steps';
 import { siteDelete, siteList } from '@/services/api';
@@ -9,6 +9,15 @@ import { useCompanyFeatures } from '@/hooks/rbac';
 import { handleAlert } from '@/lib/utils';
 import { DirectoryDrawer, DirectoryPage, EmptyRow, FilterChip, SearchChip } from './page-shell';
 import { usePeopleRows } from './people-rows';
+import { InfoIcon, MoreVertical } from 'lucide-react';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import './locations-theme.css';
 
 /**
  * Directory ▸ Locations — the organisation's sites.
@@ -118,10 +127,27 @@ const Locations = () => {
   }
 
   return (
-    <>
+    <div className="loc-theme">
       <DirectoryPage
-        title="Locations"
-        description="The sites your organisation operates from — address, timezone and who works there."
+        titleClassName="dir-serif-heading"
+        title={
+          <span className="flex items-center gap-2">
+            Locations
+            <CustomTooltip
+              text={
+                <>
+                  The sites your organisation operates from —
+                  <br />
+                  address, timezone and who works there.
+                </>
+              }
+              side="top"
+              className="!bg-gray-300 !text-black whitespace-normal text-left"
+            >
+              <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+            </CustomTooltip>
+          </span>
+        }
         actions={
           canAdd ? (
             <button type="button" className="btn primary soft-accent" onClick={() => setCreating(true)}>
@@ -132,7 +158,13 @@ const Locations = () => {
         }
         filters={
           <>
-            <FilterChip label="Country" value={country} options={countries} onChange={setCountry} />
+            <FilterChip
+              label="Country"
+              value={country}
+              options={countries}
+              onChange={setCountry}
+              tone="red"
+            />
             <SearchChip value={search} onChange={setSearch} placeholder="Search locations" />
             <span className="fchip live" style={{ marginLeft: 'auto' }}>
               {visible.length} of {sites.length}
@@ -140,16 +172,16 @@ const Locations = () => {
           </>
         }
       >
-        <table>
+        <table className="tbl">
           <thead>
-            <tr>
-              <th>Location</th>
-              <th>Address</th>
-              <th>City / State</th>
-              <th>Country</th>
-              <th>Timezone</th>
-              <th>People</th>
-              <th>Actions</th>
+            <tr className="tbl__head-row">
+              <th className="tbl__th tbl__th--left">Location</th>
+              <th className="tbl__th tbl__th--left">Address</th>
+              <th className="tbl__th tbl__th--left">City / State</th>
+              <th className="tbl__th tbl__th--left">Country</th>
+              <th className="tbl__th tbl__th--left">Timezone</th>
+              <th className="tbl__th tbl__th--left">People</th>
+              <th className="tbl__th tbl__th--left">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -157,9 +189,13 @@ const Locations = () => {
               <EmptyRow span={7} message="Loading locations…" />
             ) : visible.length ? (
               visible.map((site: Site) => (
-                <tr key={site?.uuid || site?.site_id} onClick={() => setOpen(site)}>
-                  <td>
-                    <div className="list-row-name">
+                <tr
+                  key={site?.uuid || site?.site_id}
+                  className="tbl__row"
+                  onClick={() => setOpen(site)}
+                >
+                  <td className="tbl__td tbl__td--left">
+                    <div className="tbl__name">
                       {site?.name || '—'}
                       {site?.is_default === '1' ? (
                         <span className="tag acc" style={{ marginLeft: 8 }}>
@@ -167,42 +203,63 @@ const Locations = () => {
                         </span>
                       ) : null}
                     </div>
-                    <div className="list-row-sub">{site?.postal_code || '—'}</div>
+                    <div className="tbl__subtitle">{site?.postal_code || '—'}</div>
                   </td>
-                  <td>{site?.address || '—'}</td>
-                  <td>{[site?.city, site?.state].filter(Boolean).join(', ') || '—'}</td>
-                  <td>{site?.country || '—'}</td>
-                  <td>
+                  <td className="tbl__td tbl__td--left tbl__value--muted">
+                    {site?.address || '—'}
+                  </td>
+                  <td className="tbl__td tbl__td--left tbl__value--muted">
+                    {[site?.city, site?.state].filter(Boolean).join(', ') || '—'}
+                  </td>
+                  <td className="tbl__td tbl__td--left tbl__value--muted">
+                    {site?.country || '—'}
+                  </td>
+                  <td className="tbl__td tbl__td--left">
                     <span className="mono">{site?.timezone || '—'}</span>
                   </td>
-                  <td>{headcount[site?.name || ''] || 0}</td>
-                  <td onClick={(event) => event.stopPropagation()}>
-                    <span className="flex items-center gap-1">
-                      {canEdit ? (
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`Edit ${site?.name || 'location'}`}
-                          aria-label={`Edit ${site?.name || 'location'}`}
-                          onClick={() => setEditing(site)}
-                        >
-                          <Ic n="sliders" size={12} />
-                        </button>
-                      ) : null}
-                      {/* The default site anchors numbers and users, so the
-                          platform does not allow removing it. */}
-                      {canDelete && site?.is_default !== '1' ? (
-                        <button
-                          type="button"
-                          className="mini"
-                          title={`Delete ${site?.name || 'location'}`}
-                          aria-label={`Delete ${site?.name || 'location'}`}
-                          onClick={() => setDeleting(site)}
-                        >
-                          <Ic n="trash" size={12} />
-                        </button>
-                      ) : null}
-                    </span>
+                  <td className="tbl__td tbl__td--left tbl__value">
+                    {headcount[site?.name || ''] || 0}
+                  </td>
+                  <td className="tbl__td tbl__td--left" onClick={(event) => event.stopPropagation()}>
+                    {canEdit || (canDelete && site?.is_default !== '1') ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="mini"
+                            title={`Actions for ${site?.name || 'location'}`}
+                            aria-label={`Actions for ${site?.name || 'location'}`}
+                          >
+                            <MoreVertical size={14} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="border-transparent">
+                          {canEdit ? (
+                            <DropdownMenuItem
+                              className="ppl-row-menu-item"
+                              onSelect={() => setEditing(site)}
+                            >
+                              <Ic n="sliders" size={14} />
+                              Edit
+                            </DropdownMenuItem>
+                          ) : null}
+                          {/* The default site anchors numbers and users, so
+                              the platform does not allow removing it. */}
+                          {canDelete && site?.is_default !== '1' ? (
+                            <DropdownMenuItem
+                              variant="destructive"
+                              className="ppl-row-menu-item"
+                              onSelect={() => setDeleting(site)}
+                            >
+                              <Ic n="trash" size={14} />
+                              Delete
+                            </DropdownMenuItem>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      '—'
+                    )}
                   </td>
                 </tr>
               ))
@@ -274,15 +331,16 @@ const Locations = () => {
 
       {/* The platform's own site form — `data` empty means create. */}
       {(creating || editing) && (
-        <SideDrawer
-          isOpen={creating || Boolean(editing)}
-          title={editing ? `Update location (${editing?.name || ''})` : 'New location'}
-          width="min(880px, 76vw)"
-          isTab={false}
-          enableResponsive
-          handleClose={closeForm}
-          content={<NewSiteSteps data={editing || {}} handleClose={closeForm} />}
-        />
+        <Dialog open={creating || Boolean(editing)} onOpenChange={(val) => !val && closeForm()}>
+          <DialogContent className="loc-create-dialog flex w-[92vw] max-w-[720px] max-h-[85vh] flex-col gap-0 overflow-hidden p-0">
+            <DialogTitle className="dir-serif-heading flex items-center gap-2 px-5 pt-4 pb-2 text-gray-900">
+              {editing ? `Update location (${editing?.name || ''})` : 'New location'}
+            </DialogTitle>
+            <div className="loc-create-theme min-h-0 flex-1 overflow-hidden px-5 pb-5">
+              <NewSiteSteps data={editing || {}} handleClose={closeForm} />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       <AlertConfirm
@@ -313,7 +371,7 @@ const Locations = () => {
           ),
         }}
       />
-    </>
+    </div>
   );
 };
 

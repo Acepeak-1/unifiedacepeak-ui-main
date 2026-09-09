@@ -1,4 +1,5 @@
 import { FC, useState } from 'react';
+import { Globe, Phone } from 'lucide-react';
 import { useFormContext } from 'react-hook-form';
 import { ISELECTVALUE } from '@/interfaces/api-interfaces';
 import { Button } from '@/components/ui/button';
@@ -264,7 +265,7 @@ const CommonSettingPermission: FC<any> = ({
           {/* {IS_ADMIN ? ( */}
           {isShowRole && (
             <div className="flex bg-white justify-between gap-3.5 w-full border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                 <div className="flex items-center gap-1">
                   <p
                     className={`font-semibold truncate text-md text-gray-900 ${(errors.settings as any)?.role?.value?.message ? 'text-red' : 'text-gray-900'}`}
@@ -293,8 +294,23 @@ const CommonSettingPermission: FC<any> = ({
               ) : null}
             </div>
           )}
+          {/* A real, in-flow section header — only for this page (see
+             isOwnSettingsPage) — rather than something the caller
+             positions from outside: it's a <header>, not a <div>, so it
+             doesn't disturb the ":nth-of-type" bookkeeping every other
+             page-local rule for this card list already relies on for the
+             actual .rounded-xl cards. */}
+          {isOwnSettingsPage && (
+            <header className="acepeak-section-header acepeak-section-header--regional">
+              <Globe className="h-4 w-4 text-gray-500 shrink-0" />
+              <span className="acepeak-section-header-title">Regional</span>
+              <span className="acepeak-section-header-desc">
+                Set by your company, so you cannot change it here.
+              </span>
+            </header>
+          )}
           <div className="flex bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 min-w-0 flex-1">
               <div className="flex items-center gap-1">
                 <p
                   className={`font-semibold truncate text-md ${(errors.settings as any)?.operational_hours?.regional ? 'text-red' : 'text-gray-900'}`}
@@ -334,7 +350,7 @@ const CommonSettingPermission: FC<any> = ({
           </div>
           {isShowVoicemail && (
             <div className="flex bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                 <p className="font-semibold truncate text-md">Voicemail Settings</p>
                 <p className="text-gray-800 truncate text-sm">
                   {voicemail_pin?.users?.length
@@ -364,7 +380,7 @@ const CommonSettingPermission: FC<any> = ({
           )}
           {isBussinessHours ? (
             <div className="flex bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                 <div className="flex items-center gap-1">
                   <p className="font-semibold truncate text-md">
                     {isCampaignHours ? 'Campaign Hours' : 'Business Hours'}
@@ -413,10 +429,22 @@ const CommonSettingPermission: FC<any> = ({
             </div>
           ) : null}
 
+          {isOwnSettingsPage &&
+            ((features?.plan_features?.advance_call_management?.access?.RECORDING &&
+              !isCampaignHours) ||
+              features?.plan_features?.advance_call_management?.access?.TRANSCRIPTION) && (
+              <header className="acepeak-section-header acepeak-section-header--calling">
+                <Phone className="h-4 w-4 text-gray-500 shrink-0" />
+                <span className="acepeak-section-header-title">Calling</span>
+                <span className="acepeak-section-header-desc">
+                  Manage call recording, transcription and AI monitoring settings.
+                </span>
+              </header>
+            )}
           {features?.plan_features?.advance_call_management?.access?.RECORDING &&
             !isCampaignHours && (
               <div className="flex flex-col sm:flex-row bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                   <p className="font-semibold truncate text-md">
                     Automatic & On Demand Call Recording
                   </p>
@@ -444,7 +472,7 @@ const CommonSettingPermission: FC<any> = ({
           {features?.plan_features?.advance_call_management?.access?.TRANSCRIPTION && (
             <>
               <div className="flex bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                   <p className="font-semibold truncate text-md">Automatic Transcription</p>
                   <p className="text-gray-800 truncate text-sm">
                     Automatic transcription is{' '}
@@ -467,9 +495,13 @@ const CommonSettingPermission: FC<any> = ({
                 />
               </div>
               <div className="flex flex-col sm:flex-row bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                   <p className="font-semibold truncate text-md">AI Call Monitoring</p>
-                  <p className="text-gray-800 truncate text-sm">
+                  {/* text-xs text-gray-500 (12px, #6B7891), matching
+                     CompanyLockNote's own helper-text style below — only
+                     for this page's own request; every other caller
+                     keeps its original text-gray-800 text-sm. */}
+                  <p className={isOwnSettingsPage ? 'text-xs text-gray-500' : 'text-gray-800 truncate text-sm'}>
                     When enabled transcripts will be automatically triggered.
                     {/* AI Call Monitoring is{' '}
                     {watch('settings.ai_call_monitoring') ? 'enabled' : 'disabled'}. */}
@@ -492,9 +524,14 @@ const CommonSettingPermission: FC<any> = ({
               </div>
             </>
           )}
-          {!isCampaignHours && (
+          {/* On the Preferences page, Display Number is always shown as its
+             own panel (see the always-rendered DisplayNumberModal below)
+             rather than a summary row you click to open it — so this row
+             would just be a second, redundant way to reach the same
+             fields. Every other caller keeps this row exactly as before. */}
+          {!isCampaignHours && !isOwnSettingsPage && (
             <div className="flex bg-white justify-between gap-3.5 w-full  border border-gray-100 shadow-[1px_1px_2px_rgba(0,0,0,0.05)] p-4 rounded-xl">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                 <div className="flex items-center gap-1">
                   <p className="font-semibold truncate text-md">Display Number</p>
                   {(errors?.settings as any)?.display_number?.masking?.value?.message && (
@@ -636,11 +673,20 @@ const CommonSettingPermission: FC<any> = ({
           origin={origin}
         />
       )}
-      {modalState?.displayNumberModal && (
+      {/* Preferences always renders this — there is no summary row left to
+         click (see above), and the panel itself is meant to stay visible
+         rather than open/close. Every other caller keeps the original
+         click-to-open behaviour, gated on modalState exactly as before. */}
+      {(isOwnSettingsPage || modalState?.displayNumberModal) && (
         <DisplayNumberModal
-          modalState={modalState?.displayNumberModal}
-          setModalState={() => closeModal('displayNumberModal')}
+          modalState={isOwnSettingsPage ? true : modalState?.displayNumberModal}
+          setModalState={isOwnSettingsPage ? () => {} : () => closeModal('displayNumberModal')}
           data={data}
+          /* Opt-in only for the person's own Preferences page, which lays
+             out a reserved right-hand column for this dialog. Every other
+             caller (admin per-user forwarding, campaigns, IVR, queues)
+             leaves this unset and keeps the original centered dialog. */
+          anchorRight={isOwnSettingsPage}
         />
       )}
     </>

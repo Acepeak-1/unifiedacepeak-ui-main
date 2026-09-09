@@ -76,6 +76,15 @@ const PhoneConsole = () => {
           selectedCall={selectedCall}
           onBackToDialer={() => setSelectedCall(null)}
           onOpenTranscript={() => {}}
+          /* Recordings / Voicemails in the left column open the matching
+             history on the contact, not the generic call list. */
+          recordTab={
+            logSource === 'recording'
+              ? 'recordings'
+              : logSource === 'voicemail'
+                ? 'voicemails'
+                : 'calls'
+          }
         />
       </div>
     </div>

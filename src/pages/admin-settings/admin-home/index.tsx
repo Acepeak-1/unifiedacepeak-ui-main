@@ -36,10 +36,6 @@ const DONUT_COLORS = [
   'var(--ink-4)',
 ];
 
-/** Cycled by index across "Most Accessed Areas" tiles — see `.tint-0`
-    through `.tint-3` in mcm-page.css. */
-const AREA_TILE_TINTS = 4;
-
 /* "All Screens" column count at each breakpoint — matches what CSS
    `column-count` used to switch at, but read in JS because the masonry
    packing below needs to know it upfront. */
@@ -276,7 +272,7 @@ const AdminHome = () => {
               text={`${allEntries.length} screens across ${groups.length} areas. Only what your role can reach is listed.`}
               side="right"
               openOnMount
-              className="w-max max-w-[260px] border-0 bg-[#fdf7f5] text-black shadow-none [&_svg]:fill-[#fdf7f5]"
+              className="w-max max-w-[260px] border-0 bg-[#fdf7f5] text-black shadow-[0_6px_20px_rgba(17,17,17,0.18)] [&_svg]:fill-[#fdf7f5]"
             >
               <span className="mcm-adminhome-infobtn" aria-label="About this page">
                 <Info />

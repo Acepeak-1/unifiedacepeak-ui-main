@@ -45,6 +45,7 @@ export interface Destination {
   outbound?: number;
   inbound?: number;
   sms?: number;
+  mms?: number;
   /* Why a row has no price, in words a customer can read. */
   note?: string;
 }
@@ -99,8 +100,14 @@ export const readRateAnswer = (destination: Destination, answer: any): Destinati
   const outbound = lowestRate(result?.outbound_call_rates);
   const inbound = lowestRate(result?.inbound_call_rates);
   const sms = lowestRate(result?.sms_rates);
+  const mms = lowestRate(result?.mms_rates);
 
-  if (outbound === undefined && inbound === undefined && sms === undefined) {
+  if (
+    outbound === undefined &&
+    inbound === undefined &&
+    sms === undefined &&
+    mms === undefined
+  ) {
     return {
       ...destination,
       state: 'unpriced',
@@ -108,7 +115,7 @@ export const readRateAnswer = (destination: Destination, answer: any): Destinati
     };
   }
 
-  return { ...destination, state: 'priced', outbound, inbound, sms, note: undefined };
+  return { ...destination, state: 'priced', outbound, inbound, sms, mms, note: undefined };
 };
 
 export const markLoading = (destination: Destination): Destination => ({
@@ -178,6 +185,7 @@ export const toCsv = (destinations: Destination[]): string => {
     'Outbound',
     'Inbound',
     'SMS',
+    'MMS',
     'Status',
   ];
   const rows = destinations.map((d) =>
@@ -188,6 +196,7 @@ export const toCsv = (destinations: Destination[]): string => {
       csvCell(d.outbound ?? ''),
       csvCell(d.inbound ?? ''),
       csvCell(d.sms ?? ''),
+      csvCell(d.mms ?? ''),
       csvCell(
         d.state === 'priced'
           ? 'Priced'

@@ -252,15 +252,28 @@ const headerValue = (session: DialpadSession | null, name: string) => {
   return Array.isArray(values) && values.length ? String(values[0] || '').trim() : '';
 };
 
+/* Carrier/SIP display names are often a placeholder rather than a person, and
+   showing "Unknown" in place of the caller's saved name (or even their number)
+   is worse than showing nothing — so these are treated as absent. */
+const isPlaceholderName = (value: string) =>
+  /^(unknown|unknown contact|anonymous|private|restricted|unavailable|n\/?a|null)$/i.test(
+    value.trim(),
+  );
+
+const realName = (value: unknown): string => {
+  const s = String(value ?? '').trim();
+  return s && !isPlaceholderName(s) ? s : '';
+};
+
 export const contactDisplayName = (session: DialpadSession | null): string => {
   const first = String(session?.contactInfo?.name?.first || '').trim();
   const last = String(session?.contactInfo?.name?.last || '').trim();
   const joined = `${first} ${last}`.trim();
   return (
-    joined ||
-    String(session?.liveCallData?.contact_name || '').trim() ||
-    headerValue(session, 'x-contactname') ||
-    String(session?.remoteName || '').trim() ||
+    realName(joined) ||
+    realName(session?.liveCallData?.contact_name) ||
+    realName(headerValue(session, 'x-contactname')) ||
+    realName(session?.remoteName) ||
     String(session?.remoteNumber || '').trim() ||
     'Unknown contact'
   );

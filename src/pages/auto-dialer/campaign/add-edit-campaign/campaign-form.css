@@ -1,0 +1,1029 @@
+/* ============================================================
+   Add / Edit Campaign — form surface.
+
+   The drawer renders shared components (Input, CustomSelect, Button,
+   Tabs, RadioGroup) that all draw their accent from the app theme's
+   `--primary`, which is set at runtime from the tenant's brand colour
+   and is blue on this deployment. Rather than fork five components or
+   repaint `--primary` for the whole app, this re-points the token on
+   the form root: every shared control inside the drawer turns red on
+   its own and nothing outside it moves.
+
+   The one thing the scope cannot reach is react-select's menu, which
+   portals to <body>. Those rules are matched on `.acp-select` — a
+   second class react-select puts on its own elements via the
+   `inputClass` prefix — and carry `!important` only because the global
+   select rules in index.css already do.
+   ============================================================ */
+.acp-form {
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --ring: #dc2626;
+  --destructive: #dc2626;
+
+  --acp-ink: #171717;
+  --acp-muted: #6b7280;
+  --acp-line: #e5e7eb;
+  --acp-edge: #fca5a5;
+  --acp-wash: #fef2f2;
+  --acp-red: #dc2626;
+  --acp-red-deep: #b91c1c;
+  /* Resting ground for the three mode cards — neutral, not tinted, so
+     Preview/Progressive/Predictive read as one consistent group and only
+     the border + icon chip carry any red. */
+  --acp-card-bg: #f7f7f7;
+}
+
+/* ── the modal shell ──────────────────────────────────────────
+   Sized to its content and capped, rather than the full-height side
+   panel this used to open in. Only the field area scrolls, so the
+   header, type cards, step rail and footer stay put. */
+/* `width` (not `max-width`) — Radix's own DialogContent class already
+   carries a `max-w-[calc(100%-2rem)]` utility at the same specificity as
+   a plain class, so a `max-width` here could lose that tie on source
+   order and let the modal render wider than the viewport, clipping its
+   own right edge. Setting `width` directly is never in that fight: it
+   always wins as the target box size, on every breakpoint, not just
+   past a media query threshold. */
+.acp-modal {
+  width: min(900px, calc(100vw - 32px)) !important;
+  max-width: min(900px, calc(100vw - 32px)) !important;
+  max-height: 90vh;
+  padding: 0;
+  gap: 0;
+  border: 1px solid var(--acp-line, #e5e7eb);
+  border-radius: 16px;
+  background: #ffffff;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+@media (max-width: 480px) {
+  .acp-modal {
+    width: min(900px, calc(100vw - 24px)) !important;
+    max-width: min(900px, calc(100vw - 24px)) !important;
+    max-height: 94vh;
+  }
+}
+.acp-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 90vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* ── header ───────────────────────────────────────────────── */
+.acp-form .acp-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px 15px 0;
+  flex: none;
+}
+.acp-form .acp-title {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 41px;
+  color: var(--acp-ink);
+}
+.acp-form .acp-sub {
+  margin-top: 3px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--acp-muted);
+}
+.acp-form .acp-close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  margin-left: auto;
+  border-radius: 99px;
+  background: #ffffff;
+  border: 1px solid var(--acp-line);
+  color: var(--acp-ink);
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+.acp-form .acp-close:hover {
+  background: var(--acp-wash);
+  border-color: var(--acp-edge);
+  color: var(--acp-red);
+}
+
+/* ── campaign type cards ──────────────────────────────────────
+   Three across on a comfortable width, wrapping to a single column
+   only when a third of the modal can no longer hold a label. */
+.acp-form .acp-types {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px 15px 0;
+  flex: none;
+}
+@media (max-width: 560px) {
+  .acp-form .acp-types {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* All three cards share one neutral resting look — gray card, soft-red
+   icon chip — so Preview/Progressive/Predictive read as one consistent
+   group. Selecting one only adds a thin soft-red border and a small red
+   radio dot; it never turns the card itself red. */
+.acp-form .acp-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--acp-line);
+  border-radius: 10px;
+  background: var(--acp-card-bg);
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+.acp-form .acp-type:hover:not(.is-locked) {
+  border-color: var(--acp-edge);
+}
+.acp-form .acp-type.is-on {
+  border-color: var(--acp-edge);
+  background: var(--acp-card-bg);
+}
+.acp-form .acp-type.is-locked {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.acp-form .acp-type-ico {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 7px;
+  background: var(--acp-wash);
+  color: var(--acp-red);
+}
+.acp-form .acp-type-ico svg {
+  width: 13px;
+  height: 13px;
+}
+.acp-form .acp-type-body {
+  flex: 1;
+  min-width: 0;
+}
+.acp-form .acp-type-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--acp-ink);
+  line-height: 1.2;
+}
+.acp-form .acp-type [data-slot='radio-group-item'] {
+  margin-top: 1px;
+}
+/* The shared radio primitive adds a ring + shadow on checked state for
+   emphasis elsewhere in the app; here that read as a red glow, so it's
+   toned down to a small solid dot, scoped to these cards only. */
+.acp-form .acp-type [data-slot='radio-group-item'][data-state='checked'] {
+  border-color: var(--acp-red) !important;
+  background-color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* ── chain stepper ────────────────────────────────────────────
+   A numbered circle per step, label centered below (wrapping to two
+   lines rather than truncating or forcing horizontal scroll —
+   "Settings & Permissions" is no shorter than "Agents", so equal-width
+   columns need the wrap). Each circle is still a button wired to the
+   same handleTabChange, so the validation gate on moving forward is
+   unchanged.
+
+   The connecting line is one continuous track behind the circles, not
+   a separate segment per gap — that's what makes it actually touch
+   circle 1 through circle 5 instead of floating short dashes between
+   them. `left`/`right: 10%` inset the track to land exactly on the
+   first and last circle's centre: with 5 equal-width columns, a
+   circle's centre sits half a column in from each edge, and half of
+   1/5 is 1/10. This assumes TABS_ORDER stays at 5 steps. */
+.acp-form .acp-steps {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 15px 4px;
+  flex: none;
+}
+/* `left`/`right: 10%` inset the track to land exactly on the first and
+   last circle's centre: with 5 equal-width columns, a centred circle's
+   centre sits half a column in from each edge, and half of 1/5 is 1/10. */
+.acp-form .acp-steps-track {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 28px;
+  height: 2px;
+  background: var(--acp-line);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.acp-form .acp-steps-track-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  background: var(--acp-ink);
+  transition: width 0.2s ease;
+}
+.acp-form .acp-step-item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+}
+.acp-form .acp-step-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 99px;
+  border: 2px solid var(--acp-line);
+  background: #ffffff;
+  color: var(--acp-ink);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.acp-form .acp-step-l {
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--acp-muted);
+  text-align: center;
+  max-width: 96px;
+}
+.acp-form .acp-step-item.is-on .acp-step-btn {
+  background: var(--acp-ink);
+  border-color: var(--acp-ink);
+  color: #ffffff;
+}
+.acp-form .acp-step-item.is-on .acp-step-l {
+  color: var(--acp-ink);
+  font-weight: 700;
+}
+.acp-form .acp-step-item.is-done .acp-step-btn {
+  background: #f3f4f6;
+  border-color: var(--acp-ink);
+  color: var(--acp-ink);
+}
+@media (max-width: 480px) {
+  .acp-form .acp-step-l {
+    display: none;
+  }
+}
+
+/* ── body: the only part that scrolls ─────────────────────── */
+.acp-form .acp-formbody {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+.acp-form .acp-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 15px 16px;
+}
+.acp-form .acp-fields {
+  display: flex;
+  flex-direction: column;
+}
+/* One column by default; `acp-row` puts a genuinely paired set side by side. */
+.acp-form .acp-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+.acp-form .acp-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 560px) {
+  .acp-form .acp-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── labels, fields, helper text ───────────────────────────── */
+.acp-form label,
+.acp-form [data-slot='label'] {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--acp-ink);
+}
+.acp-form .acp-optional {
+  font-weight: 500;
+  color: var(--acp-muted);
+}
+.acp-form [data-slot='input'],
+.acp-form .acp-textarea {
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--acp-ink);
+}
+.acp-form [data-slot='input'] {
+  height: 42px;
+  min-height: 42px;
+}
+/* Settings & Permissions only: Country/Timezone/date/time fields run
+   smaller than the rest of the form. Scoped to this one class (rather
+   than lowering the shared `[data-slot='input']` height) so no other
+   step's inputs are affected. `!important` guards against a source-order
+   tie with that shared rule, which carries the same specificity. */
+.acp-form [data-slot='input'].acp-compact-field {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  font-size: 12.5px !important;
+}
+/* Campaign Name: matches Site/Caller IDs/Leads' 220px cap. A plain
+   Tailwind `max-w-[220px]` on the input was added first but had no
+   visible effect, so this is written directly here instead — the same
+   file every other width/height fix in this step has reliably landed
+   through. */
+.acp-form [data-slot='input'].acp-w-match-site {
+  width: 220px !important;
+  max-width: 220px !important;
+}
+/* CustomSelect wraps its own label + control in a `gap-1.5` column; tighten
+   that to match the plain compact inputs above. */
+.acp-form .acp-compact-field {
+  gap: 4px !important;
+}
+.acp-form [data-slot='label'] {
+  margin-bottom: 7px;
+  display: inline-flex;
+}
+/* index.css's date-picker icon is a detailed blue SVG asset; this swaps
+   in a compact black calendar glyph instead of just recoloring the same
+   shape — same size/position (width/height are untouched, so they still
+   come from the global rule), just a simpler icon. */
+.acp-form input[type='date']::-webkit-calendar-picker-indicator {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23171717' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='15' rx='2.5'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3Cline x1='8' y1='3' x2='8' y2='6.5'/%3E%3Cline x1='16' y1='3' x2='16' y2='6.5'/%3E%3Crect x='7' y='13' width='2.4' height='2.4' fill='%23171717' stroke='none'/%3E%3Crect x='11.3' y='13' width='2.4' height='2.4' fill='%23171717' stroke='none'/%3E%3Crect x='15.6' y='13' width='2.4' height='2.4' fill='%23171717' stroke='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter: none;
+}
+/* Basic Information: Campaign Name/Site/Caller IDs/Leads/Description run
+   at 70% of their grid column instead of filling it, so there's visible
+   breathing room to the right without shrinking all the way down to a
+   fixed content-hugging width. */
+.acp-form .acp-w-70 {
+  max-width: 70%;
+}
+@media (max-width: 640px) {
+  .acp-form .acp-w-70 {
+    max-width: 100%;
+  }
+}
+.acp-form [data-slot='input']::placeholder,
+.acp-form .acp-textarea::placeholder {
+  color: #9ca3af;
+}
+.acp-form [data-slot='input']:focus,
+.acp-form .acp-textarea:focus {
+  outline: none;
+  border-color: var(--acp-red);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+.acp-form .acp-textarea {
+  width: 100%;
+  min-height: 88px;
+  max-height: 160px;
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  resize: vertical;
+  line-height: 1.5;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.acp-form .acp-textarea:hover {
+  border-color: var(--acp-edge);
+}
+.acp-form .acp-field-err {
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--acp-red);
+}
+.acp-form .acp-field-hint {
+  margin-top: 5px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--acp-muted);
+}
+.acp-form .acp-invalid [data-slot='input'],
+.acp-form .acp-invalid .acp-textarea {
+  border-color: var(--acp-red);
+}
+
+/* ── footer ───────────────────────────────────────────────────
+   Pinned below the scrolling field area so the actions stay reachable
+   however long a step gets. */
+.acp-form .acp-actions {
+  flex: none;
+  border-top: 1px solid var(--acp-line);
+  padding: 14px 15px;
+  background: #ffffff;
+}
+.acp-form .acp-actions [data-slot='button'] {
+  height: 36px;
+  min-height: 36px;
+  border-radius: 999px;
+  padding-left: 14px;
+  padding-right: 14px;
+  font-weight: 700;
+}
+/* Black at rest and it stays black — no red hover/active swap. */
+.acp-form .acp-next {
+  background: #171717;
+  border-color: #171717;
+  color: #ffffff;
+}
+.acp-form .acp-next:hover:not(:disabled),
+.acp-form .acp-next:active:not(:disabled) {
+  background: #171717;
+  border-color: #171717;
+  color: #ffffff;
+}
+.acp-form .acp-prev {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: var(--acp-ink);
+}
+.acp-form .acp-prev:hover:not(:disabled) {
+  background: var(--acp-wash);
+  border-color: var(--acp-edge);
+  color: var(--acp-red);
+}
+.acp-form .acp-cancel {
+  color: var(--acp-ink);
+  background: #ffffff;
+}
+.acp-form .acp-cancel:hover {
+  color: var(--acp-red);
+}
+
+/* ── settings step: mode-specific card + shared field grid ──────
+   One card renders per dialling mode (Preview / Progressive /
+   Predictive) — never more than one at a time — so this is the part
+   of the form that visibly changes shape when the mode changes.
+   White, not the pink wash the card used before: the mode is already
+   established by the type card above this step, so the accent here is
+   just the small icon chip, not the whole container. */
+.acp-form .acp-mode-card {
+  border: 1px solid var(--acp-line);
+  border-radius: 12px;
+  padding: 14px;
+  background: #ffffff;
+}
+.acp-form .acp-mode-card.acp-mode-predictive {
+  border-color: var(--acp-edge);
+}
+.acp-form .acp-mode-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.acp-form .acp-mode-card-ico {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 9px;
+  background: var(--acp-wash);
+  color: var(--acp-red);
+}
+.acp-form .acp-mode-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--acp-ink);
+  line-height: 1.3;
+}
+.acp-form .acp-mode-card-desc {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--acp-muted);
+}
+.acp-form .acp-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  margin-left: auto;
+  padding: 4px 9px;
+  border-radius: 99px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--acp-red);
+  color: #ffffff;
+}
+.acp-form .acp-mode-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acp-form .acp-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.acp-form .acp-field-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 640px) {
+  .acp-form .acp-field-grid,
+  .acp-form .acp-field-grid-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Each field's own mini card — icon rides inside the label the field
+   already renders (CustomSelect/Input's `label` prop takes a node), so
+   there's no second, duplicate label sitting above it. */
+.acp-form .acp-field-card {
+  border: 1px solid var(--acp-line);
+  border-radius: 9px;
+  padding: 9px 10px;
+  background: #ffffff;
+}
+.acp-form .acp-field-card-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.acp-form .acp-field-card-label svg {
+  color: var(--acp-red);
+  flex: none;
+}
+
+.acp-form .acp-switch-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px 9px 14px;
+  border: 1px solid var(--acp-line);
+  border-radius: 9px;
+  background: #ffffff;
+  overflow: hidden;
+}
+.acp-form .acp-switch-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--acp-line);
+  transition: background-color 0.15s ease;
+}
+.acp-form .acp-switch-row.is-on::before {
+  background: var(--acp-red);
+}
+.acp-form .acp-switch-row-tall {
+  align-items: flex-start;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.acp-form .acp-switch-row-ico {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 7px;
+  background: var(--acp-card-bg);
+  color: var(--acp-muted);
+}
+.acp-form .acp-switch-row.is-on .acp-switch-row-ico {
+  background: var(--acp-wash);
+  color: var(--acp-red);
+}
+.acp-form .acp-switch-row p {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--acp-ink);
+}
+.acp-form .acp-switch-row .hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--acp-muted);
+}
+
+.acp-form .acp-note {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--acp-muted);
+  background: #ffffff;
+  border: 1px dashed var(--acp-edge);
+  border-radius: 9px;
+  padding: 9px 11px;
+}
+.acp-form .acp-note strong {
+  color: var(--acp-ink);
+}
+
+/* Plain card — used for Agent Disposition below the mode card, common
+   to every mode, so it draws no colour from the selected type. */
+.acp-form .acp-card {
+  border: 1px solid var(--acp-line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #ffffff;
+}
+.acp-form .acp-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.acp-form .acp-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--acp-ink);
+}
+
+/* Compact 2-up disposition cards — icon, name, toggle, one line, all the
+   same height since they're plain grid cells (grid's default `stretch`
+   already equalises row height, no extra CSS needed for that part). */
+.acp-form .acp-disposition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 560px) {
+  .acp-form .acp-disposition-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.acp-form .acp-disposition-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--acp-line);
+  border-radius: 9px;
+  background: var(--acp-card-bg);
+  transition: border-color 0.15s ease;
+}
+.acp-form .acp-disposition-card.is-on {
+  border-color: var(--acp-edge);
+  background: #ffffff;
+}
+.acp-form .acp-disposition-ico {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--acp-muted);
+}
+.acp-form .acp-disposition-card.is-on .acp-disposition-ico {
+  background: var(--acp-wash);
+  color: var(--acp-red);
+}
+.acp-form .acp-disposition-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--acp-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* ============================================================
+   The select overrides below sit in `@layer base` deliberately.
+
+   index.css styles react-select from inside that layer and marks every
+   declaration `!important`. For IMPORTANT declarations the cascade
+   reverses layer order, which puts unlayered rules *last* — so an
+   unlayered `!important` here loses to a layered one there no matter
+   how specific it is. Joining the same layer restores the normal
+   contest, which these win on specificity.
+   ============================================================ */
+@layer base {
+  /* ── react-select: the parts inside the form ───────────────── */
+  .acp-form .custom-react-select__control {
+    border-radius: 8px !important;
+    border-color: #d1d5db !important;
+    min-height: 34px !important;
+    height: 34px !important;
+  }
+  /* The multi-selects grow with their chips, so they only get a floor. */
+  .acp-form .team_chat.custom-react-select__control {
+    height: auto !important;
+    min-height: 42px !important;
+  }
+  /* Settings & Permissions' Country/Timezone selects run smaller than the
+     rest of the form — has to sit in this same layer as the rule above,
+     or the important-layer reversal makes it lose despite being more
+     specific (see the note above this block). */
+  .acp-form .acp-compact-field .custom-react-select__control {
+    min-height: 34px !important;
+    height: 34px !important;
+  }
+  /* index.css's base control rule forces `width: 100%`, so shrinking the
+     value-container alone (below) just moved the empty gap from beside
+     the text to beside the arrow — the control itself was still stretched
+     to fill the grid column. Capping the control's own width is what
+     actually removes the gap, since the box now ends close to the text
+     instead of at the far edge of the column. */
+  .acp-form .acp-compact-select .custom-react-select__control {
+    width: auto !important;
+    max-width: 220px !important;
+    column-gap: 6px !important;
+  }
+  .acp-form .acp-compact-select,
+  .acp-form .acp-compact-select .selectBox {
+    width: auto !important;
+    flex: 0 0 auto !important;
+  }
+  /* index.css pins every value-container to a viewport-width-based size
+     (9-12vw) for the filter bars it was written for — unrelated to this
+     control's actual width, so it fights the max-width above. Scoped to
+     `.acp-compact-select` (width) rather than `.acp-compact-field`
+     (height/padding) so a multi-select like Caller IDs/Leads can shrink
+     in width without also being forced to the single-select's fixed
+     34px height, which would clip wrapped chips. */
+  .acp-form .acp-compact-select .custom-react-select__value-container,
+  .acp-form .acp-compact-field .custom-react-select__value-container {
+    width: auto !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+  .acp-form .custom-react-select__control:hover {
+    border-color: var(--acp-edge) !important;
+  }
+  .acp-form .custom-react-select__control--is-focused,
+  .acp-form .custom-react-select__control--menu-is-open {
+    border-color: var(--acp-red) !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+  }
+  .acp-form .react-select-error .custom-react-select__control {
+    border-color: var(--acp-red) !important;
+  }
+
+  /* Chips for the multi-selects: light gray ground, dark label, red remove. */
+  .acp-form .custom-react-select__multi-value {
+    background-color: var(--acp-card-bg) !important;
+    border: 1px solid var(--acp-line) !important;
+  }
+  .acp-form .custom-react-select__multi-value__label {
+    color: var(--acp-ink) !important;
+  }
+  .acp-form .custom-react-select__multi-value__remove {
+    color: var(--acp-red) !important;
+  }
+  .acp-form .custom-react-select__multi-value__remove:hover {
+    background-color: #fee2e2 !important;
+    color: var(--acp-red-deep) !important;
+  }
+
+  /* ── react-select's portalled menu ─────────────────────────────
+     On <body>, so the form's tokens never reach it: these are matched
+     on the `.acp-select` class react-select copies onto its own nodes,
+     and they only affect selects this form renders. */
+  .acp-select.custom-react-select__menu {
+    border-color: var(--acp-edge, #fca5a5) !important;
+    border-radius: 12px !important;
+    box-shadow:
+      0 8px 24px rgba(23, 23, 23, 0.08),
+      0 2px 6px rgba(23, 23, 23, 0.05) !important;
+  }
+  .acp-select.custom-react-select__menu .custom-react-select__option {
+    background-color: #ffffff !important;
+    color: #171717 !important;
+    border-radius: 8px !important;
+  }
+  .acp-select.custom-react-select__menu .custom-react-select__option:hover,
+  .acp-select.custom-react-select__menu .custom-react-select__option--is-focused {
+    background-color: #fef2f2 !important;
+    color: #dc2626 !important;
+  }
+  .acp-select.custom-react-select__menu .custom-react-select__option--is-selected {
+    background-color: #fef2f2 !important;
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+  }
+  /* The "Select All" strip CustomSelect prepends to every multi-select. */
+  .acp-select.custom-react-select__menu .custom-react-select__menu-list > div:first-child {
+    color: #dc2626 !important;
+  }
+
+  /* A select in the invalid state, marked on the field wrapper so inputs and
+     selects show the same error treatment. */
+  .acp-form .acp-invalid .custom-react-select__control {
+    border-color: var(--acp-red) !important;
+  }
+}
+
+/* ============================================================
+   Clock time picker — replaces the browser's native <input type="time">
+   dropdown. Its popover portals to <body> like react-select's menu does,
+   so these rules aren't scoped under `.acp-form` — they can't be, there's
+   no `.acp-form` ancestor to inherit from out there. Colours are the same
+   red/black/white tokens as the rest of the form, just written literally
+   since the CSS custom properties don't reach this far either.
+   ============================================================ */
+.acp-clock-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #171717;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.acp-clock-trigger:hover:not(:disabled) {
+  border-color: #fca5a5;
+}
+.acp-clock-trigger:disabled {
+  color: #9ca3af;
+  background: #f9fafb;
+  cursor: not-allowed;
+}
+.acp-clock-pop {
+  z-index: 9999 !important;
+}
+.acp-clock-seg {
+  min-width: 34px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #171717;
+  background: #f3f4f6;
+  cursor: pointer;
+}
+.acp-clock-seg.is-active {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.acp-clock-meridiem {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #9ca3af;
+  cursor: pointer;
+}
+.acp-clock-meridiem.is-active {
+  background: #dc2626;
+  color: #ffffff;
+}
+.acp-clock-face {
+  position: relative;
+  margin: 0 auto;
+  border-radius: 99px;
+  background: #f9fafb;
+  border: 1px solid #f0f0f0;
+}
+.acp-clock-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 99px;
+  background: #dc2626;
+  z-index: 2;
+}
+.acp-clock-hand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 2px;
+  background: #dc2626;
+  transform-origin: 0 50%;
+  z-index: 1;
+}
+.acp-clock-mark {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #171717;
+  background: transparent;
+  cursor: pointer;
+  z-index: 2;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+.acp-clock-mark:hover {
+  background: #fef2f2;
+}
+.acp-clock-mark.is-selected {
+  background: #dc2626;
+  color: #ffffff;
+}
+.acp-clock-cancel {
+  padding: 6px 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+}
+.acp-clock-cancel:hover {
+  color: #171717;
+}
+/* Solid black, same as the footer's Next button — no red hover swap,
+   matching that button's current no-hover-color-change behavior. */
+.acp-clock-ok {
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #171717;
+  cursor: pointer;
+}
+.acp-clock-ok:hover {
+  background: #171717;
+}
+
+/* ── Agents step: members table ──────────────────────────────
+   Row selection used to be a checkbox column; it's a click on the row's
+   own cells now, so this is the only visual left carrying that state. */
+.acp-form .acp-agent-row-selected {
+  background: var(--acp-wash) !important;
+}
+.acp-form .acp-agent-row-selected:hover {
+  background: var(--acp-wash) !important;
+}
+.acp-form .acp-role-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--acp-red-deep);
+  background: var(--acp-wash);
+  white-space: nowrap;
+}

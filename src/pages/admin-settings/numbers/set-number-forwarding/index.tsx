@@ -8,7 +8,8 @@ import {
   TAB_CONSTANT,
 } from './constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FC, useEffect, useState } from 'react';
+import { FC, Fragment, useEffect, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { callForwardingSchema } from './schema';
@@ -586,20 +587,34 @@ const UpsertCallForwarding: FC<UpdateForwardingProps> = ({
           >
             <TabsList
               className={`flex text-sm font-semibold text-center  p-0 rounded-none min-h-10 ${
-                isUpsertTemplate ? 'call-handling-template-tabs-list' : ''
+                isUpsertTemplate ? 'call-handling-template-tabs-list' : 'justify-center gap-1.5'
               }`}
             >
-              {TABS_ORDER.map((value, index) => (
-                <TabsTrigger
-                  key={index}
-                  value={value}
-                  className={`data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:text-primary border-b-2 px-6   text-gray-700 cursor-pointer h-full rounded-none    m-auto relative flex gap-1 bg-transparent font-semibold data-[state=active]:shadow-2xs ${
-                    isUpsertTemplate ? 'call-handling-template-tab-trigger' : ''
-                  }`}
-                >
-                  {value}
-                </TabsTrigger>
-              ))}
+              {TABS_ORDER.map((value, index) =>
+                isUpsertTemplate ? (
+                  <TabsTrigger
+                    key={index}
+                    value={value}
+                    className="data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:text-primary border-b-2 px-6   text-gray-700 cursor-pointer h-full rounded-none    m-auto relative flex gap-1 bg-transparent font-semibold data-[state=active]:shadow-2xs call-handling-template-tab-trigger"
+                  >
+                    {value}
+                  </TabsTrigger>
+                ) : (
+                  /* Same plain "Step One › Step Two" format as Add Number's
+                     stepper — text steps rather than an underlined tab bar —
+                     while staying a real TabsTrigger so clicking still
+                     navigates between sections. */
+                  <Fragment key={index}>
+                    {index > 0 && <ChevronRight className="h-3.5 w-3.5 text-gray-400" />}
+                    <TabsTrigger
+                      value={value}
+                      className="cursor-pointer rounded-none border-0 bg-transparent p-0 text-sm font-semibold text-gray-400 shadow-none data-[state=active]:text-gray-900"
+                    >
+                      {value}
+                    </TabsTrigger>
+                  </Fragment>
+                ),
+              )}
             </TabsList>
           </div>
 
@@ -649,11 +664,20 @@ const UpsertCallForwarding: FC<UpdateForwardingProps> = ({
             isUpsertTemplate ? 'call-handling-template-footer' : ''
           }`}
         >
+          {/* Cancel/Prev share the same neutral white pill, Next/Submit the
+              solid black pill — matching the Add Number / Add Identity
+              popups' footer instead of variant="outline"'s theme-primary
+              border, which reads as red here and looked like a warning
+              rather than the forward action it is. */}
           <Button
             type="button"
-            variant={'transparent'}
+            variant={isUpsertTemplate ? 'transparent' : 'outline'}
             onClick={() => setDrawerState(false)}
-            className={isUpsertTemplate ? 'call-handling-template-footer-btn' : ''}
+            className={
+              isUpsertTemplate
+                ? 'call-handling-template-footer-btn'
+                : 'rounded-full border-gray-300 bg-white px-5 text-black hover:bg-gray-100 hover:text-black'
+            }
           >
             Cancel
           </Button>
@@ -662,7 +686,11 @@ const UpsertCallForwarding: FC<UpdateForwardingProps> = ({
             type="button"
             onClick={handlePrev}
             disabled={activeTab === TABS_ORDER[0]}
-            className={isUpsertTemplate ? 'call-handling-template-footer-btn' : ''}
+            className={
+              isUpsertTemplate
+                ? 'call-handling-template-footer-btn'
+                : 'rounded-full border-gray-300 bg-white px-5 text-black hover:bg-gray-100 hover:text-black'
+            }
           >
             Prev
           </Button>
@@ -671,17 +699,25 @@ const UpsertCallForwarding: FC<UpdateForwardingProps> = ({
               variant={'outline'}
               type="button"
               onClick={handleNext}
-              className={isUpsertTemplate ? 'call-handling-template-footer-btn' : ''}
+              className={
+                isUpsertTemplate
+                  ? 'call-handling-template-footer-btn'
+                  : 'rounded-full border-black bg-black px-5 text-white hover:bg-gray-800 hover:text-white'
+              }
             >
               Next
             </Button>
           )}
           {activeTab === CALL_FORWARDING_TAB_CONSTANT.MEDIA && (
             <Button
-              variant={'primary'}
+              variant={isUpsertTemplate ? 'primary' : 'outline'}
               type="submit"
               disabled={isPending}
-              className={isUpsertTemplate ? 'call-handling-template-footer-btn' : ''}
+              className={
+                isUpsertTemplate
+                  ? 'call-handling-template-footer-btn'
+                  : 'rounded-full border-black bg-black px-5 text-white hover:bg-gray-800 hover:text-white'
+              }
             >
               {isPending ? 'Submiting...' : 'Submit'}
             </Button>

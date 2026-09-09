@@ -1,19 +1,75 @@
 import { Icon, IconName } from '@/assets/icons/icon';
 import AlertConfirm from '@/components/custom/alert-confirm';
-import CustomTooltip from '@/components/custom/custom-tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ShieldCheck, Trash2 } from 'lucide-react';
 import TableManager from '@/components/custom/table-manager';
+import TableSearchHeader from '@/components/custom/table-search-header';
 import { getVerificationList } from '@/services/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
-const Verification = ({ search }: { search: string }) => {
+export const DUMMY_VERIFICATIONS = [
+  {
+    verification_id: 'dummy-verification-1',
+    did_number: '+1 202 555 0123',
+    address: { country: 'United States', state: 'Los Angeles' },
+    country: 'United States / Los Angeles',
+    awaiting_registration: 'Pending',
+    expires_at: '5 days',
+  },
+  {
+    verification_id: 'dummy-verification-2',
+    did_number: '+44 20 7946 0958',
+    address: { country: 'United Kingdom', state: 'London' },
+    country: 'United Kingdom / London',
+    awaiting_registration: 'Approved',
+    expires_at: '—',
+  },
+  {
+    verification_id: 'dummy-verification-3',
+    did_number: '+34 91 123 4567',
+    address: { country: 'Spain', state: 'Madrid' },
+    country: 'Spain / Madrid',
+    awaiting_registration: 'Rejected',
+    expires_at: '2 days',
+  },
+];
+
+const Verification = ({
+  search: debouncedSearch,
+  liveSearch,
+  setSearch,
+}: {
+  /** Debounced value TableManager actually filters on. */
+  search: string;
+  /** Immediate value the search box itself displays. */
+  liveSearch: string;
+  setSearch: (value: string) => void;
+}) => {
   const [rowData, setRowData] = useState<any>(null);
+  const [isTableRefreshing, setIsTableRefreshing] = useState(false);
+  const tableRef = useRef<any>(null);
+  const handleRefreshTable = async () => {
+    setIsTableRefreshing(true);
+    try {
+      await tableRef.current?.refetchTable();
+    } finally {
+      setIsTableRefreshing(false);
+    }
+  };
   console.log('🚀 ~ Verification ~ rowData:', rowData);
   //   const [drawerState, setDrawerState] = useState({
   //     editAddress: false,
   //   });
   const [modalState, setModalState] = useState({
     deleteAddress: false,
+    viewVerification: false,
   });
   const queryClient: any = useQueryClient();
   //   const handleDrawerClose = () => {
@@ -21,7 +77,7 @@ const Verification = ({ search }: { search: string }) => {
   //     setRowData(null);
   //   };
   const handleModalClose = () => {
-    setModalState((prev) => ({ ...prev, deleteAddress: false }));
+    setModalState((prev) => ({ ...prev, deleteAddress: false, viewVerification: false }));
     setRowData(null);
   };
 
@@ -52,6 +108,19 @@ const Verification = ({ search }: { search: string }) => {
     {
       header: 'Status',
       accessorKey: 'awaiting_registration',
+      cell: ({ row }: any) => {
+        const status = row?.original?.awaiting_registration || '';
+        const statusColour: Record<string, string> = {
+          Pending: '#d97706',
+          Approved: '#16a34a',
+          Rejected: '#dc2626',
+        };
+        return (
+          <span style={{ color: statusColour[status] || '#334155' }} className="font-medium">
+            {status}
+          </span>
+        );
+      },
     },
     {
       header: 'Time Left',
@@ -65,10 +134,10 @@ const Verification = ({ search }: { search: string }) => {
         if (data?.is_primary) return;
         const actions = [
           {
-            icon: 'View',
+            icon: 'Eye',
             onClick: () => {
               setRowData({ isEdit: true, formData: data });
-              //   setDrawerState((prev) => ({ ...prev, editAddress: true }));
+              setModalState((prev) => ({ ...prev, viewVerification: true }));
             },
             className: 'bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white',
             tooltipText: 'View Verification',
@@ -79,26 +148,32 @@ const Verification = ({ search }: { search: string }) => {
               setRowData({ isEdit: true, formData: data });
               setModalState((prev) => ({ ...prev, deleteAddress: true }));
             },
-            className: 'bg-red-100 text-red-500 hover:bg-red-500 hover:text-white',
+            className:
+              'bg-[var(--accent-wash)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white',
             tooltipText: 'Delete',
           },
         ];
 
         return (
-          <div className="flex items-center gap-2">
-            {actions?.map((action, index) => (
-              <CustomTooltip text={action.tooltipText} side="top">
+          <div className="flex items-center justify-center w-full">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <div
-                  key={index}
-                  className={`cursor-pointer flex items-center justify-center rounded-full w-8 h-8 ${action.className}`}
-                  onClick={() => {
-                    action.onClick();
-                  }}
+                  className="cursor-pointer flex items-center justify-center rounded-full w-8 h-8 bg-red-100 text-red-500 hover:bg-red-500 hover:text-white"
+                  onClick={(event) => event.stopPropagation()}
                 >
-                  <Icon name={action.icon as IconName} className="w-5 h-5" />
+                  <Icon name="MenuDots" className="w-5 h-5" />
                 </div>
-              </CustomTooltip>
-            ))}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="border-red-300">
+                {actions?.map((action, index) => (
+                  <DropdownMenuItem key={index} onClick={action.onClick}>
+                    <Icon name={action.icon as IconName} className="w-4 h-4" />
+                    {action.tooltipText}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       },
@@ -107,17 +182,79 @@ const Verification = ({ search }: { search: string }) => {
 
   return (
     <div>
-      <div className="w-ful p-3 flex flex-col gap-2">
+      <div className="ident-table-card ident-table-card--plain ident-table--verifications w-full flex flex-col">
         <TableManager
           {...{
             columns,
-            search,
+            search: debouncedSearch,
+            tableRef,
+            hideFooterRefresh: true,
+            customHeader: (
+              <TableSearchHeader
+                value={liveSearch}
+                onChange={setSearch}
+                onRefresh={handleRefreshTable}
+                refreshing={isTableRefreshing}
+                placeholder="Search verifications"
+              />
+            ),
             fetcherKey: 'getVerificationList',
             fetcherFn: getVerificationList,
+            staticData: DUMMY_VERIFICATIONS,
+            clientSideSearch: true,
+            tableMaxHeight: '320px',
             emptyTablePlaceholder: 'No verifications found',
           }}
         />
       </div>
+
+      {modalState?.viewVerification && rowData?.formData && (
+        <Dialog open={modalState.viewVerification} onOpenChange={(open) => !open && handleModalClose()}>
+          <DialogContent
+            showCloseButton={false}
+            className="ident-form-popup flex w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-md"
+          >
+            <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
+              <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
+                <ShieldCheck className="h-4 w-4 text-black" />
+                Verification
+              </DialogTitle>
+              <button
+                type="button"
+                onClick={handleModalClose}
+                aria-label="Close"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+              >
+                <Icon name="CloseIcon" className="h-4 w-4" />
+              </button>
+            </DialogHeader>
+            <div className="flex flex-col gap-3 text-sm">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <span className="text-gray-500">DID Number</span>
+                <span className="font-medium text-gray-900">
+                  {rowData.formData?.did_number || '—'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <span className="text-gray-500">Country/City</span>
+                <span className="font-medium text-gray-900">{rowData.formData?.country || '—'}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <span className="text-gray-500">Status</span>
+                <span className="font-medium text-gray-900">
+                  {rowData.formData?.awaiting_registration || '—'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Time Left</span>
+                <span className="font-medium text-gray-900">
+                  {rowData.formData?.expires_at || '—'}
+                </span>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {modalState?.deleteAddress && (
         <AlertConfirm
@@ -129,6 +266,11 @@ const Verification = ({ search }: { search: string }) => {
             },
             open: modalState?.deleteAddress,
             setOpen: () => handleModalClose(),
+            icon: <Trash2 className="h-7 w-7" />,
+            iconTone: 'danger',
+            confirmBtnClassName: 'bg-red-600 hover:bg-red-700 text-white border-red-600',
+            showDivider: true,
+            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5',
           }}
         />
       )}

@@ -4,10 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { getDepartmentList } from '@/services/api';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import { Ic } from '@/components/mcm/icons';
-import SideDrawer from '@/components/custom/side-drawer';
-import { useCompanyFeatures } from '@/hooks/rbac';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import NewDepartment from '@/pages/admin-settings/phone-systems/departments/new-department';
 import { DirectoryPage, EmptyRow, SearchChip } from './page-shell';
+import { InfoIcon } from 'lucide-react';
+import CustomTooltip from '@/components/custom/custom-tooltip';
+import './groups-theme.css';
 
 /**
  * Directory ▸ Groups — the departments people belong to.
@@ -37,23 +39,37 @@ const managerName = (manager: unknown) => {
   }
 };
 
+/* Sample groups so the page has enough rows to look populated. Ids are
+   prefixed 'dummy-' and never sent to the API — remove this block once real
+   departments fill the list out. */
+const DUMMY_GROUP_ROWS = [
+  { uuid: 'dummy-group-1', name: 'Sales', manager: 'Priya Nair', members: 8, extension: '4001' },
+  { uuid: 'dummy-group-2', name: 'Support', manager: 'James Carter', members: 12, extension: '4002' },
+  { uuid: 'dummy-group-3', name: 'Engineering', manager: 'Daniel Wu', members: 15, extension: '4003' },
+  { uuid: 'dummy-group-4', name: 'Marketing', manager: 'Olivia Brown', members: 6, extension: '4004' },
+  { uuid: 'dummy-group-5', name: 'Billing', manager: 'Sophia Martinez', members: 4, extension: '4005' },
+  { uuid: 'dummy-group-6', name: 'Onboarding', manager: 'Ethan Rodriguez', members: 5, extension: '4006' },
+].map((seed) => ({
+  uuid: seed.uuid,
+  name: seed.name,
+  manager: JSON.stringify({ first_name: seed.manager.split(' ')[0], last_name: seed.manager.split(' ')[1] }),
+  members: JSON.stringify(Array.from({ length: seed.members }, (_, i) => ({ uuid: `${seed.uuid}-member-${i}` }))),
+  extension: seed.extension,
+}));
+
 const Groups = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
 
-  /* Same gate the Department page puts on New Department. */
-  const { features } = useCompanyFeatures();
-  const phoneSystem = features?.plan_features?.phone_system_action;
-  const canCreateGroup = Boolean(phoneSystem?.access?.DEPARTMENT && phoneSystem?.action?.add);
-
-  const { data: rows = [], isPending } = useQuery({
+  const { data: apiRows = [], isPending } = useQuery({
     /* The platform's department writes invalidate ['getDepartmentList']; keying
        this list anything else meant a newly created group never appeared. */
     queryKey: ['getDepartmentList', 'directoryGroups'],
     queryFn: () => getDepartmentList({ page: 1, limit: 200 }),
     select: (res: any) => res?.data?.data?.result?.rows || [],
   });
+  const rows = useMemo(() => [...apiRows, ...DUMMY_GROUP_ROWS], [apiRows]);
 
   const visible = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -65,17 +81,69 @@ const Groups = () => {
     );
   }, [rows, search]);
 
+  /* Exports what the search is showing, not "every group" — the same rule
+     People's own export uses, so a filtered list can't quietly be handed
+     over labelled as the whole company. */
+  const exportGroups = () => {
+    const header = ['Group', 'Manager', 'Members', 'Extension'];
+    const lines = visible.map((row: any) => {
+      const members = parseMembers(row?.members).length;
+      const cells = [row?.name || '', managerName(row?.manager), String(members), row?.extension || ''];
+      return cells.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',');
+    });
+    const csv = [header.join(','), ...lines].join('\r\n');
+    const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `groups-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
+    <div className="grp-theme">
     <DirectoryPage
-      title="Groups"
-      description="Teams across the organisation — the same records Admin calls Departments."
+      titleClassName="dir-serif-heading"
+      title={
+        <span className="flex items-center gap-2">
+          Groups
+          <CustomTooltip
+            text={
+              <>
+                Teams across the organisation —
+                <br />
+                the same records Admin calls Departments.
+              </>
+            }
+            side="top"
+            className="!bg-gray-300 !text-black whitespace-normal text-left"
+          >
+            <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+          </CustomTooltip>
+        </span>
+      }
       actions={
-        canCreateGroup ? (
-          <button type="button" className="btn primary soft-accent" onClick={() => setCreating(true)}>
-            <Ic n="plus" />
-            New group
+        <>
+          <button
+            type="button"
+            className="btn ghost"
+            disabled={!visible.length}
+            title={
+              visible.length === rows.length
+                ? 'Download every group as a spreadsheet'
+                : 'Downloads the groups this search is showing, not all of them'
+            }
+            onClick={exportGroups}
+          >
+            <Ic n="dl" />
+            Export {visible.length}
           </button>
-        ) : null
+          <button type="button" className="btn primary" onClick={() => setCreating(true)}>
+            <Ic n="plus" />
+            Create group
+          </button>
+        </>
       }
       filters={
         <>
@@ -86,14 +154,14 @@ const Groups = () => {
         </>
       }
     >
-      <table>
+      <table className="tbl">
         <thead>
-          <tr>
-            <th>Group</th>
-            <th>Manager</th>
-            <th>Members</th>
-            <th>Extension</th>
-            <th>Open</th>
+          <tr className="tbl__head-row">
+            <th className="tbl__th tbl__th--left">Group</th>
+            <th className="tbl__th tbl__th--left">Manager</th>
+            <th className="tbl__th tbl__th--left">Members</th>
+            <th className="tbl__th tbl__th--left">Extension</th>
+            <th className="tbl__th tbl__th--left">Open</th>
           </tr>
         </thead>
         <tbody>
@@ -104,19 +172,23 @@ const Groups = () => {
               const members = parseMembers(row?.members);
               const manager = managerName(row?.manager);
               return (
-                <tr key={row?.uuid}>
-                  <td>
-                    <span className="flex items-center gap-2.5">
+                <tr key={row?.uuid} className="tbl__row">
+                  <td className="tbl__td tbl__td--left">
+                    <span className="tbl__agent">
                       <CustomAvatar name={row?.name || 'Group'} size="30" />
-                      <span style={{ fontWeight: 700 }}>{row?.name || '—'}</span>
+                      <span className="tbl__name">{row?.name || '—'}</span>
                     </span>
                   </td>
-                  <td>{manager || <span style={{ color: 'var(--ink-4)' }}>—</span>}</td>
-                  <td>
+                  <td className="tbl__td tbl__td--left tbl__value--muted">
+                    {manager || <span style={{ color: 'var(--ink-4)' }}>—</span>}
+                  </td>
+                  <td className="tbl__td tbl__td--left">
                     <span className="tag acc num">{members.length}</span>
                   </td>
-                  <td className="num">{row?.extension || '—'}</td>
-                  <td>
+                  <td className="tbl__td tbl__td--left num tbl__value">
+                    {row?.extension || '—'}
+                  </td>
+                  <td className="tbl__td tbl__td--left">
                     <button
                       type="button"
                       className="mini"
@@ -141,18 +213,36 @@ const Groups = () => {
       {/* The platform's own department form, opened in place. `rowData` empty
           means create rather than edit. */}
       {creating && (
-        <SideDrawer
-          isOpen={creating}
-          title="Create group"
-          width="min(920px, 78vw)"
-          isTab={false}
-          enableResponsive
-          headerClassName="min-h-8 px-4 sm:px-5"
-          handleClose={() => setCreating(false)}
-          content={<NewDepartment rowData={{}} setDrawerState={setCreating} />}
-        />
+        <Dialog open={creating} onOpenChange={(val) => !val && setCreating(false)}>
+          <DialogContent className="grp-create-dialog flex w-[92vw] max-w-[760px] max-h-[85vh] flex-col gap-0 overflow-hidden p-0">
+            <DialogTitle className="dir-serif-heading flex items-center gap-2 px-5 py-4 text-gray-900">
+              Create group
+              <CustomTooltip
+                text={
+                  <>
+                    Create a department to organize your
+                    <br />
+                    company's workflow. This allows you to route
+                    <br />
+                    calls to specific teams (e.g., Support or Billing)
+                    <br />
+                    and assign multiple users to a single extension.
+                  </>
+                }
+                side="top"
+                className="!bg-gray-300 !text-black whitespace-normal text-left"
+              >
+                <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+              </CustomTooltip>
+            </DialogTitle>
+            <div className="grp-create-theme min-h-0 flex-1 overflow-hidden px-5 pb-5">
+              <NewDepartment rowData={{}} setDrawerState={setCreating} />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </DirectoryPage>
+    </div>
   );
 };
 

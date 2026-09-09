@@ -15,8 +15,15 @@ const enableCrossOriginIsolation = process.env.VITE_CROSS_ORIGIN_ISOLATION === '
 // VITE_* value came through undefined, so axios had no baseURL, the org
 // metadata request failed and the app rendered the maintenance screen. On a
 // local checkout fall back to the project root and read the .env there.
+//
+// A checkout's own .env wins over the server directory. On Windows the
+// absolute path '/etc/mycountrymobile-web' resolves against the current drive
+// (C:\etc\mycountrymobile-web), so a dev who followed DOCS.md and created it
+// silently shadowed the repo's .env with localhost placeholders.
 const SERVER_ENV_DIR = '/etc/mycountrymobile-web';
-const envDir = fs.existsSync(SERVER_ENV_DIR) ? SERVER_ENV_DIR : undefined;
+const LOCAL_ENV_FILE = path.resolve(__dirname, '.env');
+const envDir =
+  !fs.existsSync(LOCAL_ENV_FILE) && fs.existsSync(SERVER_ENV_DIR) ? SERVER_ENV_DIR : undefined;
 
 // Origin the API recognises as this deployment's tenant; see the dev proxy below.
 const TENANT_ORIGIN = process.env.VITE_DEV_PROXY_ORIGIN || 'https://ucaas.acepeak.com';
@@ -70,6 +77,23 @@ export default defineConfig({
         // back 422 "Website settings not found" — which the login screen
         // reports as bad credentials even when they are correct. Present the
         // deployed domain so local dev hits the same tenant as production.
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('origin', TENANT_ORIGIN);
+            proxyReq.setHeader('referer', `${TENANT_ORIGIN}/`);
+          });
+        },
+      },
+      // Uploaded assets (org logos, login banners) come back from the API as
+      // paths like "Organisations/<uuid>.svg" with no "/api" prefix. The app
+      // builds their <img> src as `${VITE_API_BASE_URL}/${path}`, and
+      // VITE_API_BASE_URL is deliberately empty locally (see above), so that
+      // resolves to this dev server's own origin instead of the API host and
+      // 404s — the logo silently fails to render. Proxy this path the same
+      // way "/api" already is.
+      '/Organisations': {
+        target: 'https://api2.acepeak.com',
+        changeOrigin: true,
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq) => {
             proxyReq.setHeader('origin', TENANT_ORIGIN);

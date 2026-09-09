@@ -1,0 +1,323 @@
+/*
+  AI Tools — Shared Table Design
+  Used by: AI Receptionists, Chat Agents, Sessions
+
+  Example markup shape:
+
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead>
+        <tr class="tbl__head-row">
+          <th class="tbl__th tbl__th--left">Agent</th>
+          <th class="tbl__th tbl__th--center">Status</th>
+          <th class="tbl__th tbl__th--center">Conversations (7D)</th>
+          <th class="tbl__th tbl__th--center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="tbl__row">
+          <td class="tbl__td tbl__td--left">
+            <div class="tbl__agent">
+              <div class="tbl__avatar">WS</div>
+              <div class="tbl__agent-meta">
+                <span class="tbl__name">Website Support Bot</span>
+                <span class="tbl__subtitle">Solstice Home Services · chat</span>
+              </div>
+            </div>
+          </td>
+          <td class="tbl__td tbl__td--center">
+            <button class="tbl__pill tbl__pill--live">
+              <span class="tbl__pill-dot"></span> Live
+            </button>
+          </td>
+          <td class="tbl__td tbl__td--center"><span class="tbl__value">126</span></td>
+          <td class="tbl__td tbl__td--center"><!-- action icons --></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+*/
+
+.tbl-wrap {
+  width: 100%;
+  /* Both axes on `auto` (not just `overflow-x`) so the rounded corners
+     below actually clip the table's own square header/row corners —
+     border-radius clipping still allows scrolling in whichever axis
+     needs it, it just doesn't work with only one axis set. */
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e5e5; /* neutral-200 */
+  box-shadow: none;
+}
+
+/* This table sits inside `.mcm-page`/`.mcm-admin`, whose own `mcm-page.css`
+   ships generic `.mcm-page table`, `.mcm-admin table thead th` etc. rules
+   for every other admin table. Those selectors carry more type-selector
+   weight (e.g. `.mcm-admin table thead th`) than a single `.tbl__th` class,
+   so they were winning the cascade even once both files loaded through the
+   same global stylesheet — hence `!important` below, scoped to exactly the
+   properties those legacy rules also set. */
+.tbl {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate !important;
+  border-spacing: 0;
+}
+
+/* `table-layout: fixed` splits width evenly across every column that
+   doesn't say otherwise — fine when most columns hold a pill or a short
+   value next to one wide agent column, but with only a couple of narrow
+   text columns and a 2-icon actions column it stretched a wide empty gap
+   across the actions column along with everyone else. Giving just that
+   column (or any other that only needs to hug its own content) a real
+   pixel width here makes `fixed` hand the rest of the row back to the
+   unconstrained columns instead — tried percentage/`auto` sizing first,
+   but combined with this wrapper's `overflow-x: auto` that shrank the
+   whole table to its content width rather than filling the row. */
+.tbl__th--tight,
+.tbl__td--tight {
+  width: 96px;
+  white-space: nowrap;
+}
+
+/* ---------- Header ---------- */
+
+.tbl__head-row {
+  background: #fafafa; /* neutral-50 */
+  border-bottom: 1px solid #e5e5e5; /* neutral-200 */
+}
+
+.tbl__th {
+  background: transparent !important;
+  padding: 13px 18px !important;
+  font-family:
+    'Plus Jakarta Sans',
+    'Twemoji Country Flags',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important; /* bold */
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: #737373 !important; /* neutral-500; matches the inspected oklch(0.556 0 none) */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tbl__th--left {
+  text-align: left !important;
+}
+
+.tbl__th--center {
+  text-align: center !important;
+}
+
+.tbl__th--right {
+  text-align: right !important;
+}
+
+/* ---------- Rows ---------- */
+
+.tbl__row {
+  background: #ffffff;
+  transition: background-color 0.15s ease;
+}
+
+.tbl__row:hover {
+  background: #fafafa; /* neutral-50 */
+}
+
+.tbl__td {
+  background: transparent !important;
+  padding: 8px 18px !important;
+  height: auto;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tbl__td--left {
+  text-align: left !important;
+}
+
+.tbl__td--center {
+  text-align: center !important;
+}
+
+.tbl__td--right {
+  text-align: right !important;
+}
+
+/* Row height (matches the shared table reference across all AI Tools tables) */
+.tbl__row {
+  height: 52.67px;
+}
+
+/* ---------- Agent / Name cell ---------- */
+
+.tbl__agent {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.tbl__avatar {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: #f5f5f5;
+  color: #525252;
+}
+
+/* Cycle a tint per row (`tbl__avatar--0` through `--5`, repeating past six
+   rows) instead of one flat grey for every avatar — makes a list of
+   several rows scannable at a glance instead of reading as one undifferentiated
+   block. */
+.tbl__avatar--0 { background: #fee2e2; color: #b91c1c; }
+.tbl__avatar--1 { background: #dbeafe; color: #1d4ed8; }
+.tbl__avatar--2 { background: #dcfce7; color: #15803d; }
+.tbl__avatar--3 { background: #fef3c7; color: #b45309; }
+.tbl__avatar--4 { background: #ede9fe; color: #6d28d9; }
+.tbl__avatar--5 { background: #ffe4e6; color: #be123c; }
+
+.tbl__agent-meta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tbl__name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 400; /* thin / regular, not bold */
+  line-height: 1.25rem;
+  color: #020617; /* slate-950 */
+}
+
+.tbl__name:hover {
+  color: #020617;
+}
+
+.tbl__subtitle {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1rem;
+  color: #737373; /* neutral-500 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ---------- Status pill ---------- */
+
+.tbl__pill {
+  display: inline-flex;
+  height: 24px;
+  min-width: 64px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.tbl__pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: currentColor;
+}
+
+.tbl__pill--live {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
+.tbl__pill--draft {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #d97706;
+}
+
+.tbl__pill--paused {
+  background: #f5f5f5;
+  border-color: #e5e5e5;
+  color: #737373;
+}
+
+/* ---------- Metric values (Conversations / Resolution / etc.) ---------- */
+
+.tbl__value {
+  font-size: 12px;
+  font-weight: 700;
+  color: #020617; /* slate-950 */
+}
+
+.tbl__value--muted {
+  font-weight: 400;
+  color: #334155; /* slate-700 */
+}
+
+/* ---------- Sentiment badge ---------- */
+
+.tbl__sentiment {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tbl__sentiment--positive { color: #16a34a; }
+.tbl__sentiment--neutral  { color: #d97706; }
+.tbl__sentiment--negative { color: #dc2626; }
+
+/* ---------- Actions ---------- */
+
+.tbl__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tbl__action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  color: #737373;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.tbl__action-btn:hover {
+  background: #f5f5f5;
+  color: #171717;
+}

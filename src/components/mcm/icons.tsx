@@ -65,7 +65,9 @@ export type McmIconName =
   | 'trend'
   | 'merge'
   | 'trash'
-  | 'refresh';
+  | 'refresh'
+  | 'more'
+  | 'info';
 
 export const McmIconSprite = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
@@ -89,6 +91,19 @@ export const Ic = ({
     viewBox="0 0 24 24"
     style={size ? { width: size, height: size } : undefined}
     aria-hidden="true"
+    /* Presentation-attribute fallback for the .ic CSS rule (mcm-page.css),
+       which only applies under a `.mcm-page` ancestor — an icon rendered
+       inside a portal (a Radix dropdown/dialog, which mounts to
+       document.body) sits outside that ancestor and would otherwise render
+       with the SVG default fill (a solid black blob, or nothing at all for
+       stroke-only glyphs like `sliders`). A CSS rule with a real ancestor
+       selector still wins over these where `.mcm-page` is present, so this
+       changes nothing there. */
+    fill={fill ? 'currentColor' : 'none'}
+    stroke={fill ? 'none' : 'currentColor'}
+    strokeWidth={1.8}
+    strokeLinecap="round"
+    strokeLinejoin="round"
   >
     <use href={`#mcmp-${n}`} />
   </svg>
@@ -153,4 +168,6 @@ const SPRITE = `<g id="mcmp-trash"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/
 <g id="mcmp-trend"><path d="M3 17l6-6 4 4 8-8M21 7h-5M21 7v5"/></g>
 <g id="mcmp-merge"><path d="M8 21V9a5 5 0 0 0-5-5M16 21V9a5 5 0 0 1 5-5M12 3v18"/></g>
 <g id="mcmp-trash"><path d="M4 6h16M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6M6.5 6l.8 13.1A2 2 0 0 0 9.3 21h5.4a2 2 0 0 0 2-1.9L17.5 6M10 10.5v6M14 10.5v6"/></g>
-<g id="mcmp-refresh"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6M20.5 4v5h-5"/></g>`;
+<g id="mcmp-refresh"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6M20.5 4v5h-5"/></g>
+<g id="mcmp-more"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></g>
+<g id="mcmp-info"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.1"/></g>`;

@@ -3,7 +3,7 @@ import CustomSelect from '@/components/custom/custom-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/hooks/use-user';
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { userInitialState } from '../../../constants';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getRoleList, getUserList, validateUser } from '@/services/api';
@@ -18,7 +18,13 @@ import ErrorTooltip from '@/components/custom/error-tooltip';
 import { generateRandomExtension, handleAlert } from '@/lib/utils';
 import { Icon } from '@/assets/icons/icon';
 import CustomTooltip from '@/components/custom/custom-tooltip';
-import { InfoIcon } from 'lucide-react';
+import { Check, ChevronDown, InfoIcon } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { COMPANY_DEFAULTS_QUERY_KEY, fetchCompanyDefaults } from '@/lib/company-defaults';
 import { NEW_PERSON_ROLE_KEY, readNewPersonRole } from '@/lib/role-permission-defaults';
 import {
@@ -43,6 +49,10 @@ type ValidationErrorMap = {
     extension?: string;
   };
 };
+/** Same normalisation invite-duplicates.ts uses for extensions — digits only. */
+const normaliseExtensionDigits = (value: unknown): string =>
+  String(value ?? '').replace(/\D+/g, '');
+
 const debounce = (fn: any, delay: any) => {
   let timer: any;
   return (...args: any) => {
@@ -63,8 +73,15 @@ const AddUserInfo = ({
     watch,
     setValue,
     control,
+    trigger,
     formState: { errors },
   }: any = useFormContext<any>();
+  /* Which row the form on screen is showing — a freshly appended blank one,
+     or an existing row somebody opened "Edit" on. Everything else in `fields`
+     renders as a compact row below instead of its own full form, and "Add
+     User" (in the header) files the row on screen away into that list and
+     opens a new blank one in its place. */
+  const [activeIndex, setActiveIndex] = useState(0);
   const { user } = useUser();
   // const [errorType, setErrorType] = useState(null);
   // const [errIndex, setErrIndex] = useState(null);
@@ -76,7 +93,7 @@ const AddUserInfo = ({
     name: 'users',
   });
 
-  const { data: companySiteList, isLoading } = useGetSite();
+  const { data: companySiteList } = useGetSite();
 
   const { data: roleList = [], isPending } = useQuery({
     queryKey: ['useRolesList', false],
@@ -123,7 +140,7 @@ const AddUserInfo = ({
 
   const { fields, append, remove } = formFieldArrayInstance;
 
-  const [users, userAddCountRaw] = watch(['users', 'user_add_count']) as [User[], number | null];
+  const users = watch('users') as User[];
 
   useEffect(() => {
     const picked = roleDecision.role;
@@ -157,7 +174,6 @@ const AddUserInfo = ({
      cannot find either — two unsaved rows are not "taken" yet, and its check
      spans every company it hosts rather than just this one. */
   const clashes = useMemo(() => findInviteClashes({ rows: users, roster }), [users, roster]);
-  const userAddCount = Number(userAddCountRaw) || 0;
   const { plan_info, user_info = {}, company_info } = user || {};
   const isPlanExpired = company_info?.plan_status === 'EXPIRED';
   const isTrial = company_info?.is_trial === 'Y';
@@ -279,11 +295,6 @@ const AddUserInfo = ({
     errors?.users?.[index]?.extension?.message ||
     validationErrors?.[index]?.extension;
 
-  const phoneProblem = (index: number) =>
-    clashForField(clashes, index, 'phone')?.message ||
-    errors?.users?.[index]?.phone?.message ||
-    validationErrors?.[index]?.phone;
-
   // const { mutate: mutateValidateUser } = useMutation({
   //   mutationFn: validateUser,
   //   onSuccess: () => {
@@ -324,21 +335,12 @@ const AddUserInfo = ({
 
   const MAX_USERS = 10;
 
-  const handleUserAddCountChange = (event: ChangeEvent<HTMLInputElement>) => {
-    /* Two digits, so the box can express MAX_USERS. Anything below 1 clears the
-       field, anything above the cap is pinned to the cap. */
-    const sanitizedValue = event.target.value.replace(/[^0-9]/g, '').slice(0, 2);
-    const parsedValue = sanitizedValue ? Number(sanitizedValue) : null;
-    const nextValue =
-      parsedValue === null || parsedValue < 1 ? null : Math.min(parsedValue, MAX_USERS);
-
-    setValue('user_add_count', nextValue, {
-      shouldDirty: true,
-      shouldTouch: true,
-    });
-  };
-
-  const handleAddUser = () => {
+  /* One row per click — the quantity box this used to read from is gone, so
+     this simply adds a single row, still behind the same plan/trial/licence
+     guards as before. Files the row currently on screen away (it stays in
+     `users`, so it is still submitted either way) and opens a fresh blank
+     row in its place. */
+  const handleAddUser = async () => {
     if (isPlanExpired) {
       handleAlert({
         text: 'You cannot add users until your subscription is renewed.',
@@ -351,14 +353,6 @@ const AddUserInfo = ({
       handleAlert({
         text: 'This feature is not available in your current plan. Please upgrade',
         type: 'error',
-      });
-      return;
-    }
-
-    if (userAddCount < 1 || userAddCount > MAX_USERS) {
-      handleAlert({
-        text: `Please enter a number between 1 and ${MAX_USERS}.`,
-        type: 'warning',
       });
       return;
     }
@@ -387,43 +381,23 @@ const AddUserInfo = ({
       return;
     }
 
-    if (userAddCount > maxAllowed) {
-      handleAlert({
-        text:
-          availableLicensesToPurchase !== 'Unlimited' && userAddCount > availableLicensesToPurchase
-            ? `You can only add up to ${availableLicensesToPurchase} users based on available licenses.`
-            : `Maximum of 10 users can be added at once.`,
-        type: 'warning',
-      });
-      return;
-    }
+    const isRowValid = await trigger(`users.${activeIndex}`);
+    if (!isRowValid) return;
 
-    const remainingSlots = maxAllowed - currentCount;
+    append({ ...userInitialState });
+    setActiveIndex(currentCount);
+  };
 
-    if (userAddCount > remainingSlots) {
-      if (currentCount === 1 && userAddCount === maxAllowed) {
-        // Silently allow it if there's only the default row and they entered the max allowed,
-        // it will append (maxAllowed - 1) rows, bringing the total exactly to maxAllowed.
-      } else {
-        handleAlert({
-          text:
-            availableLicensesToPurchase !== 'Unlimited' && remainingSlots < MAX_USERS - currentCount
-              ? `You can only add ${remainingSlots} more user${remainingSlots === 1 ? '' : 's'} based on available licenses.`
-              : `You can only add ${remainingSlots} more user${remainingSlots === 1 ? '' : 's'}.`,
-          type: 'warning',
-        });
-        return;
-      }
-    }
+  /* Opens an already-added row back up in the form instead of its row below. */
+  const handleEditRow = (index: number) => setActiveIndex(index);
 
-    const count = Math.min(userAddCount, remainingSlots);
-    if (count <= 0) return;
-
-    Array.from({ length: count }).forEach(() => {
-      append({ ...userInitialState });
-    });
-
-    setValue('user_add_count', '');
+  /* Removing a row above the one on screen shifts every later index down by
+     one — following that shift here is what keeps the open form pointed at
+     the same row instead of silently jumping to whatever now sits at its old
+     index. */
+  const handleDeleteRow = (index: number) => {
+    remove(index);
+    setActiveIndex((prev) => (prev > index ? prev - 1 : prev));
   };
 
   // const handleAddUser = () => {
@@ -437,8 +411,34 @@ const AddUserInfo = ({
   //   setValue('user_add_count', '');
   // };
 
+  /* A pure-random draw collided with an already-taken extension often enough
+     to leave the form silently blocked (Save & Continue disabled, only a
+     small red flag on the field to say why) the moment it opened. Retries
+     against both the roster and this batch's other rows until it lands on
+     one that's actually free, so the auto-filled value doesn't start the
+     form in a broken state. */
   const generateNewExtension = (index: number) => {
-    const newExtension = generateRandomExtension();
+    const takenByRoster = new Set(
+      (roster as any[])
+        .map((person) => normaliseExtensionDigits(person?.extension))
+        .filter(Boolean),
+    );
+    const takenInBatch = new Set(
+      (users || [])
+        .map((u, i) => (i === index ? '' : normaliseExtensionDigits(u?.extension)))
+        .filter(Boolean),
+    );
+
+    let newExtension = generateRandomExtension();
+    let attempts = 0;
+    while (
+      (takenByRoster.has(newExtension) || takenInBatch.has(newExtension)) &&
+      attempts < 25
+    ) {
+      newExtension = generateRandomExtension();
+      attempts += 1;
+    }
+
     setValue(`users.[${index}].extension`, newExtension, { shouldValidate: true });
     handleValidateUser({ value: newExtension, type: 'extension' }, index);
   };
@@ -475,50 +475,37 @@ const AddUserInfo = ({
 
   return (
     <div className="flex min-h-0 flex-col gap-2 overflow-y-auto">
-      <div className="flex flex-col gap-1 mt-3">
-        <p className="text-gray-900 text-center mb-2">
-          Licenses available to purchase:{' '}
-          {plan_info?.dataValues?.licenses !== 0
-            ? plan_info?.dataValues?.licenses - dataGetMyPlanDetails?.license_detail?.total_licenses
-            : 'Unlimited'}
-        </p>
-
-        <div className="flex flex-col items-stretch justify-center gap-3 md:flex-row md:items-start lg:justify-center">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <div className="w-34">
-              <Input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="Enter no."
-                value={String(userAddCountRaw ?? '')}
-                onChange={handleUserAddCountChange}
-                maxLength={2}
-              />
-              <p className="text-[10px] ps-[2px] pt-1 text-gray-500">
-                Enter number between 1-{MAX_USERS}
-              </p>
-            </div>
-            <Button variant={'outline'} type="button" onClick={handleAddUser}>
-              <Plus className="w-3 h-3" />
-              Add Users
-            </Button>
-          </div>
-          <div className="w-full md:max-w-[260px] lg:max-w-none lg:w-auto">
-            <CustomSelect
-              options={companySiteList?.map((site: { name: string; uuid: string }) => ({
-                label: site?.name,
-                value: site?.uuid,
-              }))}
-              placeholder="Select location"
-              isLoading={isLoading}
-              handleChange={(e: ISELECTVALUE | null) => {
-                setValue(`site`, e || { label: '', value: '' }, { shouldValidate: true });
-              }}
-              value={watch('site')}
-              error={errors?.site?.value?.message}
-            />
-          </div>
+      <div className="flex flex-col gap-1 mt-1">
+        <div className="ppl-invite-actions flex flex-wrap items-center justify-end gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant={'outline'} size={'sm'} type="button" className="ppl-invite-btn">
+                Branches
+                <ChevronDown size={14} className="text-gray-700" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="border-transparent">
+              {companySiteList?.map((site: { name: string; uuid: string }) => (
+                <DropdownMenuItem
+                  key={site.uuid}
+                  className="ppl-row-menu-item justify-between"
+                  onSelect={() =>
+                    setValue(
+                      'site',
+                      { label: site.name, value: site.uuid },
+                      { shouldValidate: true },
+                    )
+                  }
+                >
+                  {site.name}
+                  {watch('site')?.value === site.uuid ? <Check size={14} /> : null}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {errors?.site?.value?.message ? (
+            <ErrorTooltip text={errors?.site?.value?.message} />
+          ) : null}
         </div>
 
         {/* {licenseInfo.extraCharge && (
@@ -526,12 +513,38 @@ const AddUserInfo = ({
           Additional licenses to purchase: {licenseInfo.extraUnits}
         </p>
       )} */}
-        <p className="text-gray-700 text-center text-sm mt-1 flex items-center justify-center gap-1">
-          Unused licenses: {licenseInfo?.available || 0}
-          <CustomTooltip text="License purchased" side="top">
-            <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
-          </CustomTooltip>
-        </p>
+        <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="rounded-lg border border-transparent bg-white p-2 shadow-sm">
+            <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-gray-500">
+              Available to purchase
+            </div>
+            <div className="mt-0.5 text-lg font-bold leading-none text-gray-900">
+              {plan_info?.dataValues?.licenses !== 0
+                ? plan_info?.dataValues?.licenses -
+                  dataGetMyPlanDetails?.license_detail?.total_licenses
+                : 'Unlimited'}
+            </div>
+          </div>
+          <div className="rounded-lg border border-transparent bg-white p-2 shadow-sm">
+            <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-gray-500">
+              Unused licenses
+              <CustomTooltip text="License purchased" side="top">
+                <InfoIcon className="w-3 h-3 text-gray-500 cursor-pointer" />
+              </CustomTooltip>
+            </div>
+            <div className="mt-0.5 text-lg font-bold leading-none text-gray-900">
+              {licenseInfo?.available || 0}
+            </div>
+          </div>
+          <div className="rounded-lg border border-transparent bg-white p-2 shadow-sm">
+            <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-gray-500">
+              New licenses purchased
+            </div>
+            <div className="mt-0.5 text-lg font-bold leading-none text-gray-900">
+              {licenseInfo?.extraUnits || 0}
+            </div>
+          </div>
+        </div>
         {licenseInfo?.hasLicenseMismatch ? (
           <p className="text-amber-600 text-center text-xs">
             Your plan lists {licenseInfo?.reportedFree} unused licence
@@ -539,17 +552,27 @@ const AddUserInfo = ({
             {licenseInfo?.enforcedFree}. We use the lower number so you are not blocked at checkout.
           </p>
         ) : null}
-        <p className="text-gray-700 text-center text-sm">
-          New licenses purchased: {licenseInfo?.extraUnits || 0}
-        </p>
 
         {/* Which role everybody on this form starts on, and why that one. Said
             once at the top rather than repeated on every row: it is the same
             answer for all of them, and it is a company-wide setting somebody
             can go and change. */}
         {roleDecision.reason ? (
-          <p className="mx-auto mt-1 max-w-3xl text-center text-xs text-gray-600">
-            {roleDecision.reason}
+          <p className="mx-auto mt-1 flex max-w-3xl items-center justify-center gap-1 text-center text-xs text-gray-600">
+            {roleDecision.role ? (
+              <>
+                Starting role: <strong>&ldquo;{roleDecision.role.name}&rdquo;</strong>
+              </>
+            ) : (
+              'Starting role not set'
+            )}
+            <CustomTooltip
+              text={roleDecision.reason}
+              side="top"
+              className="!bg-gray-300 !text-black max-w-[240px] whitespace-normal text-left leading-snug"
+            >
+              <InfoIcon className="w-3.5 h-3.5 text-gray-500 cursor-pointer" />
+            </CustomTooltip>
           </p>
         ) : null}
         {roleDecision.warning ? (
@@ -570,173 +593,236 @@ const AddUserInfo = ({
         ) : null}
       </div>
       <div className="flex flex-col my-2 gap-3 pr-0 md:pr-3 lg:gap-2">
-        {fields?.map((_, index) => (
-          <div
-            key={index}
-            className="mcm-invitee grid grid-cols-1 gap-3 rounded-xl border border-gray-200 p-3 md:grid-cols-2 xl:grid-cols-3"
-          >
-            <div className="w-full">
-              <Input
-                label="First Name"
-                type="text"
-                placeholder="First Name"
-                {...register(`users.${index}.first_name`)}
-                error={errors?.users?.[index]?.first_name?.message}
-                maxLength={50}
-              />
-            </div>
-            <div className="w-full">
-              <Input
-                label="Last Name"
-                type="text"
-                placeholder="Last Name"
-                {...register(`users.${index}.last_name`)}
-                error={errors?.users?.[index]?.last_name?.message}
-                maxLength={50}
-              />
-            </div>
-            <div className="w-full">
-              <Input
-                label="Email"
-                type="email"
-                placeholder="Email"
-                {...register(`users.${index}.email`)}
-                error={emailProblem(index)}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setValue(`users.[${index}].email`, value, {
+        {/* The one open form — a fresh blank row, or whichever row "Edit"
+            below was clicked on. */}
+        <div
+          key={activeIndex}
+          className="mcm-invitee grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-white p-3 md:grid-cols-2 xl:grid-cols-3"
+        >
+          <div className="w-full">
+            <Input
+              label="First Name"
+              type="text"
+              placeholder="First Name"
+              {...register(`users.${activeIndex}.first_name`)}
+              error={errors?.users?.[activeIndex]?.first_name?.message}
+              maxLength={50}
+            />
+          </div>
+          <div className="w-full">
+            <Input
+              label="Last Name"
+              type="text"
+              placeholder="Last Name"
+              {...register(`users.${activeIndex}.last_name`)}
+              error={errors?.users?.[activeIndex]?.last_name?.message}
+              maxLength={50}
+            />
+          </div>
+          <div className="w-full">
+            <Input
+              label="Email"
+              type="email"
+              placeholder="Email"
+              {...register(`users.${activeIndex}.email`)}
+              error={emailProblem(activeIndex)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setValue(`users.[${activeIndex}].email`, value, {
+                  shouldValidate: true,
+                });
+                handleValidateUser({ value, type: 'email' }, activeIndex);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5 w-full">
+            <Label>Phone</Label>
+            <div className="flex w-full gap-1">
+              <PhoneInput
+                country={'us'}
+                value={watch(`users.${activeIndex}.phone`)}
+                onChange={(value) => {
+                  setValue(`users.[${activeIndex}].phone`, value, {
                     shouldValidate: true,
                   });
-                  handleValidateUser({ value, type: 'email' }, index);
+                  handleValidateUser({ value, type: 'phone' }, activeIndex);
                 }}
+                containerClass={`w-full ${errors?.users?.[activeIndex]?.phone?.message ? 'phone-error' : ''}`}
+                enableSearch={true}
               />
             </div>
+          </div>
 
-            <div className="flex flex-col gap-1.5 w-full">
-              <div className="flex items-center justify-between">
-                <Label>Phone</Label>
-                <div className="flex items-start">
-                  {phoneProblem(index) ? <ErrorTooltip text={phoneProblem(index)} /> : null}
-                </div>
-              </div>
-              <div className="flex w-full gap-1">
-                <PhoneInput
-                  country={'us'}
-                  value={watch(`users.${index}.phone`)}
-                  onChange={(value) => {
-                    setValue(`users.[${index}].phone`, value, {
-                      shouldValidate: true,
-                    });
-                    handleValidateUser({ value, type: 'phone' }, index);
-                  }}
-                  containerClass={`w-full ${errors?.users?.[index]?.phone?.message ? 'phone-error' : ''}`}
-                  enableSearch={true}
-                />
-              </div>
-            </div>
+          <div className="w-full">
+            <CustomSelect
+              label="Role"
+              value={watch(`users.${activeIndex}.role`)}
+              options={roleList.map(
+                (role: { name: string; role_uuid: string; type: string; uuid: string }) => ({
+                  label: role?.name,
+                  value: role?.type === 'custom' ? role?.uuid : role?.role_uuid,
+                }),
+              )}
+              handleChange={(e: ISELECTVALUE | null) => {
+                setValue(`users.${activeIndex}.role`, e || { label: '', value: '' }, {
+                  shouldValidate: true,
+                });
+                /* Branch on the role's `type`, not on its display name: a custom
+                   role may legitimately be called "ADMIN", and the old test
+                   would then have written it into role_uuid. Both fields are
+                   set every time — one to the id, the other cleared — because
+                   leaving the previous one behind meant switching from a custom
+                   role back to a system role silently kept the custom role, the
+                   backend checking custom_role_uuid first. */
+                const picked = roleList.find(
+                  (item: any) =>
+                    (item?.type === 'custom' ? item?.uuid : item?.role_uuid) === e?.value,
+                );
+                const isCustomRole = picked?.type === 'custom';
+                setValue(`users.${activeIndex}.role_uuid`, isCustomRole ? '' : e?.value || '', {
+                  shouldValidate: true,
+                });
+                setValue(
+                  `users.${activeIndex}.custom_role_uuid`,
+                  isCustomRole ? e?.value || '' : '',
+                  { shouldValidate: true },
+                );
+              }}
+              error={errors?.users?.[activeIndex]?.role?.value?.message}
+              isLoading={isPending}
+              /* Rendered inline rather than portaled to <body> — a portaled
+                 menu can't inherit this page's red accent (its own scoped
+                 colour vars don't reach across the portal boundary), so it
+                 would always show the platform's default blue no matter
+                 what --primary is set to here. */
+              menuPortalTarget={false}
+            />
+          </div>
 
-            <div className="w-full">
-              <CustomSelect
-                label="Role"
-                value={watch(`users.${index}.role`)}
-                options={roleList.map(
-                  (role: { name: string; role_uuid: string; type: string; uuid: string }) => ({
-                    label: role?.name,
-                    value: role?.type === 'custom' ? role?.uuid : role?.role_uuid,
-                  }),
-                )}
-                handleChange={(e: ISELECTVALUE | null) => {
-                  setValue(`users.${index}.role`, e || { label: '', value: '' }, {
-                    shouldValidate: true,
-                  });
-                  /* Branch on the role's `type`, not on its display name: a custom
-                     role may legitimately be called "ADMIN", and the old test
-                     would then have written it into role_uuid. Both fields are
-                     set every time — one to the id, the other cleared — because
-                     leaving the previous one behind meant switching from a custom
-                     role back to a system role silently kept the custom role, the
-                     backend checking custom_role_uuid first. */
-                  const picked = roleList.find(
-                    (item: any) =>
-                      (item?.type === 'custom' ? item?.uuid : item?.role_uuid) === e?.value,
-                  );
-                  const isCustomRole = picked?.type === 'custom';
-                  setValue(`users.${index}.role_uuid`, isCustomRole ? '' : e?.value || '', {
-                    shouldValidate: true,
-                  });
-                  setValue(`users.${index}.custom_role_uuid`, isCustomRole ? e?.value || '' : '', {
-                    shouldValidate: true,
-                  });
-                }}
-                error={errors?.users?.[index]?.role?.value?.message}
-                isLoading={isPending}
-              />
-              {/* What that role actually allows. The names the platform ships
-                  with — AGENT, MANAGER, SUB-ADMIN — do not say, and the
-                  permissions behind them barely differ, so the box on its own is
-                  a guess dressed up as a decision. The words come from the same
-                  place the Default permissions screen reads them, so the two
-                  screens describe a role identically. */}
-              {(() => {
-                const chosen = chosenRoleOf(index);
-                const caution = roleWarning(chosen);
-                return chosen ? (
-                  <>
-                    <p className="mt-1 text-[11px] leading-snug text-gray-500">
-                      {describeRole(chosen)}
-                    </p>
-                    {caution ? (
-                      <p className="mt-0.5 text-[11px] font-medium leading-snug text-amber-600">
-                        {caution}
-                      </p>
-                    ) : null}
-                  </>
-                ) : null;
-              })()}
-            </div>
-
+          <div className="flex w-full items-end gap-2">
             <div className="w-full">
               <Input
                 label="Extension"
                 type="text"
                 placeholder="Extension"
-                value={watch(`users.[${index}].extension`)}
-                error={extensionProblem(index)}
+                value={watch(`users.[${activeIndex}].extension`)}
+                error={extensionProblem(activeIndex)}
                 onChange={(e) => {
                   const value = e.target.value;
-                  setValue(`users.[${index}].extension`, value, {
+                  setValue(`users.[${activeIndex}].extension`, value, {
                     shouldValidate: true,
                   });
-                  handleValidateUser({ value, type: 'extension' }, index);
+                  handleValidateUser({ value, type: 'extension' }, activeIndex);
                 }}
                 maxLength={5}
               />
             </div>
-
             <Button
               type="button"
               variant={'outline'}
-              className="w-10 h-10 self-end rounded-xl bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white border-0 lg:self-auto"
-              onClick={() => generateNewExtension(index)}
+              className="h-10 w-10 shrink-0 rounded-xl border-0 bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white"
+              onClick={() => generateNewExtension(activeIndex)}
             >
               <Icon name="Refresh" className="w-5 h-5" />
             </Button>
-
-            {fields.length > 1 && (
-              <div
-                className="border-0 cursor-pointer self-end min-w-10 w-10 h-10 rounded-xl bg-red-100 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center lg:self-auto"
-                onClick={() => remove(index)}
-              >
-                <TrashBin className="w-5 h-5" />
-              </div>
-            )}
           </div>
-        ))}
+
+          <div className="ppl-invite-actions col-span-2 flex flex-wrap items-center justify-end gap-2 xl:col-span-3">
+            <Button
+              variant={'outline'}
+              size={'sm'}
+              type="button"
+              className="ppl-invite-btn"
+              onClick={handleAddUser}
+            >
+              <Plus className="w-3 h-3 text-gray-700" />
+              Add User
+            </Button>
+          </div>
+
+          {/* What that role actually allows. The names the platform ships
+              with — AGENT, MANAGER, SUB-ADMIN — do not say, and the
+              permissions behind them barely differ, so the box on its own is
+              a guess dressed up as a decision. The words come from the same
+              place the Default permissions screen reads them, so the two
+              screens describe a role identically. Spans the full row (not
+              just the Role column) and stays on one line. */}
+          {(() => {
+            const chosen = chosenRoleOf(activeIndex);
+            if (!chosen) return null;
+            const caution = roleWarning(chosen);
+            const description = describeRole(chosen);
+            return (
+              <p
+                className={`ppl-role-note col-span-2 truncate text-[10px] leading-snug ${caution ? 'font-medium text-amber-600' : 'text-gray-500'}`}
+              >
+                {caution || description}
+              </p>
+            );
+          })()}
+        </div>
+
+        {/* Everyone already filed away — added via "Add User" above, or
+            sitting here since the form opened on a fresh blank row. */}
+        {fields.length > 1 ? (
+          <div className="flex flex-col gap-2">
+            {fields.map((field: any, index: number) => {
+              if (index === activeIndex) return null;
+              const rowUser = users?.[index] || {};
+              const fullName =
+                [rowUser?.first_name, rowUser?.last_name].filter(Boolean).join(' ') ||
+                'Unnamed person';
+              return (
+                <div
+                  key={field.id}
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-white p-3"
+                >
+                  <div className="min-w-0 flex-1 basis-40">
+                    <div className="truncate text-sm font-semibold text-gray-900">{fullName}</div>
+                    <div className="truncate text-xs text-gray-500">
+                      {rowUser?.email || 'No email'}
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1 basis-32 text-xs text-gray-600">
+                    {rowUser?.phone ? `+${rowUser.phone}` : '—'}
+                  </div>
+                  <div className="min-w-0 flex-1 basis-28 text-xs text-gray-600">
+                    {rowUser?.role?.label || '—'}
+                  </div>
+                  <div className="min-w-0 basis-20 text-xs text-gray-600">
+                    Ext {rowUser?.extension || '—'}
+                  </div>
+                  <div className="ml-auto flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      title="Edit"
+                      aria-label={`Edit ${fullName}`}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      onClick={() => handleEditRow(index)}
+                    >
+                      <Icon name="EditIcon" className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Delete"
+                      aria-label={`Delete ${fullName}`}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-500 hover:bg-red-500 hover:text-white"
+                      onClick={() => handleDeleteRow(index)}
+                    >
+                      <TrashBin className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
 
       {licenseInfo.extraCharge ? (
         <OrderSummary
-          customClass="w-full lg:w-4/6 xl:w-3/5 xxl:w-3/6"
+          customClass="w-full"
           orderSummary={{
             watchUserLength: users?.length,
             availableLicenses: licenseInfo?.available,

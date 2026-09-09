@@ -1,0 +1,99 @@
+/* .mcm-page sizes .page via flexbox and relies on it being a direct flex
+   child; this wrapper div sits between them, so without `display: contents`
+   .page can't shrink/scroll and instead gets clipped by .mcm-page's
+   `overflow: hidden`. See people-theme.css's .ppl-red-theme rule for the
+   full explanation — same fix, every Directory page wrapper needs it. */
+.rol-theme {
+  display: contents;
+}
+
+/* The shared .fchip search pill turns its border/text --accent-ink on hover,
+   which defaults to blue since this page sets no accent override — kept
+   black here instead. */
+.mcm-page .rol-theme .fchip:hover {
+  border-color: var(--line);
+  color: #171717;
+}
+
+/* Roles table skin: matches the .tbl/.tbl__* row spec used on the analytics
+   tables. Scoped to this page only. */
+.rol-theme .tbl-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+}
+.rol-theme .tbl {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.rol-theme .tbl__head-row {
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+}
+.rol-theme .tbl__th {
+  background: #fafafa;
+  padding: 13px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #737373;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rol-theme .tbl__th:first-child {
+  padding-left: 18px;
+}
+.rol-theme .tbl__th--left {
+  text-align: left;
+}
+.rol-theme .tbl__row {
+  background: #ffffff;
+  transition: background-color 0.15s ease;
+  height: 52.67px;
+}
+.rol-theme .tbl__row:hover {
+  background: #fafafa;
+}
+.rol-theme .tbl__td {
+  background: transparent;
+  padding: 8px 18px;
+  height: auto;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+.rol-theme .tbl__td--left {
+  text-align: left;
+}
+.rol-theme .tbl__name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25rem;
+  color: #020617;
+}
+.rol-theme .tbl__subtitle {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1rem;
+  color: #737373;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.rol-theme .tbl__value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #020617;
+}
