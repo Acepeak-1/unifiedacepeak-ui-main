@@ -228,6 +228,7 @@ const TextEditor = (
     allowEveryoneMention = false,
     fromMeetChat = false,
     chatId = '',
+    hideToolbar = false,
   }: any,
   ref: any,
 ) => {
@@ -614,7 +615,7 @@ const TextEditor = (
       onDragOver={(e) => e.preventDefault()}
     >
       <Slate editor={editor as any} initialValue={validatedInitialValue} onChange={handleChange}>
-        {!readOnly && (
+        {!readOnly && !hideToolbar && (
           <Toolbar className="">
             <MarkButton format="bold" icon="format_bold" />
             <MarkButton format="italic" icon="format_italic" />

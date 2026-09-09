@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/button';
+// DUMMY DATA - remove this import together with DUMMY_DATA.ts
+import { DUMMY_FLAG, DUMMY_RECEPTIONISTS, SHOW_DUMMY_DATA } from '../DUMMY_DATA';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Checkbox } from '@/components/ui/checkbox';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import {
   Dialog,
@@ -14,12 +15,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
 import BussinessHoursModal from '@/components/custom/bussiness-hours-dialog';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import CustomSelect from '@/components/custom/custom-select';
 import NumberWithFlag from '@/components/custom/number-with-flag';
 import TableManager from '@/components/custom/table-manager';
+import { HoverPortalCard, SentimentAnalysisCard } from '@/components/custom/hover-portal-card';
 import { OPERATIONAL_HOURS } from '@/components/common-settings/constants';
 import { getWeeklyScheduleName } from '@/components/common-settings';
 import ForwardActionAllAi from './forward-action-all-ai';
@@ -88,22 +89,25 @@ import moment from 'moment';
 import {
   ArrowLeft,
   ArrowRight,
+  Building2,
   Check,
+  Copy,
   Edit3,
+  ExternalLink,
   FileText,
   Folder,
   Globe2,
   Headphones,
-  AudioLines,
   Loader2,
+  Lock,
   MessageSquare,
-  Mic,
   PenLine,
   Phone,
   Play,
   Plus,
   Search,
   Settings2,
+  Target,
   Sparkles,
   TrendingUp,
   Trash2,
@@ -122,7 +126,15 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { Grid } from '@/assets/icons';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
 import WebsiteScanProgressModal, {
   type WebsiteScanProgressStatus,
@@ -500,6 +512,16 @@ const normalizeSentiment = (value: any) => {
     .trim()
     .toLowerCase();
   return ['positive', 'neutral', 'negative'].includes(sentiment) ? sentiment : '';
+};
+const sentimentScoreRows = [
+  { key: 'positive', label: 'Positive', colorClass: 'bg-green-500' },
+  { key: 'negative', label: 'Negative', colorClass: 'bg-red-600' },
+  { key: 'neutral', label: 'Neutral', colorClass: 'bg-neutral-400' },
+] as const;
+const sentimentScoreValue = (scores: any, key: (typeof sentimentScoreRows)[number]['key']) => {
+  const score = Number(scores?.[key] || 0);
+  if (!Number.isFinite(score)) return 0;
+  return Math.max(0, Math.min(100, score));
 };
 const sentimentFromScores = (scores: any) => {
   const positive = Number(scores?.positive || 0);
@@ -1248,14 +1270,77 @@ const buildPickPageCategories = (links: string[]): PickPageCategory[] => {
 };
 const getPickPageCategoryIconClassName = (index: number) => {
   const colorClasses = [
-    'bg-slate-100 text-slate-700',
-    'bg-emerald-100 text-emerald-700',
-    'bg-amber-100 text-amber-700',
-    'bg-slate-200 text-slate-800',
-    'bg-slate-100 text-slate-600',
+    'bg-red-50 text-red-600',
+    'bg-neutral-100 text-neutral-700',
+    'bg-red-100 text-red-700',
+    'bg-neutral-200 text-neutral-800',
+    'bg-neutral-100 text-neutral-600',
   ];
   return colorClasses[index % colorClasses.length];
 };
+/* One icon per known category so a list of several groups never repeats the
+   same glyph; arbitrary folder-name categories fall back to a rotating pool
+   that shares no icon with the keyword map, so the two sources can't collide. */
+const PICK_PAGE_CATEGORY_ICON_MAP: Record<string, typeof Globe2> = {
+  __main__: Globe2,
+  'pricing-plans': TrendingUp,
+  'features-services': Sparkles,
+  'help-contact': Headphones,
+  'company-info': UserRound,
+  blog: MessageSquare,
+  'legal-trust': FileText,
+  'developers-integrations': Settings2,
+  'industries-use-cases': Building2,
+};
+const PICK_PAGE_FALLBACK_ICONS = [Folder, Bot, PhoneCall, Gauge, RefreshCcw];
+const getPickPageCategoryIcon = (categoryId: string, fallbackIndex: number) =>
+  PICK_PAGE_CATEGORY_ICON_MAP[categoryId] ||
+  PICK_PAGE_FALLBACK_ICONS[fallbackIndex % PICK_PAGE_FALLBACK_ICONS.length];
+/* The dialog's built-in close button is styled per-dialog rather than globally:
+   a grey tint circle on hover, and no focus ring, since the ring read as a
+   stray grey border the moment the button was clicked. */
+const MANAGER_SELECT_STYLE = `
+/* index.css declares these in @layer base with !important, and a layered
+   !important outranks an unlayered one no matter how specific - so these
+   overrides have to join the same layer to land. */
+@layer base {
+    .ai-manager-select.custom-react-select__control,
+    .ai-manager-select.custom-react-select__control:hover,
+    .ai-manager-select.custom-react-select__control--is-focused,
+    .ai-manager-select.custom-react-select__control--menu-is-open {
+      border-color: var(--color-neutral-300) !important;
+      box-shadow: none !important;
+    }
+    .ai-manager-select.custom-react-select__control:hover,
+    .ai-manager-select.custom-react-select__control--is-focused,
+    .ai-manager-select.custom-react-select__control--menu-is-open {
+      border-color: var(--color-neutral-400) !important;
+    }
+    .ai-manager-select.custom-react-select__menu {
+      border-color: var(--color-neutral-200) !important;
+      border-radius: 0.75rem !important;
+      padding: 0.375rem !important;
+    }
+    .ai-manager-select.custom-react-select__option {
+      border-radius: 0.5rem !important;
+      font-weight: 500 !important;
+    }
+    .ai-manager-select.custom-react-select__option:hover,
+    .ai-manager-select.custom-react-select__option--is-focused {
+      background-color: #f3f4f6 !important;
+      color: var(--color-neutral-900) !important;
+    }
+    .ai-manager-select.custom-react-select__option--is-selected {
+      background-color: var(--color-red-50) !important;
+      color: var(--color-neutral-900) !important;
+      font-weight: 600 !important;
+    }
+}
+`;
+
+const DIALOG_CLOSE_BUTTON_CLASS =
+  '[&_[data-slot=dialog-close]]:flex [&_[data-slot=dialog-close]]:h-8 [&_[data-slot=dialog-close]]:w-8 [&_[data-slot=dialog-close]]:items-center [&_[data-slot=dialog-close]]:justify-center [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:outline-none! [&_[data-slot=dialog-close]]:ring-0! [&_[data-slot=dialog-close]]:ring-offset-0! [&_[data-slot=dialog-close]]:transition-colors [&_[data-slot=dialog-close]]:hover:bg-neutral-200/70';
+
 const CALL_EMBED_SCRIPT_ID = 'ai-receptionist-call-widget-script';
 const unloadAi360CallWidget = () => {
   const existing = document.getElementById(CALL_EMBED_SCRIPT_ID);
@@ -2120,7 +2205,7 @@ function ForwardTypeCell({ data, onUpdate, optionsData, userExtension }: any) {
           if (!open) reset();
         }}
       >
-        <DialogContent className="max-w-[520px]">
+        <DialogContent className={cx('max-w-[520px] bg-white!', DIALOG_CLOSE_BUTTON_CLASS)}>
           <DialogHeader>
             <DialogTitle>Edit Forwarding Destination</DialogTitle>
           </DialogHeader>
@@ -2216,6 +2301,19 @@ function NewAiReceptionistPage() {
   });
   console.log(receptionistData, 'receptionistData');
 
+  // DUMMY DATA - local status flips for the preview rows.
+  const [dummyStatusOverrides, setDummyStatusOverrides] = useState<Record<string, string>>(
+    {},
+  );
+  const dummyReceptionists = useMemo(
+    () =>
+      DUMMY_RECEPTIONISTS.map((agent) => {
+        const override = dummyStatusOverrides[agent.agentId];
+        return override ? { ...agent, status: override, agentStatus: override } : agent;
+      }),
+    [dummyStatusOverrides],
+  );
+
   const receptionistRows = useMemo(
     () => (Array.isArray(receptionistData?.rows) ? receptionistData.rows : []),
     [receptionistData?.rows],
@@ -2245,19 +2343,59 @@ function NewAiReceptionistPage() {
     () => getReceptionistMetricsById(receptionistMetricsData?.rows || []),
     [receptionistMetricsData?.rows],
   );
-  const receptionistsWithMetrics = useMemo(
-    () =>
-      receptionistRows.map((agent: any) =>
-        mergeReceptionistMetrics(agent, receptionistMetricsById),
+  const receptionistsWithMetrics = useMemo(() => {
+    const merged = receptionistRows.map((agent: any) =>
+      mergeReceptionistMetrics(agent, receptionistMetricsById),
+    );
+    // DUMMY DATA - so the overview KPIs count the preview rows too.
+    return SHOW_DUMMY_DATA ? [...merged, ...dummyReceptionists] : merged;
+  }, [receptionistRows, receptionistMetricsById, dummyReceptionists]);
+  // DUMMY DATA - the KPI strip and the All/Live counts come from server
+  // aggregates, so the preview rows are folded in here as well.
+  const dummyReceptionistStats = useMemo(() => {
+    const rows = SHOW_DUMMY_DATA ? dummyReceptionists : [];
+    const weight = (row: any) => Number(row?.calls_handled || 0);
+    return {
+      count: rows.length,
+      live: rows.filter((row: any) =>
+        ['active', 'live'].includes(String(row?.status || '').toLowerCase()),
+      ).length,
+      calls7d: rows.reduce((sum, row: any) => sum + Number(row?.calls_handled_7d || 0), 0),
+      calls: rows.reduce((sum, row: any) => sum + weight(row), 0),
+      durationTotal: rows.reduce(
+        (sum, row: any) => sum + Number(row?.average_call_duration || 0) * weight(row),
+        0,
       ),
-    [receptionistRows, receptionistMetricsById],
-  );
-  const callsHandled = pickNumber(
+      resolutionTotal: rows.reduce(
+        (sum, row: any) => sum + Number(row?.resolution_rate || 0) * weight(row),
+        0,
+      ),
+      sentimentCalls: rows.reduce((sum, row: any) => sum + Number(row?.sentiment_calls || 0), 0),
+      sentimentTotal: rows.reduce(
+        (sum, row: any) => sum + Number(row?.avg_sentiment || 0) * Number(row?.sentiment_calls || 0),
+        0,
+      ),
+    };
+  }, [dummyReceptionists]);
+
+  const serverCallsHandled = pickNumber(
     receptionistMetricsData,
     ['calls_handled', 'calls_handled_7d'],
     0,
   );
-  const averageCallDuration = pickNumber(receptionistMetricsData, ['average_call_duration'], 0);
+  const serverAverageCallDuration = pickNumber(
+    receptionistMetricsData,
+    ['average_call_duration'],
+    0,
+  );
+  const callsHandled = serverCallsHandled + dummyReceptionistStats.calls7d;
+  const averageCallDuration =
+    dummyReceptionistStats.calls > 0
+      ? Math.round(
+          (serverAverageCallDuration * serverCallsHandled + dummyReceptionistStats.durationTotal) /
+            (serverCallsHandled + dummyReceptionistStats.calls),
+        )
+      : serverAverageCallDuration;
   const { data: extensionList = [] } = useGetExtensions({
     page: 1,
     limit: 1000,
@@ -2318,9 +2456,13 @@ function NewAiReceptionistPage() {
   const tableSelect = useMemo(
     () => (data: any) => {
       const rows = data?.data?.data?.result?.rows || [];
-      const rowsWithMetrics = rows.map((agent: any) =>
+      const mergedRows = rows.map((agent: any) =>
         mergeReceptionistMetrics(agent, receptionistMetricsById),
       );
+      // DUMMY DATA - appended after the metric merge so their own figures survive.
+      const rowsWithMetrics = SHOW_DUMMY_DATA
+        ? [...mergedRows, ...dummyReceptionists]
+        : mergedRows;
       if (statusFilter === 'all') return rowsWithMetrics;
       return rowsWithMetrics.filter((row: any) => {
         if (row?.deletedAt || row?.deleted_at) return false;
@@ -2328,7 +2470,7 @@ function NewAiReceptionistPage() {
         return status === 'active' || status === 'live';
       });
     },
-    [receptionistMetricsById, statusFilter],
+    [receptionistMetricsById, statusFilter, dummyReceptionists],
   );
   const liveReceptionists = useMemo(
     () =>
@@ -2345,8 +2487,8 @@ function NewAiReceptionistPage() {
         receptionistData,
         ['counts.all', 'totalItems', 'total', 'totalRecords', 'count'],
         receptionistRows.length,
-      ),
-    [receptionistData, receptionistRows.length],
+      ) + dummyReceptionistStats.count,
+    [receptionistData, receptionistRows.length, dummyReceptionistStats.count],
   );
   const liveReceptionistsCount = useMemo(
     () =>
@@ -2354,8 +2496,8 @@ function NewAiReceptionistPage() {
         receptionistData,
         ['counts.active', 'active', 'activeCount'],
         liveReceptionists.length,
-      ),
-    [receptionistData, liveReceptionists.length],
+      ) + dummyReceptionistStats.live,
+    [receptionistData, liveReceptionists.length, dummyReceptionistStats.live],
   );
   const tableFilters = useMemo(
     () => (statusFilter === 'live' ? [{ key: 'status', value: 'active' }] : []),
@@ -2364,7 +2506,14 @@ function NewAiReceptionistPage() {
 
   const listStats = useMemo(() => {
     const totalCalls = callsHandled;
-    const resolutionRate = pickNumber(receptionistMetricsData, ['resolution_rate'], 0);
+    const serverResolution = pickNumber(receptionistMetricsData, ['resolution_rate'], 0);
+    const resolutionRate =
+      dummyReceptionistStats.calls > 0
+        ? Math.round(
+            (serverResolution * serverCallsHandled + dummyReceptionistStats.resolutionTotal) /
+              (serverCallsHandled + dummyReceptionistStats.calls),
+          )
+        : serverResolution;
     const avgDuration = averageCallDuration;
     const sentimentRows = receptionistsWithMetrics
       .map((row: any) => ({
@@ -2373,12 +2522,22 @@ function NewAiReceptionistPage() {
       }))
       .filter((row: any) => row.calls > 0 && Number.isFinite(row.score));
     const resultSentimentCalls = pickNumber(receptionistMetricsData, ['sentiment_calls'], 0);
-    const sentimentCalls =
-      resultSentimentCalls || sentimentRows.reduce((sum: number, row: any) => sum + row.calls, 0);
-    const avgSentiment = sentimentCalls
+    const serverSentimentCalls =
+      resultSentimentCalls ||
+      sentimentRows
+        .filter((row: any) => !dummyReceptionistStats.count || row.calls > 0)
+        .reduce((sum: number, row: any) => sum + row.calls, 0) -
+        dummyReceptionistStats.sentimentCalls;
+    const baseSentimentCalls = Math.max(0, serverSentimentCalls);
+    const serverAvgSentiment = baseSentimentCalls
       ? pickNumber(receptionistMetricsData, ['avg_sentiment'], 0) ||
         sentimentRows.reduce((sum: number, row: any) => sum + row.score * row.calls, 0) /
-          sentimentCalls
+          Math.max(1, sentimentRows.reduce((sum: number, row: any) => sum + row.calls, 0))
+      : 0;
+    const sentimentCalls = baseSentimentCalls + dummyReceptionistStats.sentimentCalls;
+    const avgSentiment = sentimentCalls
+      ? (serverAvgSentiment * baseSentimentCalls + dummyReceptionistStats.sentimentTotal) /
+        sentimentCalls
       : 0;
     // Below-target metrics borrow the same red the rest of the screen reserves for
     // things that need attention — matching the Performance/Queues KPI strip, where
@@ -2662,16 +2821,26 @@ function NewAiReceptionistPage() {
           const handleStatusChange = (newStatus: string) => {
             const currentStatus = isLive ? 'live' : 'inactive';
             if (newStatus === currentStatus) return;
+            // DUMMY DATA - preview rows have no server record, so flip them locally.
+            if (data?.[DUMMY_FLAG]) {
+              setDummyStatusOverrides((prev) => ({
+                ...prev,
+                [String(data.agentId || data.agent_uuid)]:
+                  newStatus === 'live' ? 'active' : 'inactive',
+              }));
+              return;
+            }
             handleStatusUpdate(data, newStatus);
           };
 
           return (
+            <div className="flex justify-start">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
                   className={cx(
-                    'inline-flex h-6 min-w-[64px] items-center justify-center gap-1 rounded-full border! px-1.5 text-[11px] font-extrabold cursor-pointer outline-none transition-colors duration-200',
+                    'inline-flex h-6 min-w-[76px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border! px-2.5 text-[11px] font-extrabold cursor-pointer outline-none transition-colors duration-200',
                     isLive
                       ? 'border-green-200! bg-green-100! text-green-800! hover:bg-green-100/80!'
                       : 'border-slate-200! bg-slate-100! text-slate-600! hover:bg-slate-100/80!',
@@ -2679,12 +2848,12 @@ function NewAiReceptionistPage() {
                 >
                   <span
                     className={cx(
-                      'h-2 w-2 rounded-full',
+                      'h-2 w-2 shrink-0 rounded-full',
                       isLive ? 'bg-green-500' : 'bg-slate-400',
                     )}
                   />
-                  <span>{isLive ? 'Live' : 'Paused'}</span>
-                  <ChevronDown className="h-3 w-3 opacity-60" />
+                  <span className="leading-none">{isLive ? 'Live' : 'Paused'}</span>
+                  <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -2707,9 +2876,10 @@ function NewAiReceptionistPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           );
         },
-        meta: { textAlign: 'center' },
+        meta: { textAlign: 'left' },
       },
       {
         header: 'Caller Id',
@@ -2755,13 +2925,30 @@ function NewAiReceptionistPage() {
               : label === 'negative'
                 ? 'bg-red-50! text-red-600!'
                 : 'bg-amber-50! text-amber-700!';
-          return (
+          const sentimentScores = sentimentScoreRows.map((item) => ({
+            ...item,
+            score: Math.round(sentimentScoreValue(data.sentiment_scores, item.key)),
+          }));
+          const hasScores = sentimentScores.some((item) => item.score > 0);
+          const pill = (
             <span
               className={`inline-flex w-fit items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-semibold capitalize ${pillClass}`}
-              title={sentimentCountsText(data.sentiment_counts)}
+              title={!hasScores ? sentimentCountsText(data.sentiment_counts) : undefined}
             >
               {label} · {Math.round(score)}
             </span>
+          );
+
+          if (!hasScores) {
+            return <div className="flex justify-center">{pill}</div>;
+          }
+
+          return (
+            <div className="flex justify-center">
+              <HoverPortalCard trigger={pill}>
+                <SentimentAnalysisCard scores={sentimentScores} />
+              </HoverPortalCard>
+            </div>
           );
         },
         meta: { textAlign: 'center' },
@@ -2927,29 +3114,39 @@ function NewAiReceptionistPage() {
   }
 
   return (
-    <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#eef1f8] text-neutral-900">
-      <div className="flex min-h-[72px] items-center justify-between border-b border-neutral-200 bg-white px-7">
+    <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#efefef] text-neutral-900">
+      <div className="flex min-h-[92px] items-center justify-between border-b border-neutral-200 bg-white px-7">
         <div className="flex items-center gap-3">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-red-50 p-1.5">
-            <span className="flex h-full w-full items-center justify-center rounded-xl border-2 border-red-200 bg-white text-red-600">
-              <Bot className="h-5 w-5" strokeWidth={2.25} />
-            </span>
-          </span>
           <div>
-            <div className="flex items-center gap-2 text-base font-medium text-neutral-500">
-              <button
-                type="button"
-                onClick={() => navigate('/admin-settings/knowledge/ai-agent')}
-                className="transition-colors hover:text-neutral-900"
-              >
-                AI Agents
-              </button>
-              <span>/</span>
-              <span className="text-neutral-900">AI Receptionists</span>
+            <button
+              type="button"
+              onClick={() => navigate('/admin-settings/knowledge/ai-agent')}
+              className="block transition-colors hover:text-neutral-700"
+              style={{
+                fontFamily: '"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace',
+                fontStyle: 'normal',
+                fontWeight: 800,
+                fontSize: '12px',
+                lineHeight: '18px',
+                letterSpacing: '0.04em',
+                color: 'rgb(220, 38, 38)',
+                textTransform: 'uppercase',
+              }}
+            >
+              AI Tools
+            </button>
+            <div
+              style={{
+                fontFamily: '"Instrument Serif", Georgia, serif',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                fontSize: '27px',
+                lineHeight: '41px',
+                color: 'rgb(23, 23, 23)',
+              }}
+            >
+              AI Receptionists
             </div>
-            <p className="mt-0.5 text-xs font-normal text-neutral-400">
-              Voice assistants · 24/7 call handling &amp; routing
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -2958,7 +3155,7 @@ function NewAiReceptionistPage() {
             onClick={() => {
               setView('analytics');
             }}
-            className="inline-flex h-10 items-center gap-1.5 rounded-full border! border-neutral-200! bg-white! px-4 text-sm font-semibold text-neutral-700! shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-colors hover:border-red-200! hover:bg-red-50! hover:text-red-600!"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border! border-neutral-200! bg-white! px-2.5 text-sm font-semibold text-neutral-700! shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-colors hover:border-red-200! hover:bg-red-50! hover:text-red-600!"
           >
             <TrendingUp className="h-4 w-4 shrink-0" />
             <span>Analytics</span>
@@ -2968,7 +3165,7 @@ function NewAiReceptionistPage() {
             onClick={() => {
               openReceptionistForm(null, 'create');
             }}
-            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#DC2626]! px-[18px] text-sm font-semibold text-white! shadow-none transition-colors hover:bg-red-700!"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-neutral-900! px-3 text-sm font-semibold text-white! shadow-none transition-colors hover:bg-neutral-800!"
           >
             <Plus className="h-4 w-4 shrink-0" />
             <span>Create New Receptionist</span>
@@ -2976,7 +3173,7 @@ function NewAiReceptionistPage() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-7 overflow-auto bg-[#eef1f8] px-7 py-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-7 overflow-auto bg-[#efefef] px-7 py-6">
         <div>
           <div className="mb-3 flex items-center gap-2.5">
             <h2 className="text-[12.5px] font-semibold uppercase tracking-[0.05em] text-red-600">
@@ -3052,8 +3249,8 @@ function NewAiReceptionistPage() {
               pagerAccentClassName="border-red-600! text-white! bg-red-600!"
               customHeader={
                 <div className="flex flex-col gap-3 py-1 sm:flex-row sm:items-center">
-                  <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border! border-neutral-200! bg-white! pl-2 pr-3 shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-all focus-within:border-red-300! focus-within:shadow-[0_0_0_4px_rgba(220,38,38,.1)]! sm:max-w-[320px]">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+                  <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border! border-neutral-200! bg-white! pl-2 pr-3 shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-all focus-within:border-neutral-400! sm:max-w-[320px]">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-red-600">
                       <Search className="h-3.5 w-3.5" />
                     </span>
                     <input
@@ -3127,7 +3324,7 @@ function NewAiReceptionistPage() {
                   </div>
                 </div>
               }
-              customClass="!rounded-none !border-0 !shadow-none [&_table]:table-fixed [&_table]:border-separate [&_table]:border-spacing-0 [&_thead]:bg-neutral-50! [&_th]:bg-transparent! [&_th]:px-[18px]! [&_th]:py-[13px]! [&_th]:text-[12px]! [&_th]:font-bold! [&_th]:uppercase! [&_th]:tracking-[0.04em]! [&_th]:text-neutral-500! [&_td]:bg-transparent! [&_td]:h-auto! [&_td]:min-h-0! [&_td]:px-[18px]! [&_td]:py-2! [&_td]:align-middle [&_th:nth-child(2)]:w-[140px] [&_td:nth-child(2)]:w-[140px] [&_th:nth-child(2)]:text-center! [&_td:nth-child(2)]:text-center! [&_th:nth-child(3)]:w-[140px] [&_td:nth-child(3)]:w-[140px] [&_th:nth-child(3)]:text-center! [&_td:nth-child(3)]:text-center! [&_th:nth-child(4)]:w-[140px] [&_td:nth-child(4)]:w-[140px] [&_th:nth-child(4)]:text-center! [&_td:nth-child(4)]:text-center! [&_th:nth-child(5)]:w-[140px] [&_td:nth-child(5)]:w-[140px] [&_th:nth-child(5)]:text-center! [&_td:nth-child(5)]:text-center! [&_th:last-child]:w-[150px] [&_td:last-child]:w-[150px] [&_th:last-child]:text-center!"
+              customClass="!rounded-none !border-0 !shadow-none [&_table]:table-fixed [&_table]:border-separate [&_table]:border-spacing-0 [&_thead]:bg-neutral-50! [&_th]:bg-transparent! [&_th]:px-[18px]! [&_th]:py-[13px]! [&_th]:text-[12px]! [&_th]:font-bold! [&_th]:uppercase! [&_th]:tracking-[0.04em]! [&_th]:text-neutral-500! [&_td]:bg-transparent! [&_td]:h-auto! [&_td]:min-h-0! [&_td]:px-[18px]! [&_td]:py-2! [&_td]:align-middle [&_th:first-child]:w-[260px] [&_td:first-child]:w-[260px] [&_th:nth-child(2)]:w-[160px] [&_td:nth-child(2)]:w-[160px] [&_th:nth-child(2)]:text-left! [&_td:nth-child(2)]:text-left! [&_th:nth-child(3)]:w-[160px] [&_td:nth-child(3)]:w-[160px] [&_th:nth-child(3)]:text-center! [&_td:nth-child(3)]:text-center! [&_th:nth-child(4)]:w-[160px] [&_td:nth-child(4)]:w-[160px] [&_th:nth-child(4)]:text-center! [&_td:nth-child(4)]:text-center! [&_th:nth-child(5)]:w-[160px] [&_td:nth-child(5)]:w-[160px] [&_th:nth-child(5)]:text-center! [&_td:nth-child(5)]:text-center! [&_th:last-child]:w-[160px] [&_td:last-child]:w-[160px] [&_th:last-child]:text-center!"
               loaderTableClass="min-h-[320px]"
               getRowClassName={() => 'bg-white! transition-colors hover:bg-neutral-50!'}
               emptyTablePlaceholder="No receptionists found"
@@ -3146,10 +3343,8 @@ function NewAiReceptionistPage() {
         <DialogContent showCloseButton={false} className="w-[340px] max-w-[92vw] rounded-2xl p-6">
           <DialogTitle className="sr-only">Delete AI Receptionist</DialogTitle>
           <div className="flex flex-col items-center text-center">
-            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-50 p-2">
-              <span className="flex h-full w-full items-center justify-center rounded-xl border-2 border-red-200 bg-white text-red-600">
-                <Trash2 className="h-6 w-6" strokeWidth={2.25} />
-              </span>
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <Trash2 className="h-6 w-6" strokeWidth={2.25} />
             </span>
             <h3 className="mt-4 text-lg font-bold text-slate-900">Delete AI Receptionist?</h3>
             <p className="mt-2 whitespace-nowrap text-sm leading-6 text-slate-500">
@@ -3532,6 +3727,7 @@ function NewAiReceptionistBuilder({
     }
     return Array.isArray(details) ? details.length > 0 : true;
   });
+  const [showDataCollectionHelp, setShowDataCollectionHelp] = useState(false);
   const [detailsToCollect, setDetailsToCollect] = useState<DetailField[]>(() => {
     const details = initialForwardActions?.data_agent?.details_to_collect;
     if (details && typeof details === 'object' && !Array.isArray(details)) {
@@ -6020,23 +6216,23 @@ function NewAiReceptionistBuilder({
     agentName: receptionistName || initialData?.agentName,
   };
 
-  const renderFooter = (nextLabel: string) => {
+  const renderFooter = () => {
     if (isReadOnly) return null;
 
+    // The same two buttons the knowledge steps render, so padding and width
+    // stay identical wherever the wizard puts a footer.
     return (
-      <div className="mt-8 flex items-center justify-between">
-        <Button
-          variant="outline"
-          className="rounded-full! border-neutral-200! bg-white! text-neutral-700! shadow-none! hover:border-red-300! hover:bg-neutral-50! hover:text-neutral-700!"
+      <div className="mt-5 flex items-center justify-between">
+        <SecondaryButton
+          tone="dark"
           disabled={isKnowledgeSummaryNavigationLocked}
           onClick={activeStep === 1 ? requestWizardLeave : handleBack}
         >
           <ArrowLeft className="h-4 w-4" />
           {activeStep === 1 ? 'Cancel' : 'Back'}
-        </Button>
-        <Button
-          variant="primary"
-          className="rounded-full! border-red-600! bg-red-600! text-white! shadow-[0_2px_10px_rgba(220,38,38,.25)]! hover:bg-red-700!"
+        </SecondaryButton>
+        <PrimaryButton
+          tone="dark"
           disabled={
             isSubmitting ||
             isPendingToken ||
@@ -6054,36 +6250,31 @@ function NewAiReceptionistBuilder({
                 : isEdit
                   ? 'Update Receptionist'
                   : 'Create Receptionist'
-            : nextLabel}
+            : 'Continue'}
           <ArrowRight className="h-4 w-4" />
-        </Button>
+        </PrimaryButton>
       </div>
     );
   };
 
   const renderBasicsStep = () => (
-    <div className="mx-auto flex w-full max-w-[860px] flex-col gap-4">
-      <div className="flex items-start gap-3">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] bg-red-50 p-2">
-          <span className="flex h-full w-full items-center justify-center rounded-2xl border-2 border-red-200 bg-white text-red-600">
-            <User className="h-5 w-5" strokeWidth={2.25} />
-          </span>
-        </span>
-        <div>
-          <h2 className="text-lg font-bold tracking-normal text-neutral-950">
-            What kind of receptionist do you need?
-          </h2>
-          <p className="mt-1 text-sm leading-5 text-neutral-500">
-            Configure the receptionist for your business. You can change everything later.
-          </p>
-        </div>
+    <div className="mx-auto flex w-full max-w-[1140px] flex-col gap-3">
+      <div>
+        <h2 className="text-lg font-bold tracking-normal text-neutral-950">
+          What kind of receptionist do you need?
+        </h2>
+        <p className="mt-0.5 text-sm leading-5 text-neutral-500">
+          Configure the receptionist for your business. You can change everything later.
+        </p>
       </div>
-      <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
+      <div className="flex flex-col gap-3">
+      <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
         <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" />
+          <User className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
           Identity
         </h3>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field
             label="Receptionist name *"
             error={stepErrors.receptionistName}
@@ -6097,7 +6288,7 @@ function NewAiReceptionistBuilder({
               }}
               maxLength={MAX_RECEPTIONIST_NAME_LENGTH}
               placeholder="Reception Desk Assistant"
-              className="h-10 w-full rounded-xl border border-neutral-300 px-3 text-sm outline-none! transition-colors hover:border-black focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
+              className="h-10 w-full rounded-xl border border-neutral-300 px-3 text-sm outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
             />
             <div className="mt-1 flex min-h-4 items-center justify-between gap-2 text-[11px]">
               <span
@@ -6131,7 +6322,7 @@ function NewAiReceptionistBuilder({
               }}
               placeholder="e.g. Example Business"
               className={cx(
-                'h-10 w-full rounded-xl border px-3 text-sm outline-none! transition-colors hover:border-black focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100',
+                'h-10 w-full rounded-xl border px-3 text-sm outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100',
                 stepErrors.companyBrand ? 'border-red-400' : 'border-neutral-300',
               )}
             />
@@ -6143,7 +6334,7 @@ function NewAiReceptionistBuilder({
               <button
                 type="button"
                 disabled={isReadOnly || isLoadingUseCaseTemplates}
-                className="flex h-10 w-full items-center justify-between rounded-xl border! border-neutral-300! bg-white! px-3 text-sm outline-none! transition-colors hover:border-black! disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-600"
+                className="flex h-10 w-full items-center justify-between rounded-xl border! border-neutral-300! bg-white! px-3 text-sm outline-none! transition-colors disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-600"
               >
                 <span className={roleUseCase ? 'text-neutral-900!' : 'text-neutral-400!'}>
                   {roleUseCase ||
@@ -6154,7 +6345,7 @@ function NewAiReceptionistBuilder({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
-              className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-[320px] overflow-y-auto rounded-xl! border! border-neutral-200! bg-white p-1.5 shadow-lg z-50 animate-none"
+              className="flex w-[var(--radix-dropdown-menu-trigger-width)] max-h-[320px] flex-col gap-1 overflow-y-auto rounded-xl! border! border-neutral-200! bg-white p-1.5 shadow-lg z-50 animate-none"
             >
               {useCaseTemplateOptions.map((option) => {
                 const isSelected = option.name === roleUseCase;
@@ -6174,8 +6365,10 @@ function NewAiReceptionistBuilder({
                       setStepErrors((prev) => ({ ...prev, systemPrompt: '' }));
                     }}
                     className={cx(
-                      'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-red-50! focus:bg-red-50!',
-                      isSelected ? 'bg-red-50! text-red-600! font-semibold' : 'text-neutral-900',
+                      'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium',
+                      isSelected
+                        ? 'bg-red-50! text-neutral-900! font-semibold'
+                        : 'text-neutral-900 hover:bg-[#f3f4f6]! focus:bg-[#f3f4f6]!',
                     )}
                   >
                     <span className="truncate">{option.name}</span>
@@ -6186,12 +6379,12 @@ function NewAiReceptionistBuilder({
             </DropdownMenuContent>
           </DropdownMenu>
         </Field>
-        <Field label="Short description (internal only)" className="mt-4">
+        <Field label="Short description (internal only)" className="mt-3">
           <input
             value={shortDescription}
             onChange={(event) => setShortDescription(sanitizeAiPlainText(event.target.value))}
             placeholder="What does this receptionist do?"
-            className="h-10 w-full rounded-xl border border-neutral-300 px-3 text-sm outline-none! transition-colors hover:border-black focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
+            className="h-10 w-full rounded-xl border border-neutral-300 px-3 text-sm outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
           />
         </Field>
       </div>
@@ -6206,102 +6399,82 @@ function NewAiReceptionistBuilder({
         disabled={isReadOnly}
         isLoading={isLoadingSites}
       />
-      <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+      </div>
+      <div className="flex h-full flex-col rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
         <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" />
+          <Bot className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
           System prompt
         </h3>
-        <p className="mt-0.5 text-xs text-neutral-500">
-          Master instructions that shape every response. Picking a template above auto-fills this.
-          Edit freely — most teams refine it after testing.
+        <p className="mt-0.5 truncate text-xs text-neutral-500">
+          Master instructions the AI follows. Auto-filled by your template.
         </p>
-        <Field error={stepErrors.systemPrompt} fieldKey="systemPrompt" className="mt-4">
+        <Field
+          error={stepErrors.systemPrompt}
+          fieldKey="systemPrompt"
+          className="mt-3 flex! flex-1! flex-col!"
+        >
           <textarea
             value={systemPrompt}
             onChange={(event) => {
               setSystemPrompt(sanitizeAiPromptText(event.target.value));
               setStepErrors((prev) => ({ ...prev, systemPrompt: '' }));
             }}
-            className="w-full min-h-[170px] resize-y rounded-xl border border-neutral-300 p-3 text-sm outline-none! transition-colors hover:border-black focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
+            className="w-full flex-1 min-h-[104px] resize-y rounded-xl border border-neutral-300 p-3 text-sm outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
           />
         </Field>
-        <div className="mt-3 flex items-start gap-1.5 rounded-lg border border-red-100 bg-red-50 px-2.5 py-1.5">
+        <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-100 bg-red-50 px-2.5 py-1.5">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" />
           <p className="text-xs text-neutral-800">
-            Tip: short prompts work better than long ones. Tell the AI WHO it is, WHAT it does, and
-            1–2 hard rules.
+            Tip: short prompts work better — tell the AI WHO it is, WHAT it does, and 1–2 hard rules.
           </p>
         </div>
       </div>
-      {renderFooter('Continue - Pick a voice')}
+      </div>
+      {renderFooter()}
     </div>
   );
 
   const renderVoiceStep = () => (
     <div
-      className="mx-auto flex w-full max-w-[860px] flex-col gap-6 scroll-mt-24"
+      className="mx-auto flex w-full max-w-[1140px] flex-col gap-6 scroll-mt-24"
       data-validation-key="selectedPersona"
     >
-      <div className="flex items-start gap-3">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] bg-red-50 p-2">
-          <span className="flex h-full w-full items-center justify-center rounded-2xl border-2 border-red-200 bg-white text-red-600">
-            <Headphones className="h-5 w-5" strokeWidth={2.25} />
-          </span>
-        </span>
+      <div className="flex items-center justify-between gap-6">
         <div>
           <h2 className="flex items-center gap-1.5 text-lg font-bold tracking-normal text-neutral-950">
             Voice &amp; persona
             <CustomTooltip
               side="top"
               text="Pick the voice and personality that answers every call. Every voice auto-detects the caller's language, so there's nothing extra to configure."
+              className="w-max max-w-[340px] border-none! bg-[#fdf7f5]! text-black! shadow-[0_6px_20px_rgba(17,17,17,0.18)]! [&_svg]:fill-[#fdf7f5]"
             >
               <Info className="h-4 w-4 cursor-help text-neutral-400" />
             </CustomTooltip>
           </h2>
-          <p className="mt-1 text-sm leading-5 text-neutral-500 whitespace-nowrap">
+          <p className="mt-0.5 text-sm leading-5 text-neutral-500 whitespace-nowrap">
             Pick the persona that matches your brand — tap ► to hear a live preview.
           </p>
         </div>
-      </div>
-
-      {/* Top Banner (Choose Your AI Voice Persona) */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="flex items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white p-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
-            <Mic className="h-5 w-5" strokeWidth={2.25} />
-          </span>
-          <div className="min-w-0">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+        <div className="flex shrink-0 items-start gap-8">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
               AI Voices
             </div>
-            <div className="text-xl font-extrabold text-neutral-950">
+            <div className="text-xl font-extrabold text-red-600">
               {availableVoices?.length || 0}
             </div>
-            <div className="text-[11px] text-neutral-500">Studio & custom voices</div>
           </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white p-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
-            <Globe2 className="h-5 w-5" strokeWidth={2.25} />
-          </span>
-          <div className="min-w-0">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
               Languages
             </div>
             <div className="text-xl font-extrabold text-neutral-950">50+</div>
-            <div className="text-[11px] text-neutral-500">Global coverage</div>
           </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white p-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
-            <AudioLines className="h-5 w-5" strokeWidth={2.25} />
-          </span>
-          <div className="min-w-0">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
               Detected
             </div>
             <div className="text-xl font-extrabold text-neutral-950">Auto</div>
-            <div className="text-[11px] text-neutral-500">Detects caller language</div>
           </div>
         </div>
       </div>
@@ -6313,8 +6486,8 @@ function NewAiReceptionistBuilder({
           {/* Search + Filters row */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             {/* Search Input */}
-            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border! border-neutral-200! bg-white! pl-2 pr-3 shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-all focus-within:border-red-300! focus-within:shadow-[0_0_0_4px_rgba(220,38,38,.1)]!">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border! border-neutral-200! bg-white! pl-2 pr-3 shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-all focus-within:border-neutral-400!">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-red-600">
                 <Search className="h-3.5 w-3.5" />
               </span>
               <input
@@ -6339,7 +6512,7 @@ function NewAiReceptionistBuilder({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="w-[200px] max-h-[280px] overflow-y-auto bg-white border! border-neutral-200! shadow-lg rounded-xl! p-1 z-50 animate-none"
+                className="flex w-[200px] max-h-[280px] flex-col gap-1 overflow-y-auto bg-white border! border-neutral-200! shadow-lg rounded-xl! p-1.5 z-50 animate-none"
               >
                 {GENDER_FILTER_OPTIONS.map((opt) => {
                   const isSelected = opt.key === genderFilter;
@@ -6348,8 +6521,10 @@ function NewAiReceptionistBuilder({
                       key={opt.key}
                       onClick={() => setGenderFilter(opt.key)}
                       className={cx(
-                        'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-xs font-medium hover:bg-red-50! focus:bg-red-50!',
-                        isSelected ? 'bg-red-50! text-red-600! font-semibold' : 'text-neutral-900',
+                        'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-xs font-medium',
+                        isSelected
+                        ? 'bg-red-50! text-neutral-900! font-semibold'
+                        : 'text-neutral-900 hover:bg-[#f3f4f6]! focus:bg-[#f3f4f6]!',
                       )}
                     >
                       <span className="truncate">{opt.label}</span>
@@ -6373,7 +6548,7 @@ function NewAiReceptionistBuilder({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="w-[200px] max-h-[280px] overflow-y-auto bg-white border! border-neutral-200! shadow-lg rounded-xl! p-1 z-50 animate-none"
+                className="flex w-[200px] max-h-[280px] flex-col gap-1 overflow-y-auto bg-white border! border-neutral-200! shadow-lg rounded-xl! p-1.5 z-50 animate-none"
               >
                 {LOCALE_FILTER_OPTIONS.map((opt) => {
                   const isSelected = opt.key === localeFilter;
@@ -6382,8 +6557,10 @@ function NewAiReceptionistBuilder({
                       key={opt.key}
                       onClick={() => setLocaleFilter(opt.key)}
                       className={cx(
-                        'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-xs font-medium hover:bg-red-50! focus:bg-red-50!',
-                        isSelected ? 'bg-red-50! text-red-600! font-semibold' : 'text-neutral-900',
+                        'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-xs font-medium',
+                        isSelected
+                        ? 'bg-red-50! text-neutral-900! font-semibold'
+                        : 'text-neutral-900 hover:bg-[#f3f4f6]! focus:bg-[#f3f4f6]!',
                       )}
                     >
                       <span className="truncate">{opt.label}</span>
@@ -6445,6 +6622,7 @@ function NewAiReceptionistBuilder({
             </p>
           </div>
         ) : (
+          <div className="max-h-[455px] overflow-y-auto pr-1">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {filteredVoices.map((voice: any, voiceIndex: number) => {
               const voiceValue = getVoiceSelectionValue(voice);
@@ -6470,7 +6648,7 @@ function NewAiReceptionistBuilder({
                   className={cx(
                     'relative rounded-2xl border bg-white p-5 text-left transition-all duration-200 cursor-pointer shadow-sm flex flex-col justify-between min-h-[190px]',
                     selected
-                      ? 'border-red-300 ring-1 ring-red-100'
+                      ? 'border-neutral-400'
                       : 'border-neutral-200 hover:border-neutral-300 hover:shadow-md',
                   )}
                 >
@@ -6548,17 +6726,18 @@ function NewAiReceptionistBuilder({
                         handleSelectVoice(voice);
                       }}
                       className={cx(
-                        'flex h-8 items-center gap-1.5 rounded-full border! px-3 text-xs font-semibold outline-none! transition-colors',
+                        'flex items-center justify-center outline-none! transition-all duration-300 ease-out',
                         selected
-                          ? 'border-red-600! bg-red-600! text-white!'
-                          : 'border-neutral-300! bg-white! text-neutral-700! hover:border-black!',
+                          ? 'h-8 w-8 rounded-full border! border-red-600! bg-red-50! text-red-600! scale-100'
+                          : 'h-8 gap-1.5 rounded-full border! border-neutral-300! bg-white! px-3 text-xs font-semibold text-neutral-700! hover:border-black! hover:scale-105 active:scale-95',
                       )}
                     >
                       {selected ? (
-                        <>
-                          <Check className="h-3.5 w-3.5" />
-                          Selected
-                        </>
+                        <Check
+                          key="selected-check"
+                          className="h-4 w-4 animate-in zoom-in-50 spin-in-45 duration-300 ease-out"
+                          strokeWidth={2.5}
+                        />
                       ) : (
                         'Select'
                       )}
@@ -6568,11 +6747,12 @@ function NewAiReceptionistBuilder({
               );
             })}
           </div>
+          </div>
         )}
         </div>
       </div>
 
-      {renderFooter('Continue - Greeting & Hours')}
+      {renderFooter()}
     </div>
   );
 
@@ -6582,379 +6762,377 @@ function NewAiReceptionistBuilder({
       operationalHours?.type === '24_hours'
         ? `24 Hours${timezone ? ` (${timezone})` : ''}`
         : getWeeklyScheduleName(operationalHours?.value) || 'Not configured';
+    const customDays = ((operationalHours?.holidays || []) as any[]).filter(
+      (holiday) => holiday?.title || holiday?.from,
+    );
+    const formatCustomDayRange = (from?: string, to?: string) => {
+      if (!from) return '';
+      const start = moment(from);
+      if (!start.isValid()) return '';
+      const end = to ? moment(to) : start;
+      if (!end.isValid() || start.isSame(end, 'day')) return start.format('MMM D');
+      return `${start.format('MMM D')} – ${end.format('MMM D')}`;
+    };
 
-    return (
-      <div className="mx-auto flex w-full max-w-[860px] flex-col gap-4">
-        <div className="flex items-start gap-3">
-          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] bg-red-50 p-2">
-            <span className="flex h-full w-full items-center justify-center rounded-2xl border-2 border-red-200 bg-white text-red-600">
-              <Clock3 className="h-5 w-5" strokeWidth={2.25} />
-            </span>
-          </span>
-          <div>
-            <h2 className="text-lg font-bold tracking-normal text-neutral-950">
-              Opening line & business hours
-            </h2>
-            <p className="mt-1 text-sm leading-5 text-neutral-500">
-              Tell the receptionist what to say first, and when it should answer.
+    const openingLineCard = (
+      <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
+          <MessageSquare className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
+          Opening line
+        </h3>
+        <Field
+          error={stepErrors.greetingText}
+          fieldKey="greetingText"
+          className="mt-4"
+        >
+          <textarea
+            value={greetingText}
+            onChange={(event) => {
+              setGreetingText(sanitizeAiPlainText(event.target.value));
+              setStepErrors((prev) => ({ ...prev, greetingText: '' }));
+              setSelectedGreetingType('custom');
+            }}
+            className="min-h-[84px] w-full resize-y rounded-xl border border-neutral-300 p-3 text-sm outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
+          />
+          <div className="mt-2.5 flex flex-nowrap items-center gap-1.5 overflow-x-auto text-xs">
+            <span className="shrink-0 text-neutral-600 font-semibold mr-0.5">Try:</span>
+            <button
+              type="button"
+              onClick={() => handleSelectGreetingType('friendly')}
+              className={cx(
+                'h-7 shrink-0 whitespace-nowrap rounded-full border px-2.5 text-[11px] font-semibold cursor-pointer transition-colors',
+                selectedGreetingType === 'friendly'
+                  ? 'border-red-600 bg-red-50 text-red-600'
+                  : 'border-neutral-200 bg-white text-neutral-600 hover:border-red-300',
+              )}
+            >
+              Friendly greeting
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectGreetingType('professional')}
+              className={cx(
+                'h-7 shrink-0 whitespace-nowrap rounded-full border px-2.5 text-[11px] font-semibold cursor-pointer transition-colors',
+                selectedGreetingType === 'professional'
+                  ? 'border-red-600 bg-red-50 text-red-600'
+                  : 'border-neutral-200 bg-white text-neutral-600 hover:border-red-300',
+              )}
+            >
+              Professional intro
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectGreetingType('triage')}
+              className={cx(
+                'h-7 shrink-0 whitespace-nowrap rounded-full border px-2.5 text-[11px] font-semibold cursor-pointer transition-colors',
+                selectedGreetingType === 'triage'
+                  ? 'border-red-600 bg-red-50 text-red-600'
+                  : 'border-neutral-200 bg-white text-neutral-600 hover:border-red-300',
+              )}
+            >
+              Quick triage
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectGreetingType('holiday')}
+              className={cx(
+                'h-7 shrink-0 whitespace-nowrap rounded-full border px-2.5 text-[11px] font-semibold cursor-pointer transition-colors',
+                selectedGreetingType === 'holiday'
+                  ? 'border-red-600 bg-red-50 text-red-600'
+                  : 'border-neutral-200 bg-white text-neutral-600 hover:border-red-300',
+              )}
+            >
+              Holiday message
+            </button>
+          </div>
+        </Field>
+      </div>
+    );
+
+    const businessHoursCard = (
+      <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <div className="flex items-baseline gap-1.5">
+          <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
+            <Clock3 className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
+            Business hours
+          </h3>
+          <span className="text-xs text-neutral-400 font-normal">(optional)</span>
+          <CustomTooltip
+            side="top"
+            text="After hours are handled automatically. Outside the hours you set, your receptionist tells callers you're closed and offers to schedule a callback with the assigned manager."
+            className="w-max max-w-[340px] border-none! bg-[#fdf7f5]! text-black! shadow-[0_6px_20px_rgba(17,17,17,0.18)]! [&_svg]:fill-[#fdf7f5]"
+          >
+            <Info className="h-4 w-4 cursor-help text-neutral-400" />
+          </CustomTooltip>
+        </div>
+        <p className="mt-1 text-xs text-neutral-500">
+          Set when your{' '}
+          <span className="font-semibold text-neutral-700">human agents are online</span> to
+          take calls. During these hours the AI can transfer callers to a live agent.
+        </p>
+
+        <div
+          className={cx(
+            'mt-3 flex items-center justify-between gap-4 rounded-lg border p-3',
+            bussinessHourError
+              ? 'border-red-200 bg-red-50/60'
+              : 'border-neutral-200 bg-neutral-50/60',
+          )}
+        >
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+              {bussinessHourError ? 'Needs attention' : 'Current schedule'}
+            </p>
+            <p
+              className={cx(
+                'truncate text-sm font-bold',
+                bussinessHourError ? 'text-red-600' : 'text-neutral-900',
+              )}
+            >
+              {bussinessHourError || displayHours}
+            </p>
+            {!bussinessHourError && customDays.length > 0 && (
+              <p className="truncate text-sm text-neutral-500">
+                {customDays.slice(0, 2).map((holiday: any, index: number) => (
+                  <span key={index}>
+                    {index > 0 && ', '}
+                    {holiday?.title || 'Custom day'}
+                      {holiday?.from && ` (${formatCustomDayRange(holiday.from, holiday.to)})`}
+                    </span>
+                  ))}
+                {customDays.length > 2 && ` +${customDays.length - 2} more`}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => openModal('bussinessHoursModal')}
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border! border-neutral-300! bg-white! px-3.5 text-xs font-semibold text-neutral-700 outline-none! transition-all duration-150 hover:-translate-y-0.5 hover:border-red-300! hover:text-neutral-900"
+          >
+            <Edit3 className="h-3.5 w-3.5" />
+            {operationalHours?.type ? 'Edit' : 'Set business hours'}
+          </button>
+        </div>
+      </div>
+    );
+
+    const businessHoursBehaviorCard = (
+      <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
+          <PhoneCall className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
+          Business hours behavior
+        </h3>
+        <p className="mt-1 text-xs text-neutral-500">
+          Choose what happens when callers reach you during business hours.
+        </p>
+
+        <div className="mt-3 flex items-start justify-between gap-4 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-neutral-900">Enable human handoff</p>
+            <p className="mt-1 text-xs text-neutral-500 leading-normal">
+              When ON, the AI can forward business-hours calls to the selected destination.
             </p>
           </div>
-        </div>
-        <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
-          <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" />
-            Opening line
-          </h3>
-          <Field
-            error={stepErrors.greetingText}
-            fieldKey="greetingText"
-            className="mt-4"
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enableHumanHandoff}
+            disabled={isReadOnly}
+            onClick={() => {
+              const enabled = !enableHumanHandoff;
+              setEnableHumanHandoff(enabled);
+              if (!enabled) {
+                setStepErrors((prev) => ({ ...prev, forwardCall: '' }));
+              }
+            }}
+            className={cx(
+              'relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full outline-none! transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+              enableHumanHandoff ? 'bg-red-600!' : 'bg-neutral-200!',
+            )}
           >
-            <textarea
-              value={greetingText}
-              onChange={(event) => {
-                setGreetingText(sanitizeAiPlainText(event.target.value));
-                setStepErrors((prev) => ({ ...prev, greetingText: '' }));
-                setSelectedGreetingType('custom');
-              }}
-              className="min-h-[110px] w-full resize-y rounded-xl border border-neutral-300 p-3 text-sm outline-none! transition-colors hover:border-black focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
+            <span
+              className={cx(
+                'inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
+                enableHumanHandoff ? 'translate-x-[22px]' : 'translate-x-0.5',
+              )}
             />
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-              <span className="flex items-center gap-1 text-neutral-500 font-medium mr-1">
-                <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-                Try:
-              </span>
-              <button
-                type="button"
-                onClick={() => handleSelectGreetingType('friendly')}
-                className={cx(
-                  'h-8 px-3 rounded-full border text-xs font-semibold cursor-pointer transition-colors',
-                  selectedGreetingType === 'friendly'
-                    ? 'border-red-600 bg-red-600/5 text-red-600'
-                    : 'border-neutral-200 bg-white text-neutral-600 hover:border-red-300',
-                )}
-              >
-                Friendly greeting
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectGreetingType('professional')}
-                className={cx(
-                  'h-8 px-3 rounded-full border text-xs font-semibold cursor-pointer transition-colors',
-                  selectedGreetingType === 'professional'
-                    ? 'border-red-600 bg-red-600/5 text-red-600'
-                    : 'border-neutral-200 bg-white text-neutral-600 hover:border-red-300',
-                )}
-              >
-                Professional intro
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectGreetingType('triage')}
-                className={cx(
-                  'h-8 px-3 rounded-full border text-xs font-semibold cursor-pointer transition-colors',
-                  selectedGreetingType === 'triage'
-                    ? 'border-red-600 bg-red-600/5 text-red-600'
-                    : 'border-neutral-200 bg-white text-neutral-600 hover:border-red-300',
-                )}
-              >
-                Quick triage
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectGreetingType('holiday')}
-                className={cx(
-                  'h-8 px-3 rounded-full border text-xs font-semibold cursor-pointer transition-colors',
-                  selectedGreetingType === 'holiday'
-                    ? 'border-red-600 bg-red-600/5 text-red-600'
-                    : 'border-neutral-200 bg-white text-neutral-600 hover:border-red-300',
-                )}
-              >
-                Holiday message
-              </button>
-              {/* <button
-                type="button"
-                onClick={() => handleSelectGreetingType(selectedGreetingType === 'custom' ? 'friendly' : selectedGreetingType)}
-                className="h-8 px-4 rounded-full bg-red-600 text-white font-semibold cursor-pointer hover:bg-red-600/90 transition-colors shadow-sm"
-              >
-                Generate
-              </button> */}
-            </div>
-          </Field>
+          </button>
         </div>
-        {selectedLocationId !== 'none' && (
-          <>
-            <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
-              <div className="flex items-baseline gap-1.5">
-                <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" />
-                  Business hours
-                </h3>
-                <span className="text-xs text-neutral-400 font-normal">(optional)</span>
-              </div>
-              <p className="mt-1 text-xs text-neutral-500">
-                Set when your{' '}
-                <span className="font-semibold text-neutral-700">human agents are online</span> to
-                take calls. During these hours the AI can transfer callers to a live agent.
-              </p>
 
-              <div className="mt-4 flex items-start gap-1.5 rounded-lg border border-red-100 bg-red-50 px-2.5 py-1.5">
-                <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-red-600" />
-                <p className="text-xs text-neutral-800">
-                  <span className="font-bold">After hours are handled automatically.</span> Outside
-                  the hours you set, your receptionist tells callers you’re closed and offers to
-                  schedule a callback with the assigned manager.
-                </p>
-              </div>
-
-              <div
-                className={cx(
-                  'mt-4 flex items-center justify-between gap-4 rounded-lg border p-4',
-                  bussinessHourError
-                    ? 'border-red-200 bg-red-50/60'
-                    : 'border-neutral-200 bg-neutral-50/60',
+        {enableHumanHandoff && (
+          <div
+            className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50/50 p-3"
+            data-validation-key="forwardCall"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="grid grid-cols-2 gap-8 flex-1">
+                <div>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                    Forward Type
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-neutral-900">
+                    {committedForwardTypeLabel}
+                  </p>
+                </div>
+                {committedShouldShowForwardTo && (
+                  <div>
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                      {getForwardValueFieldLabel(selectedForwardType)}
+                    </p>
+                    <p className="mt-1 flex items-center gap-1 text-sm font-bold text-neutral-900">
+                      {committedForwardValueLabel}
+                      {
+                        selectedForwardType === 'EXTENSION' &&
+                        committedForwardState?.value?.value ? (
+                          <span className="inline-flex items-center gap-1 font-normal text-neutral-500 ml-2">
+                            <Grid className="h-3.5 w-3.5 text-neutral-400" />
+                            {committedForwardState.value.value}
+                          </span>
+                        ) : (
+                          ''
+                        )
+                      }
+                    </p>
+                  </div>
                 )}
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenForwardDestinationModal}
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border! border-neutral-300! bg-white! px-3.5 text-xs font-semibold text-neutral-700 outline-none! transition-all duration-150 hover:-translate-y-0.5 hover:border-red-300! hover:text-neutral-900"
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <span
-                    className={cx(
-                      'grid h-9 w-9 shrink-0 place-items-center rounded-lg',
-                      bussinessHourError
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-red-50 text-red-600',
-                    )}
-                  >
-                    <Clock3 className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                      {bussinessHourError ? 'Needs attention' : 'Current schedule'}
-                    </p>
-                    <p
-                      className={cx(
-                        'truncate text-sm font-bold',
-                        bussinessHourError ? 'text-red-600' : 'text-neutral-900',
-                      )}
-                    >
-                      {bussinessHourError || displayHours}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openModal('bussinessHoursModal')}
-                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border! border-neutral-300! bg-white! px-3.5 text-xs font-semibold text-neutral-700 outline-none! transition-all duration-150 hover:-translate-y-0.5 hover:border-red-300! hover:text-neutral-900"
-                >
-                  <Edit3 className="h-3.5 w-3.5" />
-                  {operationalHours?.type ? 'Edit' : 'Set business hours'}
-                </button>
-              </div>
+                <Edit3 className="h-3.5 w-3.5" />
+                Edit
+              </button>
             </div>
+          </div>
+        )}
+        {enableHumanHandoff && stepErrors.forwardCall && (
+          <p className="mt-3 text-sm text-red-500">{stepErrors.forwardCall}</p>
+        )}
+      </div>
+    );
 
-            <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
-              <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" />
-                Business hours behavior
-              </h3>
-              <p className="mt-1 text-xs text-neutral-500">
-                What should happen when callers reach you{' '}
-                <span className="font-semibold text-neutral-700">during</span> business hours? Click{' '}
-                <span className="font-semibold text-neutral-700">Edit</span> to pick from Hangup,
-                Voicemail, Announcement, Extension, External Number or IVR.
-              </p>
+    const managerConfigCard = (
+      <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
+          <UserRound className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
+          Manager configuration
+        </h3>
+        <p className="mt-1 text-xs text-neutral-500">
+          Choose who receives caller details for every scheduled callback.
+        </p>
 
-              <div className="mt-4 flex items-start justify-between gap-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-semibold text-neutral-900">Enable human handoff</p>
-                  <p className="mt-1 text-xs text-neutral-500 leading-normal">
-                    When ON, the AI can forward business-hours calls to the selected destination.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={enableHumanHandoff}
-                  disabled={isReadOnly}
-                  onClick={() => {
-                    const enabled = !enableHumanHandoff;
-                    setEnableHumanHandoff(enabled);
-                    if (!enabled) {
-                      setStepErrors((prev) => ({ ...prev, forwardCall: '' }));
-                    }
-                  }}
-                  className={cx(
-                    'relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full outline-none! transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-                    enableHumanHandoff ? 'bg-neutral-800!' : 'bg-neutral-200!',
-                  )}
-                >
-                  <span
-                    className={cx(
-                      'inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
-                      enableHumanHandoff ? 'translate-x-[22px]' : 'translate-x-0.5',
-                    )}
-                  />
-                </button>
-              </div>
+        <div className="mt-3 flex items-start justify-between gap-4 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-neutral-900">Enable callback scheduling</p>
+            <p className="mt-1 text-xs text-neutral-500 leading-normal">
+              When ON, the AI can offer to schedule a callback during a call and pass the
+              request to a manager. When OFF, the manager picker below is locked — the AI will
+              only take voicemails for follow-up.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enableCallbackScheduling}
+            disabled={isReadOnly}
+            onClick={() => {
+              const enabled = !enableCallbackScheduling;
+              setEnableCallbackScheduling(enabled);
+              if (!enabled) {
+                setStepErrors((prev) => ({ ...prev, manager: '' }));
+              }
+            }}
+            className={cx(
+              'relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full outline-none! transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+              enableCallbackScheduling ? 'bg-red-600!' : 'bg-neutral-200!',
+            )}
+          >
+            <span
+              className={cx(
+                'inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
+                enableCallbackScheduling ? 'translate-x-[22px]' : 'translate-x-0.5',
+              )}
+            />
+          </button>
+        </div>
 
-              {enableHumanHandoff && (
-                <div
-                  className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50/50 p-4"
-                  data-validation-key="forwardCall"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="grid grid-cols-2 gap-8 flex-1">
-                      <div>
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
-                          Forward Type
-                        </p>
-                        <p className="mt-1 text-sm font-bold text-neutral-900">
-                          {committedForwardTypeLabel}
-                        </p>
-                      </div>
-                      {committedShouldShowForwardTo && (
-                        <div>
-                          <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
-                            {getForwardValueFieldLabel(selectedForwardType)}
-                          </p>
-                          <p className="mt-1 flex items-center gap-1 text-sm font-bold text-neutral-900">
-                            {committedForwardValueLabel}
-                            {
-                              selectedForwardType === 'EXTENSION' &&
-                              committedForwardState?.value?.value ? (
-                                <span className="inline-flex items-center gap-1 font-normal text-neutral-500 ml-2">
-                                  <Grid className="h-3.5 w-3.5 text-neutral-400" />
-                                  {committedForwardState.value.value}
-                                </span>
-                              ) : (
-                                ''
-                              )
-
-                              // selectedForwardType === 'IVR' ||  ? (
-                              //   ''
-                              // ) : committedForwardState?.value?.value ? (
-                              //   ` ${committedForwardState.value.value}`
-                              // ) : (
-                              //   ''
-                              // )
-                            }
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleOpenForwardDestinationModal}
-                      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border! border-neutral-300! bg-white! px-3.5 text-xs font-semibold text-neutral-700 outline-none! transition-all duration-150 hover:-translate-y-0.5 hover:border-red-300! hover:text-neutral-900"
-                    >
-                      <Edit3 className="h-3.5 w-3.5" />
-                      Edit
-                    </button>
+        <div className="mt-3 scroll-mt-24" data-validation-key="manager">
+          <span className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-neutral-500">
+            <UserRound className="h-3.5 w-3.5" />
+            Manager who owns callbacks & escalations
+          </span>
+          {/* react-select portals its menu to <body>, so a wrapper class never
+              reaches the menu or its options - the theme's primary colour shows
+              through as a coloured border. inputClass stamps this class onto
+              every sub-component, portal included, so the rules below can land. */}
+          <style>{MANAGER_SELECT_STYLE}</style>
+          <CustomSelect
+            className="neutral-focus-select"
+            inputClass="ai-manager-select"
+            isDisabled={!enableCallbackScheduling || isReadOnly}
+            value={selectedManagerOption}
+            handleChange={(option: any) => {
+              setSelectedManagerId(option?.value || '');
+              setStepErrors((prev) => ({ ...prev, manager: '' }));
+            }}
+            options={managerOptions}
+            placeholder="Select a manager"
+            error={stepErrors.manager}
+            isLoading={isLoadingManagerUsers || isFetchingNextManagerPage}
+            onInputChange={setManagerSearch}
+            onMenuScrollToBottom={() => {
+              if (hasNextManagerPage && !isFetchingNextManagerPage) {
+                void fetchNextManagerPage();
+              }
+            }}
+            FormatOptionLabel={({ option }: any) => (
+              <div className="flex w-full items-center justify-between">
+                <div>{option?.label}</div>
+                {option?.extension && (
+                  <div className="flex items-center gap-1">
+                    <Grid className="w-4 h-4" />
+                    {option?.extension || ''}
                   </div>
-                </div>
-              )}
-              {enableHumanHandoff && stepErrors.forwardCall && (
-                <p className="mt-3 text-sm text-red-500">{stepErrors.forwardCall}</p>
-              )}
-            </div>
-
-            <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.03)] min-h-96">
-              <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" />
-                Manager configuration
-              </h3>
-              <p className="mt-1 text-xs text-neutral-500">
-                Select the manager who owns callback & escalation requests. The chosen manager
-                receives the schedule details and may keep the callback or reassign it to another
-                agent.
-              </p>
-
-              <div className="mt-5 flex items-start justify-between gap-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={enableCallbackScheduling}
-                  disabled={isReadOnly}
-                  onClick={() => {
-                    const enabled = !enableCallbackScheduling;
-                    setEnableCallbackScheduling(enabled);
-                    if (!enabled) {
-                      setStepErrors((prev) => ({ ...prev, manager: '' }));
-                    }
-                  }}
-                  className={cx(
-                    'relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full outline-none! transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-                    enableCallbackScheduling ? 'bg-neutral-800!' : 'bg-neutral-200!',
-                  )}
-                >
-                  <span
-                    className={cx(
-                      'inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
-                      enableCallbackScheduling ? 'translate-x-[22px]' : 'translate-x-0.5',
-                    )}
-                  />
-                </button>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-neutral-900">Enable callback scheduling</p>
-                  <p className="mt-1 text-xs text-neutral-500 leading-normal">
-                    When ON, the AI can offer to schedule a callback during a call and pass the
-                    request to a manager. When OFF, the manager picker below is locked — the AI will
-                    only take voicemails for follow-up.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 scroll-mt-24" data-validation-key="manager">
-                <span className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-neutral-500">
-                  <UserRound className="h-3.5 w-3.5" />
-                  Manager who owns callbacks & escalations
-                </span>
-                <CustomSelect
-                  isDisabled={!enableCallbackScheduling || isReadOnly}
-                  value={selectedManagerOption}
-                  handleChange={(option: any) => {
-                    setSelectedManagerId(option?.value || '');
-                    setStepErrors((prev) => ({ ...prev, manager: '' }));
-                  }}
-                  options={managerOptions}
-                  placeholder="Select a manager"
-                  error={stepErrors.manager}
-                  isLoading={isLoadingManagerUsers || isFetchingNextManagerPage}
-                  onInputChange={setManagerSearch}
-                  onMenuScrollToBottom={() => {
-                    if (hasNextManagerPage && !isFetchingNextManagerPage) {
-                      void fetchNextManagerPage();
-                    }
-                  }}
-                  FormatOptionLabel={({ option }: any) => (
-                    <div className="flex w-full items-center justify-between">
-                      <div>{option?.label}</div>
-                      {option?.extension && (
-                        <div className="flex items-center gap-1">
-                          <Grid className="w-4 h-4" />
-                          {option?.extension || ''}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                />
-                {stepErrors.manager && (
-                  <p className="mt-1.5 text-xs font-medium text-red-500" role="alert">
-                    {stepErrors.manager}
-                  </p>
                 )}
               </div>
+            )}
+          />
+          {stepErrors.manager && (
+            <p className="mt-1.5 text-xs font-medium text-red-500" role="alert">
+              {stepErrors.manager}
+            </p>
+          )}
+        </div>
+      </div>
+    );
 
-              <div className="mt-4 flex items-start gap-2 text-xs text-neutral-500">
-                <UploadCloud className="h-4 w-4 shrink-0 text-neutral-400 mt-0.5" />
-                <p>
-                  The selected manager receives caller name, phone number, preferred callback time,
-                  and a transcript snippet for every scheduled callback.
-                </p>
-              </div>
-            </div>
-          </>
-        )}
-        {renderFooter('Continue - Knowledge')}
+    return (
+      <div className="mx-auto flex w-full max-w-[1140px] flex-col gap-3">
+        <div>
+          <h2 className="text-lg font-bold tracking-normal text-neutral-950">
+            Opening line & business hours
+          </h2>
+          <p className="mt-0.5 text-sm leading-5 text-neutral-500">
+            Tell the receptionist what to say first, and when it should answer.
+          </p>
+        </div>
+        <div
+          className={
+            selectedLocationId !== 'none' ? 'grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch' : ''
+          }
+        >
+          {openingLineCard}
+          {selectedLocationId !== 'none' && (
+            <>
+              {businessHoursCard}
+              {businessHoursBehaviorCard}
+              {managerConfigCard}
+            </>
+          )}
+        </div>
+        {renderFooter()}
       </div>
     );
   };
@@ -6963,25 +7141,25 @@ function NewAiReceptionistBuilder({
     if (sourceStage === 1) {
       if (knowledgeWebsiteMode === 'picker') {
         return (
-          <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5">
+          <div className="mx-auto flex w-full max-w-[880px] flex-col gap-4">
             <div>
-              <h1 className="text-[22px] font-bold leading-7 text-neutral-950">
+              <h2 className="text-lg font-bold tracking-normal text-neutral-950">
                 Knowledge — your website
-              </h1>
-              <p className="mt-1 max-w-[760px] text-sm leading-5 text-neutral-500">
+              </h2>
+              <p className="mt-0.5 max-w-[760px] text-sm leading-5 text-neutral-500">
                 Pick an existing knowledge base, or create a new one by scanning your website. AI
-                turns pages and documents into Documents & FAQs.
+                turns pages and documents into Documents &amp; FAQs.
               </p>
             </div>
 
-            <div className="flex items-center justify-between gap-4 rounded-[14px] bg-gradient-to-r from-[#B91C1C] to-[#DC2626] px-6 py-5 text-white shadow-[0_2px_10px_rgba(220,38,38,.25)]">
+            <div className="flex items-center justify-between gap-4 rounded-2xl border-2 border-slate-300 bg-white px-6 py-5 text-neutral-950">
               <div className="flex min-w-0 items-center gap-4">
-                <div className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-xl bg-white/15">
+                <div className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-xl bg-red-50 text-red-600">
                   <FileText className="h-7 w-7" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-bold">Create new knowledge base</h3>
-                  <p className="mt-1 text-sm leading-5 text-white/85">
+                  <h3 className="text-[17px] font-bold text-neutral-950">Create new knowledge base</h3>
+                  <p className="mt-1 text-sm leading-5 text-neutral-500">
                     Scan a website, pick pages, upload docs — AI does the rest.
                   </p>
                 </div>
@@ -7006,7 +7184,7 @@ function NewAiReceptionistBuilder({
                     setStepErrors((prev) => ({ ...prev, knowledgeBase: '' }));
                     setKnowledgeWebsiteMode('scan');
                   }}
-                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-lg bg-white px-5 text-sm font-bold text-red-600 shadow-sm transition hover:bg-white/95"
+                  className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-neutral-900! px-5 text-sm font-bold text-white! transition hover:bg-neutral-800!"
                 >
                   Start
                   <ArrowRight className="h-4 w-4" />
@@ -7020,22 +7198,28 @@ function NewAiReceptionistBuilder({
               <span className="h-px flex-1 bg-neutral-200" />
             </div>
 
-            <div className="overflow-hidden rounded-[14px] border border-neutral-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border-[1.5px] border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,.03)]">
               <div className="px-5 py-4">
-                <h3 className="text-lg font-bold text-neutral-950">Pick a knowledge base</h3>
+                <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
+                  <Folder className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
+                  Pick a knowledge base
+                </h3>
                 <p className="mt-1 text-sm text-neutral-500">
                   Search your existing knowledge bases or create a new one from a website.
                 </p>
-                <div className="relative mt-4">
-                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+                <div className="mt-4 flex h-10 min-w-0 items-center gap-2 rounded-full border! border-neutral-200! bg-white! pl-2 pr-3 shadow-[0_1px_2px_rgba(0,0,0,.03)] transition-all focus-within:border-neutral-400!">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-red-600">
+                    <Search className="h-3.5 w-3.5" />
+                  </span>
                   <input
+                    type="text"
                     value={knowledgeBaseSearch}
                     onChange={(event) =>
                       setKnowledgeBaseSearch(sanitizeAiSearchText(event.target.value))
                     }
                     disabled={isReadOnly}
                     placeholder="Search knowledge bases..."
-                    className="h-11 w-full rounded-lg border border-neutral-200 bg-white pl-11 pr-3 text-sm outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-neutral-50"
+                    className="min-w-0 flex-1 border-none bg-transparent text-sm text-neutral-900 outline-none! placeholder:text-neutral-400 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -7078,12 +7262,18 @@ function NewAiReceptionistBuilder({
                         </span>
                         <span
                           className={cx(
-                            'shrink-0 rounded-md px-2.5 py-1 text-xs font-bold uppercase',
+                            'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
                             agent.channel === 'chat'
-                              ? 'bg-red-600/10 text-red-600'
-                              : 'bg-emerald-100 text-emerald-700',
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-violet-50 text-violet-700',
                           )}
                         >
+                          <span
+                            className={cx(
+                              'h-1.5 w-1.5 shrink-0 rounded-full',
+                              agent.channel === 'chat' ? 'bg-emerald-500' : 'bg-violet-500',
+                            )}
+                          />
                           {agent.channel === 'chat' ? 'Chat' : 'Voice'}
                         </span>
                       </button>
@@ -7101,7 +7291,7 @@ function NewAiReceptionistBuilder({
 
             {!isReadOnly && (
               <div className="mt-1 flex items-center justify-between">
-                <SecondaryButton onClick={() => void handleStepperChange(3)}>
+                <SecondaryButton tone="dark" onClick={() => void handleStepperChange(3)}>
                   <ArrowLeft className="h-4 w-4" />
                   Back
                 </SecondaryButton>
@@ -7113,11 +7303,11 @@ function NewAiReceptionistBuilder({
 
       return (
         <div className="mx-auto flex w-full max-w-[880px] flex-col gap-4">
-          <div className="mx-auto mt-2 w-full max-w-[540px] rounded-[14px] border border-neutral-200 bg-white px-7 py-9 text-center shadow-sm">
+          <div className="mx-auto mt-2 w-full max-w-[540px] rounded-2xl border-[1.5px] border-neutral-200 bg-white px-7 py-9 text-center shadow-[0_1px_2px_rgba(0,0,0,.03)]">
             <div className="mx-auto mb-3 grid h-[52px] w-[52px] place-items-center rounded-xl bg-red-600/10 text-red-600">
               <Globe2 className="h-[26px] w-[26px]" />
             </div>
-            <h3 className="text-lg font-bold text-neutral-950">What's your website?</h3>
+            <h3 className="text-[17px] font-bold text-neutral-950">What's your website?</h3>
             <p className="mx-auto mt-1 max-w-[420px] text-[13px] leading-5 text-neutral-500">
               We'll scan it and group your Product, Service, and Contact pages — you pick what to
               use.
@@ -7140,8 +7330,8 @@ function NewAiReceptionistBuilder({
                 disabled={isReadOnly}
                 placeholder="https://yourcompany.com"
                 className={cx(
-                  'w-full rounded-lg border px-3.5 py-[11px] text-[13px] outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-neutral-50',
-                  stepErrors.websiteUrl ? 'border-red-400' : 'border-neutral-200',
+                  'w-full rounded-xl border px-3.5 py-[11px] text-[13px] outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-50',
+                  stepErrors.websiteUrl ? 'border-red-400' : 'border-neutral-300',
                 )}
               />
             </div>
@@ -7166,12 +7356,12 @@ function NewAiReceptionistBuilder({
           </div>
 
           {!isReadOnly && (
-            <div className="mt-2 flex items-center justify-between">
-              <SecondaryButton onClick={() => setKnowledgeWebsiteMode('picker')}>
+            <div className="mt-1 flex items-center justify-between">
+              <SecondaryButton tone="dark" onClick={() => setKnowledgeWebsiteMode('picker')}>
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </SecondaryButton>
-              <PrimaryButton onClick={handleContinueFromWebsite} disabled={isCrawlingSite}>
+              <PrimaryButton tone="dark" onClick={handleContinueFromWebsite} disabled={isCrawlingSite}>
                 {isCrawlingSite ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -7179,7 +7369,7 @@ function NewAiReceptionistBuilder({
                   </>
                 ) : (
                   <>
-                    Continue to Pick pages
+                    Continue
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -7214,11 +7404,18 @@ function NewAiReceptionistBuilder({
         : pickPageCategories[0]?.id;
 
     return (
-      <div className="mx-auto flex w-full max-w-[880px] flex-col gap-[14px]">
-        <div className="flex items-center gap-2 rounded-lg border border-red-600/20 bg-red-600/5 px-4 py-3 text-sm font-medium text-red-600">
+      <div className="mx-auto flex w-full max-w-[880px] flex-col gap-4">
+        <div>
+          <h2 className="text-lg font-bold tracking-normal text-neutral-950">Pick pages</h2>
+          <p className="mt-0.5 text-sm leading-5 text-neutral-500">
+            Choose which pages the AI should learn from, or add content and documents manually.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 rounded-lg border border-red-600/20 bg-red-600/5 px-3 py-2 text-xs font-semibold text-neutral-950">
           {discoveredLinks.length > 0 ? (
             <>
-              <Check className="h-4 w-4 shrink-0 stroke-[3]" />
+              <Check className="h-3.5 w-3.5 shrink-0 stroke-[3] text-red-600" />
               <span>
                 Found {discoveredLinks.length.toLocaleString()} pages on {scannedDomain}. Picked the
                 most useful ones below.
@@ -7226,7 +7423,7 @@ function NewAiReceptionistBuilder({
             </>
           ) : (
             <>
-              <Info className="h-4 w-4 shrink-0" />
+              <Info className="h-3.5 w-3.5 shrink-0 text-red-600" />
               <span>
                 Manual mode — add content and documents below. The receptionist will use these as
                 its only knowledge base.
@@ -7237,37 +7434,38 @@ function NewAiReceptionistBuilder({
 
         {discoveredLinks.length > 0 ? (
           <div className="flex flex-col gap-2.5">
-            {pickPageCategories.map((category, index) => {
-              const isExpanded = category.id === activeExpandedCategoryId;
-              const contentId = `pick-page-category-${index}`;
+            {(() => {
+              let fallbackIconCounter = 0;
+              return pickPageCategories.map((category, index) => {
+                const isExpanded = category.id === activeExpandedCategoryId;
+                const contentId = `pick-page-category-${index}`;
+                const isFallbackIcon = !PICK_PAGE_CATEGORY_ICON_MAP[category.id];
+                const CategoryIcon = getPickPageCategoryIcon(category.id, fallbackIconCounter);
+                if (isFallbackIcon) fallbackIconCounter += 1;
 
-              return (
-                <div
-                  key={category.id}
-                  className="overflow-hidden rounded-[10px] border border-neutral-200 bg-white"
-                >
-                  <button
-                    type="button"
-                    aria-expanded={isExpanded}
-                    aria-controls={contentId}
-                    onClick={() => setExpandedPickPageCategoryId(category.id)}
-                    className={cx(
-                      'flex w-full items-center gap-2.5 bg-neutral-50 px-3.5 py-3 text-left',
-                      isExpanded && 'border-b border-neutral-200',
-                    )}
+                return (
+                  <div
+                    key={category.id}
+                    className="overflow-hidden rounded-xl border border-neutral-200 bg-white"
                   >
-                    <div
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      aria-controls={contentId}
+                      onClick={() => setExpandedPickPageCategoryId(category.id)}
                       className={cx(
-                        'grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[7px]',
-                        getPickPageCategoryIconClassName(index),
+                        'flex w-full items-center gap-2.5 bg-neutral-50 px-3.5 py-3 text-left',
+                        isExpanded && 'border-b border-neutral-200',
                       )}
                     >
-                      {category.stripLeadingSegments ? (
-                        <Folder className="h-4 w-4" />
-                      ) : (
-                        <Globe2 className="h-4 w-4" />
-                      )}
-                    </div>
+                      <div
+                        className={cx(
+                          'grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[7px]',
+                          getPickPageCategoryIconClassName(index),
+                        )}
+                      >
+                        <CategoryIcon className="h-4 w-4" />
+                      </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="text-sm font-bold text-neutral-950">{category.title}</h4>
                       <p className="mt-0.5 text-xs text-neutral-500">{category.subtitle}</p>
@@ -7315,13 +7513,14 @@ function NewAiReceptionistBuilder({
                   )}
                 </div>
               );
-            })}
+              });
+            })()}
           </div>
         ) : null}
 
         <div className="flex flex-col gap-4">
           {discoveredLinks.length > 0 && (
-            <div className="rounded-[10px] border border-dashed border-neutral-300 bg-white p-3.5">
+            <div className="rounded-xl border border-neutral-200 bg-white p-3.5 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
               <p className="text-sm font-bold text-neutral-950">Add another URL</p>
               <p className="mt-1 text-xs text-neutral-500">Paste any page not auto-detected.</p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -7341,15 +7540,19 @@ function NewAiReceptionistBuilder({
                   disabled={isReadOnly}
                   placeholder="https://yourcompany.com/page"
                   className={cx(
-                    'h-10 min-w-0 flex-1 rounded-lg border px-3 text-sm outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-neutral-50',
-                    stepErrors.extraUrl ? 'border-red-400' : 'border-neutral-200',
+                    'h-10 min-w-0 flex-1 rounded-xl border px-3 text-sm outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-50',
+                    stepErrors.extraUrl ? 'border-red-400' : 'border-neutral-300',
                   )}
                 />
                 {!isReadOnly && (
-                  <PrimaryButton onClick={handleAddExtraUrl}>
+                  <button
+                    type="button"
+                    onClick={handleAddExtraUrl}
+                    className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border! border-red-200! bg-red-50! px-5 text-sm font-semibold text-red-600! transition-colors hover:bg-red-100!"
+                  >
                     <Plus className="h-4 w-4" />
                     Add
-                  </PrimaryButton>
+                  </button>
                 )}
               </div>
               {stepErrors.extraUrl && (
@@ -7379,14 +7582,22 @@ function NewAiReceptionistBuilder({
             </div>
           )}
 
-          <div className="rounded-xl border border-neutral-200 bg-white p-[22px] shadow-sm">
+          <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
             <div className="mb-3.5">
-              <h3 className="text-sm font-bold text-neutral-950">Add content</h3>
+              <h3 className="flex items-center gap-1.5 text-[17px] font-bold text-neutral-950">
+                <PenLine className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
+                Add content
+                <CustomTooltip
+                  side="top"
+                  text="Write it in plain language — the AI turns it into searchable knowledge. Leave a blank line between topics to keep things organized, with one topic per paragraph. Include exact numbers, dates, and policies so the receptionist answers precisely instead of guessing."
+                  className="w-max max-w-[340px] border-none! bg-[#fdf7f5]! text-black! shadow-[0_6px_20px_rgba(17,17,17,0.18)]! [&_svg]:fill-[#fdf7f5]"
+                >
+                  <Info className="h-4 w-4 cursor-help text-neutral-400" />
+                </CustomTooltip>
+              </h3>
               <p className="mt-0.5 text-xs leading-5 text-neutral-500">
                 Type or paste the facts, policies, and answers your receptionist should know —
-                pricing, hours, addresses, refund rules, FAQs, anything. Write it in plain language;
-                the AI turns it into searchable knowledge. A blank line between topics helps keep
-                things organized.
+                pricing, hours, addresses, refund rules, FAQs, anything.
               </p>
             </div>
             <textarea
@@ -7395,19 +7606,18 @@ function NewAiReceptionistBuilder({
               readOnly={isReadOnly}
               disabled={isReadOnly}
               placeholder={`Type or paste anything your receptionist should know — write naturally, the AI organizes it into searchable answers.\n\nEXAMPLE\nBusiness hours: Monday-Friday, 9:00 AM to 6:00 PM EST. Closed weekends and US public holidays.\nPricing: Growth plan starts at $12 per user / month. Pro is $24 per user / month. Enterprise is custom-quoted - offer to connect the caller with sales.\nOffice address: 123 Market Street, Suite 400, San Francisco, CA 94105.\nRefund policy: Full refund within 30 days of purchase. No refunds after 30 days.\nSupport contact: support@example.com or +1 (800) 555-0199.`}
-              className="min-h-[220px] w-full resize-y rounded-lg border border-neutral-200 p-3 text-sm leading-6 text-neutral-800 outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-neutral-50"
+              className="min-h-[220px] w-full resize-y rounded-xl border border-neutral-300 p-3 text-sm leading-6 text-neutral-800 outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-50"
             />
             <p className="mt-1 text-right text-[11px] font-medium text-neutral-500">
               {customContentWordCount} {customContentWordCount === 1 ? 'word' : 'words'}
             </p>
-            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="flex items-start gap-1.5 text-[11px] leading-4 text-neutral-500">
-                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" />
-                Tip: one topic per paragraph. Include exact numbers, dates, and policies so the
-                receptionist answers precisely instead of guessing.
-              </p>
+            <div className="mt-2 flex justify-end">
               {!isReadOnly && (
-                <PrimaryButton onClick={handleAddCustomContent} disabled={!customContent.trim()}>
+                <PrimaryButton
+                  tone="ghost"
+                  onClick={handleAddCustomContent}
+                  disabled={!customContent.trim()}
+                >
                   <Plus className="h-4 w-4" />
                   Add this content
                 </PrimaryButton>
@@ -7451,27 +7661,6 @@ function NewAiReceptionistBuilder({
                 event.currentTarget.value = '';
               }}
             />
-            {/*
-            <button
-              type="button"
-              onClick={() => pendingFileInputRef.current?.click()}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => {
-                event.preventDefault();
-                handlePendingFilesSelected(event.dataTransfer.files);
-              }}
-              disabled={isReadOnly || pendingFiles.length >= 5}
-              className="flex min-h-[96px] w-full cursor-pointer flex-col items-center justify-center rounded-[10px] border-2 border-dashed border-neutral-300 bg-white px-5 py-5 text-center transition-colors hover:border-red-600 hover:bg-red-600/5 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <span className="inline-flex items-center gap-2 text-sm font-bold text-neutral-950">
-                <UploadCloud className="h-5 w-5 text-neutral-500" />
-                Add documents to the knowledge base
-              </span>
-              <span className="mt-1 text-xs text-neutral-500">
-                Drag & drop or click to browse · PDF up to 25 MB each
-              </span>
-            </button>
-            */}
             {pendingFiles.length > 0 && (
               <div className="mt-2 flex flex-col gap-1.5">
                 {pendingFiles.map(({ id, file }) => (
@@ -7509,6 +7698,7 @@ function NewAiReceptionistBuilder({
         {!isReadOnly && (
           <div className="mt-2 flex items-center justify-between">
             <SecondaryButton
+              tone="dark"
               onClick={() => {
                 setStepErrors({});
                 setSourceStage(1);
@@ -7517,8 +7707,8 @@ function NewAiReceptionistBuilder({
               <ArrowLeft className="h-4 w-4" />
               Back
             </SecondaryButton>
-            <PrimaryButton onClick={() => void handleContinueFromKnowledgeBase()}>
-              Continue to Review
+            <PrimaryButton tone="dark" onClick={() => void handleContinueFromKnowledgeBase()}>
+              Continue
               <ArrowRight className="h-4 w-4" />
             </PrimaryButton>
           </div>
@@ -7543,22 +7733,26 @@ function NewAiReceptionistBuilder({
             event.stopPropagation();
             setOpenReviewKnowledgeMenu(isOpen ? '' : menuKey);
           }}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-[5px] text-lg leading-none text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-950"
+          className={cx(
+            'inline-flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-950',
+            isOpen && 'bg-neutral-100 text-neutral-950',
+          )}
           aria-label="Knowledge card actions"
         >
-          ⋮
+          <MoreVertical className="h-4 w-4" />
         </button>
         {isOpen && (
-          <div className="absolute right-0 top-7 z-30 min-w-[170px] rounded-lg border border-neutral-200 bg-white p-1.5 shadow-[0_6px_18px_rgba(0,0,0,0.08)]">
+          <div className="absolute right-0 top-8 z-30 min-w-[180px] rounded-xl border border-neutral-200 bg-white p-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.12)]">
             <button
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
                 handleOpenReviewKnowledgeSource(type, item);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-neutral-800 hover:bg-neutral-50"
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-950"
             >
-              📄 View Source Document
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+              View Source Document
             </button>
             <button
               type="button"
@@ -7566,9 +7760,10 @@ function NewAiReceptionistBuilder({
                 event.stopPropagation();
                 handleOpenReviewKnowledgeEdit(type, item);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-neutral-800 hover:bg-neutral-50"
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-950"
             >
-              ✎ Edit
+              <Edit3 className="h-3.5 w-3.5 shrink-0" />
+              Edit
             </button>
             <button
               type="button"
@@ -7576,19 +7771,22 @@ function NewAiReceptionistBuilder({
                 event.stopPropagation();
                 handleDuplicateReviewKnowledgeItem(type, item);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-neutral-800 hover:bg-neutral-50"
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-950"
             >
-              ⎘ Duplicate
+              <Copy className="h-3.5 w-3.5 shrink-0" />
+              Duplicate
             </button>
+            <div className="my-1 border-t border-neutral-100" />
             <button
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
                 handleDeleteReviewKnowledgeItem(type, item);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-red-600 hover:bg-red-50"
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-red-600 transition-colors hover:bg-red-50"
             >
-              🗑 Delete
+              <Trash2 className="h-3.5 w-3.5 shrink-0" />
+              Delete
             </button>
           </div>
         )}
@@ -7608,18 +7806,25 @@ function NewAiReceptionistBuilder({
     return (
       <>
         {reviewKnowledgeSourceModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/45 px-3 py-6">
-            <div className="max-h-[calc(100vh-48px)] w-full max-w-[620px] overflow-y-auto rounded-xl bg-white shadow-2xl">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/55 px-3 py-6">
+            <div className="max-h-[calc(100vh-48px)] w-full max-w-[620px] overflow-y-auto rounded-2xl border border-neutral-200 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
               <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
-                <h3 className="text-base font-bold text-neutral-950">
+                <h3 className="flex items-center gap-2.5 text-base font-bold text-neutral-950">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-neutral-100 text-neutral-600">
+                    {reviewKnowledgeSourceModal.type === 'faq' ? (
+                      <MessageSquare className="h-4 w-4" />
+                    ) : (
+                      <FileText className="h-4 w-4" />
+                    )}
+                  </span>
                   {reviewKnowledgeSourceModal.type === 'faq'
-                    ? '💬 Source for this FAQ'
-                    : '📄 Source Document'}
+                    ? 'Source for this FAQ'
+                    : 'Source Document'}
                 </h3>
                 <button
                   type="button"
                   onClick={() => setReviewKnowledgeSourceModal(null)}
-                  className="text-neutral-400 hover:text-neutral-900"
+                  className="rounded-full p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -7649,7 +7854,7 @@ function NewAiReceptionistBuilder({
                   ) : (
                     <p className="text-neutral-500">No content preview available.</p>
                   )}
-                  <div className="mt-3 rounded-md border-l-[3px] border-red-600 bg-red-600/5 px-3 py-2 text-xs leading-5 text-neutral-700">
+                  <div className="mt-3 rounded-md border-l-[3px] border-neutral-200 bg-neutral-50 px-3 py-2 text-xs leading-5 text-neutral-700">
                     <b className="text-neutral-950">Full summarized content shown above.</b> This is
                     the content the receptionist uses to answer related questions. To revise
                     wording, use Edit on the card.
@@ -7660,9 +7865,10 @@ function NewAiReceptionistBuilder({
                         href={sourceHref}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-red-600 hover:underline"
+                        className="inline-flex items-center gap-1 text-red-600 hover:underline"
                       >
-                        🔗 Read more from the original source →
+                        <ExternalLink className="h-3 w-3 shrink-0" />
+                        Read more from the original source
                       </a>
                     </div>
                   )}
@@ -7673,16 +7879,19 @@ function NewAiReceptionistBuilder({
         )}
 
         {reviewKnowledgeEditModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/45 px-3 py-6">
-            <div className="w-full max-w-[540px] rounded-xl bg-white shadow-2xl">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/55 px-3 py-6">
+            <div className="w-full max-w-[540px] rounded-2xl border border-neutral-200 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
               <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
-                <h3 className="text-base font-bold text-neutral-950">
+                <h3 className="flex items-center gap-2.5 text-base font-bold text-neutral-950">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-neutral-100 text-neutral-600">
+                    <Edit3 className="h-4 w-4" />
+                  </span>
                   {reviewKnowledgeEditModal.type === 'faq' ? 'Edit FAQ' : 'Edit document'}
                 </h3>
                 <button
                   type="button"
                   onClick={() => setReviewKnowledgeEditModal(null)}
-                  className="text-neutral-400 hover:text-neutral-900"
+                  className="rounded-full p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -7698,7 +7907,7 @@ function NewAiReceptionistBuilder({
                       prev ? { ...prev, title: event.target.value } : prev,
                     )
                   }
-                  className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                  className="h-10 w-full rounded-xl border border-neutral-300 px-3 text-sm outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                 />
                 <label className="mb-1.5 mt-3 block text-xs font-semibold text-neutral-700">
                   {reviewKnowledgeEditModal.type === 'faq' ? 'Answer' : 'Document content'}
@@ -7710,7 +7919,7 @@ function NewAiReceptionistBuilder({
                       prev ? { ...prev, body: event.target.value } : prev,
                     )
                   }
-                  className="min-h-[150px] w-full resize-y rounded-lg border border-neutral-200 px-3 py-2 text-sm leading-6 outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                  className="min-h-[150px] w-full resize-y rounded-xl border border-neutral-300 px-3 py-2 text-sm leading-6 outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                 />
               </div>
               <div className="flex justify-end gap-2 border-t border-neutral-100 px-5 py-4">
@@ -7726,22 +7935,25 @@ function NewAiReceptionistBuilder({
         )}
 
         {reviewKnowledgeAddModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/45 px-3 py-6">
-            <div className="w-full max-w-[540px] rounded-xl bg-white shadow-2xl">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/55 px-3 py-6">
+            <div className="w-full max-w-[540px] rounded-2xl border border-neutral-200 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
               <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
-                <h3 className="text-base font-bold text-neutral-950">
+                <h3 className="flex items-center gap-2.5 text-base font-bold text-neutral-950">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-neutral-100 text-neutral-600">
+                    <Plus className="h-4 w-4" />
+                  </span>
                   {reviewKnowledgeAddModal.type === 'faq' ? 'Add FAQ' : 'Add document'}
                 </h3>
                 <button
                   type="button"
                   onClick={() => setReviewKnowledgeAddModal(null)}
-                  className="text-neutral-400 hover:text-neutral-900"
+                  className="rounded-full p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
               <div className="p-5">
-                <div className="mb-3.5 flex gap-1.5 border-b border-neutral-100 pb-2.5">
+                <div className="mb-3.5 inline-flex w-fit gap-[3px] rounded-full bg-neutral-100 p-1">
                   {[
                     { value: 'text' as const, label: 'Paste text' },
                     // { value: 'upload' as const, label: 'Upload file' },
@@ -7755,10 +7967,10 @@ function NewAiReceptionistBuilder({
                         )
                       }
                       className={cx(
-                        'flex-1 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors',
+                        'rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
                         reviewKnowledgeAddModal.mode === mode.value
-                          ? 'border-red-600 bg-red-600 text-white'
-                          : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-red-600 hover:text-red-600',
+                          ? 'bg-white text-neutral-950 shadow-sm'
+                          : 'bg-transparent text-neutral-600 hover:bg-white hover:text-neutral-950',
                       )}
                     >
                       {mode.label}
@@ -7783,7 +7995,7 @@ function NewAiReceptionistBuilder({
                           ? 'e.g. How much does it cost?'
                           : 'e.g. Refund policy'
                       }
-                      className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                      className="h-10 w-full rounded-xl border border-neutral-300 px-3 text-sm outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                     />
                     <label className="mb-1.5 mt-3 block text-xs font-semibold text-neutral-700">
                       {reviewKnowledgeAddModal.type === 'faq' ? 'Answer' : 'Document content'}
@@ -7800,7 +8012,7 @@ function NewAiReceptionistBuilder({
                           ? 'Type the answer the receptionist should give. Short, conversational answers work best.'
                           : 'Type or paste the content the receptionist should learn from. Short, factual paragraphs work best.'
                       }
-                      className="min-h-[150px] w-full resize-y rounded-lg border border-neutral-200 px-3 py-2 text-sm leading-6 outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                      className="min-h-[150px] w-full resize-y rounded-xl border border-neutral-300 px-3 py-2 text-sm leading-6 outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                     />
                   </>
                 ) : (
@@ -7817,7 +8029,7 @@ function NewAiReceptionistBuilder({
                     <button
                       type="button"
                       onClick={() => reviewKnowledgeFileInputRef.current?.click()}
-                      className="w-full rounded-[10px] border-2 border-dashed border-neutral-200 px-7 py-7 text-center text-sm text-neutral-600 transition-colors hover:border-red-600 hover:bg-red-600/5"
+                      className="w-full rounded-xl border-2 border-dashed border-neutral-300 px-7 py-7 text-center text-sm text-neutral-600 transition-colors hover:border-neutral-400 hover:bg-neutral-50"
                     >
                       <span className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-100 text-neutral-600">
                         <UploadCloud className="h-5 w-5" />
@@ -7896,108 +8108,178 @@ function NewAiReceptionistBuilder({
       ...(knowledgeSummaryPayload.pdf ?? []),
     ]).length;
 
+    const hasExtractedKnowledge = knowledgeDocumentSummaries.length > 0 || validFaqCount > 0;
+
+    const renderKnowledgeEmptyState = (type: 'document' | 'faq') => (
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-neutral-200 bg-neutral-50/60 px-6 py-10 text-center">
+        <span className="grid h-12 w-12 place-items-center rounded-full bg-neutral-100 text-neutral-600">
+          {type === 'document' ? (
+            <FileText className="h-6 w-6" />
+          ) : (
+            <MessageSquare className="h-6 w-6" />
+          )}
+        </span>
+        <div>
+          <p className="text-sm font-bold text-neutral-950">
+            {type === 'document' ? 'No documents added yet' : 'No FAQs added yet'}
+          </p>
+          <p className="mx-auto mt-1 max-w-[360px] text-xs leading-5 text-neutral-500">
+            {type === 'document'
+              ? 'Upload documents or paste text so your AI receptionist has context to answer customer questions.'
+              : 'Add frequently asked questions so your AI receptionist can answer them instantly.'}
+          </p>
+        </div>
+        {!isReadOnly && (
+          <button
+            type="button"
+            onClick={() => handleOpenReviewKnowledgeAdd(type)}
+            disabled={isKnowledgeSummaryNavigationLocked}
+            className="mt-1 inline-flex h-9 items-center gap-1.5 rounded-full border! border-red-200! bg-red-50! px-4 text-xs font-bold text-red-600! transition-colors hover:bg-red-100! disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {type === 'document' ? 'Add document' : 'Add FAQ'}
+          </button>
+        )}
+      </div>
+    );
+
     return (
       <div className="mx-auto flex w-full max-w-[880px] flex-col gap-3.5 text-left">
         <div>
-          <h1 className="text-[22px] font-bold leading-7 text-neutral-950">Review knowledge</h1>
-          <p className="mt-1 text-sm leading-5 text-neutral-500">
-            Review what was generated. Edit, delete, or add Documents and FAQs before continuing.
+          <h2 className="text-lg font-bold tracking-normal text-neutral-950">Review knowledge</h2>
+          <p className="mt-0.5 text-sm leading-5 text-neutral-500">
+            Make sure everything below is accurate before you continue.
           </p>
         </div>
 
-        <div className="rounded-[14px] border border-neutral-200 bg-neutral-50 px-[22px] py-[22px] text-center">
-          <div className="mx-auto mb-2.5 grid h-12 w-12 place-items-center rounded-full bg-emerald-500 text-white">
-            <Check className="h-[26px] w-[26px] stroke-[3]" />
-          </div>
-          <h2 className="text-[18px] font-bold leading-6 text-neutral-950">
-            Here's what your receptionist will know
-          </h2>
-          <p className="mt-0.5 text-[13px] leading-5 text-neutral-600">
-            Review what was auto-extracted. You can add more docs, custom text, or FAQs from the
-            tabs below.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-          {[
-            { label: 'Sources', value: reviewSourceCount },
-            { label: 'Documents', value: knowledgeDocumentSummaries.length },
-            { label: 'FAQs', value: validFaqCount },
-            { label: 'Training', value: '~3 min', valueClassName: 'text-sm' },
-          ].map((item) => (
-            <div key={item.label} className="rounded-[10px] border border-neutral-200 bg-white p-3">
-              <p className="text-[11px] font-medium leading-4 text-neutral-500">{item.label}</p>
-              <p
+        <div className="rounded-2xl border-[1.5px] border-neutral-200 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <span
                 className={cx(
-                  'mt-0.5 text-xl font-bold leading-6 text-neutral-950',
-                  item.valueClassName,
+                  'grid h-11 w-11 shrink-0 place-items-center rounded-xl',
+                  hasExtractedKnowledge ? 'bg-emerald-50 text-emerald-600' : 'bg-neutral-100 text-neutral-400',
                 )}
               >
-                {item.value}
-              </p>
+                {hasExtractedKnowledge ? (
+                  <Check
+                    key="knowledge-extracted-check"
+                    className="h-5 w-5 animate-in zoom-in-50 spin-in-45 duration-300 ease-out"
+                    strokeWidth={2.5}
+                  />
+                ) : (
+                  <FileText className="h-5 w-5" />
+                )}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-neutral-950">
+                  {hasExtractedKnowledge
+                    ? "Here's what your receptionist will know"
+                    : 'Nothing extracted yet'}
+                </p>
+                <p className="mt-0.5 text-xs leading-5 text-neutral-500">
+                  {hasExtractedKnowledge
+                    ? 'Add more from the tabs below if anything is missing.'
+                    : 'Add a document or FAQ below to get started.'}
+                </p>
+              </div>
             </div>
-          ))}
+
+            {[
+              { label: 'Sources', value: reviewSourceCount },
+              { label: 'Documents', value: knowledgeDocumentSummaries.length },
+              { label: 'FAQs', value: validFaqCount },
+              { label: 'Training', value: '~3 min', valueClassName: 'text-sm' },
+            ].map((item, index) => (
+              <div
+                key={item.label}
+                className={cx('shrink-0 pl-5', index > 0 && 'border-l border-neutral-200')}
+              >
+                <p className="text-[11px] font-medium uppercase tracking-wide leading-4 text-neutral-500">
+                  {item.label}
+                </p>
+                <p
+                  className={cx(
+                    'mt-0.5 text-xl font-bold leading-6 text-neutral-950',
+                    item.valueClassName,
+                  )}
+                >
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="mt-1">
           <h2 className="text-[18px] font-bold leading-6 text-neutral-950">Knowledge Base Summary</h2>
-          <p className="mt-1 text-[13px] leading-5 text-neutral-600">
-            Here's what the AI receptionist will use. Edit anything, delete what shouldn't be there,
-            add anything missing.
-          </p>
-        </div>
-
-        <div className="inline-flex w-fit gap-[3px] rounded-lg bg-neutral-100 p-1">
-          {[
-            {
-              key: 'documents' as const,
-              label: 'Documents',
-              count: knowledgeDocumentSummaries.length,
-              icon: <span className="text-sm leading-none">📄</span>,
-            },
-            {
-              key: 'faqs' as const,
-              label: 'FAQs',
-              count: validFaqCount,
-              icon: <span className="text-sm leading-none">💬</span>,
-            },
-          ].map((tab) => {
-            const isSelected = reviewKnowledgeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => {
-                  setReviewKnowledgeTab(tab.key);
-                  setReviewKnowledgeSearch('');
-                }}
-                className={cx(
-                  'inline-flex items-center gap-1.5 rounded-md border border-transparent px-3.5 py-1.5 text-xs font-semibold transition-colors',
-                  isSelected
-                    ? 'bg-white text-neutral-950 shadow-[0_1px_3px_rgba(0,0,0,0.08)]'
-                    : 'bg-transparent text-neutral-600 hover:bg-white hover:text-neutral-950',
-                )}
-              >
-                {tab.icon}
-                {tab.label}
-                <span className="ml-1 rounded-full bg-neutral-200/80 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-neutral-600">
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
         </div>
 
         <div className="mb-0.5 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative grid w-fit shrink-0 grid-cols-2 rounded-full bg-neutral-200 p-1">
+            {/* One pill that slides between the two tabs, rather than two that
+                pop on and off - the movement shows which way the selection went. */}
+            <span
+              aria-hidden="true"
+              className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-sm transition-transform duration-200 ease-out"
+              style={{
+                transform:
+                  reviewKnowledgeTab === 'faqs' ? 'translateX(100%)' : 'translateX(0)',
+              }}
+            />
+            {[
+              {
+                key: 'documents' as const,
+                label: 'Documents',
+                count: knowledgeDocumentSummaries.length,
+                icon: <FileText className="h-3.5 w-3.5" />,
+              },
+              {
+                key: 'faqs' as const,
+                label: 'FAQs',
+                count: validFaqCount,
+                icon: <MessageSquare className="h-3.5 w-3.5" />,
+              },
+            ].map((tab) => {
+              const isSelected = reviewKnowledgeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    setReviewKnowledgeTab(tab.key);
+                    setReviewKnowledgeSearch('');
+                  }}
+                  className={cx(
+                    'relative z-10 flex cursor-pointer items-center justify-center gap-1.5 rounded-full border-0 bg-transparent px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                    isSelected
+                      ? 'text-neutral-950'
+                      : 'text-neutral-500 hover:text-neutral-800',
+                  )}
+                >
+                  {tab.icon}
+                  {tab.label}
+                  <span
+                    className={cx(
+                      'ml-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none',
+                      isSelected ? 'bg-neutral-100 text-neutral-950' : 'bg-neutral-300/70 text-neutral-600',
+                    )}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
           <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-red-600" />
             <input
               value={reviewKnowledgeSearch}
               onChange={(event) =>
                 setReviewKnowledgeSearch(sanitizeAiSearchText(event.target.value))
               }
               placeholder={searchPlaceholder}
-              className="h-[38px] w-full rounded-lg border border-neutral-200 bg-white pl-9 pr-3 text-[13px] outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100"
+              className="h-9 w-full rounded-full border border-neutral-300 bg-white pl-9 pr-3 text-sm shadow-sm outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
             />
           </div>
           {!isReadOnly && (
@@ -8005,10 +8287,10 @@ function NewAiReceptionistBuilder({
               type="button"
               onClick={() => handleOpenReviewKnowledgeAdd(isDocumentsTab ? 'document' : 'faq')}
               disabled={isKnowledgeSummaryNavigationLocked}
-              className="inline-flex h-[34px] items-center justify-center gap-1.5 rounded-md bg-red-600 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-red-600/90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-[34px] shrink-0 items-center justify-center gap-1.5 rounded-full border! border-red-200! bg-red-50! px-3.5 text-xs font-bold text-red-600! transition-colors hover:bg-red-100! disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Plus className="h-3.5 w-3.5" />
-              {isDocumentsTab ? 'Add document' : 'Add FAQ'}
+              Add
             </button>
           )}
         </div>
@@ -8016,7 +8298,7 @@ function NewAiReceptionistBuilder({
         {isDocumentsTab ? (
           <div className="flex flex-col gap-2.5">
             {isSummarizingKnowledgeBase ? (
-              <div className="flex items-center justify-center gap-2 rounded-[10px] border border-neutral-200 bg-white px-4 py-8 text-sm font-semibold text-red-600">
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-8 text-sm font-semibold text-red-600">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Generating summary...
               </div>
@@ -8030,10 +8312,14 @@ function NewAiReceptionistBuilder({
                 {filteredDocuments.length ? (
                   filteredDocuments.map((document) => {
                     const copy = document.copy.trim();
+                    const isMenuOpen = openReviewKnowledgeMenu === `document-${document.id}`;
                     return (
                       <div
                         key={document.id}
-                        className="rounded-[10px] border border-neutral-200 bg-white px-[22px] py-[18px] shadow-sm transition-colors hover:border-neutral-300 hover:shadow-[0_2px_6px_rgba(0,0,0,0.04)]"
+                        className={cx(
+                          'relative rounded-xl border border-neutral-200 bg-white px-[22px] py-[18px] shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-[0_8px_20px_rgba(220,38,38,.1)]',
+                          isMenuOpen && 'z-20',
+                        )}
                       >
                         <div className="flex items-start justify-between gap-2.5">
                           <h3 className="min-w-0 flex-1 break-words text-[15px] font-bold leading-5 text-neutral-950">
@@ -8055,10 +8341,12 @@ function NewAiReceptionistBuilder({
                       </div>
                     );
                   })
-                ) : (
-                  <div className="rounded-[10px] border border-neutral-200 bg-white px-4 py-8 text-center text-sm text-neutral-500">
-                    No documents found.
+                ) : knowledgeDocumentSummaries.length ? (
+                  <div className="rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-8 text-center text-sm text-neutral-500">
+                    No documents match your search.
                   </div>
+                ) : (
+                  renderKnowledgeEmptyState('document')
                 )}
               </>
             )}
@@ -8066,7 +8354,7 @@ function NewAiReceptionistBuilder({
         ) : (
           <div className="flex flex-col gap-2.5">
             {isGeneratingKnowledgeFaqs ? (
-              <div className="flex items-center justify-center gap-2 rounded-[10px] border border-neutral-200 bg-white px-4 py-8 text-sm font-semibold text-red-600">
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-8 text-sm font-semibold text-red-600">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Generating FAQs...
               </div>
@@ -8081,7 +8369,10 @@ function NewAiReceptionistBuilder({
                   filteredFaqs.map((faq) => (
                     <div
                       key={faq.id}
-                      className="rounded-[10px] border border-neutral-200 bg-white px-[22px] py-[18px] shadow-sm transition-colors hover:border-neutral-300 hover:shadow-[0_2px_6px_rgba(0,0,0,0.04)]"
+                      className={cx(
+                        'relative rounded-xl border border-neutral-200 bg-white px-[22px] py-[18px] shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-[0_8px_20px_rgba(220,38,38,.1)]',
+                        openReviewKnowledgeMenu === `faq-${faq.id}` && 'z-20',
+                      )}
                     >
                       <div className="mb-3 flex items-start justify-between gap-3">
                         <h3 className="min-w-0 flex-1 break-words text-[15px] font-bold leading-5 text-neutral-950">
@@ -8100,10 +8391,12 @@ function NewAiReceptionistBuilder({
                       </div>
                     </div>
                   ))
-                ) : (
-                  <div className="rounded-[10px] border border-neutral-200 bg-white px-4 py-8 text-center text-sm text-neutral-500">
-                    No FAQs found. Add a custom FAQ to create knowledge manually.
+                ) : getValidKnowledgeFaqs(knowledgeFaqs).length ? (
+                  <div className="rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-8 text-center text-sm text-neutral-500">
+                    No FAQs match your search.
                   </div>
+                ) : (
+                  renderKnowledgeEmptyState('faq')
                 )}
               </>
             )}
@@ -8120,6 +8413,7 @@ function NewAiReceptionistBuilder({
         {!isReadOnly && (
           <div className="mt-2 flex items-center justify-between">
             <SecondaryButton
+              tone="dark"
               onClick={() => void handleStepperChange(4, 2)}
               disabled={isKnowledgeSummaryNavigationLocked}
             >
@@ -8127,10 +8421,11 @@ function NewAiReceptionistBuilder({
               Back
             </SecondaryButton>
             <PrimaryButton
+              tone="dark"
               onClick={() => void handleStepperChange(6, 1)}
               disabled={isKnowledgeSummaryNavigationLocked}
             >
-              Continue to Advanced Settings
+              Continue
               <ArrowRight className="h-4 w-4" />
             </PrimaryButton>
           </div>
@@ -8139,12 +8434,15 @@ function NewAiReceptionistBuilder({
     );
   };
 
-  const renderAdvancedStep = () => (
-    <div className="mx-auto flex w-full max-w-[860px] flex-col gap-4">
+  const renderAdvancedStep = () => {
+    const numberFieldClass =
+      'h-10 w-full rounded-lg border border-neutral-300 bg-white px-3 text-center text-sm font-semibold outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100';
+
+    return (
+    <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-4">
       <SectionHeading
         title="Advanced settings"
         subtitle="Configure data collection, routing, language preferences, and behavioral parameters."
-        icon={<Settings2 />}
       />
       {isCreatingKnowledgeSources && (
         <div className="flex items-center gap-3 rounded-lg border border-red-600/20 bg-red-600/5 p-4 text-sm font-semibold text-red-600">
@@ -8152,379 +8450,333 @@ function NewAiReceptionistBuilder({
           Creating selected URL, text, and file knowledge bases before saving the receptionist...
         </div>
       )}
-      <SettingsRow
-        title="Enable Call Monitoring"
-        copy="Every call is automatically transcribed for compliance, quality assurance, and analytics."
-        trailing={<Switch checked={enableCallMonitoring} disabled />}
-      />
-      <SettingsRow
-        title="Enable Transcripts"
-        copy="Generate and save text transcripts for each receptionist call."
-        trailing={<Switch checked={enableTranscripts} disabled />}
-      />
-      {/* ── Data Collection ──────────────────────────────── */}
-      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-4">
-          <div>
-            <h3 className="text-sm font-bold text-neutral-950">Data Collection</h3>
-            <p className="mt-1 text-xs leading-5 text-neutral-500">
-              When enabled, the AI politely asks callers for the details checked below and stores
-              them on the call record. Turn off to collect only the caller's phone number.
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-stretch">
+        {/* ── Preferences ──────────────────────────────── */}
+        <div className="flex h-full flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-100 px-5 py-4">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-neutral-950">
+              <Settings2 className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
+              Preferences
+            </h3>
+            <p className="mt-0.5 text-xs text-neutral-500">
+              Always-on call quality features and CRM handoff.
             </p>
           </div>
-          <Switch
+          <div className="flex flex-1 flex-col divide-y divide-neutral-100">
+            <div className="flex items-start justify-between gap-4 px-5 py-4">
+              <div>
+                <p className="text-sm font-semibold text-neutral-950">Enable Call Monitoring</p>
+                <p className="mt-1 text-xs leading-5 text-neutral-500">
+                  Every call is automatically transcribed for compliance, quality assurance, and
+                  analytics.
+                </p>
+              </div>
+              <ToggleSwitch checked={enableCallMonitoring} disabled className="mt-0.5" />
+            </div>
+            <div className="flex items-start justify-between gap-4 px-5 py-4">
+              <div>
+                <p className="text-sm font-semibold text-neutral-950">Enable Transcripts</p>
+                <p className="mt-1 text-xs leading-5 text-neutral-500">
+                  Generate and save text transcripts for each receptionist call.
+                </p>
+              </div>
+              <ToggleSwitch checked={enableTranscripts} disabled className="mt-0.5" />
+            </div>
+            <div className="flex-1 px-5 py-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-2.5">
+                  <Target className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  <div>
+                    <p className="text-sm font-semibold text-neutral-950">
+                      Push captured data to CRM
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-neutral-500">
+                      Auto-creates a CRM contact from the fields collected below, with the full
+                      call transcript attached.
+                    </p>
+                  </div>
+                </div>
+                <ToggleSwitch
+                  checked={enableCrmPush}
+                  onCheckedChange={(checked) =>
+                    setEnableCrmPush(isDataCollectionEnabled && checked)
+                  }
+                  disabled={isReadOnly || !isDataCollectionEnabled}
+                  className="mt-0.5"
+                />
+              </div>
+              {!isDataCollectionEnabled && (
+                <p className="mt-2 text-xs font-medium text-amber-700">
+                  Requires Data Collection enabled below.
+                </p>
+              )}
+              {isDataCollectionEnabled && enableCrmPush && (
+                <select
+                  value={selectedCrmPipeline}
+                  onChange={(event) => setSelectedCrmPipeline(event.target.value)}
+                  disabled={
+                    isReadOnly || isFetchingConnectedCrms || connectedCrmOptions.length === 0
+                  }
+                  className="mt-3 h-10 w-full rounded-lg border border-neutral-300 bg-white px-3 text-sm font-medium text-neutral-800 outline-none! transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-50"
+                >
+                  <option value="" disabled>
+                    {isFetchingConnectedCrms
+                      ? 'Checking connected CRMs...'
+                      : connectedCrmOptions.length > 0
+                        ? 'Select CRM...'
+                        : 'No connected CRM available'}
+                  </option>
+                  {connectedCrmOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                  <optgroup hidden label="Legacy CRM options">
+                    <option value="hubspot-sales">HubSpot — Sales pipeline</option>
+                    <option value="hubspot-marketing">HubSpot — Marketing pipeline</option>
+                    <option value="salesforce">Salesforce — Leads</option>
+                    <option value="zoho">Zoho CRM — Contacts</option>
+                  </optgroup>
+                </select>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Conversation Timeouts ──────────────────────────────── */}
+        <div className="flex h-full flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-100 px-5 py-4">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-neutral-950">
+              <Clock3 className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
+              Conversation Timeouts
+            </h3>
+            <p className="mt-0.5 text-xs text-neutral-500">
+              Control how long the AI waits before acting.
+            </p>
+          </div>
+          <div className="flex flex-1 flex-col justify-center divide-y divide-neutral-100">
+            <div className="flex items-center justify-between gap-4 px-5 py-4">
+              <label className="text-sm font-semibold text-neutral-950">Max session</label>
+              <div className="relative w-28 shrink-0">
+                <input
+                  type="number"
+                  value={maxSessionDuration}
+                  min={1}
+                  max={MAX_DURATION_SECONDS}
+                  step={1}
+                  aria-label="Maximum session duration in seconds"
+                  onChange={(event) =>
+                    setMaxSessionDuration(
+                      normalizeBoundedIntegerInput(event.target.value, MAX_DURATION_SECONDS),
+                    )
+                  }
+                  onBlur={() => setMaxSessionDuration((value) => (value === '' ? 1 : value))}
+                  className={cx(numberFieldClass, 'pr-9')}
+                />
+                <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase text-neutral-400">
+                  sec
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-4 px-5 py-4">
+              <label className="text-sm font-semibold text-neutral-950">Idle reminder</label>
+              <div className="relative w-28 shrink-0">
+                <input
+                  type="number"
+                  value={idleReminder}
+                  min={1}
+                  max={MAX_DURATION_SECONDS}
+                  step={1}
+                  aria-label="Idle reminder delay in seconds"
+                  onChange={(event) =>
+                    setIdleReminder(
+                      normalizeBoundedIntegerInput(event.target.value, MAX_DURATION_SECONDS),
+                    )
+                  }
+                  onBlur={() => setIdleReminder((value) => (value === '' ? 1 : value))}
+                  className={cx(numberFieldClass, 'pr-9')}
+                />
+                <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase text-neutral-400">
+                  sec
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-4 px-5 py-4">
+              <label className="text-sm font-semibold text-neutral-950">Reminder retries</label>
+              <div className="relative w-28 shrink-0">
+                <input
+                  type="number"
+                  value={idleReminderRetry}
+                  min={1}
+                  max={MAX_IDLE_REMINDER_RETRIES}
+                  step={1}
+                  aria-label="Idle reminder retry count"
+                  onChange={(event) =>
+                    setIdleReminderRetry(
+                      normalizeBoundedIntegerInput(event.target.value, MAX_IDLE_REMINDER_RETRIES),
+                    )
+                  }
+                  onBlur={() => setIdleReminderRetry((value) => (value === '' ? 1 : value))}
+                  className={cx(numberFieldClass, 'pr-14')}
+                />
+                <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase text-neutral-400">
+                  tries
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Data Collection ──────────────────────────────── */}
+      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
+        <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-4">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-neutral-950">
+                <FileText className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
+                Data Collection
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowDataCollectionHelp((prev) => !prev)}
+                aria-expanded={showDataCollectionHelp}
+                className="inline-flex h-4 w-4 items-center justify-center rounded-full text-neutral-400 transition-colors hover:text-neutral-900"
+                aria-label='When should I mark a field "Mandatory" vs "Optional"?'
+              >
+                <Info className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <p className="mt-1 text-xs leading-5 text-neutral-500">
+              When enabled, the AI politely asks callers for the details below and stores them on
+              the call record.
+            </p>
+          </div>
+          <ToggleSwitch
             checked={isDataCollectionEnabled}
-            onCheckedChange={(checked) => setIsDataCollectionEnabled(checked === true)}
+            onCheckedChange={(checked) => setIsDataCollectionEnabled(checked)}
             disabled={isReadOnly}
+            className="mt-0.5"
           />
         </div>
 
-        {/* Info tip */}
-        {isDataCollectionEnabled && (
-          <div className="mx-5 mb-4 rounded-lg border border-red-600/20 bg-red-600/10 p-4">
+        {isDataCollectionEnabled && showDataCollectionHelp && (
+          <div className="mx-5 mb-4 rounded-lg border border-neutral-200/60 bg-neutral-100 p-4">
             <p className="flex items-center gap-2 text-xs font-bold text-neutral-700">
-              <span>💡</span>
+              <Info className="h-3.5 w-3.5 shrink-0 text-neutral-600" />
               When should I mark a field "Mandatory" vs "Optional"?
             </p>
             <p className="mt-2 text-xs leading-5 text-neutral-600">
-              <strong>Mandatory</strong> = the AI will keep politely re-asking until the caller
-              answers, and will refuse to complete the task without it. Use for fields you really
-              need (e.g. <span className="font-semibold text-red-600">Name</span> for callbacks,{' '}
-              <span className="font-semibold text-red-600">Email</span> for follow-ups).
+              <strong className="text-neutral-950">Mandatory</strong> — the AI keeps politely
+              re-asking until the caller answers. Use for fields you really need (e.g.{' '}
+              <span className="font-semibold text-neutral-600">Email</span> for follow-ups).
             </p>
             <p className="mt-2 text-xs leading-5 text-neutral-600">
-              <strong>Optional</strong> = the AI asks once and moves on if the caller declines or
-              skips. Use for nice-to-have data (e.g.{' '}
-              <span className="font-semibold text-red-600">Date of birth</span>) — keeps the call
-              short and respectful.
+              <strong className="text-neutral-950">Optional</strong> — the AI asks once and moves
+              on if declined. Use for nice-to-have data (e.g.{' '}
+              <span className="font-semibold text-neutral-600">Date of birth</span>).
+            </p>
+            <p className="mt-2 text-xs leading-5 text-neutral-600">
+              <strong className="text-neutral-950">Disabled</strong> — the AI never asks for this
+              field at all.
             </p>
           </div>
         )}
 
-        {/* Fields list */}
+        {/* Fields grid */}
         <div className="border-t border-neutral-100">
           {[
-            { key: 'name' as DetailField, label: 'Name', alwaysAsked: true, disabled: true },
-            { key: 'phone' as DetailField, label: 'Phone', alwaysAsked: true, disabled: true },
-            { key: 'email' as DetailField, label: 'Email', alwaysAsked: false, disabled: false },
-            {
-              key: 'dob' as DetailField,
-              label: 'Date of Birth',
-              alwaysAsked: false,
-              disabled: false,
-            },
-            {
-              key: 'address' as DetailField,
-              label: 'Address',
-              alwaysAsked: false,
-              disabled: false,
-            },
+            { key: 'name' as DetailField, label: 'Name', alwaysAsked: true },
+            { key: 'phone' as DetailField, label: 'Phone', alwaysAsked: true },
+            { key: 'email' as DetailField, label: 'Email', alwaysAsked: false },
+            { key: 'dob' as DetailField, label: 'Date of Birth', alwaysAsked: false },
+            { key: 'address' as DetailField, label: 'Address', alwaysAsked: false },
           ]
             .filter(
               ({ key }) =>
                 isDataCollectionEnabled || DISABLED_DATA_COLLECTION_DETAIL_FIELDS.includes(key),
             )
-            .map(({ key, label, alwaysAsked, disabled }) => {
+            .map(({ key, label, alwaysAsked }) => {
               const isAlwaysAsked = alwaysAsked || ALWAYS_ASKED_DETAIL_FIELDS.has(key);
               const isChecked = isAlwaysAsked || detailsToCollect.includes(key);
               const mandatory = isAlwaysAsked ? 'mandatory' : detailsMandatory[key];
+              const fieldState: 'disabled' | 'optional' | 'mandatory' = !isChecked
+                ? 'disabled'
+                : mandatory === 'mandatory'
+                  ? 'mandatory'
+                  : 'optional';
+
               return (
                 <div
                   key={key}
-                  className={cx(
-                    'flex items-center gap-4 border-b border-neutral-100 px-5 py-3 last:border-b-0 transition-colors',
-                    isChecked && !isAlwaysAsked && 'bg-amber-50/40',
-                    isAlwaysAsked && 'bg-amber-50/60',
-                    !isChecked && 'opacity-60',
-                  )}
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-5 py-3 last:border-b-0"
                 >
-                  {/* Checkbox */}
-                  <Checkbox
-                    checked={isChecked}
-                    disabled={isAlwaysAsked || disabled || isReadOnly}
-                    onCheckedChange={(checked) => {
-                      if (isAlwaysAsked) return;
-                      toggleSingleDetail(key, checked === true);
-                    }}
-                    className="shrink-0"
-                  />
-
-                  {/* Label */}
                   <span
                     className={cx(
-                      'flex-1 text-sm font-semibold',
+                      'text-sm font-semibold',
                       isChecked ? 'text-neutral-900' : 'text-neutral-400',
                     )}
                   >
                     {label}
-                    {isAlwaysAsked && (
-                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-                        🔒 Always asked
-                      </span>
-                    )}
                   </span>
 
-                  {/* Mandatory / Optional radio group */}
-                  <div className={cx('flex items-center gap-5', isAlwaysAsked && 'hidden')}>
-                    <label
-                      className={cx(
-                        'flex items-center gap-1.5 cursor-pointer',
-                        (!isChecked || isAlwaysAsked) && 'pointer-events-none',
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name={`field-mode-${key}`}
-                        value="mandatory"
-                        checked={mandatory === 'mandatory'}
-                        disabled={isAlwaysAsked || !isChecked || isReadOnly}
-                        onChange={() => {
-                          if (isAlwaysAsked) return;
-                          setDetailsMandatory((prev) => ({ ...prev, [key]: 'mandatory' }));
-                        }}
-                        className="h-4 w-4 accent-red-600 cursor-pointer"
-                      />
+                  {isAlwaysAsked ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-neutral-500">
+                      <Lock className="h-2.5 w-2.5" />
+                      Always Collected
+                    </span>
+                  ) : (
+                    <div className="relative grid w-[288px] shrink-0 grid-cols-3 rounded-full bg-neutral-100 p-0.5">
+                      {/* One pill that slides between the three options, rather than
+                          three that pop on and off — the movement shows which way the
+                          setting travelled. */}
                       <span
-                        className={cx(
-                          'text-xs font-semibold',
-                          isChecked ? 'text-neutral-700' : 'text-neutral-400',
-                        )}
-                      >
-                        Mandatory
-                      </span>
-                    </label>
-                    <label
-                      className={cx(
-                        'flex items-center gap-1.5 cursor-pointer',
-                        (!isChecked || isAlwaysAsked) && 'pointer-events-none',
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name={`field-mode-${key}`}
-                        value="optional"
-                        checked={!isAlwaysAsked && mandatory === 'optional'}
-                        disabled={isAlwaysAsked || !isChecked || isReadOnly}
-                        onChange={() => {
-                          if (isAlwaysAsked) return;
-                          setDetailsMandatory((prev) => ({ ...prev, [key]: 'optional' }));
+                        aria-hidden="true"
+                        className="absolute top-0.5 bottom-0.5 w-[calc((100%-4px)/3)] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,.08)] transition-all duration-200 ease-out"
+                        style={{
+                          left: `calc(2px + ${['disabled', 'optional', 'mandatory'].indexOf(
+                            fieldState,
+                          )} * ((100% - 4px) / 3))`,
                         }}
-                        className="h-4 w-4 accent-red-600 cursor-pointer"
                       />
-                      <span
-                        className={cx(
-                          'text-xs font-semibold',
-                          isChecked ? 'text-neutral-700' : 'text-neutral-400',
-                        )}
-                      >
-                        Optional
-                      </span>
-                    </label>
-                  </div>
+                      {(['disabled', 'optional', 'mandatory'] as const).map((state) => (
+                        <button
+                          key={state}
+                          type="button"
+                          disabled={isReadOnly}
+                          onClick={() => {
+                            if (state === 'disabled') {
+                              toggleSingleDetail(key, false);
+                              return;
+                            }
+                            if (!isChecked) toggleSingleDetail(key, true);
+                            setDetailsMandatory((prev) => ({ ...prev, [key]: state }));
+                          }}
+                          className={cx(
+                            'relative z-10 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize transition-colors',
+                            fieldState === state
+                              ? state === 'mandatory'
+                                ? 'text-red-600!'
+                                : 'text-neutral-900!'
+                              : 'text-neutral-400 hover:text-neutral-700',
+                          )}
+                        >
+                          {state}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
         </div>
-
-        {/* Push to CRM */}
-        <div className="border-t border-neutral-100 bg-amber-50/30 px-5 py-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-2.5">
-              <span className="text-base">🎯</span>
-              <div>
-                <p className="text-sm font-bold text-neutral-950">Push captured data to CRM</p>
-                <p className="mt-0.5 text-xs leading-5 text-neutral-500">
-                  When enabled, the AI auto-creates a contact in your CRM using the fields collected
-                  above, with the full call transcript attached.
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={enableCrmPush}
-              onCheckedChange={(checked) =>
-                setEnableCrmPush(isDataCollectionEnabled && checked === true)
-              }
-              disabled={isReadOnly || !isDataCollectionEnabled}
-            />
-          </div>
-          {!isDataCollectionEnabled && (
-            <p className="mt-3 text-xs font-medium text-amber-700">
-              Enable data collection before pushing captured data to CRM.
-            </p>
-          )}
-          {isDataCollectionEnabled && enableCrmPush && (
-            <select
-              value={selectedCrmPipeline}
-              onChange={(event) => setSelectedCrmPipeline(event.target.value)}
-              disabled={isReadOnly || isFetchingConnectedCrms || connectedCrmOptions.length === 0}
-              className="mt-3 h-10 w-full rounded-lg border border-neutral-300 bg-white px-3 text-sm font-medium text-neutral-800 outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-neutral-50"
-            >
-              <option value="" disabled>
-                {isFetchingConnectedCrms
-                  ? 'Checking connected CRMs...'
-                  : connectedCrmOptions.length > 0
-                    ? 'Select CRM...'
-                    : 'No connected CRM available'}
-              </option>
-              {connectedCrmOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-              <optgroup hidden label="Legacy CRM options">
-                <option value="hubspot-sales">HubSpot — Sales pipeline</option>
-                <option value="hubspot-marketing">HubSpot — Marketing pipeline</option>
-                <option value="salesforce">Salesforce — Leads</option>
-                <option value="zoho">Zoho CRM — Contacts</option>
-              </optgroup>
-            </select>
-          )}
-        </div>
       </div>
-      {/* <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-bold text-neutral-950">Routing</h3>
-            <p className="mt-1 text-sm text-neutral-500">
-              Configure where calls should go when the AI needs help.
-            </p>
-          </div>
-          <Switch
-            checked={enableHumanHandoff}
-            onCheckedChange={(checked) => setEnableHumanHandoff(checked === true)}
-          />
-        </div>
-        {enableHumanHandoff && (
-          <div className="mt-4 grid gap-3">
-            <div className="rounded-lg border border-neutral-200 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs text-neutral-500">Forward Type</p>
-                  <p className="text-sm font-bold text-neutral-950">{committedForwardTypeLabel}</p>
-                </div>
-                {committedShouldShowForwardTo && (
-                  <div>
-                    <p className="text-xs text-neutral-500">
-                      {getForwardValueFieldLabel(selectedForwardType)}
-                    </p>
-                    <p className="text-sm font-bold text-neutral-950">{committedForwardValueLabel}</p>
-                  </div>
-                )}
-                <Button variant="outline" size="sm" onClick={handleOpenForwardDestinationModal}>
-                  <Edit3 className="h-4 w-4" />
-                  Edit
-                </Button>
-              </div>
-            </div>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-neutral-950">Manager</span>
-              <select
-                value={selectedManagerId}
-                onChange={(event) => {
-                  setSelectedManagerId(event.target.value);
-                  setStepErrors((prev) => ({ ...prev, manager: '' }));
-                }}
-                className="h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 text-sm outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100"
-              >
-                <option value="">Select a manager</option>
-                {managerExtensions.map((ext: any) => (
-                  <option key={ext.uuid || ext.id} value={ext.uuid || ext.id}>
-                    {`${ext.first_name || ''} ${ext.last_name || ''}`.trim()} ({ext.extension})
-                  </option>
-                ))}
-              </select>
-            </label>
-            {stepErrors.forwardCall && (
-              <p className="text-sm text-red-500">{stepErrors.forwardCall}</p>
-            )}
-            {stepErrors.manager && <p className="text-sm text-red-500">{stepErrors.manager}</p>}
-          </div>
-        )}
-        <div className="mt-4 flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2">
-          <span className="text-sm font-semibold text-neutral-950">Schedule Callback</span>
-          <Switch
-            checked={enableCallbackScheduling}
-            onCheckedChange={(checked) => setEnableCallbackScheduling(checked === true)}
-          />
-        </div>
-      </div> */}
-      <SettingsRow
-        title="Max Session Duration"
-        copy="Set the maximum session length in seconds before the AI ends the active conversation."
-        trailing={
-          <div className="flex h-9 w-32 items-center rounded-xl border border-neutral-300 bg-white focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-100">
-            <input
-              type="number"
-              value={maxSessionDuration}
-              min={1}
-              max={MAX_DURATION_SECONDS}
-              step={1}
-              aria-label="Maximum session duration in seconds"
-              onChange={(event) =>
-                setMaxSessionDuration(
-                  normalizeBoundedIntegerInput(event.target.value, MAX_DURATION_SECONDS),
-                )
-              }
-              onBlur={() => setMaxSessionDuration((value) => (value === '' ? 1 : value))}
-              className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
-            />
-            <span className="pr-3 text-xs text-neutral-500" aria-hidden="true">
-              sec
-            </span>
-          </div>
-        }
-      />
-      <SettingsRow
-        title="Idle Reminder"
-        copy="Set how many seconds to wait before sending an idle reminder to the caller."
-        trailing={
-          <div className="flex h-9 w-32 items-center rounded-xl border border-neutral-300 bg-white focus-within:border-red-400 focus-within:ring-4 focus-within:ring-red-100">
-            <input
-              type="number"
-              value={idleReminder}
-              min={1}
-              max={MAX_DURATION_SECONDS}
-              step={1}
-              aria-label="Idle reminder delay in seconds"
-              onChange={(event) =>
-                setIdleReminder(
-                  normalizeBoundedIntegerInput(event.target.value, MAX_DURATION_SECONDS),
-                )
-              }
-              onBlur={() => setIdleReminder((value) => (value === '' ? 1 : value))}
-              className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
-            />
-            <span className="pr-3 text-xs text-neutral-500" aria-hidden="true">
-              sec
-            </span>
-          </div>
-        }
-      />
-      <SettingsRow
-        title="Idle Reminder Retry"
-        copy="Set how many reminder retries should be attempted before ending the call."
-        trailing={
-          <input
-            type="number"
-            value={idleReminderRetry}
-            min={1}
-            max={MAX_IDLE_REMINDER_RETRIES}
-            step={1}
-            aria-label="Idle reminder retry count"
-            onChange={(event) =>
-              setIdleReminderRetry(
-                normalizeBoundedIntegerInput(event.target.value, MAX_IDLE_REMINDER_RETRIES),
-              )
-            }
-            onBlur={() => setIdleReminderRetry((value) => (value === '' ? 1 : value))}
-            className="h-9 w-28 rounded-xl border border-neutral-300 bg-white px-3 text-sm outline-none! focus:border-red-400 focus:ring-4 focus:ring-red-100"
-          />
-        }
-      />
-      {renderFooter(isEdit ? 'Update Receptionist' : 'Create Receptionist')}
+
+      {renderFooter()}
     </div>
-  );
+    );
+  };
 
   const renderOverview = () => (
     <ReceptionistOverview
@@ -8568,39 +8820,40 @@ function NewAiReceptionistBuilder({
 
   return (
     <FormProvider {...formInstance}>
-      <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#eef1f8] text-neutral-900">
-        <div
-          className={cx(
-            'flex bg-white',
-            useWizardEdit
-              ? 'min-h-[72px] items-center justify-between border-b border-neutral-200 px-3 py-3 sm:px-6'
-              : 'p-4 pb-0',
-          )}
-        >
-          <div className="flex items-center gap-2 text-xs font-medium text-neutral-500">
-            <button type="button" onClick={onCancel} className="hover:text-red-600 cursor-pointer">
-              AI Agents
-            </button>
-            <span>/</span>
-            <button type="button" onClick={onCancel} className="hover:text-red-600 cursor-pointer">
-              AI Receptionists
-            </button>
-            <span>/</span>
-            <span className="text-neutral-950">
-              {isEdit
-                ? useWizardEdit
-                  ? 'Update Receptionist'
-                  : receptionistName || 'Edit Receptionist'
-                : 'New Receptionist'}
-            </span>
+      <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#efefef] text-neutral-900">
+        {!useEditWorkspace && (
+          <div className="border-b border-neutral-200 bg-white">
+            {useWizardEdit ? (
+              <div className="flex min-h-[72px] items-center justify-end px-3 py-3 sm:px-6">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="px-6 pt-4 pb-1">
+                <div
+                  style={{
+                    fontFamily: '"Instrument Serif", Georgia, serif',
+                    fontStyle: 'italic',
+                    fontWeight: 400,
+                    fontSize: '27px',
+                    lineHeight: '41px',
+                    color: 'rgb(23, 23, 23)',
+                  }}
+                >
+                  {isEdit ? receptionistName || 'Edit Receptionist' : 'New Receptionist'}
+                </div>
+              </div>
+            )}
+            <ReceptionistStepper
+              activeStep={activeStep}
+              sourceStage={sourceStage}
+              onChange={(step, stage) => void handleStepperChange(step, stage)}
+              disabled={isKnowledgeSummaryNavigationLocked}
+            />
           </div>
-          {useWizardEdit && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-        </div>
-        {useEditWorkspace ? (
+        )}
+        {useEditWorkspace && (
           <>
             <ReceptionistEditHeader
               data={editHeaderAgentData}
@@ -8618,13 +8871,6 @@ function NewAiReceptionistBuilder({
               disabled={isKnowledgeSummaryNavigationLocked}
             />
           </>
-        ) : (
-          <ReceptionistStepper
-            activeStep={activeStep}
-            sourceStage={sourceStage}
-            onChange={(step, stage) => void handleStepperChange(step, stage)}
-            disabled={isKnowledgeSummaryNavigationLocked}
-          />
         )}
         {isReadOnly ? (
           <fieldset
@@ -8695,7 +8941,7 @@ function NewAiReceptionistBuilder({
               handleCancelForwardDestinationEdit();
             }}
           >
-            <DialogContent className="max-w-[620px]">
+            <DialogContent className={cx('max-w-[620px] bg-white!', DIALOG_CLOSE_BUTTON_CLASS)}>
               <DialogHeader>
                 <DialogTitle>Edit Forwarding Destination</DialogTitle>
               </DialogHeader>
@@ -8716,10 +8962,10 @@ function NewAiReceptionistBuilder({
                 forwardValueClass="w-full"
                 selectCustomClassSecond="w-full"
               />
-              <DialogFooter>
+              <DialogFooter className="flex-row! items-center justify-end!">
                 <Button
                   variant="outline"
-                  className="rounded-full! border-neutral-200! bg-white! text-neutral-700! shadow-none! hover:border-red-300! hover:bg-neutral-50!"
+                  className="rounded-full! border-neutral-200! bg-white! text-neutral-700! shadow-none! hover:border-neutral-300! hover:bg-neutral-50!"
                   onClick={handleCancelForwardDestinationEdit}
                 >
                   Cancel
@@ -8916,59 +9162,45 @@ function ReceptionistStepper({
   else if (activeStep === 6) currentStepId = 7;
 
   return (
-    <div className="border-b border-neutral-200 bg-white px-6 py-6">
-      <div className="relative mx-auto max-w-[1200px]">
-        {/* Progress Line */}
-        <div className="absolute top-4 left-[8%] right-[8%] h-[1px] bg-neutral-200 -translate-y-1/2 z-0" />
+    <div className="px-6 pt-1 pb-3.5">
+      <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-x-4 gap-y-1">
+        {steps.map((step, index) => {
+          const isActive = step.id === currentStepId;
+          // Steps already walked through stay black so the trail behind you is
+          // readable; the ones still ahead sit back in grey.
+          const isVisited = step.id < currentStepId;
 
-        <div className="relative flex justify-between items-start z-10">
-          {steps.map((step) => {
-            const isCompleted = step.id < currentStepId;
-            const isActive = step.id === currentStepId;
-
-            return (
+          return (
+            <Fragment key={step.id}>
+              {index > 0 && (
+                <span aria-hidden="true" className="shrink-0 select-none text-sm! font-medium! text-neutral-400!">
+                  &gt;
+                </span>
+              )}
               <button
-                key={step.id}
                 type="button"
                 onClick={() =>
                   onChange(step.stepVal as ReceptionistStep, step.stageVal as SourceStage)
                 }
                 disabled={disabled}
                 className={cx(
-                  'flex flex-col items-center gap-2 group focus:outline-none flex-1',
+                  // The bang suffixes are load-bearing: a global button rule
+                  // outranks these utilities otherwise, and the greys silently
+                  // render as near-black.
+                  'shrink-0 text-sm! transition-colors focus:outline-none',
                   disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
+                  isActive
+                    ? 'font-semibold! text-red-600!'
+                    : isVisited
+                      ? 'font-medium! text-neutral-900!'
+                      : 'font-medium! text-neutral-400!',
                 )}
               >
-                <div className="relative flex h-8 w-8 items-center justify-center">
-                  {isCompleted && (
-                    <span className="absolute inset-0 -z-10 scale-125 animate-in rounded-full bg-red-600/20 fade-in zoom-in blur-md duration-500" />
-                  )}
-                  <div
-                    className={cx(
-                      'flex h-8 w-8 items-center justify-center rounded-full border text-sm font-bold transition-all duration-200',
-                      isCompleted && 'border-red-600! bg-red-600! text-white!',
-                      isActive &&
-                        'border-red-600! bg-red-600! text-white! shadow-[0_2px_10px_rgba(220,38,38,.25)] ring-4 ring-red-100!',
-                      !isCompleted &&
-                        !isActive &&
-                        'border-neutral-200 bg-white text-neutral-400 group-hover:border-red-200',
-                    )}
-                  >
-                    {isCompleted ? <Check className="h-4 w-4 stroke-[3.5]" /> : step.id}
-                  </div>
-                </div>
-                <span
-                  className={cx(
-                    'text-xs font-semibold px-1 text-center transition-colors',
-                    isActive ? 'text-red-600!' : 'text-neutral-500 group-hover:text-neutral-800',
-                  )}
-                >
-                  {step.label}
-                </span>
+                {step.label}
               </button>
-            );
-          })}
-        </div>
+            </Fragment>
+          );
+        })}
       </div>
     </div>
   );
@@ -9469,16 +9701,12 @@ function SectionHeading({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3">
-      {icon && (
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600/5 text-red-600 [&_svg]:h-5 [&_svg]:w-5">
-          {icon}
-        </span>
-      )}
-      <div>
-        <h2 className="text-lg font-bold tracking-normal text-neutral-950">{title}</h2>
-        <p className="mt-1 text-sm leading-5 text-neutral-500">{subtitle}</p>
-      </div>
+    <div>
+      <h2 className="flex items-center gap-2 text-lg font-bold tracking-normal text-neutral-950">
+        {icon && <span className="shrink-0 text-red-600 [&_svg]:h-[18px] [&_svg]:w-[18px]">{icon}</span>}
+        {title}
+      </h2>
+      <p className="mt-1 text-sm leading-5 text-neutral-500">{subtitle}</p>
     </div>
   );
 }
@@ -9500,7 +9728,7 @@ function Field({
 }) {
   return (
     <label className={cx('block scroll-mt-24', className)} data-validation-key={fieldKey}>
-      {label && <span className="mb-1.5 block text-sm font-semibold text-neutral-950">{label}</span>}
+      {label && <span className="mb-1.5 block text-sm font-medium text-neutral-950">{label}</span>}
       {helper && <span className="mb-2 block text-xs text-neutral-500">{helper}</span>}
       {children}
       {error && <span className="mt-1 block text-xs text-red-500">{error}</span>}
@@ -9508,23 +9736,37 @@ function Field({
   );
 }
 
-function SettingsRow({
-  title,
-  copy,
-  trailing,
+function ToggleSwitch({
+  checked,
+  onCheckedChange,
+  disabled = false,
+  className,
 }: {
-  title: string;
-  copy: string;
-  trailing: ReactNode;
+  checked: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+  disabled?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-4 shadow-sm transition-colors hover:border-red-200">
-      <div>
-        <h3 className="text-sm font-bold text-neutral-950">{title}</h3>
-        <p className="mt-1 text-sm leading-5 text-neutral-500">{copy}</p>
-      </div>
-      <div className="shrink-0">{trailing}</div>
-    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onCheckedChange?.(!checked)}
+      className={cx(
+        'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full outline-none! transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+        checked ? 'bg-red-600!' : 'bg-neutral-200!',
+        className,
+      )}
+    >
+      <span
+        className={cx(
+          'inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
+          checked ? 'translate-x-[22px]' : 'translate-x-0.5',
+        )}
+      />
+    </button>
   );
 }
 
@@ -9651,10 +9893,12 @@ function PrimaryButton({
   children,
   onClick,
   disabled = false,
+  tone = 'red',
 }: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
+  tone?: 'red' | 'dark' | 'ghost';
 }) {
   return (
     <button
@@ -9662,8 +9906,17 @@ function PrimaryButton({
       onClick={onClick}
       disabled={disabled}
       className={cx(
-        'inline-flex h-10 items-center justify-center whitespace-nowrap gap-1.5 rounded-full bg-red-600! px-5 text-sm font-semibold text-white! shadow-[0_2px_10px_rgba(220,38,38,.25)] transition-colors hover:bg-red-700!',
-        disabled && 'cursor-not-allowed opacity-60 hover:bg-red-600!',
+        'inline-flex h-10 items-center justify-center whitespace-nowrap gap-1.5 rounded-full px-5 text-sm font-semibold transition-colors',
+        disabled
+          ? 'cursor-not-allowed bg-neutral-100! text-neutral-400! shadow-none!'
+          : tone === 'ghost'
+            ? 'border! border-neutral-200! bg-neutral-100! text-neutral-700! shadow-none! hover:border-red-200! hover:bg-red-50! hover:text-red-600!'
+            : cx(
+                'text-white!',
+                tone === 'dark'
+                  ? 'bg-neutral-900! shadow-[0_2px_10px_rgba(0,0,0,.2)]! hover:bg-neutral-800!'
+                  : 'bg-red-600! shadow-[0_2px_10px_rgba(220,38,38,.25)] hover:bg-red-700!',
+              ),
       )}
     >
       {children}
@@ -9675,10 +9928,12 @@ function SecondaryButton({
   children,
   onClick,
   disabled = false,
+  tone = 'red',
 }: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
+  tone?: 'red' | 'dark';
 }) {
   return (
     <button
@@ -9686,7 +9941,10 @@ function SecondaryButton({
       onClick={onClick}
       disabled={disabled}
       className={cx(
-        'inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-neutral-200 bg-white! px-5 text-sm font-semibold text-neutral-700! transition-colors hover:border-red-300! hover:bg-neutral-50!',
+        'inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-white! px-5 text-sm font-semibold transition-colors',
+        tone === 'dark'
+          ? 'border-2! border-neutral-200! text-neutral-950! hover:border-neutral-300! hover:bg-neutral-50!'
+          : 'border border-neutral-200! text-neutral-700! hover:border-red-300! hover:bg-neutral-50!',
         disabled && 'cursor-not-allowed opacity-60 hover:border-neutral-200!',
       )}
     >

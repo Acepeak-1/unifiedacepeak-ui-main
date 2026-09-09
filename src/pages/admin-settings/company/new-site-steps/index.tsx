@@ -142,8 +142,8 @@ const NewSiteSteps = ({ data = {}, handleClose }: any) => {
                 (e.g., London, Dubai) under one billing account.
               </>
             }
-            side="top"
-            className="!bg-gray-300 !text-black whitespace-normal text-left"
+            side="right"
+            className="whitespace-normal text-left"
           >
             <InfoIcon className="w-3.5 h-3.5 text-gray-500 cursor-pointer" />
           </CustomTooltip>

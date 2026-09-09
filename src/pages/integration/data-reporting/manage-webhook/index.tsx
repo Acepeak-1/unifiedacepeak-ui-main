@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react';
 import { SearchIcon } from '@/components/custom/header/GlobalSearch';
 import TableManager from '@/components/custom/table-manager';
 import CustomTooltip from '@/components/custom/custom-tooltip';
@@ -184,7 +185,7 @@ const ManageWebhook = () => {
               className="mcm-tooltip-info"
               text="Endpoints the console posts to when calls, messages or contacts change."
             >
-              <span className="mcm-intpage-info">i</span>
+              <Info className="mcm-intpage-info" />
             </CustomTooltip>
             <div className="mcm-segmented" role="group" aria-label="Filter webhooks by status">
               {statTiles.map((tile) => (
@@ -224,6 +225,8 @@ const ManageWebhook = () => {
       <>
         <div className="mcm-intbody w-full p-3 flex flex-col gap-2 overflow-y-auto">
           <TableManager
+            perPageSelectClass="mcm-select"
+            recordNoun="webhook"
             {...{
               // fetcherKey: 'callListingLog',
               // fetcherFn: callList,

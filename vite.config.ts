@@ -84,6 +84,23 @@ export default defineConfig({
           });
         },
       },
+      // Uploaded assets (org logos, login banners) come back from the API as
+      // paths like "Organisations/<uuid>.svg" with no "/api" prefix. The app
+      // builds their <img> src as `${VITE_API_BASE_URL}/${path}`, and
+      // VITE_API_BASE_URL is deliberately empty locally (see above), so that
+      // resolves to this dev server's own origin instead of the API host and
+      // 404s — the logo silently fails to render. Proxy this path the same
+      // way "/api" already is.
+      '/Organisations': {
+        target: 'https://api2.acepeak.com',
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('origin', TENANT_ORIGIN);
+            proxyReq.setHeader('referer', `${TENANT_ORIGIN}/`);
+          });
+        },
+      },
     },
   },
   build: {

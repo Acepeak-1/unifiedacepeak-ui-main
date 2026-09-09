@@ -53,6 +53,10 @@
   --kpi-heading: #dc2626; /* red-600 */
   --kpi-rule: #e5e5e5; /* neutral-200 */
   --kpi-veil: rgba(255, 255, 255, 0.7);
+  /* Indicator "off" state. A step darker than --kpi-divider, which is right
+     for a solid bar track but disappears entirely once it's broken up into
+     1px dots (the dial's ticks, the Longest wait matrix). */
+  --kpi-ind-muted: #cbd5e1; /* slate-300 */
 }
 
 .kpi-grid {
@@ -94,12 +98,172 @@
 }
 
 .kpi-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px; /* gap-1.5 */
   padding: 16px; /* p-4 */
   min-width: 0;
   border-bottom: 1px solid var(--kpi-divider);
+}
+
+/* ---- per-card indicator ----
+   Every indicator gets the same 96×30 slot at the right-hand end of the
+   value row, so all eight cards align on one right edge and one centre
+   line whatever each is drawing (dial, bar, matrix, sparkline, segments).
+   It sits inside `.kpi-card__value-row` rather than in the card's own
+   column flow, so the label / value / description lines stay exactly where
+   they were. Cards with no indicator are untouched. */
+.kpi-card--alert {
+  background: color-mix(in oklab, var(--kpi-value-critical) 5%, var(--kpi-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--kpi-value-critical) 32%, transparent);
+  border-radius: 10px;
+}
+
+.kpi-indicator {
+  /* `margin-left: auto` is what pins every one of them to the same right
+     edge; `align-self: center` opts out of the row's baseline alignment so
+     a 30px graphic centres against a 26px numeral instead of hanging off
+     its baseline. */
+  margin-left: auto;
+  align-self: center;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  width: 96px;
+  /* Sits just under the value's own 32.5px line box (26px × 1.25), so the
+     tallest indicator still can't drive the row's height. */
+  height: 32px;
+}
+
+/* Dial / sparkline variants put their graphic and its reading side by side
+   inside the same slot. */
+.kpi-indicator--split {
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+}
+
+/* --- pill bar --- */
+.kpi-ind-track {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--kpi-divider);
+}
+
+.kpi-ind-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* The healthy zone on the track (e.g. 75–85% for Occupancy). */
+.kpi-ind-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in oklab, var(--kpi-label) 14%, transparent);
+}
+
+/* The current reading's own tick, so a fill that stops mid-track still has
+   a precise edge to read against. */
+.kpi-ind-needle {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 999px;
+  background: var(--kpi-value);
+  opacity: 0.55;
+  transition: left 0.3s ease;
+}
+
+.kpi-ind-caption {
+  font-size: 9.5px;
+  line-height: 1;
+  color: var(--kpi-description);
+  white-space: nowrap;
+}
+
+/* --- dial (Waiting) --- */
+.kpi-ind-dial {
+  width: 54px;
+  height: 28px;
+  flex: none;
+  overflow: visible;
+}
+
+.kpi-ind-read {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1;
+}
+
+.kpi-ind-read-v {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--kpi-value);
+  white-space: nowrap;
+}
+
+.kpi-ind-read-k {
+  font-size: 9.5px;
+  color: var(--kpi-description);
+  white-space: nowrap;
+}
+
+/* --- dot matrix (Longest wait) --- */
+.kpi-ind-matrix {
+  width: 58px;
+  height: 20px;
+  flex: none;
+}
+
+/* --- sparkline (Abandon rate, when off target) --- */
+.kpi-ind-spark {
+  width: 44px;
+  height: 20px;
+  flex: none;
+}
+
+/* --- icon badge (Avg handle time) --- */
+.kpi-ind-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: color-mix(in oklab, currentColor 14%, var(--kpi-surface));
+}
+
+/* --- segmented seats (On queue agents) --- */
+.kpi-ind-segments {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kpi-ind-seg {
+  width: 12px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--kpi-divider);
+}
+
+.kpi-ind-seg.is-on {
+  background: color-mix(in oklab, var(--kpi-helper-dot) 45%, var(--kpi-surface));
+  box-shadow: inset 0 0 0 1px var(--kpi-helper-dot);
 }
 
 /* Divider between cards: bottom border on mobile (stacked),
@@ -275,4 +439,5 @@
   --kpi-heading: var(--accent, #f87171);
   --kpi-rule: var(--line, #26314a);
   --kpi-veil: rgba(17, 24, 39, 0.7);
+  --kpi-ind-muted: var(--ink-4, #6b7a96);
 }

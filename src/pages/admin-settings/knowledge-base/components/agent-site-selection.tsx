@@ -1,4 +1,5 @@
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Info, MapPin } from 'lucide-react';
+import CustomTooltip from '@/components/custom/custom-tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,23 +68,31 @@ export default function AgentSiteSelection({
   error,
   disabled = false,
   isLoading = false,
-}: AgentSiteSelectionProps) {
+  className,
+}: AgentSiteSelectionProps & { className?: string }) {
   return (
     <div
-      className="scroll-mt-24 rounded-2xl border-[1.5px] border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,.03)]"
+      className={cx(
+        'scroll-mt-24 rounded-2xl border-[1.5px] border-neutral-200 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,.03)]',
+        className,
+      )}
       data-validation-key="siteLocation"
     >
+      {/* The one line of explanation moves into a tooltip - it is read once,
+          and the card is tighter without a permanent subtitle. */}
       <h3 className="flex items-center gap-2 text-[17px] font-bold text-neutral-950">
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" />
+        <MapPin className="h-4 w-4 shrink-0 text-red-600" strokeWidth={2.25} />
         Location
+        <CustomTooltip
+          side="top"
+          text="Select the site this agent belongs to for schedules and reporting."
+          className="w-max max-w-[340px] border-none! bg-[#fdf7f5]! text-black! shadow-[0_6px_20px_rgba(17,17,17,0.18)]! [&_svg]:fill-[#fdf7f5]"
+        >
+          <Info className="h-4 w-4 cursor-help text-neutral-400" />
+        </CustomTooltip>
       </h3>
-      <p className="mt-0.5 text-xs text-neutral-500">
-        Select the site this agent belongs to. Its timezone will be used for schedules and
-        reporting.
-      </p>
 
-      <label className="mt-4 block">
-        <span className="mb-1.5 block text-xs font-semibold text-neutral-700">Site location *</span>
+      <label className="mt-2.5 block">
         {(() => {
           const isSiteDefault = (site: any) =>
             site?.is_default === '1' || site?.is_default === 1 || site?.is_default === true;
@@ -102,7 +111,7 @@ export default function AgentSiteSelection({
                   aria-invalid={Boolean(error)}
                   className={cx(
                     'flex h-10 w-full items-center justify-between rounded-xl border! bg-white! px-3 text-sm outline-none! transition-colors disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500',
-                    error ? 'border-red-400!' : 'border-neutral-300! hover:border-black!',
+                    error ? 'border-red-400!' : 'border-neutral-300!',
                   )}
                 >
                   <span className={selectedLabel ? 'text-neutral-900!' : 'text-neutral-400!'}>
@@ -118,7 +127,7 @@ export default function AgentSiteSelection({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-[320px] overflow-y-auto rounded-xl! border! border-neutral-200! bg-white p-1.5 shadow-lg z-50 animate-none"
+                className="flex w-[var(--radix-dropdown-menu-trigger-width)] max-h-[320px] flex-col gap-1 overflow-y-auto rounded-xl! border! border-neutral-200! bg-white p-1.5 shadow-lg z-50 animate-none"
               >
                 {sites.map((site) => {
                   const siteId = getAgentSiteId(site);
@@ -129,8 +138,10 @@ export default function AgentSiteSelection({
                       key={siteId}
                       onClick={() => onChange(siteId)}
                       className={cx(
-                        'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-red-50! focus:bg-red-50!',
-                        isSelected ? 'bg-red-50! text-red-600! font-semibold' : 'text-neutral-900',
+                        'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium',
+                        isSelected
+                        ? 'bg-red-50! text-neutral-900! font-semibold'
+                        : 'text-neutral-900 hover:bg-[#f3f4f6]! focus:bg-[#f3f4f6]!',
                       )}
                     >
                       <span className="truncate">{label}</span>

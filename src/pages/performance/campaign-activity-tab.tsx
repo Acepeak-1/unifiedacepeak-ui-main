@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import Campaign from '@/pages/auto-dialer/campaign';
 import { campaignList } from '@/services/api';
 import PerfStatCard from './stat-card';
+import { DUMMY_CAMPAIGNS } from './dummy-tab-data';
 
 const parseMembers = (members: any) => {
   try {
@@ -14,12 +15,16 @@ const parseMembers = (members: any) => {
 };
 
 const CampaignActivityTab = () => {
-  const { data: campaigns = [] } = useQuery({
+  const { data: realCampaigns = [] } = useQuery({
     queryKey: ['performanceCampaignActivityList'],
     queryFn: () => campaignList({ page: 1, limit: 100, filters: [] }),
     select: (res: any) => res?.data?.data?.result?.rows || [],
     refetchInterval: 5000,
   });
+  // No campaigns on a fresh account yet — see `dummy-tab-data.ts`. The
+  // embedded `<Campaign />` list below still reads the real (empty) API on
+  // its own, so this only fills the stat cards above it.
+  const campaigns = realCampaigns.length ? realCampaigns : DUMMY_CAMPAIGNS;
 
   const totals = useMemo(() => {
     const acc = {

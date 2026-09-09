@@ -24,7 +24,7 @@ import { useUser } from '@/hooks/use-user';
 import { demoRates } from './constant';
 import Loader from '@/components/custom/loader';
 import countryList from '@/lib/countries.json';
-import { Image as ImageIcon, Mail } from 'lucide-react';
+import { Info, Image as ImageIcon, Mail } from 'lucide-react';
 import { Icon } from '@/assets/icons/icon';
 
 type RateKind = 'outbound' | 'inbound' | 'sms' | 'mms';
@@ -227,7 +227,7 @@ const OutboundRates = () => {
                 className="mcm-tooltip-info"
                 text="What each destination costs to call or text — per minute for calls, per message for SMS."
               >
-                <span className="mcm-intpage-info">i</span>
+                <Info className="mcm-intpage-info" />
               </CustomTooltip>
             </div>
 
@@ -251,6 +251,7 @@ const OutboundRates = () => {
 
           <div className="mcm-intpage-search mcm-ratepicker">
             <CustomSelect
+              inputClass="mcm-select"
               /* The dial code belongs on the destination, not only in the
                  table below — it is half of what identifies a destination. */
               options={countryList?.map((country) => ({

@@ -1,3 +1,23 @@
+/* shadcn's DialogContent uses `bg-background`, which is the app-wide ground
+   colour (#eef1f8) now — this dialog wants plain white instead. */
+.contact-create-dialog {
+  background: #fff;
+}
+
+/* Submit — solid black at rest, not just on hover. CreateContactNew is
+   shared (Leads reuses it too), so this only touches the button inside the
+   Add/Update Contact dialog here. */
+.contact-create-theme .contact-submit-btn {
+  background: #171717 !important;
+  border-color: #171717 !important;
+  color: #fff !important;
+}
+.contact-create-theme .contact-submit-btn:hover {
+  background: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+}
+
 /* Add/Update Contact dialog: no colour change on hover or focus (i.e. click)
    for inputs or dropdowns — the base Input/react-select components both turn
    the border the tenant's accent colour, which read as a stray outline here. */

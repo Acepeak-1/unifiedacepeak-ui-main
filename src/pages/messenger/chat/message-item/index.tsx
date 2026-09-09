@@ -737,10 +737,10 @@ const MessageItem = ({
     }
 
     return (
-      <div className="my-1 flex w-full justify-center px-2 text-xs sm:px-0">
+      <div className="my-1 flex w-full items-center justify-center gap-2 px-2 text-xs sm:px-0">
         <div
           className={cn(
-            'inline-flex max-w-[96%] flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-2xl  px-3 py-1.5 text-center text-[12px] leading-5 text-gray-500 transition-colors select-none sm:max-w-[85%] sm:rounded-full sm:text-[14px]',
+            'inline-flex max-w-[96%] flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-2xl bg-red-50 px-3 py-1.5 text-center text-[12px] leading-5 text-gray-500 transition-colors select-none sm:max-w-[85%] sm:rounded-full sm:text-[13px]',
             msgObj?.messageType === 'prompt' && msgObj?.meetLogId ? 'cursor-pointer' : '',
           )}
           onClick={() => {
@@ -765,8 +765,10 @@ const MessageItem = ({
           {callMetadataDuration ? (
             <span className="shrink-0 font-mono opacity-70">• {callMetadataDuration}</span>
           ) : null}
-          {formattedTime && <span className="shrink-0 opacity-60">at {formattedTime}</span>}
         </div>
+        {formattedTime && (
+          <span className="shrink-0 text-[12px] text-gray-400">{formattedTime}</span>
+        )}
       </div>
     );
   }

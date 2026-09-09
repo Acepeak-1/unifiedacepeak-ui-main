@@ -3,7 +3,15 @@ import CustomSelect from '@/components/custom/custom-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/hooks/use-user';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { userInitialState } from '../../../constants';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getRoleList, getUserList, validateUser } from '@/services/api';
@@ -49,6 +57,10 @@ type ValidationErrorMap = {
     extension?: string;
   };
 };
+/** Same normalisation invite-duplicates.ts uses for extensions — digits only. */
+const normaliseExtensionDigits = (value: unknown): string =>
+  String(value ?? '').replace(/\D+/g, '');
+
 const debounce = (fn: any, delay: any) => {
   let timer: any;
   return (...args: any) => {
@@ -57,13 +69,16 @@ const debounce = (fn: any, delay: any) => {
   };
 };
 
-const AddUserInfo = ({
-  setIspaymentRequired,
-  setOrderSummary,
-  setIsUserValidatorError,
-  dataGetMyPlanDetails,
-  setPaymentCalculation,
-}: any) => {
+const AddUserInfo = forwardRef(function AddUserInfo(
+  {
+    setIspaymentRequired,
+    setOrderSummary,
+    setIsUserValidatorError,
+    dataGetMyPlanDetails,
+    setPaymentCalculation,
+  }: any,
+  ref: any,
+) {
   const {
     register,
     watch,
@@ -396,6 +411,27 @@ const AddUserInfo = ({
     setActiveIndex((prev) => (prev > index ? prev - 1 : prev));
   };
 
+  /* Called from the wizard's own "Save & Continue" before it submits. A
+     trailing row nobody has touched (opened by "Add User" for a second person
+     who was then never filled in) has to go through `remove` here rather than
+     a plain `setValue` in the parent — react-hook-form keeps a ref registry
+     for uncontrolled inputs per array index, and shrinking the array any other
+     way leaves it out of sync, so the next row appended at that same index can
+     silently inherit the previous row's stale field values (passwords
+     included) instead of starting blank. */
+  useImperativeHandle(ref, () => ({
+    pruneTrailingBlankRow: () => {
+      const lastIndex = fields.length - 1;
+      if (lastIndex <= 0) return;
+      const lastRow = users?.[lastIndex];
+      const isUntouched =
+        !lastRow?.first_name && !lastRow?.last_name && !lastRow?.email && !lastRow?.phone;
+      if (!isUntouched) return;
+      remove(lastIndex);
+      setActiveIndex((prev) => (prev >= lastIndex ? lastIndex - 1 : prev));
+    },
+  }));
+
   // const handleAddUser = () => {
   //   const count = Math.min(userAddCount, 10 - users.length);
 
@@ -407,8 +443,34 @@ const AddUserInfo = ({
   //   setValue('user_add_count', '');
   // };
 
+  /* A pure-random draw collided with an already-taken extension often enough
+     to leave the form silently blocked (Save & Continue disabled, only a
+     small red flag on the field to say why) the moment it opened. Retries
+     against both the roster and this batch's other rows until it lands on
+     one that's actually free, so the auto-filled value doesn't start the
+     form in a broken state. */
   const generateNewExtension = (index: number) => {
-    const newExtension = generateRandomExtension();
+    const takenByRoster = new Set(
+      (roster as any[])
+        .map((person) => normaliseExtensionDigits(person?.extension))
+        .filter(Boolean),
+    );
+    const takenInBatch = new Set(
+      (users || [])
+        .map((u, i) => (i === index ? '' : normaliseExtensionDigits(u?.extension)))
+        .filter(Boolean),
+    );
+
+    let newExtension = generateRandomExtension();
+    let attempts = 0;
+    while (
+      (takenByRoster.has(newExtension) || takenInBatch.has(newExtension)) &&
+      attempts < 25
+    ) {
+      newExtension = generateRandomExtension();
+      attempts += 1;
+    }
+
     setValue(`users.[${index}].extension`, newExtension, { shouldValidate: true });
     handleValidateUser({ value: newExtension, type: 'extension' }, index);
   };
@@ -447,16 +509,6 @@ const AddUserInfo = ({
     <div className="flex min-h-0 flex-col gap-2 overflow-y-auto">
       <div className="flex flex-col gap-1 mt-1">
         <div className="ppl-invite-actions flex flex-wrap items-center justify-end gap-2">
-          <Button
-            variant={'outline'}
-            size={'sm'}
-            type="button"
-            className="ppl-invite-btn"
-            onClick={handleAddUser}
-          >
-            <Plus className="w-3 h-3 text-gray-700" />
-            Add User
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant={'outline'} size={'sm'} type="button" className="ppl-invite-btn">
@@ -508,7 +560,7 @@ const AddUserInfo = ({
           <div className="rounded-lg border border-transparent bg-white p-2 shadow-sm">
             <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-gray-500">
               Unused licenses
-              <CustomTooltip text="License purchased" side="top">
+              <CustomTooltip text="License purchased" side="right">
                 <InfoIcon className="w-3 h-3 text-gray-500 cursor-pointer" />
               </CustomTooltip>
             </div>
@@ -548,8 +600,8 @@ const AddUserInfo = ({
             )}
             <CustomTooltip
               text={roleDecision.reason}
-              side="top"
-              className="!bg-gray-300 !text-black max-w-[240px] whitespace-normal text-left leading-snug"
+              side="right"
+              className="max-w-[240px] whitespace-normal text-left leading-snug"
             >
               <InfoIcon className="w-3.5 h-3.5 text-gray-500 cursor-pointer" />
             </CustomTooltip>
@@ -577,7 +629,7 @@ const AddUserInfo = ({
             below was clicked on. */}
         <div
           key={activeIndex}
-          className="mcm-invitee grid grid-cols-1 gap-3 rounded-xl border border-gray-200 p-3 md:grid-cols-2 xl:grid-cols-3"
+          className="mcm-invitee grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-white p-3 md:grid-cols-2 xl:grid-cols-3"
         >
           <div className="w-full">
             <Input
@@ -680,22 +732,45 @@ const AddUserInfo = ({
             />
           </div>
 
-          <div className="w-full">
-            <Input
-              label="Extension"
-              type="text"
-              placeholder="Extension"
-              value={watch(`users.[${activeIndex}].extension`)}
-              error={extensionProblem(activeIndex)}
-              onChange={(e) => {
-                const value = e.target.value;
-                setValue(`users.[${activeIndex}].extension`, value, {
-                  shouldValidate: true,
-                });
-                handleValidateUser({ value, type: 'extension' }, activeIndex);
-              }}
-              maxLength={5}
-            />
+          <div className="flex w-full items-end gap-2">
+            <div className="w-full">
+              <Input
+                label="Extension"
+                type="text"
+                placeholder="Extension"
+                value={watch(`users.[${activeIndex}].extension`)}
+                error={extensionProblem(activeIndex)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setValue(`users.[${activeIndex}].extension`, value, {
+                    shouldValidate: true,
+                  });
+                  handleValidateUser({ value, type: 'extension' }, activeIndex);
+                }}
+                maxLength={5}
+              />
+            </div>
+            <Button
+              type="button"
+              variant={'outline'}
+              className="h-10 w-10 shrink-0 rounded-full border-0 bg-[#171717] text-white hover:bg-black hover:text-white"
+              onClick={() => generateNewExtension(activeIndex)}
+            >
+              <Icon name="Refresh" className="w-5 h-5" />
+            </Button>
+          </div>
+
+          <div className="ppl-invite-actions col-span-2 flex flex-wrap items-center justify-end gap-2 xl:col-span-3">
+            <Button
+              variant={'outline'}
+              size={'sm'}
+              type="button"
+              className="ppl-invite-btn"
+              onClick={handleAddUser}
+            >
+              <Plus className="w-3 h-3 text-gray-700" />
+              Add User
+            </Button>
           </div>
 
           {/* What that role actually allows. The names the platform ships
@@ -704,7 +779,7 @@ const AddUserInfo = ({
               a guess dressed up as a decision. The words come from the same
               place the Default permissions screen reads them, so the two
               screens describe a role identically. Spans the full row (not
-              just the Role column) and clamps to two lines. */}
+              just the Role column) and stays on one line. */}
           {(() => {
             const chosen = chosenRoleOf(activeIndex);
             if (!chosen) return null;
@@ -712,21 +787,12 @@ const AddUserInfo = ({
             const description = describeRole(chosen);
             return (
               <p
-                className={`ppl-role-note col-span-2 line-clamp-2 text-[11px] leading-snug ${caution ? 'font-medium text-amber-600' : 'text-gray-500'}`}
+                className={`ppl-role-note col-span-2 truncate text-[10px] leading-snug ${caution ? 'font-medium text-amber-600' : 'text-gray-500'}`}
               >
                 {caution || description}
               </p>
             );
           })()}
-
-          <Button
-            type="button"
-            variant={'outline'}
-            className="w-10 h-10 self-end rounded-xl bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white border-0 lg:self-auto"
-            onClick={() => generateNewExtension(activeIndex)}
-          >
-            <Icon name="Refresh" className="w-5 h-5" />
-          </Button>
         </div>
 
         {/* Everyone already filed away — added via "Add User" above, or
@@ -800,6 +866,6 @@ const AddUserInfo = ({
       ) : null}
     </div>
   );
-};
+});
 
 export default AddUserInfo;

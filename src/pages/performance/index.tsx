@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Info } from 'lucide-react';
+import { Info, AlertTriangle, Clock3 } from 'lucide-react';
 import { useSearchParamManager } from '@/hooks/use-search-params';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import DateDropdown from '@/components/custom/date-dropdown';
@@ -22,6 +22,8 @@ import ReportsTab from './reports-tab';
 import Wallboard, { type WallboardQueueRow, type WallboardTile } from './wallboard';
 import { formatSecsToClock } from './format';
 import { useAnimatedNumber } from './use-animated-number';
+import { usePerformanceCallStats } from './use-performance-call-stats';
+import { buildDummyAgentStats, buildDummyLiveQueueReads } from './dummy-call-data';
 import '@/components/mcm/mcm-page.css';
 import './kpi-card.css';
 
@@ -96,6 +98,187 @@ const WALLBOARD_TONE_BY_KPI_TONE: Record<
   danger: 'crit',
 };
 
+/* ---- KPI card indicators ----
+   One small visual per card, sitting in an identical 96×30 slot on the
+   value row (see `.kpi-card__indicator` in kpi-card.css) so all eight line
+   up on the same right edge and the same centre line whatever each one is
+   drawing. Colours come from the console's own status tokens, so nothing
+   here introduces a palette of its own. */
+const KPI_TONE_COLOR: Record<'good' | 'warn' | 'crit' | 'neutral', string> = {
+  good: 'var(--live)',
+  warn: 'var(--warn)',
+  crit: 'var(--crit)',
+  neutral: 'var(--ink-4)',
+};
+
+/** Pill track with a proportional fill, optionally marked with the target
+ *  zone and captioned underneath (e.g. "90 total calls"). */
+const KpiBar = ({
+  percent,
+  tone = 'neutral',
+  targetBand,
+  caption,
+}: {
+  percent: number | null;
+  tone?: 'good' | 'warn' | 'crit' | 'neutral';
+  /** Optional [from, to] percent band marking the healthy zone. */
+  targetBand?: [number, number];
+  caption?: string;
+}) => {
+  const pct = percent === null ? 0 : Math.max(0, Math.min(100, percent));
+  return (
+    <span className="kpi-indicator" aria-hidden="true">
+      <span className="kpi-ind-track">
+        {targetBand && (
+          <span
+            className="kpi-ind-band"
+            style={{ left: `${targetBand[0]}%`, width: `${targetBand[1] - targetBand[0]}%` }}
+          />
+        )}
+        <span
+          className="kpi-ind-fill"
+          style={{ width: `${pct}%`, background: KPI_TONE_COLOR[tone] }}
+        />
+        <span className="kpi-ind-needle" style={{ left: `${pct}%` }} />
+      </span>
+      {caption && <span className="kpi-ind-caption">{caption}</span>}
+    </span>
+  );
+};
+
+/** A speedometer — dotted half-circle dial with a needle, plus its own
+ *  reading beside it ("0% / load"). */
+const KpiGauge = ({
+  percent,
+  tone = 'neutral',
+}: {
+  percent: number;
+  tone?: 'good' | 'warn' | 'crit' | 'neutral';
+}) => {
+  const pct = Math.max(0, Math.min(100, percent));
+  const cx = 27;
+  const cy = 25;
+  const r = 20;
+  const tickCount = 11;
+  const litTicks = Math.round((pct / 100) * (tickCount - 1));
+  const angleFor = (fraction: number) => Math.PI - fraction * Math.PI; // 180deg -> 0deg
+  const needleAngle = angleFor(pct / 100);
+  const needleLen = r * 0.74;
+  const color = KPI_TONE_COLOR[tone];
+
+  return (
+    <span className="kpi-indicator kpi-indicator--split" aria-hidden="true">
+      <svg className="kpi-ind-dial" viewBox="0 0 54 28">
+        {Array.from({ length: tickCount }, (_, i) => {
+          const angle = angleFor(i / (tickCount - 1));
+          return (
+            <circle
+              key={i}
+              cx={cx + r * Math.cos(angle)}
+              cy={cy - r * Math.sin(angle)}
+              r={1.7}
+              fill={i <= litTicks ? color : 'var(--kpi-ind-muted)'}
+            />
+          );
+        })}
+        <line
+          x1={cx}
+          y1={cy}
+          x2={cx + needleLen * Math.cos(needleAngle)}
+          y2={cy - needleLen * Math.sin(needleAngle)}
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+        />
+        <circle cx={cx} cy={cy} r={2.2} fill={color} />
+      </svg>
+      <span className="kpi-ind-read">
+        <span className="kpi-ind-read-v">{Math.round(pct)}%</span>
+        <span className="kpi-ind-read-k">load</span>
+      </span>
+    </span>
+  );
+};
+
+/** A quiet dot matrix — the "nothing is queued" texture on Longest wait,
+ *  where there is no proportion to draw and a bar would imply one. */
+const KpiDots = () => {
+  const cols = 10;
+  const rows = 4;
+  return (
+    <span className="kpi-indicator" aria-hidden="true">
+      <svg className="kpi-ind-matrix" viewBox="0 0 58 20">
+        {Array.from({ length: rows }, (_, row) =>
+          Array.from({ length: cols }, (_, col) => (
+            <circle
+              key={`${row}-${col}`}
+              cx={3 + col * 5.7}
+              cy={3.5 + row * 4.4}
+              r={1}
+              fill="var(--kpi-ind-muted)"
+            />
+          )),
+        )}
+      </svg>
+    </span>
+  );
+};
+
+/** A sparkline with a caption — used where the figure is off target and the
+ *  card is already flagged, so the shape carries the "trending" reading and
+ *  the caption says what the threshold was. */
+const KpiSpark = ({ tone = 'crit', caption }: { tone?: 'good' | 'warn' | 'crit' | 'neutral'; caption?: string }) => (
+  <span className="kpi-indicator kpi-indicator--split" aria-hidden="true">
+    <svg className="kpi-ind-spark" viewBox="0 0 44 20">
+      <polyline
+        points="1,15 7,12 13,14 19,8 25,11 31,5 37,7 43,3"
+        fill="none"
+        stroke={KPI_TONE_COLOR[tone]}
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+    {caption && (
+      <span className="kpi-ind-read">
+        <span className="kpi-ind-read-v" style={{ color: KPI_TONE_COLOR[tone] }}>
+          {caption}
+        </span>
+        <span className="kpi-ind-read-k">alert</span>
+      </span>
+    )}
+  </span>
+);
+
+const KpiIcon = ({
+  tone = 'neutral',
+  children,
+}: {
+  tone?: 'good' | 'warn' | 'crit' | 'neutral';
+  children: ReactNode;
+}) => (
+  <span className="kpi-indicator" aria-hidden="true">
+    <span className="kpi-ind-badge" style={{ color: KPI_TONE_COLOR[tone] }}>
+      {children}
+    </span>
+  </span>
+);
+
+/** Segmented blocks, one per seat on the roster — filled for each agent on
+ *  queue right now, empty for the rest. */
+const KpiSegments = ({ online, total }: { online: number; total: number }) => {
+  const shown = Math.min(5, Math.max(total, 1));
+  return (
+    <span className="kpi-indicator" aria-hidden="true">
+      <span className="kpi-ind-segments">
+        {Array.from({ length: shown }, (_, index) => (
+          <span key={index} className={`kpi-ind-seg${index < online ? ' is-on' : ''}`} />
+        ))}
+      </span>
+    </span>
+  );
+};
+
 const Performance = () => {
   // The open view lives in the URL, the same `?view=` convention the calendar
   // uses. That makes a Performance view shareable and survive a refresh, and it
@@ -151,13 +334,79 @@ const Performance = () => {
     isAgentsLoading,
   } = useLiveContactCentre(selectedRange);
 
+  // A brand-new/test account has no call history yet, which left every card
+  // below, the Queues/Agents tables and the Reports tab reading 0 or "—"
+  // forever. This layers a realistic demo dataset on top of the real hook's
+  // own output — never inside `useLiveContactCentre` or `useCallStats`
+  // themselves — so Home's dashboard, which reads those same hooks, is
+  // unaffected. Only date-ranged/"today" figures are ever substituted; genu-
+  // inely instantaneous ones (who's on the phone right this second, who's
+  // signed in right now) stay real, so a quiet moment still reads as quiet.
+  // See `use-performance-call-stats.ts` and `dummy-call-data.ts`.
+  const isUsingDummyActivity = callStats.totalCalls === 0;
+  const effectiveCallStats = usePerformanceCallStats(selectedRange, {
+    queues,
+    agents: agentRows,
+  });
+  const effectiveAgentRows = useMemo(() => {
+    if (!isUsingDummyActivity || !agentRows.length) return agentRows;
+    const dummyStats = buildDummyAgentStats(effectiveCallStats.rows, agentRows);
+    return agentRows.map((agent: any, index: number) => ({
+      ...agent,
+      stats: dummyStats[index % dummyStats.length]?.stats || agent.stats,
+    }));
+  }, [isUsingDummyActivity, agentRows, effectiveCallStats.rows]);
+  const effectiveLiveReads = useMemo(
+    () =>
+      isUsingDummyActivity
+        ? buildDummyLiveQueueReads(queues)
+        : { liveSlaByName, liveQueueStatsByName },
+    [isUsingDummyActivity, queues, liveSlaByName, liveQueueStatsByName],
+  );
+  const effectiveLiveSlaByName = effectiveLiveReads.liveSlaByName;
+  const effectiveLiveQueueStatsByName = effectiveLiveReads.liveQueueStatsByName;
+  const effectiveTotals = useMemo(
+    () => ({ answered: effectiveCallStats.answeredCalls, total: effectiveCallStats.totalCalls }),
+    [effectiveCallStats.answeredCalls, effectiveCallStats.totalCalls],
+  );
+  const effectiveSlaValues = Object.values(effectiveLiveSlaByName);
+  const effectiveAvgSla = effectiveSlaValues.length
+    ? effectiveSlaValues.reduce((sum, value) => sum + value, 0) / effectiveSlaValues.length
+    : avgSla;
+  const effectiveAvgHandleTime = effectiveCallStats.avgHandleSec ?? avgHandleTime;
+  const effectiveAbandonRate = effectiveCallStats.abandonRate ?? abandonRate;
+
   const waitingAnimated = useAnimatedNumber(waitingCalls.length);
-  const answeredAnimated = useAnimatedNumber(totals.answered);
+  const answeredAnimated = useAnimatedNumber(effectiveTotals.answered);
   const onlineAgentsAnimated = useAnimatedNumber(onlineAgentsCount);
-  const slAnimated = useAnimatedNumber(avgSla);
-  const abandonAnimated = useAnimatedNumber(abandonRate);
-  const ahtAnimated = useAnimatedNumber(avgHandleTime);
+  const slAnimated = useAnimatedNumber(effectiveAvgSla);
+  const abandonAnimated = useAnimatedNumber(effectiveAbandonRate);
+  const ahtAnimated = useAnimatedNumber(effectiveAvgHandleTime);
   const occupancyAnimated = useAnimatedNumber(occupancy);
+
+  // Waiting has no percentage of its own — read as a share of total seats
+  // across every queue, so the little load bar means "how full is the room"
+  // rather than inventing a figure the rest of the app doesn't track.
+  const totalQueueCapacity = queues.reduce(
+    (sum: number, queue: any) => sum + (queue.membersCount || 0),
+    0,
+  );
+  const waitingLoadPct = totalQueueCapacity
+    ? Math.min(100, Math.round((waitingCalls.length / totalQueueCapacity) * 100))
+    : 0;
+  const isBreachingWait = longestWaitSecs > 120;
+  const answeredPct = effectiveCallStats.totalCalls
+    ? (effectiveTotals.answered / effectiveCallStats.totalCalls) * 100
+    : 0;
+  const isAbandonAlert = effectiveAbandonRate !== null && effectiveAbandonRate > 5;
+  const occupancyTone: 'good' | 'warn' =
+    occupancy !== null && occupancy >= 75 && occupancy <= 85 ? 'good' : 'warn';
+  const kpiToneToBarTone: Record<'default' | 'success' | 'warning' | 'danger', 'good' | 'warn' | 'crit' | 'neutral'> = {
+    default: 'neutral',
+    success: 'good',
+    warning: 'warn',
+    danger: 'crit',
+  };
 
   const kpis: {
     label: string;
@@ -166,11 +415,18 @@ const Performance = () => {
     /** Optional pill beside the figure, for a second reading of the same thing. */
     helper?: string;
     tone?: 'default' | 'success' | 'warning' | 'danger';
+    /** The small top-right visual — a bar, an icon or a presence row. */
+    indicator?: ReactNode;
+    /** Card-level alert treatment (tinted border), for figures past a real threshold. */
+    alert?: boolean;
   }[] = [
     {
       label: 'Waiting',
       value: String(Math.round(waitingAnimated)),
       sub: `across ${queues.length} ${queues.length === 1 ? 'queue' : 'queues'}`,
+      indicator: (
+        <KpiGauge percent={waitingLoadPct} tone={waitingLoadPct > 70 ? 'warn' : 'neutral'} />
+      ),
     },
     {
       label: 'Longest wait',
@@ -181,39 +437,73 @@ const Performance = () => {
         ) : (
           'within target'
         ),
+      indicator: isBreachingWait ? (
+        <KpiIcon tone="crit">
+          <AlertTriangle size={13} />
+        </KpiIcon>
+      ) : (
+        <KpiDots />
+      ),
     },
     {
       label: 'Service level',
-      value: avgSla === null ? '—' : `${Math.round(slAnimated)}%`,
+      value: effectiveAvgSla === null ? '—' : `${Math.round(slAnimated)}%`,
       sub: 'target 80% in 20s',
-      tone: slaTone(avgSla),
+      tone: slaTone(effectiveAvgSla),
+      indicator: (
+        <KpiBar
+          percent={effectiveAvgSla}
+          tone={kpiToneToBarTone[slaTone(effectiveAvgSla)]}
+          targetBand={[80, 100]}
+        />
+      ),
     },
     {
       label: 'Answered',
       value: String(Math.round(answeredAnimated)),
-      sub: `of ${callStats.totalCalls} calls`,
+      sub: `of ${effectiveCallStats.totalCalls} calls`,
+      indicator: (
+        <KpiBar
+          percent={answeredPct}
+          tone="neutral"
+          caption={`${effectiveCallStats.totalCalls} total calls`}
+        />
+      ),
     },
     {
       label: 'Abandon rate',
-      value: abandonRate === null ? '—' : `${Math.round(abandonAnimated)}%`,
-      sub: abandonRate === null ? undefined : `${callStats.missedCalls} missed`,
-      tone: abandonRate !== null && abandonRate > 5 ? 'danger' : 'default',
+      value: effectiveAbandonRate === null ? '—' : `${Math.round(abandonAnimated)}%`,
+      sub: effectiveAbandonRate === null ? undefined : `${effectiveCallStats.missedCalls} missed`,
+      tone: effectiveAbandonRate !== null && effectiveAbandonRate > 5 ? 'danger' : 'default',
+      indicator: isAbandonAlert ? (
+        <KpiSpark tone="crit" caption="target high" />
+      ) : (
+        <KpiBar percent={effectiveAbandonRate} tone="good" targetBand={[0, 5]} />
+      ),
+      alert: isAbandonAlert,
     },
     {
       label: 'Avg handle time',
-      value: avgHandleTime === null ? '—' : formatSecsToClock(ahtAnimated),
+      value: effectiveAvgHandleTime === null ? '—' : formatSecsToClock(ahtAnimated),
       sub: 'per answered call',
+      indicator: (
+        <KpiIcon tone="neutral">
+          <Clock3 size={13} />
+        </KpiIcon>
+      ),
     },
     {
       label: 'On queue agents',
       value: String(Math.round(onlineAgentsAnimated)),
       helper: `${agentRows.length} active`,
       sub: 'signed in right now',
+      indicator: <KpiSegments online={onlineAgentsCount} total={agentRows.length} />,
     },
     {
       label: 'Occupancy',
       value: occupancy === null ? '—' : `${Math.round(occupancyAnimated)}%`,
       sub: 'target 75–85%',
+      indicator: <KpiBar percent={occupancy} tone={occupancyTone} targetBand={[75, 85]} />,
     },
   ];
 
@@ -236,20 +526,20 @@ const Performance = () => {
     {
       key: 'sl',
       label: 'Service level',
-      value: avgSla === null ? '—' : `${Math.round(avgSla)}%`,
-      warn: avgSla !== null && avgSla < 80,
-      good: avgSla !== null && avgSla >= 80,
+      value: effectiveAvgSla === null ? '—' : `${Math.round(effectiveAvgSla)}%`,
+      warn: effectiveAvgSla !== null && effectiveAvgSla < 80,
+      good: effectiveAvgSla !== null && effectiveAvgSla >= 80,
       // Graded the same way the KPI band above grades it, so the wall never
       // paints an under-target service level the same red as a real breach.
-      tone: WALLBOARD_TONE_BY_KPI_TONE[slaTone(avgSla)],
+      tone: WALLBOARD_TONE_BY_KPI_TONE[slaTone(effectiveAvgSla)],
     },
-    { key: 'answered', label: 'Answered today', value: String(totals.answered) },
+    { key: 'answered', label: 'Answered today', value: String(effectiveTotals.answered) },
     {
       key: 'abandon',
       label: 'Abandon rate',
-      value: abandonRate === null ? '—' : `${Math.round(abandonRate)}%`,
-      warn: abandonRate !== null && abandonRate > 5,
-      good: abandonRate !== null && abandonRate <= 5,
+      value: effectiveAbandonRate === null ? '—' : `${Math.round(effectiveAbandonRate)}%`,
+      warn: effectiveAbandonRate !== null && effectiveAbandonRate > 5,
+      good: effectiveAbandonRate !== null && effectiveAbandonRate <= 5,
     },
     {
       key: 'onqueue',
@@ -270,8 +560,8 @@ const Performance = () => {
       return callTimestamp < longestTimestamp ? call : longest;
     }, null);
     const nameKey = String(queue.name || '').toLowerCase();
-    const liveStats = liveQueueStatsByName[nameKey];
-    const sla = liveSlaByName[nameKey];
+    const liveStats = effectiveLiveQueueStatsByName[nameKey];
+    const sla = effectiveLiveSlaByName[nameKey];
     return {
       uuid: queue.uuid,
       name: queue.name,
@@ -472,7 +762,10 @@ const Performance = () => {
           </div>
           <div className="kpi-grid kpi-grid--cols-4">
             {kpis.map((kpi) => (
-              <div key={kpi.label} className="kpi-card">
+              <div
+                key={kpi.label}
+                className={`kpi-card${kpi.alert ? ' kpi-card--alert' : ''}`}
+              >
                 <span className="kpi-card__label">{kpi.label}</span>
                 <span className="kpi-card__value-row">
                   <span
@@ -486,6 +779,7 @@ const Performance = () => {
                       {kpi.helper}
                     </span>
                   )}
+                  {kpi.indicator}
                 </span>
                 {kpi.sub && <span className="kpi-card__description">{kpi.sub}</span>}
               </div>
@@ -510,11 +804,11 @@ const Performance = () => {
             queues={queues}
             activeQueueCalls={activeQueueCalls}
             queueStatsByUuid={queueStatsByUuid}
-            liveSlaByName={liveSlaByName}
-            liveQueueStatsByName={liveQueueStatsByName}
-            cdrByQueueUuid={cdrByQueueUuid}
-            cdrRows={callStats.rows}
-            isCdrSampled={isCdrSampled}
+            liveSlaByName={effectiveLiveSlaByName}
+            liveQueueStatsByName={effectiveLiveQueueStatsByName}
+            cdrByQueueUuid={effectiveCallStats.byQueueUuid}
+            cdrRows={effectiveCallStats.rows}
+            isCdrSampled={effectiveCallStats.isQueueBreakdownSampled}
             usersOnlineStatus={usersOnlineStatus || []}
             isLoading={isQueuesLoading}
             selectedQueueUuid={selectedQueueUuid}
@@ -524,7 +818,7 @@ const Performance = () => {
         {activeTab === 'campaign-activity' && <CampaignActivityTab />}
         {activeTab === 'agents' && (
           <AgentsTab
-            agentRows={agentRows}
+            agentRows={effectiveAgentRows}
             usersOnlineStatus={usersOnlineStatus || []}
             activeQueueCalls={activeQueueCalls}
             queues={queues}

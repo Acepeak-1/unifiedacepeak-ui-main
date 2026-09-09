@@ -25,8 +25,13 @@
   --surface-2: #fef8f8;
 }
 
-.ppl-red-theme .fchip {
-  border-color: transparent;
+/* .fchip:hover, .fchip-select and .search-fchip's shape/size are now handled
+   globally in mcm-page.css (every Directory page gets the same rounded,
+   bigger search box and a real-looking Filters button) — only this page's
+   own red search-icon colour stays here. */
+.ppl-red-theme .fchip .ic {
+  color: #dc2626;
+  flex-shrink: 0;
 }
 
 /* The page canvas behind the cards (`.mcm-page`'s own background) is an
@@ -37,7 +42,7 @@
    which some rendering engines don't support and would silently drop this
    rule entirely. Everything else (cards, table, buttons) keeps white. */
 .mcm-admin-people {
-  background: #e8e9eb;
+  background: #efefef;
 }
 
 /* Same italic serif treatment on both "People" and the "Invite people"
@@ -53,10 +58,22 @@
   color: #171717;
 }
 
-.ppl-red-theme .btn.ghost .ic,
-.ppl-red-theme .fchip-select svg,
 .ppl-red-theme .ppl-row-menu-trigger svg {
   color: #dc2626;
+}
+.mcm-page .ppl-red-theme .fchip-select {
+  background: #171717;
+  border-color: #171717;
+  color: #fff;
+  border-radius: 9999px;
+}
+.ppl-red-theme .fchip-select svg {
+  color: #fff;
+}
+.mcm-page .ppl-red-theme .fchip-select:hover {
+  background: #000;
+  border-color: #000;
+  color: #fff;
 }
 
 /* KPI band: one bordered card sharing dividers between cells, per the
@@ -124,13 +141,17 @@
   color: #171717;
 }
 .ppl-red-theme .btn.ghost {
-  background: #fff;
-  border-color: transparent;
-  color: #171717;
+  background: #171717;
+  border-color: #171717;
+  color: #fff;
+}
+.ppl-red-theme .btn.ghost .ic {
+  color: #fff;
 }
 .ppl-red-theme .btn.ghost:hover {
-  background: #fff;
-  border-color: transparent;
+  background: #000;
+  border-color: #000;
+  color: #fff;
 }
 .ppl-red-theme .btn.primary:hover {
   border-color: #fca5a5;
@@ -145,10 +166,37 @@
   background: #fef8f8;
 }
 
-/* The scrolling body: enough height to need a scrollbar once dummy rows are
-   in, header stays put while rows scroll under it. */
+/* Only the table body should scroll — the title, stats and search bar stay
+   put. `.page` used to be the only scrollable thing on the page (its own
+   overflow-y), so once the table grew past the viewport the whole page,
+   header included, scrolled up with it. Turning `.page` into a column flex
+   box lets the head/kpis/search stay their natural (shrink-to-fit) height
+   while `.panel-card`/`.tbl-wrap` take the rest and scroll internally. */
+.ppl-red-theme .page {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+  padding-bottom: 12px;
+}
+.ppl-red-theme .page-head,
+.ppl-red-theme .kpis.kpi-grid,
+.ppl-red-theme .page-caveat {
+  flex-shrink: 0;
+}
+.ppl-red-theme .panel-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ppl-red-theme .tbar-in-card {
+  flex-shrink: 0;
+}
 .ppl-red-theme .tbl-wrap {
-  max-height: 560px;
+  flex: 1;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
 }
 /* A shared rule (.mcm-admin table thead th) also reads --surface-2 and outranks
@@ -235,13 +283,17 @@
   --color-ucass-primary-200: #fef2f2;
 }
 .ppl-invite-theme .mcm-invite .btn.ghost {
-  background: #fff;
-  border-color: transparent;
-  color: #171717;
+  background: #171717;
+  border-color: #171717;
+  color: #fff;
+}
+.ppl-invite-theme .mcm-invite .btn.ghost .ic {
+  color: #fff;
 }
 .ppl-invite-theme .mcm-invite .btn.ghost:hover {
-  background: #fde2e2;
-  border-color: #fca5a5;
+  background: #000;
+  border-color: #000;
+  color: #fff;
 }
 
 /* Thin, unobtrusive scrollbars wherever this drawer scrolls. */
@@ -257,6 +309,13 @@
   background: transparent;
 }
 
+/* shadcn's DialogContent uses `bg-background`, which is the app-wide ground
+   colour (#eef1f8) now — that's right for a page, but this dialog (and the
+   gutters around its cards) wants plain white. */
+.ppl-invite-dialog {
+  background: #fff;
+}
+
 /* Stepper: sits right under the dialog title now, tighter padding, smaller
    circles/text, narrower and left-anchored instead of centred so the two
    steps sit closer together. */
@@ -264,6 +323,9 @@
   /* Positioning context for .ppl-invite-actions below, which floats up onto
      this same row rather than taking a row of its own. */
   position: relative;
+  /* .mcm-page paints the app-wide ground colour (#eef1f8) by default — this
+     dialog wants plain white throughout instead. */
+  background: #fff;
 }
 .ppl-invite-theme .mcm-invite > div:first-child {
   padding: 2px 16px 4px;
@@ -293,12 +355,32 @@
   margin-bottom: 6px;
 }
 .ppl-invite-theme .ppl-invite-btn {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: #171717 !important;
+  border: 1px solid #171717 !important;
+  color: #fff !important;
+  border-radius: 9999px !important;
 }
 .ppl-invite-theme .ppl-invite-btn:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
+  background: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+}
+.ppl-invite-theme .ppl-invite-btn svg {
+  color: #fff !important;
+}
+
+/* Save & Continue / Submit — same reasoning: the shadcn Button underneath
+   ships its own colour utilities, which don't reliably lose to a plain class
+   override, so this is pinned with !important rather than left to depend on
+   cascade order. */
+.ppl-invite-theme .mcm-invite .btn.primary {
+  background: #171717 !important;
+  border-color: #171717 !important;
+  color: #fff !important;
+}
+.ppl-invite-theme .mcm-invite .btn.primary:hover {
+  background: #000 !important;
+  border-color: #000 !important;
 }
 
 /* License / summary block above the user rows: tighter vertical rhythm. */
@@ -664,4 +746,16 @@
 }
 .ppl-invite-theme label[for] {
   font-size: 12.5px;
+}
+
+/* Page head (title + actions) filled white like the stats band and the
+   table card below it, so the top of the page reads as three distinct
+   cards instead of the title floating on the bare grey page background. */
+.mcm-page .ppl-red-theme .page-head {
+  background: #fff;
+  margin: -22px -26px 20px;
+  padding: 20px 26px;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 0;
 }
