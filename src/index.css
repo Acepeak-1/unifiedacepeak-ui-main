@@ -23,6 +23,7 @@
    puts it in the same PostCSS-processed bundle as Tailwind and mcm-page.css,
    in the same reliable position that already makes mcm-page.css win. */
 @import './components/mcm/ai-tools-table.css';
+@import './pages/dashboard/home/home.css';
 
 @theme {
   --color-ucass-gray: oklch(0.9612 0 0);
