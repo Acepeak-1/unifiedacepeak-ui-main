@@ -425,21 +425,21 @@ const CompanyInfo = () => {
                 <div className="w-full sm:min-w-[240px]">
                   <Input
                     placeholder="Search sites..."
-                    className="pl-10"
-                    IconPosition="left-0 pl-2 inset-y-0"
+                    className="mcm-pill-input pl-8"
+                    IconPosition="left-0 pl-3 inset-y-0"
                     value={search}
                     onChange={(e) => {
                       const value = e.target.value;
                       if (value.startsWith(' ')) return;
                       setSearch(e.target.value);
                     }}
-                    Icon={<SearchLine className="h-4 w-4 text-gray-700" />}
+                    Icon={<SearchLine className="h-3.5 w-3.5 text-gray-700" />}
                   />
                 </div>
                 {/* Comparing locations is a different job from reading one, and
                     it needs a table rather than a column of cards. */}
                 <Button
-                  className="rounded-xl"
+                  className="rounded-full"
                   variant={'outline'}
                   onClick={() => navigate('/admin-settings/company/location-management')}
                 >
@@ -448,7 +448,7 @@ const CompanyInfo = () => {
                 </Button>
                 {!isTrial && canViewSites && canAddSites && (
                   <Button
-                    className="rounded-xl"
+                    className="rounded-full"
                     variant={'outline'}
                     onClick={() => handleNewSite()}
                   >

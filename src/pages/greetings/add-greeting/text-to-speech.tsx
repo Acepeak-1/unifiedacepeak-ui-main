@@ -160,7 +160,7 @@ const TextToSpeech: FC<UploadGreetingProps> = ({ handleTextToSpeech, isPendingTe
         control={control}
         render={({ field }) => (
           <textarea
-            rows={5}
+            rows={3}
             value={field.value || ''}
             onChange={(event) => {
               const locale = selectedLocale?.value || '';
@@ -169,7 +169,7 @@ const TextToSpeech: FC<UploadGreetingProps> = ({ handleTextToSpeech, isPendingTe
               setValue('textFile', null);
             }}
             placeholder={selectedLocale ? 'Type your text here...' : 'Select language first'}
-            className=" border border-gray-300 rounded-xl text-sm min-h-[86px]  p-3 hover:border-primary focus:border-primary focus-visible:border-primary focus-visible:outline-none disabled:bg-gray-50 disabled:cursor-not-allowed"
+            className=" border border-gray-300 rounded-xl text-sm min-h-[56px]  p-3 hover:border-primary focus:border-primary focus-visible:border-primary focus-visible:outline-none disabled:bg-gray-50 disabled:cursor-not-allowed"
             maxLength={500}
             disabled={!selectedLocale}
           />
@@ -183,8 +183,9 @@ const TextToSpeech: FC<UploadGreetingProps> = ({ handleTextToSpeech, isPendingTe
 
       <div className="flex justify-center">
         <Button
-          variant={'outline'}
+          variant={'dark'}
           type="button"
+          className="rounded-full"
           onClick={handleTextToSpeech}
           disabled={!watch('textToSpeech') || !selectedLocale || isPendingTextToSpeech}
         >

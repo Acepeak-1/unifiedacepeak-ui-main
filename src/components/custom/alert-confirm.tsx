@@ -73,7 +73,7 @@ const AlertConfirm = ({
           <div className="flex justify-end gap-2 w-full">
             <Button
               variant={'outline'}
-              className="min-w-[120px]"
+              className="min-w-[120px] rounded-full"
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -89,6 +89,7 @@ const AlertConfirm = ({
           <div className="flex justify-end gap-2 w-full">
             <Button
               variant={'transparent'}
+              className="rounded-full"
               onClick={(e) => {
                 e.stopPropagation();
                 setOpen(false);
@@ -99,7 +100,7 @@ const AlertConfirm = ({
             </Button>
             <Button
               variant={'outline'}
-              className="min-w-[120px]"
+              className="min-w-[120px] rounded-full"
               type="button"
               onClick={(e) => {
                 e.preventDefault();

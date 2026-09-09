@@ -354,12 +354,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                         : 'border-neutral-200 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50',
                     )}
                   >
-                    <span
-                      className={cn(
-                        'grid h-9 w-9 shrink-0 place-items-center rounded-lg',
-                        isSelected ? 'bg-black text-white' : 'bg-neutral-100 text-neutral-500',
-                      )}
-                    >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-red-50 text-red-600">
                       {option.icon}
                     </span>
                     <div className="min-w-0">
@@ -546,7 +541,7 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
                     type="button"
                     onClick={() => appendCustomDays()}
                     disabled={fields.length >= MAX_HOLIDAYS}
-                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-600! px-3 text-xs font-bold text-white! shadow-[0_2px_6px_rgba(220,38,38,.25)] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-600! px-3 text-xs font-bold text-white! disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add day
@@ -657,14 +652,14 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
             <button
               type="button"
               onClick={handleCancel}
-              className="inline-flex h-10 items-center justify-center rounded-lg border! border-neutral-200! bg-white! px-4 text-sm font-bold text-neutral-700 outline-none! transition-all duration-150 hover:-translate-y-0.5 hover:border-red-300! hover:bg-red-50! hover:text-red-700"
+              className="inline-flex h-10 items-center justify-center rounded-full border! border-neutral-200! bg-white! px-4 text-sm font-bold text-neutral-700 outline-none! transition-all duration-150 hover:-translate-y-0.5 hover:border-red-300! hover:bg-red-50! hover:text-red-700"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={() => handleSubmit()}
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-black! px-4 text-sm font-bold text-white! shadow-[0_2px_6px_rgba(0,0,0,.25)]"
+              className="inline-flex h-10 items-center justify-center rounded-full bg-black! px-4 text-sm font-bold text-white! shadow-[0_2px_6px_rgba(0,0,0,.25)]"
             >
               Submit
             </button>

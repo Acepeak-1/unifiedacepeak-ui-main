@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, IdCard, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, IdCard, Info, Plus, Trash2 } from 'lucide-react';
 
 import CustomSelect from '@/components/custom/custom-select';
 import Loader from '@/components/custom/loader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { handleAlert } from '@/lib/utils';
 import {
   COMPANY_DEFAULTS_QUERY_KEY,
@@ -296,12 +297,26 @@ const CompanyProfileFields = () => {
 
   return (
     <section className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-200/15">
-      <div className="flex min-h-[65px] flex-col justify-center border-b border-gray-200 bg-white px-4 py-3">
+      <div className="flex items-center gap-1.5 px-4 pt-3">
         <p className="text-lg font-semibold text-gray-900">Profile fields</p>
-        <p className="text-xs text-gray-500">
-          The extra details you keep about the people who work here — an employee number, a
-          department code, a start date, a desk.
-        </p>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3.5 w-3.5 shrink-0 cursor-help text-gray-400" />
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            className="w-max max-w-[280px] [text-wrap:pretty] text-black"
+            style={{
+              background: '#fdf7f5',
+              border: 'none',
+              color: '#000',
+              boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+            }}
+          >
+            Extra details about people who work here — employee number, department, start date,
+            desk.
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-3 sm:px-4">
@@ -319,16 +334,13 @@ const CompanyProfileFields = () => {
           )}
 
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="flex flex-wrap items-start gap-3 border-b border-gray-200 p-4">
+            <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 p-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
                 <IdCard className="h-5 w-5" />
               </div>
               <div className="flex min-w-[220px] flex-1 flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-base font-semibold text-gray-900">Your fields</p>
-                  <span className="rounded-sm bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
-                    Coming soon
-                  </span>
                 </div>
                 <p className="text-xs text-gray-500">
                   Set out the details you want to keep, in the order you want to see them.
@@ -344,11 +356,10 @@ const CompanyProfileFields = () => {
               {/* The honest bit. Defining a field is real and is saved; nothing
                   yet puts it on anybody's record, and an admin who saves this
                   and then opens a colleague's profile must not be surprised. */}
-              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                Coming soon. What you set here is saved for your company, but these details do not
-                appear on anyone&apos;s profile yet — there is nowhere to fill them in, and nothing
-                to see in the people list. Set them up now and they are ready when it arrives.
-              </p>
+              <ul className="flex flex-wrap list-disc gap-x-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 pl-6 text-xs text-black">
+                <li>Coming soon — fields aren&apos;t on anyone&apos;s profile yet.</li>
+                <li>Saved now, so they&apos;re ready once this ships.</li>
+              </ul>
 
               {!fields.length ? (
                 <div className="rounded-lg border border-dashed border-gray-300 px-4 py-8 text-center">

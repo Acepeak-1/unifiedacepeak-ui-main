@@ -191,7 +191,7 @@ const NewSiteSteps = ({ data = {}, handleClose }: any) => {
           </span>
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto rounded-lg bg-gray-100 pr-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto rounded-lg bg-white pr-1">
         <div className="mx-auto w-full max-w-[940px] p-4">{stepLookUp[currentStep]}</div>
       </div>
       <div className="flex flex-col-reverse gap-2 border-t border-gray-200 pt-2 sm:flex-row sm:justify-end sm:pt-2">

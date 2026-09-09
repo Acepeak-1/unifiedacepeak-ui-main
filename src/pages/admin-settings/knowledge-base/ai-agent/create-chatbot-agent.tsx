@@ -5580,7 +5580,7 @@ function CreateChatbotAgent() {
 
   return (
     <FormProvider {...formInstance}>
-      <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#f3f4f6] text-[#07142f]">
+      <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white text-[#07142f]">
         <div className="flex min-h-[72px] items-center border-b border-gray-200 bg-white px-3 py-3 sm:px-6">
           <div className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium text-slate-500">
             <button

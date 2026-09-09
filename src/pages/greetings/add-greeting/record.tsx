@@ -79,11 +79,16 @@ const Record: FC = () => {
 
   return (
     <div className="flex flex-col gap-4 pt-2">
-      <div className="border border-gray-300 gap-12 flex flex-col w-full h-44 justify-center rounded-xl">
+      <div className="border border-gray-300 flex flex-col w-full py-6 justify-center rounded-xl">
         <div className="gap-4 flex flex-col p-3 justify-center">
           <div className="flex flex-col gap-2 justify-center w-full items-center">
             {!recording && !WatchUploadFile && (
-              <Button variant={'outline'} type="button" onClick={handleStartRecording}>
+              <Button
+                variant={'dark'}
+                type="button"
+                className="rounded-full"
+                onClick={handleStartRecording}
+              >
                 Start Recording
               </Button>
             )}
@@ -98,7 +103,12 @@ const Record: FC = () => {
                     {formatDuration(duration)}
                   </small>
                 </div>
-                <Button type="button" variant={'outline'} onClick={handleStopRecording}>
+                <Button
+                  type="button"
+                  variant={'dark'}
+                  className="rounded-full"
+                  onClick={handleStopRecording}
+                >
                   Stop Recording
                 </Button>
               </>
@@ -108,10 +118,20 @@ const Record: FC = () => {
               <div className="flex flex-col items-center justify-center w-full">
                 <ReadyAudio controls src={audioRecordUrl} />
                 <div className="flex gap-2 mt-2">
-                  <Button type="button" variant={'secondary'} onClick={handleCloseAudio}>
+                  <Button
+                    type="button"
+                    variant={'secondary'}
+                    className="rounded-full"
+                    onClick={handleCloseAudio}
+                  >
                     Close
                   </Button>
-                  <Button type="button" variant={'outline'} onClick={handleRecordAgain}>
+                  <Button
+                    type="button"
+                    variant={'dark'}
+                    className="rounded-full"
+                    onClick={handleRecordAgain}
+                  >
                     Record Again
                   </Button>
                 </div>

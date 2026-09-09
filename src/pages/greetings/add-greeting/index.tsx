@@ -189,7 +189,11 @@ const AddGreeting: FC<IAddgreetings> = ({
   return (
     <div className="w-full flex flex-col gap-2 justify-between h-full">
       <FormProvider {...formInstance}>
-        <div className="flex flex-col gap-4 pr-1 flex-1 overflow-y-auto">
+        <div
+          className={`flex flex-col gap-4 pr-1 flex-1 ${
+            activeTab === TAB_CONSTANT.TEXT_TO_SPEECH ? 'max-h-[65vh] overflow-y-auto' : ''
+          }`}
+        >
           <Tabs value={activeTab} onValueChange={handleTabChange} className="flex flex-col w-full">
             <div className="border-b border-gray-200 w-full mb-4">
               <TabsList className="flex text-sm font-semibold text-center p-0 rounded-none h-auto justify-start bg-transparent gap-6">
@@ -246,6 +250,7 @@ const AddGreeting: FC<IAddgreetings> = ({
           <Button
             variant="transparent"
             type="button"
+            className="rounded-full"
             onClick={() => {
               reset();
               setDrawerState(false);
@@ -254,8 +259,9 @@ const AddGreeting: FC<IAddgreetings> = ({
             Cancel
           </Button>
           <Button
-            variant={'outline'}
+            variant={'dark'}
             type="button"
+            className="rounded-full"
             onClick={handleCreateGreeting}
             disabled={
               showLoader ||

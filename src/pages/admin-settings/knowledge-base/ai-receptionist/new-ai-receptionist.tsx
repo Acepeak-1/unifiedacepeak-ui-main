@@ -8568,7 +8568,7 @@ function NewAiReceptionistBuilder({
 
   return (
     <FormProvider {...formInstance}>
-      <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#eef1f8] text-neutral-900">
+      <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white text-neutral-900">
         <div
           className={cx(
             'flex bg-white',

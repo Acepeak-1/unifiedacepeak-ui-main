@@ -2558,7 +2558,8 @@
   box-shadow: 0 1px 2px rgb(13 21 38 / 0.25);
 }
 .mcm-page [data-slot='switch'][data-state='checked'] [data-slot='switch-thumb'] {
-  left: 18px;
+  left: auto;
+  right: 2px;
 }
 
 /* 3. Radio dots were a hairline ring that all but vanished against the
@@ -3700,17 +3701,30 @@
   border-bottom: 1px solid var(--line-2);
 }
 
-/* Location management only: the filter bar sat flush against the header,
-   sharing its background and separated by just a 1px line, so the two read
-   as one fused block. Pulling it into its own bordered strip below the
-   header — same pattern the header itself uses to separate from the table
-   below — makes it read as a distinct control row instead. */
-.mcm-admin .location-management-page .mcm-adminpage-bar {
-  margin: 14px 22px 0;
+/* Location management only: the filter row used to be pinned above the
+   table as a separate, non-scrolling bar — but that made it a sibling of
+   the table's own scroll area rather than a part of it, so the two always
+   risked drifting a scrollbar's-width apart at the right edge no matter how
+   the widths were padded to match. It now renders as the first thing inside
+   the same scrolling column as the table (see the JSX), so it shares the
+   exact same box and can't misalign — only the page title/Export header
+   above stays fixed while this and the table scroll together. */
+.mcm-admin .location-management-page .location-management-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
   padding: 12px 16px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--surface);
+}
+.mcm-admin .location-management-page .loc-filter-select__control {
+  border-radius: 9999px !important;
+}
+.mcm-admin .location-management-bar > * {
+  max-width: 280px;
+  width: 100%;
 }
 
 .mcm-admin .mcm-adminpage-body {
@@ -3737,34 +3751,71 @@
   background: var(--surface-2);
 }
 
-/* Location management only: match the roomier header row used on the
-   Performance table (13.5px, 17px/16px padding) instead of the denser
-   default admin-list header. Scoped by the extra class on this page's root
-   section so no other `.mcm-adminpage` table is affected. */
-.mcm-admin .mcm-adminpage.location-management-page table th {
-  text-align: left;
-  font-size: 13.5px;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ink) !important;
-  padding: 17px 16px;
-  border-bottom: 1px solid var(--line);
-  white-space: nowrap;
-}
-
 .mcm-admin .mcm-adminpage table td {
   padding: 10px 12px;
   font-size: 13px;
   vertical-align: middle;
 }
 
-/* Location management only: rows sat edge to edge with just a hairline
-   between them, so one location's details ran straight into the next.
-   Extra vertical padding gives each row room to breathe before the next
-   one starts, without restructuring the table itself. */
+/* Location management only: match the AI Tools shared table design (Chat
+   Agents, AI Receptionists, Sessions) supplied as aitoolstable.css — same
+   header band, row height, cell padding and name/subtitle weight, applied
+   onto this page's existing table markup rather than renaming every class,
+   since the visual spec is what was asked for, not the BEM names themselves. */
+.mcm-admin .mcm-adminpage.location-management-page table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.mcm-admin .mcm-adminpage.location-management-page .overflow-x-auto {
+  border-radius: var(--r);
+  box-shadow:
+    0 1px 3px rgba(17, 17, 17, 0.08),
+    0 4px 12px rgba(17, 17, 17, 0.06);
+}
+.mcm-admin .mcm-adminpage.location-management-page table thead tr {
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+}
+.mcm-admin .mcm-adminpage.location-management-page table th {
+  padding: 13px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #737373;
+  background: transparent;
+  white-space: nowrap;
+}
+.mcm-admin .mcm-adminpage.location-management-page table th:first-child {
+  padding-left: 18px;
+}
+.mcm-admin .mcm-adminpage.location-management-page table tbody tr {
+  background: #ffffff;
+  height: 52.67px;
+  transition: background-color 0.15s ease;
+}
+.mcm-admin .mcm-adminpage.location-management-page table tbody tr:hover {
+  background: #fafafa;
+}
 .mcm-admin .mcm-adminpage.location-management-page table tbody td {
-  padding: 18px 16px;
+  padding: 8px 18px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+/* The Location column's header sits at the same 10px the rest of the header
+   row uses, but its body cells inherited the 18px given to the checkbox
+   column next to it — pulling every name a few pixels to the right of its
+   own column heading. Matching it back to 10px lines the two up. */
+.mcm-admin .mcm-adminpage.location-management-page table tbody td:nth-child(2) {
+  padding-left: 10px;
+}
+.mcm-admin .mcm-adminpage.location-management-page .list-row-name {
+  font-weight: 400;
+  color: #020617;
+}
+.mcm-admin .mcm-adminpage.location-management-page .list-row-sub {
+  font-size: 11px;
+  color: #737373;
 }
 
 /* Search should not stretch the full width of a 1900px screen. */
@@ -4946,13 +4997,14 @@
 .mcm-setcard-h {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 16px;
   padding: 13px 16px 11px;
   border-bottom: 1px solid var(--line);
 }
 .mcm-setcard-ht {
   min-width: 0;
+  flex: 1;
 }
 .mcm-setcard-h h3 {
   margin: 0;
@@ -5151,6 +5203,18 @@
     0 6px 18px rgba(17, 17, 17, 0.1),
     0 1px 4px rgba(17, 17, 17, 0.06);
 }
+.company-ring-time-page .mcm-setcard {
+  border: none;
+  box-shadow:
+    0 6px 18px rgba(17, 17, 17, 0.1),
+    0 1px 4px rgba(17, 17, 17, 0.06);
+}
+.company-voicemail-page .mcm-setcard {
+  border: none;
+  box-shadow:
+    0 6px 18px rgba(17, 17, 17, 0.1),
+    0 1px 4px rgba(17, 17, 17, 0.06);
+}
 .location-management-page .mcm-setcard-h {
   justify-content: flex-start;
   gap: 8px;
@@ -5174,20 +5238,24 @@
   color: #111111;
 }
 
-/* "Coming soon" badges (the unmodified base badge — `.is-on`/`.is-app`/`.is-off`
-   already carry their own colour and are excluded here) read amber by default.
-   This page's brand accent is red, so its badges follow suit instead of
-   clashing. The note text stays black — a tinted background is enough to mark
-   it out, and red-on-pink was harder to read than plain ink. */
-.company-rules-page .mcm-setcard-badge:not(.is-on):not(.is-app):not(.is-off) {
-  background: #fdecec;
-  color: #d92b2b;
+/* "Coming soon" reads as a warning on a page a customer is actively using
+   right now, not as a helpful status — so the whole Company section hides
+   that badge outright rather than re-colouring it. `.is-on`/`.is-app`/
+   `.is-off` are genuinely informative (what's active, what's app-only,
+   what's switched off) and stay visible; only the unmodified base badge,
+   which is exclusively 'coming soon' (see `STATUS_CLASS` in
+   setting-card.tsx), is hidden here. Scoped to `.mcm-company-theme` — the
+   shared ancestor of every Company page, not just the ones that also carry
+   `.company-rules-page` — so it reaches Messaging, Profile fields, Bulk
+   settings and the rest too. */
+.mcm-company-theme .mcm-setcard-badge:not(.is-on):not(.is-app):not(.is-off) {
+  display: none;
 }
 .company-rules-page .mcm-setcard-note:not(.is-on):not(.is-app):not(.is-plain) {
   background: #fdecec;
   color: #111111;
 }
-.company-rules-page .mcm-setcard-h h3 {
+.mcm-company-theme .mcm-setcard-h h3 {
   font-size: 16px;
 }
 .company-rules-page .mcm-setcard {
@@ -5199,7 +5267,7 @@
 /* Only the header strip — title, description, the Change button — takes the
    grey; the rows below stay white so the two read as separate zones. */
 .company-rules-page .mcm-setcard-h {
-  background: #eef0f2;
+  background: #f5f6f7;
   border-radius: var(--r) var(--r) 0 0;
 }
 
@@ -5216,6 +5284,9 @@
   flex: none;
   min-height: 0;
   overflow: visible;
+}
+.company-rules-page .user-settings-template-settings-name-wrap label {
+  font-size: 14px;
 }
 
 /* The form itself carries `.mcm-page` — a class meant for a top-level route
@@ -5703,12 +5774,13 @@
   background-color: #ffffff;
 }
 
-/* Icon tiles and pill badges: tinted ground, red rule, black label. The class is
-   shared with the filled buttons below, which is why this one excludes them
-   rather than the other way round. */
+/* Icon tiles: no tinted ground at all — just the glyph, in its own colour,
+   with nothing boxing it in. The class is shared with the filled buttons
+   below, which is why this one excludes them rather than the other way
+   round. */
 .mcm-company-theme .bg-ucass-primary-200:not([data-slot='button']) {
-  background-color: #fdecec;
-  border: 1px solid #d92b2b;
+  background-color: transparent;
+  border: none;
   color: #111111;
 }
 
@@ -5794,14 +5866,14 @@
 
 /* Company settings tab strip only: the pink pill above reads as a tag, not
    as "you are here" — fine for a badge, weak for primary navigation. A
-   heavier black underline is a plainer, more common tab pattern and reads
-   as selection at a glance instead of blending with actual badges (Standard,
-   Main Location) that use the same pink wash. Scoped narrowly so the shared
-   pill rule above still applies everywhere else. */
+   plain white rounded pill with a thin border reads as selection at a
+   glance instead of blending with actual badges (Standard, Main Location)
+   that use the same pink wash. Scoped narrowly so the shared pill rule
+   above still applies everywhere else. */
 .mcm-company-theme .company-tabs-nav a[aria-current='page']:not([data-slot='button']) {
-  background-color: transparent !important;
+  background-color: #ffffff !important;
   color: #111111 !important;
-  border-radius: 0 !important;
+  border-radius: 9999px !important;
 }
 
 /* The press itself — colour only, no wash, so a click on a long row does not
@@ -5869,6 +5941,75 @@
   border-color: #a81d1d;
 }
 
+/* Every action across this section — Save, Reset, Manage, Export, per-row
+   Edit/Change — reads as one pill-button language instead of a mix of
+   square and rounded corners depending on which page it happened to be
+   built on. Only buttons opt into this — search bars and other form fields
+   keep their normal rounded-rectangle shape (see `.mcm-pill-input` below,
+   which only carries the rest/focus border behaviour, not a shape change). */
+.mcm-company-theme [data-slot='button'] {
+  border-radius: 9999px !important;
+}
+.mcm-company-theme .mcm-pill-input {
+  border-radius: 9999px !important;
+}
+
+/* Search bars only: no border at rest, the red ring appears just while
+   someone is actually typing into it — not a permanent decoration like the
+   rest of this section's fields. */
+.mcm-company-theme input.mcm-pill-input.border-gray-300,
+.mcm-company-theme input.mcm-pill-input.hover\:border-primary:hover {
+  border-color: transparent;
+}
+.mcm-company-theme input.mcm-pill-input.focus\:border-primary:focus {
+  border-color: #d92b2b;
+}
+
+/* The amber "instruction" boxes (No PO boxes, weekly-schedule warnings, and
+   the like) used the standard Tailwind amber-50/amber-900 pairing, which
+   reads brighter and browner than the rest of this section's much quieter
+   ink-on-white notes. Toning the wash down and switching the text to plain
+   black keeps the box noticeable without it being the loudest thing on the
+   page. Excludes `.rounded-sm` — the small "Saved, not enforced yet" /
+   "In effect now" status tags reuse the same amber-50 utility for their own,
+   unrelated tint and must keep it. */
+.mcm-company-theme .bg-amber-50:not(.rounded-sm) {
+  background-color: #fdfaf0;
+}
+.mcm-company-theme .bg-amber-50:not(.rounded-sm) .text-amber-900 {
+  color: #111111;
+}
+
+/* The shared admin shell knocks every `.text-lg` heading down to 17px (see
+   `.mcm-admin .text-lg` above) to match its own heading scale. This
+   section's page titles (Ring time, Voicemail, Calling permissions, and the
+   rest) were asked for at an even 18px, so they get their own, more specific
+   override here rather than changing that rule for every other admin page. */
+.mcm-admin .mcm-company-theme .text-lg {
+  font-size: 18px !important;
+}
+
+/* Checkboxes across this section — apply-to lists, acknowledgements — used
+   the stock light-grey border, which all but disappears against the white
+   and near-white row backgrounds these sit on. A darker, slightly thicker
+   border keeps an unchecked box visible without waiting for a browser's
+   own focus ring to reveal it. */
+.mcm-company-theme [data-slot='checkbox'] {
+  height: 18px !important;
+  width: 18px !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  border-color: #4b5563 !important;
+  border-radius: 4px !important;
+  background-color: #ffffff !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+.mcm-company-theme [data-slot='checkbox'][data-state='checked'] {
+  border-color: #d92b2b;
+  background-color: #d92b2b;
+}
+
 /* The four company-rule rows stay plain (white, grey border) — no background
  * tint. Instead the "Locked" pill itself carries the red, since that is the
  * thing actually true about the row; "Staff can change" rows keep the neutral
@@ -5902,25 +6043,26 @@
     border-color: #f3c9c9 !important;
   }
 
-  /* Hover and keyboard focus: the faintest red tint, text still black. Kept
-     lighter than the selected band below and left with black ink, so arrowing
-     down the list never looks like you have already chosen the row you are
-     merely passing over — the red ink and the heavier weight are what mark the
-     actual selection. */
+  /* Hover and keyboard focus: plain grey, text still black. Kept visually
+     distinct from the pink selected band below, so arrowing down the list
+     never looks like you have already chosen the row you are merely passing
+     over — the tint and the heavier weight are what mark the actual
+     selection. */
   body:has(.mcm-company-theme) .custom-react-select__option:hover,
   body:has(.mcm-company-theme) .custom-react-select__option--is-focused,
   body:has(.mcm-company-theme) .select-group__option:hover,
   body:has(.mcm-company-theme) .select-group__option--is-focused {
-    background-color: #fdf5f5 !important;
+    background-color: #f3f4f6 !important;
     color: #111111 !important;
   }
 
-  /* Selected: the pink band and red ink from the reference.
+  /* Selected: the pink band from the reference, with black ink — plain text
+   * colour throughout this section, same as everywhere else in Company.
    *
    * Listed AFTER hover, and naming the hover and focus combinations explicitly,
    * because react-select puts BOTH classes on the row when you mouse over the
    * option that is already chosen. At equal specificity the later rule wins, so
-   * without this the selected row lost its red the moment the cursor touched
+   * without this the selected row lost its tint the moment the cursor touched
    * it — which is the one place the colour actually carries meaning. */
   body:has(.mcm-company-theme) .custom-react-select__option--is-selected,
   body:has(.mcm-company-theme) .custom-react-select__option--is-selected:hover,
@@ -5929,7 +6071,7 @@
   body:has(.mcm-company-theme) .select-group__option--is-selected:hover,
   body:has(.mcm-company-theme) .select-group__option--is-selected.select-group__option--is-focused {
     background-color: #fdecec !important;
-    color: #d92b2b !important;
+    color: #111111 !important;
     font-weight: 600 !important;
   }
 
