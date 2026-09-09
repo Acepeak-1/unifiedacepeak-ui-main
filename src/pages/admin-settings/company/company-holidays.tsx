@@ -594,13 +594,13 @@ const CompanyHolidays = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={openAdd} disabled={isAdding}>
+          <Button type="button" variant="dark" size="sm" onClick={openAdd} disabled={isAdding}>
             <Plus className="h-3.5 w-3.5" />
             Add holiday
           </Button>
           <Button
             type="button"
-            variant="primary"
+            variant="dark"
             size="sm"
             onClick={() => save()}
             disabled={!dirty || isPending || isLoading}
@@ -686,7 +686,7 @@ const CompanyHolidays = () => {
           </div>
           <Button
             type="button"
-            variant="outline"
+            variant="dark"
             onClick={addPreset}
             disabled={!selectedPreset || presetNewCount === 0}
           >
@@ -758,7 +758,7 @@ const CompanyHolidays = () => {
                   </label>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="dark"
                     size="sm"
                     onClick={() => openEdit(item)}
                     aria-label={`Edit ${item.title}`}
@@ -842,7 +842,7 @@ const CompanyHolidays = () => {
               />
               <span className="text-xs text-gray-600">Repeats every year</span>
             </label>
-            <Button type="button" variant="primary" onClick={commitDraft}>
+            <Button type="button" variant="dark" onClick={commitDraft}>
               {draft.id ? 'Update' : 'Add'}
             </Button>
           </div>

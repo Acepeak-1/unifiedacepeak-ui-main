@@ -346,7 +346,7 @@ const CompanyProfileFields = () => {
                   Set out the details you want to keep, in the order you want to see them.
                 </p>
               </div>
-              <Button type="button" variant="outline" onClick={addField}>
+              <Button type="button" variant="dark" onClick={addField}>
                 <Plus className="h-3.5 w-3.5" />
                 Add a field
               </Button>
@@ -387,7 +387,7 @@ const CompanyProfileFields = () => {
                         <div className="flex items-center gap-1">
                           <Button
                             type="button"
-                            variant="outline"
+                            variant="dark"
                             onClick={() => moveField(index, -1)}
                             disabled={index === 0}
                             aria-label={`Move ${field.label || 'this field'} up`}
@@ -396,7 +396,7 @@ const CompanyProfileFields = () => {
                           </Button>
                           <Button
                             type="button"
-                            variant="outline"
+                            variant="dark"
                             onClick={() => moveField(index, 1)}
                             disabled={index === fields.length - 1}
                             aria-label={`Move ${field.label || 'this field'} down`}
@@ -405,7 +405,7 @@ const CompanyProfileFields = () => {
                           </Button>
                           <Button
                             type="button"
-                            variant="outline"
+                            variant="dark"
                             onClick={() =>
                               isSaved ? setConfirmingDelete(field.id) : removeField(field.id)
                             }
@@ -502,14 +502,14 @@ const CompanyProfileFields = () => {
                           <div className="flex flex-wrap items-center gap-2">
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="dark"
                               onClick={() => setConfirmingDelete(null)}
                             >
                               Keep it
                             </Button>
                             <Button
                               type="button"
-                              variant="primary"
+                              variant="dark"
                               onClick={() => removeField(field.id)}
                             >
                               Remove it
@@ -530,7 +530,7 @@ const CompanyProfileFields = () => {
             </p>
             <Button
               type="button"
-              variant="primary"
+              variant="dark"
               onClick={handleSave}
               disabled={isSaving || !isDirty}
             >

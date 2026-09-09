@@ -139,7 +139,7 @@ const CompanyRulesForm = ({ tab }: { tab: string }) => {
           )}
 
           <div className="flex justify-end pt-3">
-            <Button type="submit" variant="outline" disabled={isPending || isLoading}>
+            <Button type="submit" variant="dark" disabled={isPending || isLoading}>
               {isPending ? 'Saving...' : hasCompanyDefaults ? 'Save changes' : 'Create defaults'}
             </Button>
           </div>

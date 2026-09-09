@@ -545,7 +545,7 @@ const CompanyBulkSettings = () => {
               </div>
               <Button
                 type="button"
-                variant="outline"
+                variant="dark"
                 size="sm"
                 className="rounded-full"
                 onClick={toggleAllVisible}
@@ -632,7 +632,7 @@ const CompanyBulkSettings = () => {
                 People are saved one at a time, so a long list takes a moment. Please leave this
                 page open until it finishes.
               </p>
-              <Button type="button" variant="primary" onClick={() => run()} disabled={!canRun}>
+              <Button type="button" variant="dark" onClick={() => run()} disabled={!canRun}>
                 {running
                   ? 'Applying...'
                   : `Apply to ${preview?.changed || 0} ${

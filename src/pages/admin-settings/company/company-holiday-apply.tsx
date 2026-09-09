@@ -708,7 +708,7 @@ const CompanyHolidayApply = () => {
 
         <Button
           type="button"
-          variant="outline"
+          variant="dark"
           size="sm"
           onClick={() => setOpen((previous) => !previous)}
           disabled={running}
@@ -871,7 +871,7 @@ const CompanyHolidayApply = () => {
               {running && (
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="dark"
                   size="sm"
                   onClick={() => {
                     stopped.current = true;
@@ -882,7 +882,7 @@ const CompanyHolidayApply = () => {
               )}
               <Button
                 type="button"
-                variant="primary"
+                variant="dark"
                 size="sm"
                 onClick={start}
                 disabled={running || loadingLines || !companyHolidays.length}

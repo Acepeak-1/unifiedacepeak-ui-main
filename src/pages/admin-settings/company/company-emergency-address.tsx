@@ -615,7 +615,7 @@ const CompanyEmergencyAddress = () => {
               </Button>
               <Button
                 type="submit"
-                variant="primary"
+                variant="dark"
                 className="rounded-full"
                 disabled={isSaving || !acknowledged}
               >

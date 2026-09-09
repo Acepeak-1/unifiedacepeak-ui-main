@@ -133,16 +133,16 @@
   min-height: 0;
   overflow: hidden;
 }
-/* Excludes Radix's Switch root, which also renders as a <button>: its own
-   authored classes give it a real border and background (a track pill whose
-   colour is the whole point of a toggle), sized so the thumb's checked-state
-   translate lands exactly at the inner edge of that border. This reset's
-   border:0/background:none stripped both, which left the border-dependent
-   thumb math translating 1px further than the now-borderless track actually
-   had room for — reading as the knob sitting outside the track once switched
-   on. Every other button (icon buttons, chevrons, dropdown triggers, ...)
-   still gets the reset. */
-.mcm-page button:not([data-slot='switch']) {
+/* Excludes the Switch (its own classes give it the track's border/background
+   — see switch.tsx) and the shared Button component: [data-slot='button']
+   always carries its own variant styling (bg-black, bg-primary, ...) via
+   Tailwind, and those utilities live in Tailwind's layered stylesheet, which
+   loses to this un-layered reset regardless of specificity. Without the
+   exclusion every Button rendered under this shell — Save, Manage, New
+   location, every "dark"/"primary"/"outline" variant — kept its classes but
+   showed no background or border at all. Plain, unstyled `<button>`s (icon
+   buttons, chevrons, dropdown triggers, ...) still get the reset. */
+.mcm-page button:not([data-slot='switch']):not([data-slot='button']) {
   font: inherit;
   color: inherit;
   border: 0;
@@ -2653,45 +2653,18 @@
   margin-right: auto;
 }
 
-/* 2. Toggles. The stock switch paints a WHITE track when off, sitting on a
-      white card, so only the grey thumb was visible — it read as a stray
-      dot rather than a control. Off = filled track + white thumb, which is
-      the convention every major console follows. The on state is left to
-      the tenant's brand colour. */
+/* 2. Toggles. This used to resize the thumb to 16x16 and re-centre it
+   vertically with `translate: 2px -50%` — a hack that only makes sense if
+   the thumb is absolutely positioned inside the track. The current Switch
+   (src/components/ui/switch.tsx) is a plain button whose track centres the
+   thumb with flexbox already, so that extra -50% shoved the thumb half out
+   through the top of the pill instead of centring it — the "bite" shape.
+   The component's own classes now own sizing, colour and travel entirely;
+   this just clears the border/shadow the plain <button> reset would
+   otherwise leave off. */
 .mcm-page [data-slot='switch'] {
-  width: 38px;
-  height: 22px;
   border: none;
   box-shadow: none;
-}
-.mcm-page [data-slot='switch'][data-state='unchecked'] {
-  background: var(--ink-4);
-}
-/* On = the console accent. Left to itself this used `--primary`, which
-   defaults to near-black, so an enabled toggle read as dark rather than
-   active. Scoped to `.mcm-page` so every console switch agrees. */
-.mcm-page [data-slot='switch'][data-state='checked'] {
-  background: var(--accent);
-  border-color: transparent;
-}
-/* An 18px thumb in a 38x22 track left no room on either side: it sat flush
-   against the rim and, once on, looked like it was bulging out of the
-   track. 16px with a 3px inset on both ends travels cleanly instead —
-   38 - 2(border) - 2(3px inset) - 16 = 15px of travel. */
-.mcm-page [data-slot='switch'] [data-slot='switch-thumb'] {
-  width: 16px;
-  height: 16px;
-  margin-left: 3px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgb(13 21 38 / 0.25);
-  translate: 2px -50%;
-}
-/* Override `translate`, not `transform`: Tailwind v4's translate-x-* sets the
-   standalone `translate` property, so a transform here stacked on top of it
-   and pushed the thumb clean out of the track. */
-.mcm-page [data-slot='switch'][data-state='checked'] [data-slot='switch-thumb'] {
-  left: auto;
-  right: 2px;
 }
 
 /* 3. Radio dots were a hairline ring that all but vanished against the
@@ -7235,14 +7208,23 @@
   background-color: #fff !important;
 }
 
-/* Icon tiles: no tinted ground at all — just the glyph, in its own colour,
+/* Icon tiles: no tinted ground at all — just the glyph, in the brand red,
    with nothing boxing it in. The class is shared with the filled buttons
    below, which is why this one excludes them rather than the other way
    round. */
 .mcm-company-theme .bg-ucass-primary-200:not([data-slot='button']) {
   background-color: transparent;
   border: none;
-  color: #111111;
+  color: var(--primary);
+}
+
+/* SettingCard's own icon slot (Messaging, Security, Policies, Voicemail...)
+   carries a separate muted-ink colour rather than `bg-ucass-primary-200`, so
+   the tile fix above never reached it. Scoped to company pages only, same as
+   the tile fix, so SettingCard icons elsewhere (user-settings templates,
+   roles) keep their own muted colour. */
+.mcm-company-theme .mcm-setcard-icon {
+  color: var(--primary);
 }
 
 /* Brand-coloured logo tiles. The channel marks are currentColor line icons,
@@ -7938,6 +7920,21 @@
   background-color: #ffffff !important;
   color: #111111 !important;
   border-radius: 9999px !important;
+}
+
+/* Eleven sections in one strip: the shared .mcm-segmented padding (built for
+   four-item filters like CRM's) is too generous here and forces a horizontal
+   scrollbar. Tightened so every section sits on one line with no scroll. */
+.mcm-company-theme .company-tabs-nav {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 0;
+  background: #e5e7eb;
+}
+.mcm-company-theme .company-tabs-nav > a {
+  padding: 6px 9px;
+  font-size: 11.5px;
 }
 
 /* The press itself — colour only, no wash, so a click on a long row does not

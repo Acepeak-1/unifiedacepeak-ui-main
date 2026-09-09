@@ -83,23 +83,10 @@ const CompanyLayout = () => {
       <div className="shrink-0 px-3 pt-4 bg-white">
         {/* Links rather than buttons, so each section can be opened in a new tab,
             bookmarked, and sent to someone in a support reply. */}
-        <div className="mb-3 overflow-x-auto">
-          <nav
-            className="company-tabs-nav flex w-full flex-nowrap items-center justify-between gap-0.5 rounded-full px-1.5 py-1.5"
-            aria-label="Company settings"
-          >
+        <div className="mb-3">
+          <nav className="mcm-segmented company-tabs-nav" aria-label="Company settings">
             {COMPANY_SECTIONS.map((item) => (
-              <NavLink
-                key={item.path}
-                to={`/admin-settings/company/${item.path}`}
-                className={({ isActive }) =>
-                  `flex-1 cursor-pointer whitespace-nowrap rounded-full border px-2.5 py-1 text-center text-[11px] font-semibold transition-colors ${
-                    isActive
-                      ? 'border-gray-200 bg-white text-gray-900 shadow-sm'
-                      : 'border-transparent text-gray-500 hover:text-gray-900'
-                  }`
-                }
-              >
+              <NavLink key={item.path} to={`/admin-settings/company/${item.path}`}>
                 {item.label}
               </NavLink>
             ))}

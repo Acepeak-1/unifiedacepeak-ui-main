@@ -116,7 +116,7 @@ const CompanySettingsCard = () => {
         </div>
         <Button
           type="button"
-          variant="outline"
+          variant="dark"
           className="rounded-xl"
           onClick={() => navigate(COMPANY_RULES_PATH)}
         >

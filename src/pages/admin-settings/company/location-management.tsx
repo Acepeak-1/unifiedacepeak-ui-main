@@ -419,10 +419,10 @@ const LocationManagement = () => {
       actions={
         <Button
           type="button"
-          variant="outline"
+          variant="dark"
           onClick={exportCsv}
           disabled={!rows.length}
-          className="rounded-full bg-white text-black border-black hover:bg-white"
+          className="rounded-full"
         >
           <Download className="h-3.5 w-3.5" />
           Export list
@@ -590,7 +590,7 @@ const LocationManagement = () => {
                 </div>
                 <Button
                   type="button"
-                  variant="primary"
+                  variant="dark"
                   className="rounded-full"
                   disabled={!selectedRows.length || !bulkZone?.value || isApplying}
                   onClick={() => bulkZone?.value && applyTimezone(bulkZone.value)}
