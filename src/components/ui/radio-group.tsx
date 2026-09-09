@@ -25,14 +25,7 @@ function RadioGroupItem({
     <RadioGroupPrimitive.Item
       data-slot="radio-group-item"
       className={cn(
-        /* The checked ring+tint+shadow (`ring-2 ring-primary/30
-           shadow-md bg-primary/10`) read as one oversized, blurred blob
-           rather than a clean small dot in a ring — reported against two
-           separate radio groups now, so this is a rendering defect to fix
-           here rather than a per-instance preference to override each
-           time it comes up. Checked state is just a coloured border and
-           the dot (rendered by the indicator below) now. */
-        "relative after:absolute after:-inset-2 after:content-[''] border-gray-400 text-primary bg-white data-[state=checked]:border-primary data-[state=checked]:bg-white focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-all outline-none focus-visible:ring-[3px] cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 touch-manipulation",
+        "relative after:absolute after:-inset-2 after:content-[''] border-gray-400 text-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-all outline-none focus-visible:ring-[3px] cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 touch-manipulation",
         className,
       )}
       {...props}

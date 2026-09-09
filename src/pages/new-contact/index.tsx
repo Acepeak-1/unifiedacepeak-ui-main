@@ -280,7 +280,7 @@ const NewContact: FC = () => {
           <>
             {/* Header bar */}
             <div className="border-b border-gray-200 bg-white">
-              <div className="flex flex-col gap-3 px-3 py-3 sm:py-0 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col gap-3 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="w-full shrink-0 overflow-x-auto lg:w-auto lg:min-w-0 lg:shrink lg:flex-1">
                   <Tabs
                     value={tabName}
@@ -308,7 +308,7 @@ const NewContact: FC = () => {
                   <Button
                     onClick={() => login()}
                     variant="outline"
-                    className="btn ghost w-full sm:w-auto md:max-lg:shrink-0"
+                    className="w-full rounded-full border-0 bg-[#171717] text-white hover:bg-black hover:text-white sm:w-auto md:max-lg:shrink-0"
                   >
                     Sync With Google
                   </Button>
@@ -316,7 +316,7 @@ const NewContact: FC = () => {
                   <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center md:max-lg:min-w-0 md:max-lg:flex-1 md:max-lg:flex-nowrap lg:w-auto lg:min-w-0 lg:flex-nowrap">
                     <Input
                       placeholder="Search"
-                      className="min-h-10 w-full rounded-lg pl-10 sm:min-w-[6rem] md:min-w-[8rem] md:max-lg:min-w-0 md:max-lg:flex-1 lg:min-w-[12rem] xl:min-w-[18rem]"
+                      className="min-h-10 w-full rounded-full pl-10 sm:min-w-[6rem] md:min-w-[8rem] md:max-lg:min-w-0 md:max-lg:flex-1 lg:min-w-[12rem] xl:min-w-[18rem]"
                       IconPosition="left-0 pl-2 inset-y-0"
                       value={search}
                       onChange={(e) => {
@@ -381,7 +381,7 @@ const NewContact: FC = () => {
                       {canAddContact ? (
                         <>
                           <Button
-                            className="cursor-pointer flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-lg w-9 h-9 bg-white border border-primary text-primary hover:bg-primary hover:text-white"
+                            className="cursor-pointer flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-full w-9 h-9 border-0 bg-[#171717] text-white hover:bg-black hover:text-white"
                             type="button"
                             onClick={() =>
                               setDrawerState((prev) => ({ ...prev, updateContacts: true }))
@@ -393,7 +393,7 @@ const NewContact: FC = () => {
                           {tabName === CONTACT_TABS_CONST.CONTACT_LIST && (
                             <>
                               <Button
-                                className="cursor-pointer flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-lg w-9 h-9 bg-white border border-primary text-primary hover:bg-primary hover:text-white"
+                                className="cursor-pointer flex items-center justify-center min-h-9 min-w-9 max-w-9 max-h-9 rounded-full w-9 h-9 border-0 bg-[#171717] text-white hover:bg-black hover:text-white"
                                 type="button"
                                 onClick={() =>
                                   setDrawerState((prev) => ({ ...prev, exportContacts: true }))
@@ -405,7 +405,7 @@ const NewContact: FC = () => {
                             </>
                           )}
                           <Button
-                            className="cursor-pointer flex min-h-9 items-center justify-center gap-2 rounded-lg border border-primary bg-white px-3 text-primary hover:bg-primary hover:text-white sm:h-9 sm:w-9 sm:px-0"
+                            className="cursor-pointer flex min-h-9 items-center justify-center gap-2 rounded-full border-0 bg-[#171717] px-3 text-white hover:bg-black hover:text-white sm:h-9 sm:w-9 sm:px-0"
                             type="button"
                             onClick={() =>
                               tabName === CONTACT_TABS_CONST.CONTACT_GROUP_LIST

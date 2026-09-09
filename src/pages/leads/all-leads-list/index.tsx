@@ -365,6 +365,8 @@ const AllLeadsList: FC<any> = ({
           descriptionEmptyTable: payloadExtraParams?.search
             ? ''
             : 'Add or import leads to begin campaign calling.',
+          pagerAccentClassName: 'bg-red-600 text-white border-red-600',
+          hideFooterRefresh: true,
         }}
       />
       {modalState?.open && (

@@ -23,6 +23,7 @@
    puts it in the same PostCSS-processed bundle as Tailwind and mcm-page.css,
    in the same reliable position that already makes mcm-page.css win. */
 @import './components/mcm/ai-tools-table.css';
+@import './pages/dashboard/home/home.css';
 
 @theme {
   --color-ucass-gray: oklch(0.9612 0 0);
@@ -766,23 +767,23 @@
      is what makes that the case. */
   .custom-react-select__option:hover,
   .custom-react-select__option--is-focused {
-    background-color: var(--select-option-hover-bg, var(--color-gray-100)) !important;
-    color: var(--select-option-hover-fg, var(--color-black)) !important;
+    background-color: #fdecec !important;
+    color: #d92b2b !important;
   }
 
-  /* Selected: the brand's lightest pink band with red ink, the same pair the
-     Company screens use, rather than a solid --primary fill.
+  /* Selected: a neutral grey band, so it reads as "this is the current value"
+     rather than being confused with the light-red hover colour above.
 
      Listed AFTER hover and naming the hover/focused combinations explicitly,
      because react-select puts BOTH classes on the row when you mouse over the
      option that is already chosen. At equal specificity the later rule wins,
-     so without this the selected row lost its pink the moment the cursor
+     so without this the selected row lost its grey the moment the cursor
      touched it — the one place the colour carries meaning. */
   .custom-react-select__option--is-selected,
   .custom-react-select__option--is-selected:hover,
   .custom-react-select__option--is-selected.custom-react-select__option--is-focused {
-    background-color: #fdecec !important;
-    color: #d92b2b !important;
+    background-color: var(--select-option-hover-bg, var(--color-gray-100)) !important;
+    color: var(--select-option-hover-fg, var(--color-black)) !important;
     font-weight: 600 !important;
   }
 
@@ -1160,6 +1161,15 @@
       transform: translateX(-50%) translateY(-500px);
     }
   }
+}
+
+/* Every info-tooltip trigger (the little "i" icon) turns red on hover, app-wide.
+   Plain/unlayered on purpose — some triggers set their own colour via an inline
+   `style` (e.g. the Playground page), which a merely-later class can't beat, so
+   this needs `!important` to win there too. */
+.tooltip-trigger-red:hover,
+.tooltip-trigger-red:hover svg {
+  color: #dc2626 !important;
 }
 
 @layer utilities {

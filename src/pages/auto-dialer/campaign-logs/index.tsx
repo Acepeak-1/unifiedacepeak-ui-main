@@ -3,9 +3,12 @@ import CustomSelect from '@/components/custom/custom-select';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import { ISELECTVALUE } from '@/interfaces/api-interfaces';
 import { dropdownList } from '@/services/api';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { RefreshCcw, Search } from 'lucide-react';
+import useDebounce from '@/hooks/use-debounce';
 import { campaignTypeOptions } from '../campaign/const';
+import './campaign-logs-head.css';
 
 const CampaignLogs = () => {
   const [campaignType, setCampaignType] = useState<ISELECTVALUE>();
@@ -13,6 +16,9 @@ const CampaignLogs = () => {
   const [disposition, setDisposition] = useState<any>();
   const [campaignStatistics, setCampaignStatistics] = useState<any>(null);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
+  const queryClient = useQueryClient();
   console.log(disposition, 'dispositiondisposition', campaign);
 
   const getCardValue = (keys: string[]) =>
@@ -34,6 +40,7 @@ const CampaignLogs = () => {
   };
 
   const payloadExtraParams = {
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
     filters: [
       ...(campaign?.value ? [{ key: 'campaign_uuid', value: campaign?.value }] : []),
       ...(campaignType?.value ? [{ key: 'campaignType', value: campaignType?.value }] : []),
@@ -54,13 +61,16 @@ const CampaignLogs = () => {
 
   return (
     // <div className="flex flex-col w-full">
-    <div className="flex flex-col w-full">
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 min-h-[65px] bg-white">
-        <p className="text-gray-900 font-semibold text-lg flex items-center gap-1">Campaign Logs</p>
+    <div className="w-full bg-[#e3e3e3] flex flex-col overflow-x-auto overflow-y-hidden h-full">
+      <div className="flex items-center justify-between px-[26px] pt-5 pb-1 border-b border-gray-200 bg-white">
+        <div>
+          <div className="cl-eyebrow">Activity</div>
+          <p className="cl-title">Statistics</p>
+        </div>
         <div className="flex items-center gap-2 filters">
           <CustomSelect
             isClearable
-            placeholder="Select campaign type"
+            placeholder="Campaign type"
             options={campaignTypeOptions || []}
             handleChange={(e: ISELECTVALUE) => {
               setCampaignType(e);
@@ -69,11 +79,11 @@ const CampaignLogs = () => {
               setSelectedCard(null);
             }}
             value={campaignType}
-            inputClass="team_chat"
+            inputClass="team_chat cl-filter"
           />
           <CustomSelect
             isClearable
-            placeholder="Select campaign name"
+            placeholder="Campaign name"
             isLoading={isPendingDepartmentList}
             options={
               (campaignListData &&
@@ -90,7 +100,7 @@ const CampaignLogs = () => {
               setSelectedCard(null);
             }}
             value={campaign}
-            inputClass="team_chat"
+            inputClass="team_chat cl-filter"
           />
           {!campaign?.value ? (
             <CustomTooltip text="Please select campaign name first" side="top">
@@ -102,7 +112,7 @@ const CampaignLogs = () => {
                   options={[]}
                   handleChange={() => {}}
                   value={disposition}
-                  inputClass="team_chat"
+                  inputClass="team_chat cl-filter"
                 />
               </div>
             </CustomTooltip>
@@ -125,63 +135,77 @@ const CampaignLogs = () => {
               })()}
               handleChange={(e: ISELECTVALUE) => setDisposition(e)}
               value={disposition}
-              inputClass="team_chat"
+              inputClass="team_chat cl-filter"
             />
           )}
         </div>
       </div>
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 p-3">
-        {[
-          { label: 'Total Contacts', keys: ['totalCall', 'totalContacts'] },
-          { label: 'Dialed', keys: ['DialedCall', 'dialedCall', 'dialed'] },
-          { label: 'Pending', keys: ['PendingCall', 'pendingCall', 'pending'] },
-          { label: 'Connected', keys: ['connected', 'Connected', 'answered'] },
-          {
-            label: 'No Answers',
-            keys: ['DialedButNotAnswered', 'dialedButNotAnswered', 'notAnswered'],
-          },
-          { label: 'DNC', keys: ['dnc', 'DNC'] },
-        ].map((card) => {
-          const isSelected =
-            selectedCard === card.label || (!selectedCard && card.label === 'Total Contacts');
-          return (
-            <div
-              key={card.label}
-              onClick={() => setSelectedCard(card.label)}
-              className={`rounded-lg p-4 border flex flex-col items-center justify-center gap-1  transition-all cursor-pointer ${
-                isSelected
-                  ? // ? 'border-primary bg-primary/10 shadow-sm'
-                    'border-primary bg-primary/10 shadow-sm'
-                  : 'border-stone-300/50 bg-stone-200/30 hover:border-stone-400 hover:bg-stone-200/40'
-              }`}
-            >
-              <span
-                className={`text-gray-900 font-semibold ${card.label === 'Total Contacts' ? 'text-base' : 'text-lg'}`}
+      <div>
+        <div className="cl-kpis">
+          {[
+            { label: 'Total Contacts', keys: ['totalCall', 'totalContacts'] },
+            { label: 'Dialed', keys: ['DialedCall', 'dialedCall', 'dialed'] },
+            { label: 'Pending', keys: ['PendingCall', 'pendingCall', 'pending'] },
+            { label: 'Connected', keys: ['connected', 'Connected', 'answered'] },
+            {
+              label: 'No Answers',
+              keys: ['DialedButNotAnswered', 'dialedButNotAnswered', 'notAnswered'],
+            },
+            { label: 'DNC', keys: ['dnc', 'DNC'] },
+          ].map((card) => {
+            const isSelected =
+              selectedCard === card.label || (!selectedCard && card.label === 'Total Contacts');
+            return (
+              <div
+                key={card.label}
+                onClick={() => setSelectedCard(card.label)}
+                className={`cl-kpi${isSelected ? ' is-selected' : ''}`}
               >
-                {getCardValue(card.keys)}
-              </span>
-              <h3
-                className={`text-center text-sm font-medium ${isSelected ? 'text-slate-500' : 'text-slate-500'}`}
-              >
-                {card.label}
-              </h3>
-            </div>
-          );
-        })}
+                <div className="cl-kpi-label">{card.label}</div>
+                <div className="cl-kpi-value">{getCardValue(card.keys)}</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <ActivityList
-        payloadExtraParams={payloadExtraParams}
-        activityType="campaignLogs"
-        contactId={''}
-        notesOnlyAction
-        onTableSuccess={(data) => {
-          if (data?.data?.data?.result) {
-            setCampaignStatistics(data.data.data.result);
-          }
-        }}
-        emptyPlaceholder="No campaign logs found"
-        description="Campaign activity will appear here once campaigns start running."
-      />
+      <div>
+        <div className="cl-card">
+          <div className="cl-toolbar">
+            <div className="cl-search">
+              <span className="cl-search-ico" aria-hidden="true">
+                <Search />
+              </span>
+              <input
+                placeholder="Search campaign logs"
+                aria-label="Search campaign logs"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className="cl-refresh"
+              aria-label="Refresh campaign logs"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['campaignLogs'] })}
+            >
+              <RefreshCcw className="w-4 h-4" />
+            </button>
+          </div>
+          <ActivityList
+            payloadExtraParams={payloadExtraParams}
+            activityType="campaignLogs"
+            contactId={''}
+            notesOnlyAction
+            onTableSuccess={(data) => {
+              if (data?.data?.data?.result) {
+                setCampaignStatistics(data.data.data.result);
+              }
+            }}
+            emptyPlaceholder="No campaign logs found"
+            description="Campaign activity will appear here once campaigns start running."
+          />
+        </div>
+      </div>
     </div>
   );
 };

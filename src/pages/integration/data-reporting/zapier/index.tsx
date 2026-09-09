@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react';
 import { useState } from 'react';
 import ZapierViewModal from '../modal/ZapierViewModal';
 import { ChevronIcon } from '@/assets/icons';
@@ -66,7 +67,7 @@ const Zapier = () => {
                 className="mcm-tooltip-info"
                 text="Send console events into Zapier so they can trigger workflows in your other tools."
               >
-                <span className="mcm-intpage-info">i</span>
+                <Info className="mcm-intpage-info" />
               </CustomTooltip>
             </div>
 
