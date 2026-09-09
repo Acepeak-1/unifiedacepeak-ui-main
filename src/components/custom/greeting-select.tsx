@@ -7,8 +7,8 @@ import { CloseIcon, Play, UploadLineIcon } from '@/assets/icons';
 import { DEFAULT_RECORDING_UUIDS, getEnv, MEDIA_URL } from '@/lib/utils';
 import { useUser } from '@/hooks/use-user';
 import ErrorTooltip from './error-tooltip';
-import SideDrawer from './side-drawer';
 import ReadyAudio from './ready-audio';
+import { Dialog, DialogContent } from '../ui/dialog';
 
 interface IGREETINGPROPS {
   options: ISELECTVALUE[];
@@ -108,7 +108,7 @@ const SelectGreeting: FC<IGREETINGPROPS> = ({
           {value?.value && (
             <Button
               type="button"
-              variant={'outline'}
+              variant={'dark'}
               className="w-10 h-10"
               onClick={() => setIsPlay(true)}
             >
@@ -117,7 +117,7 @@ const SelectGreeting: FC<IGREETINGPROPS> = ({
           )}
           {isShowUpload && !isPlay && !value?.value && (
             <Button
-              variant={'outline'}
+              variant={'dark'}
               type="button"
               className="w-10 h-10"
               onClick={() => {
@@ -134,16 +134,15 @@ const SelectGreeting: FC<IGREETINGPROPS> = ({
         </div>
       )}
 
-      {drawerState?.addGreeting && (
-        <SideDrawer
-          width={width}
-          isOpen={drawerState?.addGreeting}
-          title="Upload File"
-          handleClose={() =>
-            setDrawerState((prev) => ({ ...prev, addGreeting: false, greetingType: '' }))
-          }
-          isHeader
-          content={
+      <Dialog
+        open={Boolean(drawerState?.addGreeting)}
+        onOpenChange={(open) =>
+          !open && setDrawerState((prev) => ({ ...prev, addGreeting: false, greetingType: '' }))
+        }
+      >
+        <DialogContent className="flex w-full max-w-[560px] flex-col bg-white p-4 shadow-2xl sm:p-6">
+          <div className="text-lg font-semibold text-gray-900">Upload File</div>
+          <div className="min-h-0 bg-white">
             <AddGreeting
               drawerState={drawerState?.addGreeting}
               setDrawerState={(val) =>
@@ -157,9 +156,9 @@ const SelectGreeting: FC<IGREETINGPROPS> = ({
               }}
               isRefetchable={isRefetchable}
             />
-          }
-        />
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

@@ -138,16 +138,16 @@
   min-height: 0;
   overflow: hidden;
 }
-/* Excludes Radix's Switch root, which also renders as a <button>: its own
-   authored classes give it a real border and background (a track pill whose
-   colour is the whole point of a toggle), sized so the thumb's checked-state
-   translate lands exactly at the inner edge of that border. This reset's
-   border:0/background:none stripped both, which left the border-dependent
-   thumb math translating 1px further than the now-borderless track actually
-   had room for — reading as the knob sitting outside the track once switched
-   on. Every other button (icon buttons, chevrons, dropdown triggers, ...)
-   still gets the reset. */
-.mcm-page button:not([data-slot='switch']) {
+/* Excludes the Switch (its own classes give it the track's border/background
+   — see switch.tsx) and the shared Button component: [data-slot='button']
+   always carries its own variant styling (bg-black, bg-primary, ...) via
+   Tailwind, and those utilities live in Tailwind's layered stylesheet, which
+   loses to this un-layered reset regardless of specificity. Without the
+   exclusion every Button rendered under this shell — Save, Manage, New
+   location, every "dark"/"primary"/"outline" variant — kept its classes but
+   showed no background or border at all. Plain, unstyled `<button>`s (icon
+   buttons, chevrons, dropdown triggers, ...) still get the reset. */
+.mcm-page button:not([data-slot='switch']):not([data-slot='button']) {
   font: inherit;
   color: inherit;
   border: 0;
@@ -2796,44 +2796,18 @@
   margin-right: auto;
 }
 
-/* 2. Toggles. The stock switch paints a WHITE track when off, sitting on a
-      white card, so only the grey thumb was visible — it read as a stray
-      dot rather than a control. Off = filled track + white thumb, which is
-      the convention every major console follows. The on state is left to
-      the tenant's brand colour. */
+/* 2. Toggles. This used to resize the thumb to 16x16 and re-centre it
+   vertically with `translate: 2px -50%` — a hack that only makes sense if
+   the thumb is absolutely positioned inside the track. The current Switch
+   (src/components/ui/switch.tsx) is a plain button whose track centres the
+   thumb with flexbox already, so that extra -50% shoved the thumb half out
+   through the top of the pill instead of centring it — the "bite" shape.
+   The component's own classes now own sizing, colour and travel entirely;
+   this just clears the border/shadow the plain <button> reset would
+   otherwise leave off. */
 .mcm-page [data-slot='switch'] {
-  width: 38px;
-  height: 22px;
   border: none;
   box-shadow: none;
-}
-.mcm-page [data-slot='switch'][data-state='unchecked'] {
-  background: var(--ink-4);
-}
-/* On = the console accent. Left to itself this used `--primary`, which
-   defaults to near-black, so an enabled toggle read as dark rather than
-   active. Scoped to `.mcm-page` so every console switch agrees. */
-.mcm-page [data-slot='switch'][data-state='checked'] {
-  background: var(--accent);
-  border-color: transparent;
-}
-/* An 18px thumb in a 38x22 track left no room on either side: it sat flush
-   against the rim and, once on, looked like it was bulging out of the
-   track. 16px with a 3px inset on both ends travels cleanly instead —
-   38 - 2(border) - 2(3px inset) - 16 = 15px of travel. */
-.mcm-page [data-slot='switch'] [data-slot='switch-thumb'] {
-  width: 16px;
-  height: 16px;
-  margin-left: 3px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgb(13 21 38 / 0.25);
-  translate: 2px -50%;
-}
-/* Override `translate`, not `transform`: Tailwind v4's translate-x-* sets the
-   standalone `translate` property, so a transform here stacked on top of it
-   and pushed the thumb clean out of the track. */
-.mcm-page [data-slot='switch'][data-state='checked'] [data-slot='switch-thumb'] {
-  translate: 16px 0;
 }
 
 /* 3. Radio dots were a hairline ring that all but vanished against the
@@ -4001,17 +3975,30 @@
   border-bottom: 1px solid var(--line-2);
 }
 
-/* Location management only: the filter bar sat flush against the header,
-   sharing its background and separated by just a 1px line, so the two read
-   as one fused block. Pulling it into its own bordered strip below the
-   header — same pattern the header itself uses to separate from the table
-   below — makes it read as a distinct control row instead. */
-.mcm-admin .location-management-page .mcm-adminpage-bar {
-  margin: 14px 22px 0;
+/* Location management only: the filter row used to be pinned above the
+   table as a separate, non-scrolling bar — but that made it a sibling of
+   the table's own scroll area rather than a part of it, so the two always
+   risked drifting a scrollbar's-width apart at the right edge no matter how
+   the widths were padded to match. It now renders as the first thing inside
+   the same scrolling column as the table (see the JSX), so it shares the
+   exact same box and can't misalign — only the page title/Export header
+   above stays fixed while this and the table scroll together. */
+.mcm-admin .location-management-page .location-management-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
   padding: 12px 16px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--surface);
+}
+.mcm-admin .location-management-page .loc-filter-select__control {
+  border-radius: 9999px !important;
+}
+.mcm-admin .location-management-bar > * {
+  max-width: 280px;
+  width: 100%;
 }
 
 .mcm-admin .mcm-adminpage-body {
@@ -4038,63 +4025,71 @@
   background: var(--surface-2);
 }
 
-/* Location management only: match the roomier header row used on the
-   Performance table (13.5px, 17px/16px padding) instead of the denser
-   default admin-list header. Scoped by the extra class on this page's root
-   section so no other `.mcm-adminpage` table is affected. */
-.mcm-admin .mcm-adminpage.location-management-page table th {
-  text-align: left;
-  font-size: 13.5px;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ink) !important;
-  padding: 17px 16px;
-  border-bottom: 1px solid var(--line);
-  white-space: nowrap;
-}
-
 .mcm-admin .mcm-adminpage table td {
   padding: 10px 12px;
   font-size: 13px;
   vertical-align: middle;
 }
 
-/* Integration pages carry their own header (`.mcm-intpage-head`) instead of
-   the shared AdminPage shell, so `.mcm-adminpage table` above never matches
-   them. Any table under an integration page gets the same reference
-   treatment directly. */
-/* Table header matching the Performance screen's (`.mcm-page th`): 9.5px /
-   800 / 0.09em tracking, uppercase, 9px 12px padding on a hairline. This
-   block previously followed a 13.5px written spec instead, which left an
-   Integration table's header noticeably heavier than the same header on
-   Performance — the console's tables should read as one system, so the
-   header that actually ships is the one to match. */
-/* `text-align: left` here is unlayered, so it BEATS Tailwind's `text-right`
-   utility (which lives in @layer utilities). A th marked text-right stayed
-   left-aligned while its td obeyed, so every right-aligned column had its
-   heading hanging off the wrong end. The utility is honoured explicitly
-   below rather than by removing this default. */
-.mcm-admin .mcm-intpage table th {
-  text-align: left;
-  /* 13.5px / 800 / 0.09em / 17px 16px — the `.mcm-page th` reference panel
-     the user pointed at on the Performance screen. Dark ink: the pale
-     --ink-4 in that panel is struck through in its own inspector; the
-     rendered header takes Tailwind's text-gray-900/80. */
-  font-size: 13.5px;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  padding: 17px 16px;
-  border-bottom: 1px solid var(--line);
-  white-space: nowrap;
-  background: transparent;
+/* Location management only: match the AI Tools shared table design (Chat
+   Agents, AI Receptionists, Sessions) supplied as aitoolstable.css — same
+   header band, row height, cell padding and name/subtitle weight, applied
+   onto this page's existing table markup rather than renaming every class,
+   since the visual spec is what was asked for, not the BEM names themselves. */
+.mcm-admin .mcm-adminpage.location-management-page table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
 }
-.mcm-admin .mcm-intpage table td {
-  padding: 11px 12px;
-  font-size: 13px;
-  vertical-align: middle;
+.mcm-admin .mcm-adminpage.location-management-page .overflow-x-auto {
+  border-radius: var(--r);
+  box-shadow:
+    0 1px 3px rgba(17, 17, 17, 0.08),
+    0 4px 12px rgba(17, 17, 17, 0.06);
+}
+.mcm-admin .mcm-adminpage.location-management-page table thead tr {
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+}
+.mcm-admin .mcm-adminpage.location-management-page table th {
+  padding: 13px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #737373;
+  background: transparent;
+  white-space: nowrap;
+}
+.mcm-admin .mcm-adminpage.location-management-page table th:first-child {
+  padding-left: 18px;
+}
+.mcm-admin .mcm-adminpage.location-management-page table tbody tr {
+  background: #ffffff;
+  height: 52.67px;
+  transition: background-color 0.15s ease;
+}
+.mcm-admin .mcm-adminpage.location-management-page table tbody tr:hover {
+  background: #fafafa;
+}
+.mcm-admin .mcm-adminpage.location-management-page table tbody td {
+  padding: 8px 18px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+/* The Location column's header sits at the same 10px the rest of the header
+   row uses, but its body cells inherited the 18px given to the checkbox
+   column next to it — pulling every name a few pixels to the right of its
+   own column heading. Matching it back to 10px lines the two up. */
+.mcm-admin .mcm-adminpage.location-management-page table tbody td:nth-child(2) {
+  padding-left: 10px;
+}
+.mcm-admin .mcm-adminpage.location-management-page .list-row-name {
+  font-weight: 400;
+  color: #020617;
+}
+.mcm-admin .mcm-adminpage.location-management-page .list-row-sub {
+  font-size: 11px;
+  color: #737373;
 }
 
 /* Search should not stretch the full width of a 1900px screen. */
@@ -6071,19 +6066,13 @@
 .mcm-setcard-h {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 16px;
   padding: 13px 16px 11px;
   border-bottom: 1px solid var(--line);
 }
 .mcm-setcard-ht {
   min-width: 0;
-  /* Without this, .mcm-setcard-h's `justify-content: space-between` treats
-     the icon and this block as the only two flex children whenever a card
-     passes no `aside` — pushing the title/description to the far right
-     instead of leaving it next to the icon. Growing to fill the row makes
-     the icon+title read as one left-aligned group either way, and still
-     leaves an aside (when one is passed) pushed to the true right edge. */
   flex: 1;
 }
 .mcm-setcard-h h3 {
@@ -6283,6 +6272,18 @@
     0 6px 18px rgba(17, 17, 17, 0.1),
     0 1px 4px rgba(17, 17, 17, 0.06);
 }
+.company-ring-time-page .mcm-setcard {
+  border: none;
+  box-shadow:
+    0 6px 18px rgba(17, 17, 17, 0.1),
+    0 1px 4px rgba(17, 17, 17, 0.06);
+}
+.company-voicemail-page .mcm-setcard {
+  border: none;
+  box-shadow:
+    0 6px 18px rgba(17, 17, 17, 0.1),
+    0 1px 4px rgba(17, 17, 17, 0.06);
+}
 .location-management-page .mcm-setcard-h {
   justify-content: flex-start;
   gap: 8px;
@@ -6306,20 +6307,24 @@
   color: #111111;
 }
 
-/* "Coming soon" badges (the unmodified base badge — `.is-on`/`.is-app`/`.is-off`
-   already carry their own colour and are excluded here) read amber by default.
-   This page's brand accent is red, so its badges follow suit instead of
-   clashing. The note text stays black — a tinted background is enough to mark
-   it out, and red-on-pink was harder to read than plain ink. */
-.company-rules-page .mcm-setcard-badge:not(.is-on):not(.is-app):not(.is-off) {
-  background: #fdecec;
-  color: #d92b2b;
+/* "Coming soon" reads as a warning on a page a customer is actively using
+   right now, not as a helpful status — so the whole Company section hides
+   that badge outright rather than re-colouring it. `.is-on`/`.is-app`/
+   `.is-off` are genuinely informative (what's active, what's app-only,
+   what's switched off) and stay visible; only the unmodified base badge,
+   which is exclusively 'coming soon' (see `STATUS_CLASS` in
+   setting-card.tsx), is hidden here. Scoped to `.mcm-company-theme` — the
+   shared ancestor of every Company page, not just the ones that also carry
+   `.company-rules-page` — so it reaches Messaging, Profile fields, Bulk
+   settings and the rest too. */
+.mcm-company-theme .mcm-setcard-badge:not(.is-on):not(.is-app):not(.is-off) {
+  display: none;
 }
 .company-rules-page .mcm-setcard-note:not(.is-on):not(.is-app):not(.is-plain) {
   background: #fdecec;
   color: #111111;
 }
-.company-rules-page .mcm-setcard-h h3 {
+.mcm-company-theme .mcm-setcard-h h3 {
   font-size: 16px;
 }
 .company-rules-page .mcm-setcard {
@@ -6331,7 +6336,7 @@
 /* Only the header strip — title, description, the Change button — takes the
    grey; the rows below stay white so the two read as separate zones. */
 .company-rules-page .mcm-setcard-h {
-  background: #eef0f2;
+  background: #f5f6f7;
   border-radius: var(--r) var(--r) 0 0;
 }
 
@@ -6348,6 +6353,9 @@
   flex: none;
   min-height: 0;
   overflow: visible;
+}
+.company-rules-page .user-settings-template-settings-name-wrap label {
+  font-size: 14px;
 }
 
 /* The form itself carries `.mcm-page` — a class meant for a top-level route
@@ -7480,63 +7488,40 @@
   background: none;
 }
 
-/* ── Channel card states ──────────────────────────────────────────────────
-   The paused state and the loading skeleton (see channel-card.tsx). */
-
-/* Paused: still connected, but nothing is arriving. One word in the footer
-   said so and the card otherwise looked identical to a live one, so which
-   channels were actually running took reading rather than glancing. */
-.mcm-admin .mcm-chcard.is-paused {
-  background: var(--surface-2);
-}
-.mcm-admin .mcm-chcard.is-paused .mcm-chcard-logo,
-.mcm-admin .mcm-chcard.is-paused .mcm-chcard-account {
-  opacity: 0.55;
-}
-.mcm-admin .mcm-chcard.is-paused .mcm-chcard-head h4 {
-  color: var(--ink-3);
+/* SettingCard's own icon slot (Messaging, Security, Policies, Voicemail...)
+   carries a separate muted-ink colour rather than `bg-ucass-primary-200`, so
+   the tile fix above never reached it. Scoped to company pages only, same as
+   the tile fix, so SettingCard icons elsewhere (user-settings templates,
+   roles) keep their own muted colour. */
+.mcm-company-theme .mcm-setcard-icon {
+  color: var(--primary);
 }
 
-/* Loading skeleton — same skeleton as the card it replaces, so nothing
-   moves when the channel list lands. */
-.mcm-admin .mcm-chcard.is-skeleton .mcm-chcard-logo {
-  background: var(--surface-2);
+/* Tooltip info icons ("i" glyphs, cursor-help) go red on hover, so the
+   hint reads as reachable rather than just decorative grey. */
+.mcm-company-theme .cursor-help:hover {
+  color: var(--primary);
 }
-.mcm-admin .mcm-skel {
-  display: block;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #eef1f6 25%, #e3e8f0 37%, #eef1f6 63%);
-  background-size: 400% 100%;
-  animation: mcm-skel-shimmer 1.3s ease infinite;
+
+/* More breathing room between a row's label and the sentence explaining it —
+   the shared 4px gap read as cramped once these description sentences grew
+   to two lines. */
+.mcm-company-theme .mcm-setrow-desc {
+  margin-top: 8px;
 }
-.mcm-admin .mcm-skel-title {
-  width: 55%;
-  height: 14px;
+
+/* The shared 4px vertical padding left every card's body sitting almost flush
+   against its header and footnote — cramped once a card held more than one
+   row. More room top and bottom; sides left alone since they already line up
+   with the header. */
+.mcm-company-theme .mcm-setcard-body {
+  padding: 14px 16px 16px;
 }
-.mcm-admin .mcm-skel-line {
-  width: 100%;
-  height: 11px;
-}
-.mcm-admin .mcm-skel-line.is-short {
-  width: 70%;
-}
-.mcm-admin .mcm-skel-pill {
-  width: 84px;
-  height: 22px;
-  border-radius: 999px;
-}
-@keyframes mcm-skel-shimmer {
-  0% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0 50%;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .mcm-admin .mcm-skel {
-    animation: none;
-  }
+
+/* Icon-to-title gap in a card header: 16px read as a gap between two
+   unrelated things rather than an icon labelling the title next to it. */
+.mcm-company-theme .mcm-setcard-h {
+  gap: 8px;
 }
 
 /* Brand-coloured logo tiles. The channel marks are currentColor line icons,
@@ -8574,13 +8559,9 @@
 .mcm-admin .ident-coral-theme .bg-primary\/5 {
   background-color: var(--accent-wash) !important;
 }
-.mcm-admin .ident-coral-theme .border-primary,
-.mcm-admin .ident-coral-theme .border-primary\/30 {
-  border-color: var(--accent) !important;
-}
-.mcm-admin .ident-coral-theme .hover\:bg-primary:hover {
-  background-color: var(--accent) !important;
-  color: #fff !important;
+.mcm-company-theme .company-tabs-nav > a {
+  padding: 6px 9px;
+  font-size: 11.5px;
 }
 
 /* TableManager's table otherwise inherits the console's default header tint
@@ -8643,26 +8624,13 @@
 .mcm-admin .ident-coral-theme .table-scroll {
   border-color: var(--line) !important;
 }
-/* An empty table (Unused/In use/Released numbers with nothing to show, or a
-   Call coverage tab with no gaps) has only header cells to size itself from,
-   and auto table layout was letting the whole card shrink to that header's
-   content width instead of filling the page — the "not found" placeholder
-   then sat centered in a half-width column with the rest of the page reading
-   as dead grey space. Every layer between the body and the table is forced
-   to the page's full breadth so an empty result reads exactly as wide as a
-   full one. */
-.mcm-admin .ident-coral-theme,
-.mcm-admin .ident-coral-theme .mcm-adminpage,
-.mcm-admin .ident-coral-theme .mcm-adminpage-head,
-.mcm-admin .ident-coral-theme .mcm-adminpage-body,
-.mcm-admin .ident-coral-theme .panel-card,
-.mcm-admin .ident-coral-theme .tbl-wrap,
-.mcm-admin .ident-coral-theme .ident-table-card,
-.mcm-admin .ident-coral-theme .table-scroll,
-.mcm-admin .ident-coral-theme .table-scroll [data-slot='table-container'],
-.mcm-admin .ident-coral-theme table {
-  width: 100% !important;
-  min-width: 100% !important;
+
+/* Pill badges — "Main Location", "Locked" — carry the rule and nothing else.
+   The tint is meant for the icon tiles, where it sits behind a glyph; behind a
+   word it competes with the ink for the same small area. `rounded-sm` is what
+   separates a badge from a tile in this codebase. */
+.mcm-company-theme .rounded-sm.bg-ucass-primary-200:not([data-slot='button']) {
+  background-color: transparent;
 }
 /* .mcm-adminpage-bar is deliberately NOT in the list above: it insets
    itself with margin: 16px 22px (see its own rule below), and a block
@@ -9525,7 +9493,7 @@
   }
   .ident-form-popup .custom-react-select__option--is-focused {
     background-color: #f3f4f6 !important;
-    color: #111827 !important;
+    color: #111111 !important;
   }
   .ident-form-popup .custom-react-select__option--is-selected,
   .ident-form-popup
@@ -9539,7 +9507,7 @@
    * Listed AFTER hover, and naming the hover and focus combinations explicitly,
    * because react-select puts BOTH classes on the row when you mouse over the
    * option that is already chosen. At equal specificity the later rule wins, so
-   * without this the selected row lost its red the moment the cursor touched
+   * without this the selected row lost its tint the moment the cursor touched
    * it — which is the one place the colour actually carries meaning. */
   body:has(.mcm-company-theme) .custom-react-select__option--is-selected,
   body:has(.mcm-company-theme) .custom-react-select__option--is-selected:hover,
@@ -9548,7 +9516,7 @@
   body:has(.mcm-company-theme) .select-group__option--is-selected:hover,
   body:has(.mcm-company-theme) .select-group__option--is-selected.select-group__option--is-focused {
     background-color: #fdecec !important;
-    color: #d92b2b !important;
+    color: #111111 !important;
     font-weight: 600 !important;
   }
 
