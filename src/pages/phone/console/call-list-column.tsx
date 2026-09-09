@@ -9,7 +9,9 @@ import Loader from '@/components/custom/loader';
 import { dropdownCallInitialVal, handleDate } from '@/components/custom/date-dropdown/constant';
 import { Ic } from './icons';
 import { DialNumber, rememberDialLabel, useConsoleDialer } from './dial-number';
-import { isNumberLike } from './copilot-adapter';
+import { initialsOf, isNumberLike } from './copilot-adapter';
+import { demoCallRows } from './demo-data';
+import DateRangeMenu from '@/components/custom/date-range-menu';
 
 /** The three call-log sources the old phone page exposed, same `tabType` values. */
 export type ConsoleLogSource = 'call' | 'recording' | 'voicemail';
@@ -53,7 +55,7 @@ const sortStamp = (raw: any): number => {
 
 /* Date-section label for a call, phone-log style: Today, Yesterday, then the
    weekday name for the past week, and the full date for anything older. Rows
-   without a usable stamp (demo rows) fall under Today. */
+   without a usable stamp fall under Today. */
 const sectionLabel = (raw: any): string => {
   const value = raw?.start_stamp || raw?.created_at || raw?.answer_stamp || raw?.end_stamp;
   const m = value ? moment(value as any) : null;
@@ -118,6 +120,26 @@ const getEntryNumber = (main: any = {}) => getEntryRawNumber(main).replace(/ /g,
  * the usual variants are tried, then a digits-only match as a last resort.
  */
 const digitsOf = (value: string) => value.replace(/\D/g, '');
+
+/* Avatar disc, keyed off the name so a caller always gets the same one. Pale
+   fills with their own darker ink — light enough to sit quietly in a long list,
+   and every pair still clears AA for the initials. */
+const AVATAR_TONES: { bg: string; fg: string }[] = [
+  { bg: '#dbeafe', fg: '#1d4ed8' },
+  { bg: '#ede9fe', fg: '#6d28d9' },
+  { bg: '#dcfce7', fg: '#15803d' },
+  { bg: '#ffedd5', fg: '#b45309' },
+  { bg: '#ffe4e6', fg: '#be123c' },
+  { bg: '#cffafe', fg: '#0e7490' },
+  { bg: '#fae8ff', fg: '#a21caf' },
+];
+
+const avatarTone = (value: string) => {
+  const s = String(value || '?');
+  let h = 0;
+  for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return AVATAR_TONES[Math.abs(h) % AVATAR_TONES.length];
+};
 
 export const findContact = (contactsByNumber: Record<string, any>, rawNumber: string) => {
   if (!contactsByNumber || !rawNumber) return null;
@@ -186,53 +208,6 @@ export const toCallRow = (raw: any, contactsByNumber: Record<string, any>): Cons
   };
 };
 
-/* Demo/fallback rows shown when the API returns nothing, so each page has
-   sample content. Purely presentational — no logData to act on. */
-const demoRow = (
-  id: string,
-  direction: ConsoleCallRow['direction'],
-  name: string,
-  number: string,
-  time: string,
-  duration: string,
-  hasRecording = false,
-  topic = '',
-): ConsoleCallRow => ({
-  id,
-  raw: {},
-  direction,
-  name: name || number,
-  number,
-  time,
-  duration,
-  topic,
-  contactId: null,
-  hasRecording,
-  logData: { main: {}, count: 1, acc_logs: [], number },
-});
-
-const DEMO_ROWS: Record<ConsoleLogSource, ConsoleCallRow[]> = {
-  call: [
-    demoRow('demo-call-1', 'in', 'Aaray Mehta', '+919876543210', '14:34', '04:34'),
-    demoRow('demo-call-2', 'out', 'Sophia Turner', '+14155550132', '13:20', '02:36'),
-    demoRow('demo-call-3', 'miss', '', '+447911123456', '12:05', '—'),
-    demoRow('demo-call-4', 'in', 'Rahul Verma', '+919812345678', '11:10', '01:12'),
-    demoRow('demo-call-5', 'out', 'Emily Clark', '+12025550187', '09:45', '03:48'),
-    demoRow('demo-call-6', 'miss', 'Liam Wong', '+61291234567', '08:30', '—'),
-  ],
-  recording: [
-    demoRow('demo-rec-1', 'in', 'Aaray Mehta', '+919876543210', '14:34', '04:34', true, 'Recorded'),
-    demoRow('demo-rec-2', 'out', 'Sophia Turner', '+14155550132', '13:20', '02:36', true, 'Recorded'),
-    demoRow('demo-rec-3', 'in', 'Rahul Verma', '+919812345678', '11:10', '01:12', true, 'Recorded'),
-    demoRow('demo-rec-4', 'out', 'Emily Clark', '+12025550187', '09:45', '03:48', true, 'Recorded'),
-  ],
-  voicemail: [
-    demoRow('demo-vm-1', 'in', 'Sophia Turner', '+14155550132', '13:20', '00:32'),
-    demoRow('demo-vm-2', 'in', '', '+447911123456', '12:05', '00:18'),
-    demoRow('demo-vm-3', 'in', 'Rahul Verma', '+919812345678', '10:02', '00:45'),
-  ],
-};
-
 type Props = {
   selectedId: string | null;
   onSelect: (row: ConsoleCallRow) => void;
@@ -246,7 +221,6 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
   const navigate = useNavigate();
   const [direction, setDirection] = useState<'all' | 'in' | 'out' | 'miss'>('all');
   const [search, setSearch] = useState('');
-  const [dateOpen, setDateOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [dropdownVal, setDropdownVal] = useState(() => ({
     ...dropdownCallInitialVal,
@@ -344,29 +318,48 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
     );
   }, [data, contactsByNumber, search, source, direction]);
 
-  /* Demo fallback: when the API has no rows for this source, show sample data,
-     narrowed by the same direction and search filters. */
-  const demoRows = useMemo(() => {
-    let base = DEMO_ROWS[source] || [];
-    if (source !== 'voicemail' && direction !== 'all') {
-      base = base.filter((r) => r.direction === direction);
-    }
-    const q = search.trim().toLowerCase();
-    if (q) {
-      base = base.filter((r) =>
-        `${r.name} ${r.number}`.toLowerCase().includes(q.replace(/^\+/, '')),
-      );
-    }
-    return base;
-  }, [source, direction, search]);
+  /* Sample rows, shown only when the platform returned an empty list — never
+     mixed in alongside real calls. `DEMO_ENABLED` in demo-data.ts turns the
+     whole thing off. */
+  const isDemo = !isPending && rows.length === 0;
+  const listRows = useMemo(() => {
+    if (!isDemo) return rows;
+    return demoCallRows(source)
+      .filter((r) => source === 'voicemail' || direction === 'all' || r.direction === direction)
+      .filter((r) => {
+        const q = search.trim().toLowerCase();
+        return !q || `${r.name} ${r.number}`.toLowerCase().includes(q.replace(/^\+/, ''));
+      })
+      .map((r) => ({
+        ...r,
+        raw: {},
+        name: r.name || r.number,
+        topic: '',
+        contactId: null,
+        logData: { main: {}, count: 1, acc_logs: [], number: r.number },
+      })) as ConsoleCallRow[];
+  }, [isDemo, rows, source, direction, search]);
 
-  /* Real calls first; then top up with sample rows for any call type the real
-     data is missing, so every tab (especially "All") shows incoming, outgoing
-     and missed rather than only whatever the account happens to have. */
-  const realDirections = new Set(rows.map((r) => r.direction));
-  const listRows = rows.length
-    ? [...rows, ...demoRows.filter((r) => !realDirections.has(r.direction))]
-    : demoRows;
+  /* Counted off the rows on screen, so the tiles always agree with the list
+     beneath them — change the date range or the tab and they move with it.
+     Nothing here is estimated: the rate is answered over total, and when the
+     list is empty the tiles read zero rather than inventing a trend. */
+  const kpis = useMemo(() => {
+    const total = listRows.length;
+    const missed = listRows.filter((r) => r.direction === 'miss').length;
+    const answered = total - missed;
+    const pct = total ? Math.round((answered / total) * 1000) / 10 : 0;
+    return [
+      { key: 'total', label: 'Total calls', value: total, sub: 'in this range' },
+      { key: 'answered', label: 'Answered', value: answered, sub: total ? `${pct}% rate` : 'no calls yet' },
+      {
+        key: 'missed',
+        label: 'Missed',
+        value: missed,
+        sub: total ? `${Math.round((missed / total) * 100)}% of calls` : 'none missed',
+      },
+    ];
+  }, [listRows]);
 
   const sources: { key: ConsoleLogSource; label: string; show: boolean }[] = [
     { key: 'call', label: 'Calls', show: true },
@@ -424,98 +417,35 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
               </button>
             )}
 
-            {/* Date-range filter, in place of the old refresh icon. */}
-            <div style={{ position: 'relative' }}>
-            <button
-              type="button"
-              aria-haspopup="listbox"
-              aria-expanded={dateOpen}
-              aria-label="Filter by date"
-              title="Filter by date"
-              onClick={() => setDateOpen((o) => !o)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 34,
-                height: 34,
-                padding: 0,
-                borderRadius: 9,
-                background: '#fff',
-                border: '1px solid var(--line)',
-                boxShadow: '0 1px 3px rgba(17,17,17,0.06)',
-                cursor: 'pointer',
-                color: 'var(--ink-2)',
-              }}
-            >
-              <Ic n="cal" size={15} />
-            </button>
-
-            {dateOpen ? (
-              <>
-                <div
-                  onClick={() => setDateOpen(false)}
-                  style={{ position: 'fixed', inset: 0, zIndex: 40 }}
-                  aria-hidden
-                />
-                <div
-                  role="listbox"
-                  aria-label="Date range"
-                  style={{
-                    position: 'absolute',
-                    top: 40,
-                    right: 0,
-                    zIndex: 41,
-                    minWidth: 170,
-                    padding: 5,
-                    background: '#fff',
-                    border: '1px solid var(--line)',
-                    borderRadius: 12,
-                    boxShadow: '0 10px 28px rgba(17,17,17,0.14)',
-                  }}
-                >
-                  {DATE_PRESETS.map((preset) => {
-                    const active = dropdownVal.date_type === preset;
-                    return (
-                      <button
-                        key={preset}
-                        type="button"
-                        role="option"
-                        aria-selected={active}
-                        onClick={() => {
-                          setDropdownVal((prev) => ({
-                            ...prev,
-                            date_type: preset,
-                            value: handleDate(preset),
-                          }));
-                          setDateOpen(false);
-                        }}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          padding: '8px 10px',
-                          borderRadius: 8,
-                          fontSize: 13,
-                          fontWeight: active ? 700 : 500,
-                          color: active ? 'var(--accent-ink)' : 'var(--ink-2)',
-                          background: active ? 'var(--accent-wash)' : 'transparent',
-                        }}
-                      >
-                        <span style={{ flex: 1 }}>{preset}</span>
-                        {active ? <Ic n="check" size={12} /> : null}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            ) : null}
-            </div>
+            {/* Date-range filter — the shared control, so this and the web chat
+                manager stay the same thing. */}
+            <DateRangeMenu
+              options={DATE_PRESETS.map((preset) => ({ label: preset, value: preset }))}
+              value={dropdownVal.date_type}
+              onChange={(preset) =>
+                setDropdownVal((prev) => ({
+                  ...prev,
+                  date_type: preset,
+                  value: handleDate(preset),
+                }))
+              }
+            />
           </div>
         </div>
+
+        {/* Answer rate is a Calls figure — a recording or voicemail list has
+            no notion of "missed", so the tiles would be meaningless there. */}
+        {source === 'call' ? (
+        <div className="cr-kpis">
+          {kpis.map((k) => (
+            <div className="cr-kpi" key={k.key}>
+              <div className="cr-kpi-l">{k.label}</div>
+              <div className="cr-kpi-v num">{k.value}</div>
+              <div className="cr-kpi-s">{k.sub}</div>
+            </div>
+          ))}
+        </div>
+        ) : null}
 
         {/* source tabs — same tabType values the old phone page sent */}
         <div className="panel-tabs" style={{ padding: 0, margin: '0 0 2px' }}>
@@ -579,9 +509,21 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
           </div>
         ) : (
           <>
+            {isDemo ? (
+              <div className="cr-section" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="src demo">
+                  <Ic n="alert" size={9} />
+                  Demo data
+                </span>
+                <span style={{ fontWeight: 500, color: 'var(--ink-4)' }}>
+                  no calls in this range — showing samples
+                </span>
+              </div>
+            ) : null}
             {listRows.map((row, index) => {
               const label = sectionLabel(row.raw);
-              const showHeader = index === 0 || sectionLabel(listRows[index - 1].raw) !== label;
+              const showHeader =
+                !isDemo && (index === 0 || sectionLabel(listRows[index - 1].raw) !== label);
               return (
                 <div key={row.id} className="cr-group">
                   {showHeader ? <div className="cr-section">{label}</div> : null}
@@ -597,8 +539,18 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
                     }
                   }}
                 >
-                  {/* Smartphone call-log style: name, then a line with the
-                      direction arrow + number + time. */}
+                  {/* Contact-list style: a coloured disc, the name, then the
+                      number and talk time beneath, with the clock time right. */}
+                  <span
+                    className="cr-av-init"
+                    style={{
+                      background: avatarTone(row.name || row.number).bg,
+                      color: avatarTone(row.name || row.number).fg,
+                    }}
+                    aria-hidden
+                  >
+                    {initialsOf(row.name || row.number)}
+                  </span>
                   <div className="cr-body">
                     <div className={`cr-name ${row.direction === 'miss' ? 'cr-name-miss' : ''}`}>
                       {isNumberLike(row.name) ? (
@@ -608,7 +560,17 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
                       )}
                     </div>
                     <div className="cr-sub">
-                      <span className={`cr-dir ${row.direction === 'miss' ? 'miss' : row.direction}`}>
+                      {/* Which way the call went — inbound, outbound or missed. */}
+                      <span
+                        className={`cr-dir ${row.direction === 'miss' ? 'miss' : row.direction}`}
+                        title={
+                          row.direction === 'out'
+                            ? 'Outgoing call'
+                            : row.direction === 'miss'
+                              ? 'Missed call'
+                              : 'Incoming call'
+                        }
+                      >
                         <Ic
                           n={
                             row.direction === 'out'
@@ -621,15 +583,12 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
                         />
                       </span>
                       {!isNumberLike(row.name) ? (
-                        <>
-                          <span className="num">{row.number}</span>
-                          <span className="cr-dot">·</span>
-                        </>
+                        <span className="num">{row.number}</span>
                       ) : null}
-                      <span className="num">{row.time}</span>
                       {row.duration !== '—' ? (
                         <>
-                          <span className="cr-dot">·</span>
+                          {!isNumberLike(row.name) ? <span className="cr-dot">·</span> : null}
+                          <Ic n="clock" size={11} />
                           <span className="num">{row.duration}</span>
                         </>
                       ) : null}
@@ -638,6 +597,7 @@ const CallListColumn = ({ selectedId, onSelect, source, onSourceChange, liveNumb
                       ) : null}
                     </div>
                   </div>
+                  <span className="cr-time-right num">{row.time}</span>
                   {row.number ? (
                     <div className="cr-actions">
                       <button

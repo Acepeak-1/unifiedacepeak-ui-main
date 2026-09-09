@@ -587,7 +587,7 @@ const UpsertCallForwarding: FC<UpdateForwardingProps> = ({
           >
             <TabsList
               className={`flex text-sm font-semibold text-center  p-0 rounded-none min-h-10 ${
-                isUpsertTemplate ? 'call-handling-template-tabs-list' : 'justify-center gap-1.5'
+                isUpsertTemplate ? 'call-handling-template-tabs-list' : 'w-full justify-center gap-1.5'
               }`}
             >
               {TABS_ORDER.map((value, index) =>
@@ -603,12 +603,18 @@ const UpsertCallForwarding: FC<UpdateForwardingProps> = ({
                   /* Same plain "Step One › Step Two" format as Add Number's
                      stepper — text steps rather than an underlined tab bar —
                      while staying a real TabsTrigger so clicking still
-                     navigates between sections. */
+                     navigates between sections. The base TabsTrigger
+                     component (ui/tabs.tsx) paints its own
+                     `data-[state=active]:bg-background` — the console's
+                     light blue-grey --background token — behind whichever
+                     step is active, with no non-active-state override in
+                     this className to counter it; `!` flags on the active
+                     variants below are what actually strip that pill. */
                   <Fragment key={index}>
                     {index > 0 && <ChevronRight className="h-3.5 w-3.5 text-gray-400" />}
                     <TabsTrigger
                       value={value}
-                      className="cursor-pointer rounded-none border-0 bg-transparent p-0 text-sm font-semibold text-gray-400 shadow-none data-[state=active]:text-gray-900"
+                      className="cursor-pointer rounded-none border-0 bg-transparent p-0 text-sm font-semibold text-gray-400 shadow-none data-[state=active]:bg-transparent! data-[state=active]:shadow-none! data-[state=active]:border-transparent! data-[state=active]:text-gray-900"
                     >
                       {value}
                     </TabsTrigger>

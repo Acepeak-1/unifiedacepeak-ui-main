@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Icon } from '@/assets/icons/icon';
 import { SearchIcon } from '@/components/custom/header/GlobalSearch';
@@ -163,7 +164,7 @@ const CRMIntegration = () => {
               className="mcm-tooltip-info"
               text="Connect the system your team already works in, so calls, contacts and activity flow both ways."
             >
-              <span className="mcm-intpage-info">i</span>
+              <Info className="mcm-intpage-info" />
             </CustomTooltip>
             </div>
 

@@ -71,6 +71,108 @@ export type QueueCallStats = {
   avgHandleSec: number | null;
 };
 
+/**
+ * The pure aggregation at the heart of this hook, pulled out so it can be
+ * reused on a different set of rows — specifically, Performance's own dummy
+ * fallback dataset for accounts with no call history yet (see
+ * `pages/performance/use-performance-call-stats.ts`). Behaviour for every
+ * existing caller of `useCallStats` is unchanged: this is the exact
+ * computation that used to live inline in the hook's `useMemo`.
+ */
+export const computeCallStats = (
+  rows: any[] | undefined,
+  callStats: any,
+  totalCount: number | undefined,
+  isPending: boolean,
+) => {
+  const safeRows: any[] = rows || [];
+  const stats = callStats || null;
+  const count = totalCount || 0;
+
+  // Headline volume comes from the server-side aggregate so it stays correct
+  // even when the row sample below is capped.
+  const totalCalls = Number(stats?.total_calls ?? 0) || 0;
+  const missedCalls = Number(stats?.missed_calls ?? 0) || 0;
+  const answeredCalls = Math.max(0, totalCalls - missedCalls);
+
+  // Per-queue breakdown has no server-side aggregate, so it's grouped from
+  // the CDR rows and flagged as sampled when the range exceeds one page.
+  const working: Record<
+    string,
+    { total: number; answered: number; missed: number; waitTotal: number; handleTotal: number }
+  > = {};
+
+  let waitTotal = 0;
+  let waitCount = 0;
+  let handleTotal = 0;
+  let handleCount = 0;
+  let totalCharge = 0;
+
+  safeRows.forEach((row: any) => {
+    const talk = callTalkSeconds(row);
+    const wait = callWaitSeconds(row);
+
+    totalCharge += Number(row?.chargeTotal) || Number(row?.charge) || 0;
+
+    if (talk > 0) {
+      handleTotal += talk;
+      handleCount += 1;
+    }
+    if (wait > 0) {
+      waitTotal += wait;
+      waitCount += 1;
+    }
+
+    if (String(row?.forward_type || '').toUpperCase() !== 'QUEUE') return;
+    const queueKey = queueKeyOf(row);
+    if (!queueKey) return;
+
+    if (!working[queueKey]) {
+      working[queueKey] = { total: 0, answered: 0, missed: 0, waitTotal: 0, handleTotal: 0 };
+    }
+    const bucket = working[queueKey];
+    bucket.total += 1;
+    if (isMissedCall(row)) bucket.missed += 1;
+    if (talk > 0) {
+      bucket.answered += 1;
+      bucket.handleTotal += talk;
+    }
+    bucket.waitTotal += wait;
+  });
+
+  const byQueueUuid: Record<string, QueueCallStats> = {};
+  Object.entries(working).forEach(([queueKey, bucket]) => {
+    byQueueUuid[queueKey] = {
+      total: bucket.total,
+      answered: bucket.answered,
+      missed: bucket.missed,
+      avgWaitSec: bucket.total ? bucket.waitTotal / bucket.total : null,
+      avgHandleSec: bucket.answered ? bucket.handleTotal / bucket.answered : null,
+    };
+  });
+
+  return {
+    isPending,
+    rows: safeRows,
+    callStats: stats,
+    totalCalls,
+    missedCalls,
+    answeredCalls,
+    inboundCalls: Number(stats?.inbound_calls ?? 0) || 0,
+    outboundCalls: Number(stats?.outbound_calls ?? 0) || 0,
+    voicemailCalls: Number(stats?.voicemail ?? 0) || 0,
+    abandonRate: totalCalls ? (missedCalls / totalCalls) * 100 : null,
+    avgWaitSec: waitCount ? waitTotal / waitCount : null,
+    avgHandleSec: handleCount ? handleTotal / handleCount : null,
+    totalCharge,
+    byQueueUuid,
+    /** True when the range holds more calls than the single page pulled. */
+    isQueueBreakdownSampled: count > safeRows.length,
+    sampledRowCount: safeRows.length,
+    totalCount: count,
+  };
+};
+
 export const useCallStats = (selectedRange: { from: string; to: string }) => {
   const { data, isPending } = useQuery({
     queryKey: ['sharedCallStats', selectedRange?.from, selectedRange?.to],
@@ -91,92 +193,8 @@ export const useCallStats = (selectedRange: { from: string; to: string }) => {
   const callStats = data?.callStats;
   const totalCount = data?.totalCount;
 
-  return useMemo(() => {
-    const safeRows: any[] = rows || [];
-    const stats = callStats || null;
-    const count = totalCount || 0;
-
-    // Headline volume comes from the server-side aggregate so it stays correct
-    // even when the row sample below is capped.
-    const totalCalls = Number(stats?.total_calls ?? 0) || 0;
-    const missedCalls = Number(stats?.missed_calls ?? 0) || 0;
-    const answeredCalls = Math.max(0, totalCalls - missedCalls);
-
-    // Per-queue breakdown has no server-side aggregate, so it's grouped from
-    // the CDR rows and flagged as sampled when the range exceeds one page.
-    const working: Record<
-      string,
-      { total: number; answered: number; missed: number; waitTotal: number; handleTotal: number }
-    > = {};
-
-    let waitTotal = 0;
-    let waitCount = 0;
-    let handleTotal = 0;
-    let handleCount = 0;
-    let totalCharge = 0;
-
-    safeRows.forEach((row: any) => {
-      const talk = callTalkSeconds(row);
-      const wait = callWaitSeconds(row);
-
-      totalCharge += Number(row?.chargeTotal) || Number(row?.charge) || 0;
-
-      if (talk > 0) {
-        handleTotal += talk;
-        handleCount += 1;
-      }
-      if (wait > 0) {
-        waitTotal += wait;
-        waitCount += 1;
-      }
-
-      if (String(row?.forward_type || '').toUpperCase() !== 'QUEUE') return;
-      const queueKey = queueKeyOf(row);
-      if (!queueKey) return;
-
-      if (!working[queueKey]) {
-        working[queueKey] = { total: 0, answered: 0, missed: 0, waitTotal: 0, handleTotal: 0 };
-      }
-      const bucket = working[queueKey];
-      bucket.total += 1;
-      if (isMissedCall(row)) bucket.missed += 1;
-      if (talk > 0) {
-        bucket.answered += 1;
-        bucket.handleTotal += talk;
-      }
-      bucket.waitTotal += wait;
-    });
-
-    const byQueueUuid: Record<string, QueueCallStats> = {};
-    Object.entries(working).forEach(([queueKey, bucket]) => {
-      byQueueUuid[queueKey] = {
-        total: bucket.total,
-        answered: bucket.answered,
-        missed: bucket.missed,
-        avgWaitSec: bucket.total ? bucket.waitTotal / bucket.total : null,
-        avgHandleSec: bucket.answered ? bucket.handleTotal / bucket.answered : null,
-      };
-    });
-
-    return {
-      isPending,
-      rows: safeRows,
-      callStats: stats,
-      totalCalls,
-      missedCalls,
-      answeredCalls,
-      inboundCalls: Number(stats?.inbound_calls ?? 0) || 0,
-      outboundCalls: Number(stats?.outbound_calls ?? 0) || 0,
-      voicemailCalls: Number(stats?.voicemail ?? 0) || 0,
-      abandonRate: totalCalls ? (missedCalls / totalCalls) * 100 : null,
-      avgWaitSec: waitCount ? waitTotal / waitCount : null,
-      avgHandleSec: handleCount ? handleTotal / handleCount : null,
-      totalCharge,
-      byQueueUuid,
-      /** True when the range holds more calls than the single page pulled. */
-      isQueueBreakdownSampled: count > safeRows.length,
-      sampledRowCount: safeRows.length,
-      totalCount: count,
-    };
-  }, [rows, callStats, totalCount, isPending]);
+  return useMemo(
+    () => computeCallStats(rows, callStats, totalCount, isPending),
+    [rows, callStats, totalCount, isPending],
+  );
 };

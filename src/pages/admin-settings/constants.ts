@@ -27,7 +27,7 @@ export const formInitialState: IADDUSER = {
   users: [userInitialState],
   password: '',
   confirm_password: '',
-  password_type: 'common',
+  password_type: 'email',
 };
 
 export const TAB_CONSTANT = {

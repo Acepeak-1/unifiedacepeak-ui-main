@@ -526,13 +526,21 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <RadioGroupItem value="yes" id="fax-number-yes" />
+                  <RadioGroupItem
+                    value="yes"
+                    id="fax-number-yes"
+                    className="h-4 w-4 border-red-600! bg-white! shadow-none! ring-0! data-[state=checked]:border-red-600! data-[state=checked]:bg-white! data-[state=checked]:shadow-none! data-[state=checked]:ring-0! focus-visible:ring-0! focus-visible:shadow-none!"
+                  />
                   <Label className="cursor-pointer" htmlFor="fax-number-yes">
                     Yes
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <RadioGroupItem value="no" id="fax-number-no" />
+                  <RadioGroupItem
+                    value="no"
+                    id="fax-number-no"
+                    className="h-4 w-4 border-red-600! bg-white! shadow-none! ring-0! data-[state=checked]:border-red-600! data-[state=checked]:bg-white! data-[state=checked]:shadow-none! data-[state=checked]:ring-0! focus-visible:ring-0! focus-visible:shadow-none!"
+                  />
                   <Label className="cursor-pointer" htmlFor="fax-number-no">
                     No
                   </Label>
@@ -722,8 +730,11 @@ const StepOne = ({ formInstance, setStatus, setFeatures, isFaxNumber, setIsFaxNu
                        height — the footer was still in the DOM, just clipped
                        out of view by the dialog's overflow-hidden. A capped,
                        independently scrolling height here keeps this table's
-                       size predictable regardless of row count. */
-                    customClass: 'min-h-[80px] max-h-[220px]',
+                       size predictable regardless of row count — capped at
+                       300px rather than 220px so the "not found" placeholder
+                       itself fits without triggering its own scrollbar; a
+                       real result list still scrolls internally past that. */
+                    customClass: 'min-h-[80px] max-h-[300px]',
                   }}
                 />
               </div>

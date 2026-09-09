@@ -83,7 +83,7 @@ const DialpadGlobalOverlay = () => {
       `pointer-events-auto rounded-[24px] bg-white shadow-[0px_12px_50px_0px_rgba(0,_0,_0,_0.3)] ${
         isMaxiMode
           ? 'h-full w-full max-w-[calc(100dvw-6rem)] max-h-[calc(100dvh-2rem)] overflow-hidden'
-          : 'max-h-[calc(100dvh-2rem)] max-w-[calc(100dvw-400px)] overflow-hidden md:max-w-[min(100%,300px)] lg:max-w-[min(100%,300px)] xl:max-w-[min(100%,430px)]'
+          : 'max-h-[calc(100dvh-2rem)] max-w-[calc(100dvw-2rem)] overflow-hidden'
       }`,
     [isMaxiMode],
   );
@@ -93,9 +93,15 @@ const DialpadGlobalOverlay = () => {
         ? {}
         : modalSize === 'mini'
           ? {
-              height: 'min(760px, calc(100dvh - 2rem))',
+              /* Same footprint as the dialer card on /phone: 380 x 536, clamped
+                 so it still fits a small viewport. The width used to come from
+                 three competing responsive max-widths (300px / 430px), which is
+                 why the floating call never matched the page it came from. */
+              width: 'min(380px, calc(100dvw - 2rem))',
+              height: 'min(536px, calc(100dvh - 2rem))',
             }
           : {
+              width: 'min(380px, calc(100dvw - 2rem))',
               height: 'auto',
             },
     [isMaxiMode, modalSize],
