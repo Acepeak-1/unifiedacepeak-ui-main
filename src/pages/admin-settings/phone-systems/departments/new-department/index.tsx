@@ -537,6 +537,7 @@ const NewDepartment = ({ rowData, setDrawerState, setTabData }: any) => {
                   <Button
                     variant={'outline'}
                     type="button"
+                    className="grp-prev-btn"
                     onClick={handlePrev}
                     disabled={currentStep === TABS_ORDER[0]}
                   >
@@ -574,7 +575,7 @@ const NewDepartment = ({ rowData, setDrawerState, setTabData }: any) => {
                     type="button"
                     onClick={handlePrev}
                     disabled={currentStep === TABS_ORDER[0]}
-                    className="shrink-0"
+                    className="grp-prev-btn shrink-0"
                   >
                     Prev
                   </Button>

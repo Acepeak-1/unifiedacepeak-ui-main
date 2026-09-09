@@ -1,0 +1,19 @@
+/* Header eyebrow + title — same red mono eyebrow / italic serif title
+   treatment as the Campaigns page, scoped to its own classes so nothing
+   here touches shared `.eyebrow`/heading rules other pages use. */
+.dnc-eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  color: #dc2626;
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.dnc-title {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #171717;
+  font-size: 30px;
+  line-height: 1.3;
+}

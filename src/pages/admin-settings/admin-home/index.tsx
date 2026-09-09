@@ -272,7 +272,7 @@ const AdminHome = () => {
               text={`${allEntries.length} screens across ${groups.length} areas. Only what your role can reach is listed.`}
               side="right"
               openOnMount
-              className="w-max max-w-[260px] border-0 bg-[#fdf7f5] text-black shadow-none [&_svg]:fill-[#fdf7f5]"
+              className="w-max max-w-[260px] border-0 bg-[#fdf7f5] text-black shadow-[0_6px_20px_rgba(17,17,17,0.18)] [&_svg]:fill-[#fdf7f5]"
             >
               <span className="mcm-adminhome-infobtn" aria-label="About this page">
                 <Info />

@@ -67,6 +67,7 @@ function TableManager({
   tableRef,
   isHeightSet = true,
   tableMaxHeight = null,
+  fitHeightToContent = false,
   hasSubRows = false,
   subRowsMutateKey = '',
   subRowsMutateFn = defaultSubRowsMutateFn,
@@ -97,6 +98,7 @@ function TableManager({
   centerPager = false,
   pagerAccentClassName = 'border-ucass-blue-600 text-ucass-blue-600 bg-white',
   disablePerPageMenuPortal = false,
+  hideFooterDivider = false,
   perPageMenuPortalTarget,
   perPageSelectClass,
   recordNoun,
@@ -122,6 +124,16 @@ function TableManager({
   getRowClassName?: (row: any) => string;
   isHeightSet?: boolean;
   tableMaxHeight?: any;
+  /* isHeightSet locks the table box to a fixed `height` (tableMaxHeight, or
+     the measured `tableHeight` fallback) so it doesn't grow/shrink as a
+     client-side search filters rows in and out. That same fixed height
+     also reserves blank space below a short result set, sitting between
+     the last row and the footer, when the box is taller than its content
+     needs. `fitHeightToContent` swaps `height` for `max-height` — still
+     capped so a long result set scrolls internally instead of growing the
+     page without bound, but a short one shrinks the box to fit, closing
+     that gap. */
+  fitHeightToContent?: boolean;
   hasSubRows?: boolean;
   subRowsMutateKey?: string;
   subRowsMutateFn?: (payload?: any) => any;
@@ -164,6 +176,13 @@ function TableManager({
   centerPager?: boolean;
   pagerAccentClassName?: string;
   disablePerPageMenuPortal?: boolean;
+  /* Drops the `sm:divide-x` line TableManager's footer normally draws
+     between the per-page picker and the "N record(s)" count, and forces
+     that count to the same muted slate as the rest of the footer instead
+     of whatever color it would otherwise inherit — for callers whose own
+     design has no such divider (the Numbers section's plain text-only
+     footer). Left false, behavior is unchanged. */
+  hideFooterDivider?: boolean;
   /* The "per page" react-select menu portals to document.body by default,
      which escapes this table's own overflow:hidden card — necessary so the
      menu isn't clipped, but it also means the menu no longer inherits CSS
@@ -418,7 +437,11 @@ function TableManager({
         ref={tableScrollRef}
         className={`${tableWrapClassName} ${customClass}`}
         style={
-          isHeightSet && showPagination ? { height: tableMaxHeight || `${tableHeight}px` } : {}
+          isHeightSet && showPagination
+            ? fitHeightToContent
+              ? { maxHeight: tableMaxHeight || `${tableHeight}px` }
+              : { height: tableMaxHeight || `${tableHeight}px` }
+            : {}
         }
       >
         {isFilter && (
@@ -550,10 +573,10 @@ function TableManager({
           ? tableData.length
           : tbldata?.data?.data?.result?.totalItems || tbldata?.data?.data?.result?.total || 0;
         const recordLabel = (
-          <span className={`whitespace-nowrap font-normal ${recordsPosition === 'left' ? 'sm:pl-3' : ''}`}>
-            {recordNoun
-              ? `${recordCount} ${recordNoun}${recordCount === 1 ? '' : 's'}`
-              : `${recordCount} record(s)`}
+          <span
+            className={`whitespace-nowrap font-normal ${recordsPosition === 'left' ? 'sm:pl-3' : ''} ${hideFooterDivider ? 'text-slate-500' : ''}`}
+          >
+            {recordCount} record(s)
           </span>
         );
         const perPageSelect = (
@@ -684,7 +707,9 @@ function TableManager({
         <div className="z-10 flex w-full flex-col gap-2 rounded-xl border border-gray-200 bg-white px-2 py-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2 font-semibold sm:gap-3">
-              <div className="flex flex-wrap items-center gap-3 sm:divide-x sm:divide-gray-200">
+              <div
+                className={`flex flex-wrap items-center gap-3 ${hideFooterDivider ? '' : 'sm:divide-x sm:divide-gray-200'}`}
+              >
                 {perPageSelect}
                 {recordsPosition === 'left' && recordLabel}
               </div>

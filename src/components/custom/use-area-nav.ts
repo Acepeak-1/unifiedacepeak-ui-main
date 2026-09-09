@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useCompanyFeatures } from '@/hooks/rbac';
 import { useUser } from '@/hooks/use-user';
 import { AREA_VIEWS, areaOfItem, areaOfPath, type AreaId } from './nav-areas';
-import { navList, navListBottom, type NavItem } from './sidebar';
+import { navList, navListBottom, type NavItem } from './sidebar-nav-list';
 
 /**
  * Which area the app is in, and what belongs in the rail for it.

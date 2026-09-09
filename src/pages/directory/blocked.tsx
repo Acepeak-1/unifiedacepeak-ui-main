@@ -22,7 +22,7 @@ import {
   planBlock,
   tagRequest,
 } from '@/lib/contact-blocking';
-import { DirectoryPage, EmptyRow, SearchChip } from './page-shell';
+import { DirectoryPage, EmptyRow, SearchChip, TableFooter } from './page-shell';
 import { InfoIcon } from 'lucide-react';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import CustomSelect from '@/components/custom/custom-select';
@@ -63,7 +63,7 @@ const Blocked = () => {
   /* Two reads of the same list. The blocked one is filtered on the server, which
      is what the table shows; the whole book is what a typed number is matched
      against, because the number you want to block is usually already saved. */
-  const { data: blocked = [], isPending } = useQuery({
+  const { data: blocked = [], isPending, refetch } = useQuery({
     queryKey: ['getContactList', 'directoryBlocked'],
     queryFn: () =>
       getContactList({ page: 1, limit: 200, filters: [{ key: 'tag', value: 'BLOCK' }] }),
@@ -117,9 +117,24 @@ const Blocked = () => {
       onSuccess: () => toast.success(`${contactName(contact) || 'That number'} is unblocked.`),
     });
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
+  const pagedRows = visible.slice((page - 1) * perPage, page * perPage);
+  if (page > pageCount) setPage(pageCount);
+
   return (
     <div className="blk-theme">
     <DirectoryPage
+      footer={
+        <TableFooter
+          page={page}
+          perPage={perPage}
+          total={visible.length}
+          onPageChange={setPage}
+          onPerPageChange={setPerPage}
+        />
+      }
       titleClassName="dir-serif-heading"
       title={
         <span className="flex items-center gap-2">
@@ -134,8 +149,8 @@ const Blocked = () => {
                 someone new.
               </>
             }
-            side="top"
-            className="!bg-gray-300 !text-black whitespace-normal text-left"
+            side="right"
+            className="whitespace-normal text-left"
           >
             <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
           </CustomTooltip>
@@ -144,6 +159,15 @@ const Blocked = () => {
       filters={
         <>
           <SearchChip value={search} onChange={setSearch} placeholder="Search blocked numbers" />
+          <button
+            type="button"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+            title="Refresh"
+            aria-label="Refresh blocked numbers"
+            onClick={() => refetch()}
+          >
+            <Ic n="refresh" size={15} />
+          </button>
           <span className="fchip live" style={{ marginLeft: 'auto' }}>
             <span className="num">{blocked.length}</span> blocked
           </span>
@@ -303,8 +327,8 @@ const Blocked = () => {
         <tbody>
           {isPending ? (
             <EmptyRow span={5} message="Loading blocked numbers…" />
-          ) : visible.length ? (
-            visible.map((row) => {
+          ) : pagedRows.length ? (
+            pagedRows.map((row) => {
               const name = contactName(row) || 'Unknown';
               return (
                 <tr key={row?._id || row?.contact?.phone}>

@@ -3,14 +3,57 @@ import TableManager from '@/components/custom/table-manager';
 import { Button } from '@/components/ui/button';
 import { convertDateFormateApis, handleAlert } from '@/lib/utils';
 import { deleteReposition, getDispositions } from '@/services/api';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import DispositionModal from './add-edit-dispositions';
 import AlertConfirm from '@/components/custom/alert-confirm';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompanyFeatures } from '@/hooks/rbac';
+import { Plus, RefreshCcw, Search } from 'lucide-react';
+import './dispositions.css';
+import './dispositions-table.css';
+
+/* TEMP: sample rows for reviewing the table's visual redesign while the
+   account has no real disposition logs. Mimics the real API's response
+   shape (rather than TableManager's `staticData` escape hatch) so the
+   footer's record count and page-number pager still work correctly.
+   Remove this function and go back to `fetcherFn: getDispositions` once
+   real data is available. */
+const fetchDummyDispositions = () =>
+  Promise.resolve({
+    data: {
+      data: {
+        result: {
+          totalItems: 3,
+          totalPages: 1,
+          rows: [
+            {
+              _id: 'dummy-1',
+              createdAt: '2026-09-05T10:00:00.000Z',
+              dispositionType: 'CUSTOM',
+              disposition: { name: 'Interested', description: 'Lead wants a follow-up call.' },
+            },
+            {
+              _id: 'dummy-2',
+              createdAt: '2026-09-03T10:00:00.000Z',
+              dispositionType: 'CUSTOM',
+              disposition: { name: 'Not Interested', description: 'Declined the offer.' },
+            },
+            {
+              _id: 'dummy-3',
+              createdAt: '2026-09-01T10:00:00.000Z',
+              dispositionType: 'SYSTEM',
+              disposition: { name: 'No Answer', description: 'Call went unanswered.' },
+            },
+          ],
+        },
+      },
+    },
+  });
 
 const DispositionsList = () => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<any>(null);
+  const [search, setSearch] = useState('');
+  const dispositionTableRef = useRef<any>(null);
   const queryClient: any = useQueryClient();
   const { features } = useCompanyFeatures();
   const dispositionAccess = features?.plan_features?.campaign?.action;
@@ -115,32 +158,62 @@ const DispositionsList = () => {
   ];
   return (
     <>
-      <section className="w-full bg-gray-200/15 flex flex-col overflow-x-auto overflow-y-hidden  h-full">
-        <div className="flex items-center justify-between p-3 border-b border-gray-200 min-h-[65px] bg-white">
-          <p className="text-gray-900 font-semibold text-lg flex items-center gap-1">
-            Dispositions
-          </p>
+      <section className="w-full bg-[#e3e3e3] flex flex-col overflow-x-auto overflow-y-hidden  h-full">
+        <div className="flex items-center justify-between px-[26px] pt-5 pb-1 border-b border-gray-200 bg-white">
+          <div>
+            <div className="disp-eyebrow">Activity</div>
+            <p className="disp-title">Disposition</p>
+          </div>
           {dispositionAccess?.add && (
             <div className="flex gap-2 filters">
               <Button
-                variant={'outline'}
+                variant="dark"
                 onClick={() => setModalState((prev) => ({ ...prev, isModalOpen: true }))}
-                className="min-h-9"
+                className="min-h-9 rounded-full gap-1.5"
+                style={{ backgroundColor: '#171717', borderColor: '#171717', color: '#ffffff' }}
               >
-                Add Disposition
+                <Plus className="w-4 h-4" style={{ color: '#ffffff' }} />
+                Disposition
               </Button>
             </div>
           )}
         </div>
-        <div className="w-full  p-3 flex flex-col gap-2 ">
+        <div className="flex flex-col disp-card">
+          <div className="disp-toolbar">
+            <div className="disp-search">
+              <span className="disp-search-ico" aria-hidden="true">
+                <Search />
+              </span>
+              <input
+                placeholder="Search dispositions"
+                aria-label="Search dispositions"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className="disp-refresh"
+              aria-label="Refresh dispositions"
+              onClick={() => dispositionTableRef.current?.refetchTable()}
+            >
+              <RefreshCcw className="w-4 h-4" />
+            </button>
+          </div>
           <TableManager
             {...{
+              tableRef: dispositionTableRef,
               columns,
               fetcherKey: 'getDispositionsList',
-              fetcherFn: getDispositions,
+              fetcherFn: fetchDummyDispositions,
+              select: (data: any) => data?.data?.data?.result?.rows,
+              search,
+              clientSideSearch: true,
               emptyTablePlaceholder: 'No disposition logs found',
               descriptionEmptyTable:
                 'Disposition details will be available after calls are completed.',
+              hideFooterRefresh: true,
+              pagerAccentClassName: 'bg-red-600 text-white border-red-600',
             }}
           />
         </div>

@@ -1,4 +1,5 @@
 import CustomSelect from '@/components/custom/custom-select';
+import CustomTooltip from '@/components/custom/custom-tooltip';
 import ErrorTooltip from '@/components/custom/error-tooltip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -625,7 +626,7 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
                         className={`flex content-center cursor-pointer items-center border min-w-36 rounded-lg h-10 px-4 py-2 gap-2 ${
                           errors?.proofs?.[index]?.file?.message
                             ? 'text-red-500 border-red-500 hover:text-red-500'
-                            : 'text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-900'
+                            : 'text-gray-700 border-gray-300 hover:bg-red-50 hover:text-black'
                         }`}
                         htmlFor={`file-${index}`}
                       >
@@ -669,20 +670,40 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
               </div>
             )}
             <div className="w-full flex">
-              <Button
-                className="max-w-[140px] border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                type="button"
-                variant={'outline'}
-                onClick={() => {
-                  if (fields?.length >= didProofTypeList?.length) return;
-                  const newIndex = fields.length;
-                  append({ file: null, proof_type_id: null });
-                  trigger(`proofs.${newIndex}`);
-                }}
-                disabled={fields?.length >= didProofTypeList?.length}
-              >
-                Add New
-              </Button>
+              {(() => {
+                const isProofAddDisabled = (fields?.length || 0) >= (didProofTypeList?.length || 0);
+                const addProofButton = (
+                  <Button
+                    className="w-full border-gray-300 text-gray-700 hover:bg-red-50 hover:text-black"
+                    type="button"
+                    variant={'outline'}
+                    onClick={() => {
+                      if (isProofAddDisabled) return;
+                      const newIndex = fields.length;
+                      append({ file: null, proof_type_id: null });
+                      trigger(`proofs.${newIndex}`);
+                    }}
+                    disabled={isProofAddDisabled}
+                  >
+                    Add New
+                  </Button>
+                );
+                if (!isProofAddDisabled) {
+                  return <div className="max-w-[140px] w-full">{addProofButton}</div>;
+                }
+                return (
+                  <CustomTooltip
+                    text={
+                      !watchType
+                        ? 'Select a Type (Personal/Business) above first'
+                        : 'Every available proof type has already been added'
+                    }
+                    side="top"
+                  >
+                    <span className="inline-block max-w-[140px] w-full">{addProofButton}</span>
+                  </CustomTooltip>
+                );
+              })()}
             </div>
           </div>
           {errors?.proofs?.message && (
@@ -793,7 +814,7 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
                     </div>
                     <div className="flex gap-2 justify-end">
                       <Label
-                        className={`flex content-center cursor-pointer items-center border min-w-36 rounded-lg h-10 px-4 py-2 gap-2 ${errors?.supporting_documents?.[index]?.file?.message ? 'text-red-500 border-red-500 hover:text-red-500' : 'text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-900'}`}
+                        className={`flex content-center cursor-pointer items-center border min-w-36 rounded-lg h-10 px-4 py-2 gap-2 ${errors?.supporting_documents?.[index]?.file?.message ? 'text-red-500 border-red-500 hover:text-red-500' : 'text-gray-700 border-gray-300 hover:bg-red-50 hover:text-black'}`}
                         htmlFor={`supportingFile-${index}`}
                       >
                         <input
@@ -836,20 +857,41 @@ const CreateIdentity = ({ formInstance, className, rowData }: any) => {
               </div>
             )}
             <div className="w-full flex">
-              <Button
-                className="max-w-[140px] border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                type="button"
-                variant={'outline'}
-                onClick={() => {
-                  if (supportingDocuments?.length >= didSupportingDocList?.length) return;
-                  appendSupportingDoc({ file: null, supporting_document_template_id: null });
-                  const newIndex = supportingDocuments.length;
-                  trigger(`supporting_documents.${newIndex}`);
-                }}
-                disabled={supportingDocuments?.length >= didSupportingDocList?.length}
-              >
-                Add New
-              </Button>
+              {(() => {
+                const isSupportingAddDisabled =
+                  (supportingDocuments?.length || 0) >= (didSupportingDocList?.length || 0);
+                const addSupportingButton = (
+                  <Button
+                    className="w-full border-gray-300 text-gray-700 hover:bg-red-50 hover:text-black"
+                    type="button"
+                    variant={'outline'}
+                    onClick={() => {
+                      if (isSupportingAddDisabled) return;
+                      appendSupportingDoc({ file: null, supporting_document_template_id: null });
+                      const newIndex = supportingDocuments.length;
+                      trigger(`supporting_documents.${newIndex}`);
+                    }}
+                    disabled={isSupportingAddDisabled}
+                  >
+                    Add New
+                  </Button>
+                );
+                if (!isSupportingAddDisabled) {
+                  return <div className="max-w-[140px] w-full">{addSupportingButton}</div>;
+                }
+                return (
+                  <CustomTooltip
+                    text={
+                      didSupportingDocList?.length === 0
+                        ? 'No supporting document templates are configured for this account'
+                        : 'Every available document type has already been added'
+                    }
+                    side="top"
+                  >
+                    <span className="inline-block max-w-[140px] w-full">{addSupportingButton}</span>
+                  </CustomTooltip>
+                );
+              })()}
             </div>
           </div>
           {errors?.supporting_documents?.message && (
