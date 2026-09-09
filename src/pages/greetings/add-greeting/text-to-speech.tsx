@@ -1,5 +1,4 @@
 import { FC, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { UploadGreetingProps } from '@/interfaces/audio-interface';
 import { Controller, useFormContext } from 'react-hook-form';
 import CustomSelect from '@/components/custom/custom-select';
@@ -67,7 +66,7 @@ const getVoiceOptions = (response: any, locale: string) => {
     });
 };
 
-const TextToSpeech: FC<UploadGreetingProps> = ({ handleTextToSpeech, isPendingTextToSpeech }) => {
+const TextToSpeech: FC<UploadGreetingProps> = ({ selectMenuPortalTarget }) => {
   const { watch, control, setValue } = useFormContext();
   const WatchTextFile = watch('textFile');
   const selectedLocale = watch('textToSpeechLocale');
@@ -128,6 +127,7 @@ const TextToSpeech: FC<UploadGreetingProps> = ({ handleTextToSpeech, isPendingTe
         options={LANGUAGE_OPTIONS}
         value={selectedLocale}
         placeholder="Select language"
+        menuPortalTarget={selectMenuPortalTarget}
         handleChange={(option) => {
           setValue('textToSpeechLocale', option, { shouldDirty: true, shouldValidate: true });
           setValue('textToSpeech', '');
@@ -147,6 +147,7 @@ const TextToSpeech: FC<UploadGreetingProps> = ({ handleTextToSpeech, isPendingTe
         placeholder={selectedLocale ? 'Select voice' : 'Select language first'}
         isDisabled={!selectedLocale}
         isLoading={isVoiceListLoading}
+        menuPortalTarget={selectMenuPortalTarget}
         handleChange={(option) => {
           setValue('textToSpeechVoice', option, { shouldDirty: true, shouldValidate: true });
           setValue('textFile', null);
@@ -180,18 +181,6 @@ const TextToSpeech: FC<UploadGreetingProps> = ({ handleTextToSpeech, isPendingTe
           ? 'You can type only characters from the selected language script.'
           : 'Choose a language to enable typing.'}
       </p>
-
-      <div className="flex justify-center">
-        <Button
-          variant={'dark'}
-          type="button"
-          className="rounded-full"
-          onClick={handleTextToSpeech}
-          disabled={!watch('textToSpeech') || !selectedLocale || isPendingTextToSpeech}
-        >
-          Text to Speech
-        </Button>
-      </div>
       {WatchTextFile && audioUrl && <ReadyAudio controls src={audioUrl} />}
     </div>
   );

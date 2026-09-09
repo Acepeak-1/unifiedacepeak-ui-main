@@ -29,6 +29,12 @@ interface IGREETINGPROPS {
    * (document.body). Only passed by callers that want this dropdown's menu
    * kept inside their own page's scoped styling. */
   menuPortalTarget?: HTMLElement | null | boolean;
+  /** Undefined by default. Forwarded to the "Upload File" drawer's own
+   * AddGreeting/TextToSpeech selects (Language/Voice) — separate from
+   * menuPortalTarget above, which is only for this component's own
+   * greeting picker. Only passed by callers that want that drawer's
+   * dropdown menus kept inside their own page's scoped styling too. */
+  selectMenuPortalTarget?: any;
 }
 
 interface GreetingSelectValue extends ISELECTVALUE {
@@ -51,6 +57,7 @@ const SelectGreeting: FC<IGREETINGPROPS> = ({
   onGreetingUploadStart = () => {},
   onGreetingUploadSuccess = () => {},
   menuPortalTarget,
+  selectMenuPortalTarget,
 }) => {
   const { user } = useUser();
   const { company_info } = user;
@@ -81,13 +88,8 @@ const SelectGreeting: FC<IGREETINGPROPS> = ({
           </Button>
         </div>
       ) : (
-        <div className={`flex gap-2 relative ${selectCustomClass}`}>
+        <div className={`flex items-center gap-2 relative ${selectCustomClass}`}>
           <div className={`relative ${selectCustomClassSecond}`}>
-            {errors && (
-              <div className="flex justify-end absolute right-0 top-[-18px]">
-                <ErrorTooltip text={errors} />
-              </div>
-            )}
             <CustomSelect
               options={options}
               handleChange={(e: ISELECTVALUE | null) => {
@@ -98,6 +100,11 @@ const SelectGreeting: FC<IGREETINGPROPS> = ({
               menuPortalTarget={menuPortalTarget}
             />
           </div>
+          {errors && (
+            <div className="flex shrink-0 items-center">
+              <ErrorTooltip text={errors} />
+            </div>
+          )}
           {value?.value && (
             <Button
               type="button"
@@ -142,6 +149,7 @@ const SelectGreeting: FC<IGREETINGPROPS> = ({
                 setDrawerState((prev) => ({ ...prev, addGreeting: val, greetingType: '' }))
               }
               greetingType={name}
+              selectMenuPortalTarget={selectMenuPortalTarget}
               refetch={() => {
                 refetch();
                 onGreetingUploadSuccess();
