@@ -2311,3 +2311,25 @@
     border-color: #dc2626 !important;
   }
 }
+
+/* Waving-hand animation for the Agent Chat welcome pill. */
+@keyframes mcm-wave {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10%, 30% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+}
+.mcm-wave-hand {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: mcm-wave 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mcm-wave-hand { animation: none; }
+}
+
+/* Hide the emoji picker's category-navigation bar for a more compact picker. */
+.EmojiPickerReact .epr-category-nav {
+  display: none !important;
+}

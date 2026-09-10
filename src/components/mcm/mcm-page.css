@@ -8436,3 +8436,100 @@
     border-color: #d92b2b !important;
   }
 }
+
+/* ============================================================
+   Chat list filter tabs (All / Team / Direct / Favorites) — the
+   same pill treatment as the phone console's .seg direction
+   filters: grey idle, solid dark active, red-wash on hover.
+   ============================================================ */
+.mcm-chat-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+}
+.mcm-chat-tabs button {
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748b;
+  background: #f5f5f5;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+.mcm-chat-tabs button:hover:not(.on) {
+  color: #e50914;
+  background: #fdeaec;
+}
+.mcm-chat-tabs button.on {
+  color: #ffffff;
+  background: #0b1220;
+}
+
+/* ============================================================
+   Chat header icon buttons (search / add / filter) — bordered
+   rounded-square buttons matching the Agent Chat header.
+   ============================================================ */
+.mcm-chat-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  box-shadow: 0 1px 3px rgba(17, 17, 17, 0.06);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+.mcm-chat-iconbtn:hover,
+.mcm-chat-iconbtn[aria-expanded='true'],
+.mcm-chat-iconbtn[data-state='open'] {
+  border-color: #e50914;
+  color: #e50914;
+  background: #fff1f2;
+  box-shadow: 0 2px 6px rgba(229, 9, 20, 0.12);
+}
+.mcm-chat-iconbtn:active {
+  background: #fdd8db;
+}
+
+/* Keep the chat composer's border neutral on focus — no red ring/outline
+   leaking in from the theme's primary colour. The red the user sees isn't
+   the wrapper's own border (that's gray by default) — it's the browser's
+   native focus ring on the contenteditable Slate editor itself, which
+   `outline-0` alone doesn't reliably suppress in every browser. Kill it
+   specifically on the editable surface, in every focus state a browser
+   might use, without touching other composer children's own shadows. */
+.mcm-chat-composer [contenteditable],
+#slate-container [contenteditable],
+#slate-container {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.mcm-chat-composer [contenteditable]:focus,
+.mcm-chat-composer [contenteditable]:focus-visible,
+#slate-container [contenteditable]:focus,
+#slate-container [contenteditable]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+.mcm-chat-composer {
+  border-color: #e5e7eb !important;
+}
+.mcm-chat-composer:focus-within {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.04) !important;
+}
