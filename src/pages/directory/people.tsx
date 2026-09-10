@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Ic } from '@/components/mcm/icons';
 import SideDrawer from '@/components/custom/side-drawer';
 import UpdateForwarding from '@/pages/admin-settings/people/update-forwarding';
-import { DirectoryDrawer, DirectoryPage, EmptyRow, Kpi, SearchChip } from './page-shell';
+import { DirectoryDrawer, DirectoryPage, EmptyRow, Kpi, SearchChip, TableFooter } from './page-shell';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import { useConsoleDialer } from '@/pages/phone/console/dial-number';
 import { useInstantMeeting } from '@/hooks/use-instant-meeting';
@@ -250,6 +250,12 @@ const People = () => {
     Boolean,
   ).length;
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
+  const pagedRows = visible.slice((page - 1) * perPage, page * perPage);
+  if (page > pageCount) setPage(pageCount);
+
   /* Take the roster away as a spreadsheet.
    *
    * The platform has no export of any kind for people, so this is built here
@@ -284,6 +290,15 @@ const People = () => {
   return (
     <div className="ppl-red-theme">
       <DirectoryPage
+        footer={
+          <TableFooter
+            page={page}
+            perPage={perPage}
+            total={visible.length}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+          />
+        }
         title={
           <span className="flex items-center gap-2">
             People
@@ -295,8 +310,7 @@ const People = () => {
                   skills and one-click contact.
                 </>
               }
-              side="top"
-              className="!bg-gray-300 !text-black"
+              side="right"
             >
               <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
             </CustomTooltip>
@@ -379,6 +393,7 @@ const People = () => {
                   <DropdownMenuItem
                     key={`department-${option}`}
                     className="ppl-row-menu-item justify-between"
+                    data-selected={option === department}
                     onSelect={(event) => {
                       event.preventDefault();
                       setDepartment(option);
@@ -397,6 +412,7 @@ const People = () => {
                   <DropdownMenuItem
                     key={`location-${option}`}
                     className="ppl-row-menu-item justify-between"
+                    data-selected={option === location}
                     onSelect={(event) => {
                       event.preventDefault();
                       setLocation(option);
@@ -415,6 +431,7 @@ const People = () => {
                   <DropdownMenuItem
                     key={`presence-${option}`}
                     className="ppl-row-menu-item justify-between"
+                    data-selected={option === presence}
                     onSelect={(event) => {
                       event.preventDefault();
                       setPresence(option);
@@ -453,8 +470,8 @@ const People = () => {
           <tbody>
             {isLoading ? (
               <EmptyRow span={8} message="Loading the roster…" />
-            ) : visible.length ? (
-              visible.map((row: PersonRow) => (
+            ) : pagedRows.length ? (
+              pagedRows.map((row: PersonRow) => (
                 <tr key={row.uuid} className="tbl__row">
                   <td className="tbl__td tbl__td--left">
                     <span className="tbl__agent">

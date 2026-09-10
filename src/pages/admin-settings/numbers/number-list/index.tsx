@@ -2,6 +2,7 @@ import NumberWithFlag from '@/components/custom/number-with-flag';
 import { parseForwardActions } from '@/lib/call-standard';
 import TableManager from '@/components/custom/table-manager';
 import TableSearchHeader from '@/components/custom/table-search-header';
+import { useSlidingTabIndicator } from '@/components/custom/use-sliding-tab-indicator';
 import { AdminPage } from '@/pages/admin-settings/page-shell';
 import { useUser } from '@/hooks/use-user';
 import { capitalizeFirstLetter, handleAlert } from '@/lib/utils';
@@ -21,6 +22,7 @@ import AlertConfirm from '@/components/custom/alert-confirm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import {
+  Info,
   Hash,
   GitBranch,
   CheckCircle2,
@@ -102,7 +104,7 @@ const VIEWS: Record<ViewKey, NumberView> = {
     title: 'All numbers',
     description: 'Every number on the account, whether it is assigned, routed or sitting unused.',
     fetcherKey: 'allNumbersList',
-    showFeatures: true,
+    showFeatures: false,
     showAddNumber: true,
   },
   'by-line': {
@@ -256,11 +258,18 @@ interface INumberListState {
 const NumberList = () => {
   const { pathname } = useLocation();
   const view = VIEWS[viewFromPath(pathname)];
+  const { navRef: tabsNavRef, indicatorStyle: tabsIndicatorStyle } = useSlidingTabIndicator(view.key);
 
   const [search, setSearch] = useState<string>('');
   const [openDrawer, setOpenDrawer] = useState(false);
   const [isTableRefreshing, setIsTableRefreshing] = useState(false);
   const tableRef = useRef<any>(null);
+  /* Every dropdown menu inside this page (react-select's own portal, plus
+     the pagination footer's per-page picker) renders into document.body by
+     default, escaping the .ident-coral-theme scope below and falling back
+     to react-select's plain default colors instead of this page's red
+     theme — same fix as Identities & addresses' own menuPortalTarget. */
+  const [menuPortalTarget, setMenuPortalTarget] = useState<HTMLDivElement | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useUser();
   /* `companyInfo` does not exist on the user object — the field is `company_info`
@@ -488,7 +497,13 @@ const NumberList = () => {
         cell: ({ row }: any) => {
           const data = row?.original || {};
           return (
-            <div className="flex items-center gap-2">
+            /* The FAX badge used to sit beside the number (inline, then
+               absolute-positioned over it) — either way it fought the
+               number for the same horizontal space, cramping or clipping
+               the digits on a narrow column. Stacking the badge under the
+               number instead gives each its own row, so neither has to
+               shrink to fit the other. */
+            <div className="flex w-full flex-col items-center justify-center gap-0.5">
               <NumberWithFlag number={data?.did_number} />
               {data?.is_fax_enabled && (
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
@@ -543,7 +558,7 @@ const NumberList = () => {
                   these Tailwind utilities regardless of specificity — so the
                   pill styling has to live on a span, not the button itself. */}
               <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
-                <Hash className="h-3 w-3" />
+                <Icon name="AssignNumberIcon" className="h-3 w-3" />
                 Assign to extension
               </span>
             </button>
@@ -797,7 +812,7 @@ const NumberList = () => {
                     <Icon name="MenuDots" className="w-5 h-5" />
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="border-red-300">
+                <DropdownMenuContent align="end" className="border-neutral-200! bg-white! text-black!">
                   {menuActions.map((action: any) => (
                     <DropdownMenuItem key={action.id} onClick={action.cb}>
                       <Icon name={action.icon as IconName} className="w-4 h-4" />
@@ -819,7 +834,7 @@ const NumberList = () => {
   const releaseBlocked = Boolean(selected?.User) || Boolean(selected?.forward_call_actions);
 
   return (
-    <div className="ident-coral-theme flex min-h-0 w-full flex-1 flex-col">
+    <div ref={setMenuPortalTarget} className="ident-coral-theme flex min-h-0 w-full flex-1 flex-col">
       <AdminPage
         section="Numbers"
         title={view.title}
@@ -827,13 +842,28 @@ const NumberList = () => {
           <CustomTooltip
             text={view.description}
             side="right"
-            className="w-max max-w-[340px] whitespace-normal border-0 bg-[#fdf7f5] text-black shadow-[0_6px_20px_rgba(17,17,17,0.18)] [&_svg]:fill-[#fdf7f5]"
+            /* `w-fit` sizes this to its widest wrapped LINE, but that
+               measurement happens before text-balance (in the base
+               TooltipContent's own classes) redistributes the line
+               breaks — so the box ends up sized for one wrapping and
+               filled with another, leaving empty space on shorter lines.
+               `[text-wrap:wrap]!` cancels the base class's balance so
+               fit-content's own natural wrapping is what actually renders,
+               which is what fit-content sized the box for in the first
+               place. */
+            className="w-fit max-w-[280px] whitespace-normal [text-wrap:wrap]! border-0 bg-[#fdf7f5] text-black shadow-[0_6px_20px_rgba(17,17,17,0.18)] [&_svg]:fill-[#fdf7f5]"
           >
-            <span className="mcm-intpage-info">i</span>
+            <Info className="h-4 w-4 text-gray-500! transition-colors hover:text-red-600! active:text-red-600! data-[state=delayed-open]:text-red-600! data-[state=instant-open]:text-red-600!" />
           </CustomTooltip>
         }
         headerTabs={
-          <nav className="mcm-segmented" role="group" aria-label="Number views">
+          <nav
+            ref={tabsNavRef}
+            className="mcm-segmented"
+            role="group"
+            aria-label="Number views"
+          >
+            <span className="ident-segmented-indicator" style={tabsIndicatorStyle} aria-hidden="true" />
             {Object.values(VIEWS).map((item) => {
               const isActive = item.key === view.key;
               return (
@@ -850,9 +880,18 @@ const NumberList = () => {
           </nav>
         }
         actions={
-          !isTrial && view.showAddNumber && virtualNumberAccess?.action?.buy ? (
+          /* Same far-right spot as Identities & addresses' own "Add
+             identity" button — not grouped with the tabs. Gated the same
+             way Add identity/Add address are (trial + which view), not
+             also behind the buy permission check that used to sit here,
+             which a sub-admin role without an explicit
+             `virtual_numbers.action.buy` grant failed even though
+             Identities/Addresses' own Add buttons never checked it. The
+             actual purchase call still enforces that server-side; this
+             only controls whether the button shows. */
+          !isTrial && view.showAddNumber ? (
             <button type="button" className="ident-pill-btn black" onClick={handleAddNumber}>
-              <Plus className="w-3 h-3" />
+              <Plus className="w-3 h-4 text-white" />
               Add number
             </button>
           ) : null
@@ -891,11 +930,18 @@ const NumberList = () => {
               `headerTabs`); search now sits inside the table's own card,
               above its column headers (see `customHeader` below) — matching
               the AI Receptionist list's table header format. */}
+          {/* border/radius/spacing come from the scoped .panel-card > .tbl-wrap
+              > div > p:first-child rule in mcm-page.css, not from classes here —
+              that selector is unlayered and was silently overriding whatever
+              Tailwind classes this element carried, so keeping them here too
+              just invited them to drift out of sync with what actually renders. */}
           {view.key === 'all' && (
-            <p className="mx-4 mb-1 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-gray-900">
-              Adding an additional number to an existing user/plan will only incur a charge for the
-              phone number itself. This action does not create a new subscription or user plan. Your
-              monthly recurring total will be updated based on the quantity of numbers added.
+            <p className="flex items-center gap-2">
+              <Info className="h-3.5 w-3.5 flex-none text-[var(--accent)]" />
+              <span>
+                Adding a number to an existing user/plan only charges for the number itself — no
+                new subscription is created. Your monthly total updates with quantity.
+              </span>
             </p>
           )}
 
@@ -905,9 +951,16 @@ const NumberList = () => {
               setSearch={setSearch}
               canLabel={Boolean(virtualNumberAccess?.action?.update_forwarding)}
               onEditLabel={(did) => handleNumberState(did, 'editLabel')}
+              menuPortalTarget={menuPortalTarget}
             />
           ) : (
-            <div className="ident-table-card ident-table-card--plain w-full flex flex-col">
+            <div
+              className={`ident-table-card ident-table-card--plain w-full flex flex-col ${
+                view.key === 'all' ? '-mt-2 ident-table--all-numbers' : ''
+              } ${
+                view.key === 'in-use' || view.key === 'inventory' ? 'ident-table--numbers-list' : ''
+              } ${view.isArchive ? 'ident-table--released' : ''}`}
+            >
               <TableManager
                 {...{
                   fetcherKey: view.fetcherKey,
@@ -916,6 +969,10 @@ const NumberList = () => {
                   search,
                   tableRef,
                   hideFooterRefresh: true,
+                  pagerAccentClassName: 'border-red-600 bg-red-600 text-white',
+                  perPageMenuPortalTarget: menuPortalTarget,
+                  hideFooterDivider: true,
+                  fitHeightToContent: true,
                   customHeader: (
                     <TableSearchHeader
                       value={search}
@@ -923,6 +980,16 @@ const NumberList = () => {
                       onRefresh={handleRefreshTable}
                       refreshing={isTableRefreshing}
                       placeholder="Search numbers"
+                      rightSlot={
+                        <div className="ml-auto flex h-9 shrink-0 items-center gap-3 rounded-full border border-neutral-200 bg-white px-3.5 text-sm">
+                          <span className="font-semibold text-gray-900">All {totalAllCount}</span>
+                          <span className="h-4 w-px bg-neutral-200" />
+                          <span className="flex items-center gap-1.5 text-gray-500">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
+                            Assigned {totalInUseCount}
+                          </span>
+                        </div>
+                      }
                     />
                   ),
                   ...(view.isArchive
@@ -959,17 +1026,14 @@ const NumberList = () => {
                 className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-2xl lg:max-w-3xl"
               >
                 <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
-                  <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-                    <Hash className="h-4 w-4 text-black" />
-                    Add Number
-                  </DialogTitle>
+                  <DialogTitle className="popup-title">Add Number</DialogTitle>
                   <button
                     type="button"
                     onClick={() => setOpenDrawer(false)}
                     aria-label="Close"
-                    className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                    className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
                   >
-                    <Icon name="CloseIcon" className="h-4 w-4" />
+                    <Icon name="CloseIcon" className="h-3 w-4" />
                   </button>
                 </DialogHeader>
                 {/* Must itself be a flex column, not just a sized box: AddNumber's
@@ -999,17 +1063,14 @@ const NumberList = () => {
             className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-2xl lg:max-w-3xl"
           >
             <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
-              <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-                <Phone className="h-4 w-4 text-black" />
-                Update Forwarding
-              </DialogTitle>
+              <DialogTitle className="popup-title">Update Forwarding</DialogTitle>
               <button
                 type="button"
                 onClick={() => closeAlert('updateForwarding')}
                 aria-label="Close"
-                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
               >
-                <Icon name="CloseIcon" className="h-4 w-4" />
+                <Icon name="CloseIcon" className="h-3 w-4" />
               </button>
             </DialogHeader>
             <div className="min-h-0 flex-1 overflow-y-auto">
@@ -1060,9 +1121,12 @@ const NumberList = () => {
               'Are you sure you want to remove the assignment of this DID number? ',
             icon: <Trash2 className="h-7 w-7" />,
             iconTone: 'danger',
-            confirmBtnClassName: 'bg-red-600 hover:bg-red-700 text-white border-red-600',
-            showDivider: true,
-            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5',
+            iconLabel: 'Remove',
+            confirmBtnClassName: 'rounded-full bg-red-600 hover:bg-red-700 text-white border-red-600',
+            headerClassName: 'ident-confirm-title',
+            closeBtnClassName:
+              'rounded-full border border-gray-200 text-gray-700! hover:bg-gray-50! hover:text-gray-700! focus-visible:ring-0! shadow-none!',
+            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5 bg-white!',
           }}
           headerText="Remove DID Assignment"
         />
@@ -1081,9 +1145,12 @@ const NumberList = () => {
             confirmBtnDisabled: releaseBlocked,
             icon: <Trash2 className="h-7 w-7" />,
             iconTone: 'danger',
-            confirmBtnClassName: 'bg-red-600 hover:bg-red-700 text-white border-red-600',
-            showDivider: true,
-            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5',
+            iconLabel: 'Release',
+            confirmBtnClassName: 'rounded-full bg-red-600 hover:bg-red-700 text-white border-red-600',
+            headerClassName: 'ident-confirm-title',
+            closeBtnClassName:
+              'rounded-full border border-gray-200 text-gray-700! hover:bg-gray-50! hover:text-gray-700! focus-visible:ring-0! shadow-none!',
+            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5 bg-white!',
           }}
         />
       )}
@@ -1099,9 +1166,12 @@ const NumberList = () => {
               'Are you sure you want to remove the forwarding of this DID number? This action cannot be undone.',
             icon: <Trash2 className="h-7 w-7" />,
             iconTone: 'danger',
-            confirmBtnClassName: 'bg-red-600 hover:bg-red-700 text-white border-red-600',
-            showDivider: true,
-            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5',
+            iconLabel: 'Remove',
+            confirmBtnClassName: 'rounded-full bg-red-600 hover:bg-red-700 text-white border-red-600',
+            headerClassName: 'ident-confirm-title',
+            closeBtnClassName:
+              'rounded-full border border-gray-200 text-gray-700! hover:bg-gray-50! hover:text-gray-700! focus-visible:ring-0! shadow-none!',
+            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5 bg-white!',
           }}
         />
       )}

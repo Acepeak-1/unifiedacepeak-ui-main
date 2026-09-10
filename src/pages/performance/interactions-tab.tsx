@@ -1,10 +1,12 @@
 import CallHistory from '@/pages/reports/call-logs/call-history';
 import PerfStatCard from './stat-card';
-import { useCallStats } from '@/hooks/use-call-stats';
+import { usePerformanceCallStats } from './use-performance-call-stats';
 import { formatSecsToClock } from './format';
 
 const InteractionsTab = ({ selectedRange }: { selectedRange: { from: string; to: string } }) => {
-  const callStats = useCallStats(selectedRange);
+  // Falls back to a realistic dummy dataset only when the account genuinely
+  // has no calls in this range — see `use-performance-call-stats.ts`.
+  const callStats = usePerformanceCallStats(selectedRange);
 
   return (
     <div className="flex w-full flex-col gap-3 px-[22px] py-4">

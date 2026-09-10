@@ -276,16 +276,28 @@
 }
 .cmp .cmp-search input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-wash);
+  border-color: var(--accent-edge);
+  box-shadow: none;
 }
-.cmp .cmp-search .ic {
+.cmp .cmp-search input:focus-visible {
+  outline: none;
+}
+.cmp .cmp-search-ico {
   position: absolute;
-  left: 9px;
-  top: 8px;
-  width: 14px;
-  height: 14px;
-  color: var(--ink-4);
+  left: 6px;
+  top: 6px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  pointer-events: none;
+}
+.cmp .cmp-search-ico .ic {
+  width: 12px;
+  height: 12px;
+  color: var(--accent);
   pointer-events: none;
 }
 
@@ -320,7 +332,7 @@
    is a bar that says nothing.
    ============================================================ */
 .mcm-page.cmp {
-  --ground: #e5e7eb;
+  --ground: #e3e3e3;
   --surface: #ffffff;
   --surface-2: #f3f4f6;
   --surface-3: #e9eaed;
@@ -471,6 +483,7 @@
   gap: 10px;
   flex-wrap: wrap;
   margin-left: auto;
+  padding-right: 10px;
 }
 /* Below this the copy column can no longer hold its 320px basis, so the
    actions take a row of their own rather than being squeezed. */
@@ -496,11 +509,18 @@
 /* ── buttons: solid black, red icon ────────────────────────── */
 .cmp .btn {
   height: 34px;
-  border-radius: 12px;
+  padding: 0 16px;
+  gap: 6px;
+  border-radius: 999px;
+  font-size: 13px;
   transition:
     background-color 0.17s ease,
     border-color 0.17s ease,
     color 0.17s ease;
+}
+.cmp .btn .ic {
+  width: 14px;
+  height: 14px;
 }
 .cmp .btn.primary,
 .cmp .btn.ghost {
@@ -515,31 +535,44 @@
   color: #fff;
 }
 
-/* Black at rest, red on hover, deeper red while held. */
+/* Black in every state — no red on hover/focus/active/disabled. */
 .cmp .btn.primary {
   background: var(--btn-ink);
   color: #fff;
+  border-color: transparent;
 }
-.cmp .btn.primary:hover {
-  background: var(--accent);
+.cmp .btn.primary:hover,
+.cmp .btn.primary:active,
+.cmp .btn.primary:focus,
+.cmp .btn.primary:focus-visible {
+  background: var(--btn-ink);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: none;
+  outline: none;
+}
+.cmp .btn.primary:hover .ic,
+.cmp .btn.primary:active .ic,
+.cmp .btn.primary:focus .ic {
   color: #fff;
 }
-.cmp .btn.primary:hover .ic {
+.cmp .btn.primary:disabled {
+  background: var(--btn-ink);
   color: #fff;
-}
-.cmp .btn.primary:active {
-  background: var(--btn-ink-h);
+  opacity: 0.5;
 }
 
 .cmp .btn.ghost {
   background: var(--surface);
-  border-color: var(--btn-edge);
+  border-width: 1px;
+  border-style: solid;
+  border-color: #fecaca;
   color: var(--ink);
 }
 .cmp .btn.ghost:hover {
-  background: var(--accent-wash);
-  border-color: var(--accent-edge);
-  color: var(--accent);
+  background: var(--surface);
+  border-color: #fecaca;
+  color: var(--ink);
 }
 .cmp .btn.ghost:active {
   background: var(--accent-wash);
@@ -557,10 +590,7 @@
 /* Gray outer panel (per reference) holding a small red "Overview" label
    + divider line above the KPI grid. */
 .cmp .kpis-panel {
-  background: #f3f4f6;
-  border-radius: 14px;
-  padding: 16px 18px 18px;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 .cmp .kpis-panel-head {
   display: flex;
@@ -569,9 +599,9 @@
   margin-bottom: 12px;
 }
 .cmp .kpis-panel-head span:first-child {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--accent);
   flex: none;
@@ -589,9 +619,14 @@
    instead of a shared bar with hairline dividers. */
 .cmp .kpis {
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  background: transparent;
-  box-shadow: none;
-  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  border-radius: 10px;
+  overflow: hidden;
+  gap: 0;
   margin-bottom: 0;
 }
 @media (max-width: 1200px) {
@@ -612,9 +647,13 @@
 .cmp .kpi {
   padding: 15px 16px;
   min-width: 0;
-  background: var(--surface);
-  border-radius: 10px;
-  box-shadow: none;
+  border-right: 1px solid var(--line);
+}
+.cmp .kpi:last-child {
+  border-right: 0;
+}
+.cmp .kpi .kico {
+  display: none;
 }
 .cmp .kpi .k,
 .cmp .kpi .v,
@@ -627,31 +666,23 @@
   align-items: center;
   gap: 8px;
   min-height: 22px;
+  font-size: 11px;
   letter-spacing: 0.07em;
-  color: var(--ink-3);
-}
-.cmp .kpi .kico {
-  width: 22px;
-  height: 22px;
-  border-radius: 99px;
-  background: var(--accent-wash);
-  color: var(--accent);
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-}
-.cmp .kpi .kico .ic {
-  width: 12px;
-  height: 12px;
+  color: var(--ink);
 }
 .cmp .kpi .v {
-  font-size: 24px;
+  font-size: 28px;
   margin-top: 9px;
+  /* `.num` sets the mono font for tabular alignment elsewhere, but its
+     thinner strokes read as a lighter weight here than the reference's
+     bold sans digits — drop back to the page's own sans face. */
+  font-family: var(--sans);
 }
 .cmp .kpi .v.accentv {
   color: var(--accent);
 }
 .cmp .kpi .d {
+  font-size: 12px;
   color: var(--ink-4);
   font-weight: 600;
 }
@@ -661,12 +692,34 @@
   gap: 8px;
   align-items: center;
 }
-.cmp .tbar-sep {
-  width: 1px;
-  height: 20px;
-  background: var(--line);
-  margin: 0 2px;
+/* Now lives inside `.pc-head`, which already carries the border/padding
+   the standalone row used to bring with it. */
+.cmp .pc-head .tbar {
+  margin-bottom: 0;
+  width: 100%;
+}
+
+/* ── "All campaigns" moved above the card, same red-label + rule
+   treatment as the KPI strip's "Overview" head. ────────────────── */
+.cmp .tbl-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.cmp .tbl-panel-head > span:first-child {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
   flex: none;
+  white-space: nowrap;
+}
+.cmp .tbl-panel-line {
+  height: 1px;
+  flex: 1;
+  background: var(--line);
 }
 .cmp .fchip {
   height: 34px;
@@ -683,33 +736,35 @@
 /* The search is the only elastic control in the row, so it absorbs the
    squeeze and the chips keep their size instead of being pushed out. */
 .cmp .cmp-search {
-  flex: 1 1 180px;
-  min-width: 150px;
-  max-width: 280px;
+  flex: 1 1 200px;
+  min-width: 170px;
+  max-width: 320px;
 }
 .cmp .cmp-search input {
-  height: 34px;
+  height: 38px;
   border-radius: 99px;
-  padding-left: 33px;
+  padding-left: 38px;
 }
-.cmp .cmp-search .ic {
-  top: 10px;
-  left: 12px;
+.cmp .cmp-search-ico {
+  top: 8px;
+  left: 8px;
 }
 
 /* ── table ─────────────────────────────────────────────────── */
 .cmp .panel-card {
+  width: 100%;
+  max-width: 100%;
   box-shadow: var(--shadow-sm);
 }
 .cmp .pc-head h3 {
   color: var(--ink);
 }
 .cmp th {
-  padding: 10px 14px;
+  padding: 9px 14px;
   color: var(--ink-4);
 }
 .cmp td {
-  padding: 10px 14px;
+  padding: 8px 14px;
 }
 
 /* campaign identity: name, mode tag, created date. No gap or padding is
@@ -783,15 +838,13 @@
 .cmp .btn.run {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 11px;
-  border-radius: 9px;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 999px;
   background: var(--btn-ink);
   color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
   transition: background 0.12s;
 }
 .cmp .btn.run:hover:not(:disabled) {
@@ -809,11 +862,11 @@
   height: 13px;
 }
 .cmp .mini.dots {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   justify-content: center;
-  border-radius: 9px;
+  border-radius: 999px;
 }
 
 /* ── table geometry ────────────────────────────────────────────
@@ -932,36 +985,62 @@
   border: 0;
   border-top: 1px solid var(--line);
   border-radius: 0;
-  background: var(--surface-2);
+  background: var(--surface);
   padding: 9px 14px;
   gap: 10px;
 }
 .cmp .panel-card .table-scroll + div .tableSelect {
   width: 76px;
 }
+.cmp .panel-card .table-scroll + div button.bg-red-600 {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
+}
 
 /* ── mode selector ─────────────────────────────────────────────
    Not a filter pill: it is a select, so it takes a select's squarer
    corner and a soft red edge that firms up to full red while open. */
+/* Status/All modes are two separate rounded pill buttons, not one
+   joined segmented track — each keeps its own border/background. */
+.cmp .fchip-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex: none;
+}
 .cmp .fchip.modesel {
-  border-radius: 11px;
-  border-color: var(--sel-edge);
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
   background: var(--surface);
-  color: var(--ink);
-  padding: 0 12px;
+  color: var(--ink-3);
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 700;
 }
 .cmp .fchip.modesel svg {
-  color: var(--ink);
+  color: var(--ink-3);
 }
 .cmp .fchip.modesel:hover,
 .cmp .fchip.modesel[data-state='open'] {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--surface);
+  background: var(--accent-wash);
+  color: var(--ink);
+  box-shadow: none;
 }
 .cmp .fchip.modesel:hover svg,
 .cmp .fchip.modesel[data-state='open'] svg {
-  color: var(--accent);
+  color: var(--ink);
+}
+/* The app-wide `:focus-visible` rule paints a red outline sized to its
+   own 4px radius, which clashes with this pill's rounded-full shape and
+   reads as the pill growing/warping when a filter is open. */
+.cmp .fchip.modesel:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 /* Small dot on the Status trigger — the trigger always reads "Status"
    (it doesn't swap to the selected label, same as Channel/Agent/Outcome
@@ -1014,26 +1093,29 @@
 .cmp-menu [data-slot='dropdown-menu-item'] svg {
   color: #a1a1aa;
 }
+/* Fixed slot for the leading checkmark so every row's label starts at the
+   same x whether or not that row is the selected one. */
+.cmp-menu .menu-item-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  flex: none;
+}
 .cmp-menu [data-slot='dropdown-menu-item']:hover,
 .cmp-menu [data-slot='dropdown-menu-item']:focus,
 .cmp-menu [data-slot='dropdown-menu-item']:focus-visible,
 .cmp-menu [data-slot='dropdown-menu-item'][data-highlighted] {
-  background: #fef2f2;
-  color: #dc2626;
+  background: #f3f4f6;
   outline: none;
   box-shadow: none;
 }
-.cmp-menu [data-slot='dropdown-menu-item']:hover svg,
-.cmp-menu [data-slot='dropdown-menu-item']:focus svg,
-.cmp-menu [data-slot='dropdown-menu-item'][data-highlighted] svg {
-  color: #dc2626;
-}
 .cmp-menu [data-slot='dropdown-menu-item'].is-selected {
   background: #fef2f2;
-  color: #dc2626;
+  color: #171717;
 }
 .cmp-menu [data-slot='dropdown-menu-item'].is-selected svg {
-  color: #dc2626;
+  color: #171717;
 }
 /* Delete keeps its warning colour; everything else follows the rules above. */
 .cmp-menu [data-slot='dropdown-menu-item'][data-variant='destructive'],

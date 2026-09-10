@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react';
 import { useState } from 'react';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import { useCompanyFeatures } from '@/hooks/rbac';
@@ -60,7 +61,7 @@ const SocialMediaChannels = () => {
             className="mcm-tooltip-info"
             text="Connect your business accounts to engage with customers across platforms, and manage every conversation in one place."
           >
-            <span className="mcm-intpage-info">i</span>
+            <Info className="mcm-intpage-info" />
           </CustomTooltip>
           <div className="mcm-segmented" role="group" aria-label="Filter channels by status">
             {tabs.map((tab) => (

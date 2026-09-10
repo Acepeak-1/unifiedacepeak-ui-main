@@ -29,10 +29,25 @@ interface AlertConfirmationProps {
   /** Tint for the icon circle, matching the confirm button's own tone.
       Callers that pass `icon` typically pass this too. */
   iconTone?: 'default' | 'danger';
+  /** A short label shown centered under the icon circle — e.g. "Delete" —
+      naming the action the icon represents rather than leaving it to
+      speak for itself. Only rendered when `icon` is also passed. */
+  iconLabel?: string;
+  /** Extra classes appended to the "Confirm"/`headerText` heading — for
+      callers that want it to match a specific page's own title typography
+      rather than the dialog's plain default. Omitted by default so
+      existing callers render exactly as before. */
+  headerClassName?: string;
   /** Extra classes appended to the confirm button, for callers that want
       it to match a specific theme (e.g. a page's own accent color) rather
       than the app's default primary color. */
   confirmBtnClassName?: string;
+  /** Extra classes appended to the cancel/close button — the counterpart
+      to confirmBtnClassName, for callers that want it to match the
+      confirm button's shape (e.g. a fully-rounded pill) rather than the
+      app's default. Omitted by default so existing callers render exactly
+      as before. */
+  closeBtnClassName?: string;
   /** A divider line between the description and the button row, and a
       little extra breathing room around it — off by default so existing
       callers render exactly as before. */
@@ -58,7 +73,10 @@ const AlertConfirm = ({
   confirmBtnDisabled = false,
   icon,
   iconTone = 'default',
+  iconLabel,
+  headerClassName,
   confirmBtnClassName,
+  closeBtnClassName,
   showDivider = false,
 }: AlertConfirmationProps) => {
   return (
@@ -74,6 +92,7 @@ const AlertConfirm = ({
             className={cn(
               'truncate flex items-center justify-between',
               icon ? 'text-2xl font-bold' : 'font-semibold text-md',
+              headerClassName,
             )}
           >
             {headerText}
@@ -88,21 +107,28 @@ const AlertConfirm = ({
             </div>
           </div>
           {icon && (
-            <div className="relative w-16 h-16">
-              <div
-                className={cn(
-                  'absolute inset-0 rounded-full blur-md',
-                  iconTone === 'danger' ? 'bg-red-100' : 'bg-gray-100',
-                )}
-              />
-              <div
-                className={cn(
-                  'relative flex items-center justify-center w-16 h-16 rounded-full',
-                  iconTone === 'danger' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-700',
-                )}
-              >
-                {icon}
+            <div className="flex flex-row items-center gap-3">
+              <div className="relative w-16 h-16">
+                <div
+                  className={cn(
+                    'absolute inset-0 rounded-full blur-md',
+                    iconTone === 'danger' ? 'bg-red-100' : 'bg-gray-100',
+                  )}
+                />
+                <div
+                  className={cn(
+                    'relative flex items-center justify-center w-16 h-16 rounded-full ring-4',
+                    iconTone === 'danger'
+                      ? 'bg-red-50 text-red-600 ring-red-50/60'
+                      : 'bg-gray-100 text-gray-700 ring-gray-100/60',
+                  )}
+                >
+                  {icon}
+                </div>
               </div>
+              {iconLabel && (
+                <span className="text-lg font-semibold text-gray-900">{iconLabel}</span>
+              )}
             </div>
           )}
         </div>
@@ -120,7 +146,7 @@ const AlertConfirm = ({
           <div className="flex justify-end gap-2 w-full">
             <Button
               variant={'outline'}
-              className="min-w-[120px]"
+              className="min-w-[120px] rounded-full"
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -136,6 +162,7 @@ const AlertConfirm = ({
           <div className="flex justify-end gap-2 w-full">
             <Button
               variant={'transparent'}
+              className={cn('min-w-[120px]', closeBtnClassName)}
               onClick={(e) => {
                 e.stopPropagation();
                 setOpen(false);

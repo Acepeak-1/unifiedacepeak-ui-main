@@ -1,23 +1,26 @@
 import { Button } from '@/components/ui/button';
 import { convertDateFormateApis, getObjectLength, handleAlert } from '@/lib/utils';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Icon } from '@/assets/icons/icon';
 import TableManager from '@/components/custom/table-manager';
 import { deleteCallScript, getCallScript } from '@/services/api';
 import SideDrawer from '@/components/custom/side-drawer';
 import ScriptForm from './add-edit-script';
-import { EyeIcon } from 'lucide-react';
+import { EyeIcon, Plus, RefreshCcw, Search } from 'lucide-react';
 import { dailMethodsArr } from './constants';
 
 import OverviewScript from './overview-script';
 import { useCompanyFeatures } from '@/hooks/rbac';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import AlertConfirm from '@/components/custom/alert-confirm';
+import './call-scripts.css';
 
 const CallScripts = () => {
   const { features } = useCompanyFeatures();
   const scriptAccess = features?.plan_features?.campaign?.action || {};
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<any>(null);
+  const [search, setSearch] = useState('');
+  const callScriptTableRef = useRef<any>(null);
   const queryClient: any = useQueryClient();
   const [drawerState, setDrawerState] = useState<{ isModalOpen: boolean; selectedCampaign: any }>({
     isModalOpen: false,
@@ -112,29 +115,60 @@ const CallScripts = () => {
 
   return (
     <>
-      <section className="w-full bg-gray-200/15 flex flex-col overflow-x-auto overflow-y-hidden  h-full">
-        <div className="flex items-center justify-between p-3 border-b border-gray-200 min-h-[65px] bg-white">
-          <p className="text-gray-900 font-semibold text-lg flex items-center gap-1">Call Script</p>
+      <section className="w-full bg-[#e3e3e3] flex flex-col overflow-x-auto overflow-y-hidden  h-full">
+        <div className="flex items-center justify-between px-[26px] pt-5 pb-1 border-b border-gray-200 bg-white">
+          <div>
+            <div className="cs-eyebrow">Activity</div>
+            <p className="cs-title">Call Script</p>
+          </div>
           <div className="flex gap-2 filters">
             {scriptAccess?.add && (
               <Button
-                variant={'outline'}
+                variant="dark"
                 onClick={() => setDrawerState((prev) => ({ ...prev, isModalOpen: true }))}
-                className="min-h-9"
+                className="min-h-9 rounded-full gap-1.5"
+                style={{ backgroundColor: '#171717', borderColor: '#171717', color: '#ffffff' }}
               >
-                Add Call Script
+                <Plus className="w-4 h-4" style={{ color: '#ffffff' }} />
+                Call Script
               </Button>
             )}
           </div>
         </div>
-        <div className="w-full  p-3 flex flex-col gap-2 ">
+        <div className="flex flex-col cs-card">
+          <div className="cs-toolbar">
+            <div className="cs-search">
+              <span className="cs-search-ico" aria-hidden="true">
+                <Search />
+              </span>
+              <input
+                placeholder="Search call scripts"
+                aria-label="Search call scripts"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className="cs-refresh"
+              aria-label="Refresh call scripts"
+              onClick={() => callScriptTableRef.current?.refetchTable()}
+            >
+              <RefreshCcw className="w-4 h-4" />
+            </button>
+          </div>
           <TableManager
             {...{
+              tableRef: callScriptTableRef,
               columns,
               fetcherKey: 'getCallScript',
               fetcherFn: getCallScript,
+              search,
+              clientSideSearch: true,
               emptyTablePlaceholder: 'No call scripts found',
               descriptionEmptyTable: 'Create a call script to guide agents during campaigns',
+              hideFooterRefresh: true,
+              pagerAccentClassName: 'bg-red-600 text-white border-red-600',
             }}
           />
         </div>

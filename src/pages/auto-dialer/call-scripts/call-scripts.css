@@ -1,0 +1,166 @@
+/* Header eyebrow + title — same red mono eyebrow / italic serif title
+   treatment as the Leads page, scoped to its own classes so nothing
+   here touches shared `.eyebrow`/heading rules other pages use. */
+.cs-eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  color: #dc2626;
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.cs-title {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #171717;
+  font-size: 30px;
+  line-height: 1.3;
+}
+
+/* Table + pagination inside one bordered/rounded card, footer flush
+   against the rows with a single divider line — not a separate boxed
+   section. */
+.cs-card {
+  margin: 20px 26px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow:
+    0 2px 10px rgba(23, 23, 23, 0.06),
+    0 1px 2px rgba(23, 23, 23, 0.04);
+  overflow: hidden;
+}
+/* Row dividers are only as wide as the table itself, so the table has
+   to span the card's full width — no horizontal inset left for it to
+   fall short of the card's own left/right border. */
+.cs-card .table-scroll,
+.cs-card .table-scroll table {
+  width: 100%;
+}
+.cs-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.cs-search {
+  position: relative;
+  flex: 1 1 200px;
+  min-width: 170px;
+  max-width: 320px;
+}
+.cs-search input {
+  width: 100%;
+  height: 38px;
+  border-radius: 99px !important;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 0 14px 0 38px;
+  font-size: 12.5px;
+  color: #171717;
+}
+.cs-search input::placeholder {
+  color: #a1a1aa;
+}
+.cs-search input:focus,
+.cs-search input:focus-visible {
+  outline: none;
+  border-radius: 99px;
+  border-color: #fca5a5;
+  box-shadow: none;
+}
+.cs-search-ico {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #fef2f2;
+  pointer-events: none;
+}
+.cs-search-ico svg {
+  width: 12px;
+  height: 12px;
+  color: #f87171;
+}
+.cs-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  flex: none;
+}
+.cs-refresh:hover {
+  color: #171717;
+}
+
+.cs-card .table-scroll {
+  border: 0;
+  border-radius: 0;
+}
+.cs-card .table-scroll + div {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  border-radius: 0;
+}
+.cs-card .table-scroll + div button.bg-red-600 {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
+}
+.cs-card .table-scroll + div .tableSelect {
+  width: 76px;
+}
+/* Kills the Tailwind `divide-x` rule between the per-page select and
+   the record count — this table doesn't want that vertical divider. */
+.cs-card .table-scroll + div > div > div > div > :not([hidden]) ~ :not([hidden]) {
+  border-left-width: 0 !important;
+  border-right-width: 0 !important;
+}
+/* Even column shares so a heading always sits over its own values,
+   instead of the browser handing all the slack to one column. */
+.cs-card table {
+  table-layout: fixed;
+  width: 100%;
+}
+.cs-card th,
+.cs-card td {
+  text-align: left;
+}
+.cs-card th:nth-child(1),
+.cs-card td:nth-child(1) {
+  width: 20%;
+}
+.cs-card th:nth-child(2),
+.cs-card td:nth-child(2) {
+  width: 20%;
+}
+.cs-card th:nth-child(3),
+.cs-card td:nth-child(3) {
+  width: 20%;
+}
+.cs-card th:nth-child(4),
+.cs-card td:nth-child(4) {
+  width: 20%;
+}
+.cs-card th:nth-child(5),
+.cs-card td:nth-child(5) {
+  width: 20%;
+  text-align: center;
+}
+/* The action icons render in a block-level flex span, which
+   text-align:center can't budge — switching it to inline-flex lets the
+   td's centering actually reach it. */
+.cs-card td:nth-child(5) > span {
+  display: inline-flex;
+}
