@@ -8704,6 +8704,13 @@
 .mcm-admin .ident-coral-theme .ident-table--all-numbers table td:nth-child(4) {
   width: 18%;
 }
+/* "Forwarded to" on All numbers only — nudged right of its own centered
+   position (extra left padding on a centered column shifts its content
+   right), so the pill/text sits closer to Type than to Assigned to. */
+.mcm-admin .ident-coral-theme .ident-table--all-numbers table th:nth-child(4),
+.mcm-admin .ident-coral-theme .ident-table--all-numbers table td:nth-child(4) {
+  padding-left: 48px;
+}
 .mcm-admin .ident-coral-theme .ident-table--all-numbers table th:nth-child(5),
 .mcm-admin .ident-coral-theme .ident-table--all-numbers table td:nth-child(5) {
   width: 10%;
@@ -8711,6 +8718,16 @@
 .mcm-admin .ident-coral-theme .ident-table--all-numbers table th:nth-child(6),
 .mcm-admin .ident-coral-theme .ident-table--all-numbers table td:nth-child(6) {
   width: 13%;
+}
+/* Type and Site on All numbers only — nudged right of their own centered
+   position, same technique as Forwarded to above. */
+.mcm-admin .ident-coral-theme .ident-table--all-numbers table th:nth-child(5),
+.mcm-admin .ident-coral-theme .ident-table--all-numbers table td:nth-child(5) {
+  padding-left: 40px;
+}
+.mcm-admin .ident-coral-theme .ident-table--all-numbers table th:nth-child(6),
+.mcm-admin .ident-coral-theme .ident-table--all-numbers table td:nth-child(6) {
+  padding-left: 40px;
 }
 .mcm-admin .ident-coral-theme .ident-table--all-numbers table th:nth-child(7),
 .mcm-admin .ident-coral-theme .ident-table--all-numbers table td:nth-child(7) {
@@ -8770,6 +8787,12 @@
 .mcm-admin .ident-coral-theme .ident-table--numbers-list table th:nth-child(6),
 .mcm-admin .ident-coral-theme .ident-table--numbers-list table td:nth-child(6) {
   width: 13%;
+}
+/* Site on In use only (not Unused, which shares this same table class) —
+   nudged right of its own centered position. */
+.mcm-admin .ident-coral-theme .ident-table--in-use table th:nth-child(6),
+.mcm-admin .ident-coral-theme .ident-table--in-use table td:nth-child(6) {
+  padding-left: 40px;
 }
 .mcm-admin .ident-coral-theme .ident-table--numbers-list table th:nth-child(7),
 .mcm-admin .ident-coral-theme .ident-table--numbers-list table td:nth-child(7) {
@@ -9068,17 +9091,23 @@
 .mcm-admin .ident-coral-theme.call-coverage-page table tbody td.assigned-col {
   padding-left: 40px !important;
 }
-/* Numbers tab's "What a caller gets" column only — explicitly pinned
-   left, since its own long header text nearly fills the column and can
-   look centered even while genuinely left-aligned. */
-.mcm-admin .ident-coral-theme.call-coverage-page table thead th.caller-gets-col,
-.mcm-admin .ident-coral-theme.call-coverage-page table tbody td.caller-gets-col {
+/* Numbers tab's "Coverage" heading only — left-aligned, its own pill
+   value below stays centered. */
+.mcm-admin .ident-coral-theme.call-coverage-page table thead th.coverage-col {
   text-align: left !important;
   padding-left: 6px !important;
 }
+/* Numbers tab's "What a caller gets" heading only — centered over its
+   own value below (which stays left-aligned to read naturally). */
+.mcm-admin .ident-coral-theme.call-coverage-page table thead th.caller-gets-col {
+  text-align: center !important;
+}
+.mcm-admin .ident-coral-theme.call-coverage-page table tbody td.caller-gets-col {
+  text-align: center !important;
+  padding-left: 6px !important;
+}
 /* Extensions tab's "WHAT A CALLER GETS" heading only — centered over its
-   own two-line wrapped sentence below, which spans nearly the full
-   column width (the value itself stays left-aligned to read naturally). */
+   own wrapped sentence below (the value itself stays left-aligned). */
 .mcm-admin .ident-coral-theme.call-coverage-page table thead th.ext-caller-gets-col {
   text-align: center !important;
 }
@@ -9114,6 +9143,18 @@
 .mcm-admin .ident-coral-theme.call-coverage-page table thead th.hear-col {
   text-align: center !important;
   padding-left: 20px !important;
+}
+/* Voicemail greetings' own table only — matched to the AI session list's
+   (ai-bot-session/index.tsx) denser body text: 12.5px instead of the
+   shared table rule's 13px, name column semibold instead of the shared
+   500 weight, everything else left at the shared rule's values (already
+   close: Greeting/Generate columns don't carry text, Extension and the
+   sentence already override their own size/colour separately above). */
+.mcm-admin .ident-coral-theme.call-coverage-page table.greetings-table tbody td {
+  font-size: 12.5px;
+}
+.mcm-admin .ident-coral-theme.call-coverage-page table.greetings-table tbody td.person-col {
+  font-weight: 600;
 }
 /* Voicemail greetings tab's "Generate" column only (Numbers tab's Fix
    stays centered) — icon shifted to the cell's left edge, matching
@@ -9182,6 +9223,13 @@
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--identities td:nth-child(4) {
   width: 16.66%;
 }
+/* Address on Identities only — nudged right of its own centered
+   position (extra left padding on a centered column shifts its content
+   right). */
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--identities th:nth-child(4),
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--identities td:nth-child(4) {
+  padding-left: 32px;
+}
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--identities th:nth-child(5),
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--identities td:nth-child(5) {
   width: 16.66%;
@@ -9194,78 +9242,79 @@
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses table {
   table-layout: fixed;
 }
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses th:nth-child(1),
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td:nth-child(1) {
-  width: 13%;
+/* Eight columns (Country, Region, City, Postal Code, Address, Proofs,
+   Description, Action), equally divided at 12.5% each. */
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses th,
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td {
+  width: 12.5%;
   white-space: normal;
-}
-/* City's own content (a short place name) doesn't need as much room as
-   Country/Region or Address, so it's narrower — the header, centered
-   within that smaller width, now sits directly over the name instead of
-   floating in a wide column mostly empty to its right. */
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses th:nth-child(2),
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td:nth-child(2) {
-  width: 11%;
-  text-align: center;
 }
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses th:nth-child(3),
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td:nth-child(3) {
-  width: 11%;
+  text-align: center;
 }
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses th:nth-child(4),
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td:nth-child(4) {
-  width: 22%;
-  white-space: normal;
-}
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses th:nth-child(5),
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td:nth-child(5) {
-  width: 9%;
-}
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses th:nth-child(6),
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td:nth-child(6) {
-  width: 22%;
-  white-space: normal;
-}
-/* Proofs' count sits centered in its own narrow (8%) column, right next
-   to Description's left-aligned text starting with its own small default
-   padding — the two read as cramped together rather than clearly separate
-   columns. Extra left padding on Description alone (not touched on the
-   th, so the header label stays where it was) opens that gap up. */
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td:nth-child(6) {
-  padding-left: 22px;
-}
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses th:nth-child(7),
-.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td:nth-child(7) {
-  width: 12%;
+/* Same cascade loss as Identities/Verifications' first two columns: the
+   table's generic header-centering rule loses to the shared --plain
+   first-child/2nd-column left-align rules elsewhere in the file (same
+   specificity, those come later). These more specific selectors win and
+   actually center Country/Region over their values. */
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses th:first-child,
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td:first-child,
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses th:nth-child(2),
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--addresses td:nth-child(2) {
+  text-align: center;
 }
 
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications table {
   table-layout: fixed;
 }
+/* Six columns now (DID Number, Country, City, Status, Time Left, Action)
+   since Country/City split into two — widths trimmed from 20% each to
+   16% so all six still add up to 100. */
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications th:nth-child(1),
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications td:nth-child(1) {
-  width: 20%;
+  width: 16%;
+}
+/* Same cascade loss as Identities' Type column and Verifications' own
+   Country column: the table's generic header-centering rule loses
+   to the shared --plain first-child left-align rule elsewhere in the
+   file (same specificity, that one comes later). This more specific
+   selector wins and actually centers DID Number over its value. */
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications th:first-child,
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications td:first-child {
+  text-align: center;
 }
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications th:nth-child(2),
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications td:nth-child(2) {
-  width: 20%;
+  width: 16%;
   white-space: normal;
   /* Same fix as Identities' Type column above: the table's generic
      header-centering rule loses to the Numbers-list-only 2nd-column
      left-align rule elsewhere in the file; this more specific selector
-     wins and actually centers Country/City over its value. */
+     wins and actually centers Country over its value. */
   text-align: center;
 }
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications th:nth-child(3),
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications td:nth-child(3) {
-  width: 20%;
+  width: 16%;
+  white-space: normal;
 }
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications th:nth-child(4),
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications td:nth-child(4) {
-  width: 20%;
+  width: 16%;
 }
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications th:nth-child(5),
 .mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications td:nth-child(5) {
+  width: 16%;
+}
+/* Time Left on Verifications only — nudged right of its own centered
+   position. */
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications th:nth-child(5),
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications td:nth-child(5) {
+  padding-left: 32px;
+}
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications th:nth-child(6),
+.mcm-admin .ident-coral-theme .ident-table-card--plain.ident-table--verifications td:nth-child(6) {
   width: 20%;
 }
 
@@ -10071,3 +10120,37 @@
    up exactly (both are 22px insets off .mcm-adminpage-body). Left at the
    bar's normal 14px padding, matching the table cells' ~12px, is what
    actually lines the two up. */
+
+/* Fax Number radio (add-number step one): the selected dot is
+   `fill-primary` (red) on the base RadioGroupItem, shared by every radio
+   group in the app — scoped here instead of changed there. Targeting
+   both the svg and its path covers either place the icon library puts
+   the actual fill. Explicit margin:0 rules out any default svg margin
+   nudging the dot off the flex-centered middle of the circle. */
+.fax-number-radio [data-slot='radio-group-indicator'] svg,
+.fax-number-radio [data-slot='radio-group-indicator'] svg path {
+  fill: #000 !important;
+}
+.fax-number-radio [data-slot='radio-group-indicator'] svg {
+  margin: 0 !important;
+}
+
+/* Identities/Addresses/Verifications' and Call coverage's own tab
+   strips render their inactive tabs off a bare `<button>` instead of the
+   Numbers list's `<a>` (via react-router Link) — matched by the same
+   `.mcm-segmented button/> a` rule, but forced explicitly here too so
+   they can't drift from Numbers' own tab styling. Scoped to any
+   `.ident-coral-theme` page's button-based tab strip — Numbers list's
+   own tabs are `<a>`, so `button` here never matches them. */
+.mcm-admin .ident-coral-theme .mcm-segmented button:not(.is-active) {
+  color: var(--ink-3) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+}
+/* Same, for the selected tab — forced to match Numbers list's own
+   active-tab size/weight (a link, not a button, so untouched by this). */
+.mcm-admin .ident-coral-theme .mcm-segmented button.is-active {
+  color: #171717 !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+}
