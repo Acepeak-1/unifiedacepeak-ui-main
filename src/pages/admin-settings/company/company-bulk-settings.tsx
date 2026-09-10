@@ -30,7 +30,16 @@
 
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, CheckCircle2, Info, MinusCircle, Users, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  MinusCircle,
+  Save,
+  Search,
+  Users,
+  XCircle,
+} from 'lucide-react';
 
 import CustomSelect from '@/components/custom/custom-select';
 import Loader from '@/components/custom/loader';
@@ -39,6 +48,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { fetchAllPages } from '@/lib/fetch-all-pages';
 import { invalidateGlobalUsersDirectory } from '@/lib/invalidate-global-users-directory';
 import { handleAlert } from '@/lib/utils';
@@ -82,12 +92,6 @@ const INTERNATIONAL_OPTIONS: { label: string; value: InternationalCallingChoice 
   { label: 'Allowed to call other countries', value: 'allow' },
   { label: 'Not allowed to call other countries', value: 'block' },
 ];
-
-/* The switch reads none of these today, so the same sentence is true of every
-   one of them. It is written once and shown on each, rather than being softened
-   into something vaguer that an admin could read as "it works". */
-const COMING_SOON_NOTE =
-  'Coming soon. This is written onto each person the same way their own settings page writes it, so it is saved and waiting — but the call switch does not read it yet, so what a caller hears does not change.';
 
 type FieldId =
   | 'recording_automatic'
@@ -167,7 +171,7 @@ const FieldRow = ({
   disabled: boolean;
   control: React.ReactNode;
 }) => (
-  <SettingRow label={label} description={description} status="coming-soon">
+  <SettingRow label={label} description={description}>
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <label className="flex cursor-pointer items-center gap-2">
         <Checkbox checked={included} onCheckedChange={onToggle} disabled={disabled} />
@@ -352,33 +356,41 @@ const CompanyBulkSettings = () => {
     (preview?.changed || 0) > 0;
 
   return (
-    <section className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-200/15">
-      <div className="flex min-h-[65px] flex-col justify-center border-b border-gray-200 bg-white px-4 py-3">
-        <p className="text-lg font-semibold text-gray-900">Apply to many people</p>
-        <p className="text-xs text-gray-500">
-          Set the same answer on everybody at once, instead of opening each person in turn.
-        </p>
-      </div>
-
+    <section className="bulk-settings-page flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-200/15">
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-3 sm:px-4">
         <div className="mx-auto flex w-full min-h-0 max-w-[1040px] flex-col gap-4">
+          <div className="flex items-center gap-1.5 px-1">
+            <p className="text-lg font-semibold text-gray-900">Apply to many people</p>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 shrink-0 cursor-help text-gray-400" />
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                className="w-max max-w-[280px] [text-wrap:pretty] text-black"
+                style={{
+                  background: '#fdf7f5',
+                  border: 'none',
+                  color: '#000',
+                  boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
+                }}
+              >
+                Sets the same answer on everybody at once, instead of opening each person in turn.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
           <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white p-3">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
+            <Save className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
             <p className="text-xs text-gray-700">
-              <span className="font-semibold text-gray-900">What this writes.</span> Each person you
-              pick is saved with only the settings you ticked changed — everything else on their
-              record is written back exactly as it was. Somebody already set the way you asked is
-              counted and left alone rather than saved again. This is the same change their own
-              settings page makes, so it is recorded on the person, but it does not yet change what
-              a caller hears.
+              <span className="font-semibold text-gray-900">What this writes.</span> Only the
+              settings you tick are changed — everything else stays exactly as it was.
             </p>
           </div>
 
           <SettingCard
             title="Choose what to change"
             description="Tick a setting to include it in this run. Anything left unticked is not touched on anyone."
-            status="coming-soon"
-            note={COMING_SOON_NOTE}
           >
             <FieldRow
               included={include.recording_automatic}
@@ -512,6 +524,9 @@ const CompanyBulkSettings = () => {
               <div className="w-full sm:max-w-[280px]">
                 <Input
                   placeholder="Search by name, extension or email"
+                  className="mcm-pill-input rounded-full border border-gray-200 pl-8 shadow-none hover:border-primary focus:border-primary focus:ring-0"
+                  Icon={<Search className="h-3.5 w-3.5 text-gray-500" />}
+                  IconPosition="left-0 pl-3 inset-y-0"
                   value={search}
                   disabled={running}
                   onChange={(event) => setSearch(event.target.value)}
@@ -519,8 +534,9 @@ const CompanyBulkSettings = () => {
               </div>
               <Button
                 type="button"
-                variant="outline"
+                variant="dark"
                 size="sm"
+                className="rounded-full"
                 onClick={toggleAllVisible}
                 disabled={running || visible.length === 0}
               >
@@ -605,7 +621,7 @@ const CompanyBulkSettings = () => {
                 People are saved one at a time, so a long list takes a moment. Please leave this
                 page open until it finishes.
               </p>
-              <Button type="button" variant="primary" onClick={() => run()} disabled={!canRun}>
+              <Button type="button" variant="dark" onClick={() => run()} disabled={!canRun}>
                 {running
                   ? 'Applying...'
                   : `Apply to ${preview?.changed || 0} ${

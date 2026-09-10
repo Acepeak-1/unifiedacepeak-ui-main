@@ -1,7 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarClock, Check, ChevronDown, Eye, SlidersHorizontal, Trash2 } from 'lucide-react';
+import {
+  CalendarClock,
+  Check,
+  ChevronDown,
+  Eye,
+  RefreshCcw,
+  SlidersHorizontal,
+  Trash2,
+} from 'lucide-react';
 import moment from 'moment';
 
 import TableManager from '@/components/custom/table-manager';
@@ -94,6 +102,7 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [modeFilter, setModeFilter] = useState<string>('ALL');
   const debouncedSearch = useDebounce(search, 1000);
+  const campaignTableRef = useRef<any>(null);
 
   const [modalState, setModalState] = useState<ModalState>({ open: false, type: null, data: [] });
   const [drawerState, setDrawerState] = useState<{ isModalOpen: boolean; selectedCampaign: any }>({
@@ -476,9 +485,10 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
                 className="btn run"
                 disabled={outOfWindow}
                 onClick={() => !outOfWindow && onPlayPause(data)}
+                aria-label={isRunning ? 'Pause campaign' : isPaused ? 'Resume campaign' : 'Start campaign'}
+                title={isRunning ? 'Pause' : isPaused ? 'Resume' : 'Start'}
               >
                 <Ic n={isRunning ? 'pause' : 'play'} />
-                {isRunning ? 'Pause' : isPaused ? 'Resume' : 'Start'}
               </button>
             )}
             {menu.length ? (
@@ -569,7 +579,7 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
         {!embedded && (
           <div className="page-head">
             <div className="page-head-copy">
-              <div className="eyebrow">Campaign · Outbound</div>
+              <div className="eyebrow">Campaign</div>
               <div className="page-head-title-row">
                 <h1>Campaigns</h1>
                 <CustomTooltip
@@ -638,97 +648,118 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
           </div>
         )}
 
-        <div className="tbar">
-          <div className="cmp-search">
-            <Ic n="search" />
-            <input
-              placeholder="Search campaigns"
-              aria-label="Search campaigns"
-              value={search}
-              maxLength={50}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (value.startsWith(' ')) return;
-                setSearch(value);
-              }}
-            />
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button type="button" className="fchip modesel">
-                Status
-                {statusFilter !== 'ALL' && <span className="status-active-dot" />}
-                <ChevronDown size={14} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              side="bottom"
-              align="start"
-              sideOffset={6}
-              collisionPadding={12}
-              className="cmp-menu w-40"
-            >
-              {STATUS_FILTERS.map(([value, label]) => (
-                <DropdownMenuItem
-                  key={value}
-                  className={statusFilter === value ? 'is-selected' : undefined}
-                  onSelect={() => setStatusFilter(value)}
-                >
-                  <Check size={14} style={{ opacity: statusFilter === value ? 1 : 0 }} />
-                  {value === 'PROCESSING' ? <span className="dot green" /> : null}
-                  {label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <span className="tbar-sep" />
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button type="button" className="fchip modesel">
-                {MODE_FILTERS.find(([value]) => value === modeFilter)?.[1] || 'All modes'}
-                <ChevronDown size={14} />
-              </button>
-            </DropdownMenuTrigger>
-            {/* Opens below the trigger and is kept on screen: collision
-                handling shifts it inward near a viewport edge, which is what
-                keeps it visible on narrow screens. The panel is four rows
-                tall, so on any realistic viewport there is room below and it
-                does not flip up over the stats. */}
-            <DropdownMenuContent
-              side="bottom"
-              align="start"
-              sideOffset={6}
-              collisionPadding={12}
-              className="cmp-menu w-44"
-            >
-              {MODE_FILTERS.map(([value, label]) => (
-                <DropdownMenuItem
-                  key={value}
-                  className={modeFilter === value ? 'is-selected' : undefined}
-                  onSelect={() => setModeFilter(value)}
-                >
-                  <Check size={14} style={{ opacity: modeFilter === value ? 1 : 0 }} />
-                  {label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div className="tbl-panel-head">
+          <span>All campaigns</span>
+          <span className="tbl-panel-line" />
+          <span className="src live pc-right">
+            <Ic n="spark" size={10} />
+            live
+          </span>
         </div>
 
         <div className="panel-card">
           <div className="pc-head">
-            <h3>All campaigns</h3>
-            <span className="src live pc-right">
-              <Ic n="spark" size={10} />
-              live
-            </span>
+            <div className="tbar">
+              <div className="cmp-search">
+                <span className="cmp-search-ico" aria-hidden="true">
+                  <Ic n="search" />
+                </span>
+                <input
+                  placeholder="Search campaigns"
+                  aria-label="Search campaigns"
+                  value={search}
+                  maxLength={50}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value.startsWith(' ')) return;
+                    setSearch(value);
+                  }}
+                />
+              </div>
+
+              <button
+                type="button"
+                className="mini ico tbar-refresh"
+                aria-label="Refresh campaigns"
+                onClick={() => campaignTableRef.current?.refetchTable()}
+              >
+                <RefreshCcw className="w-4 h-4" />
+              </button>
+
+              <div className="fchip-group">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className="fchip modesel">
+                      {statusFilter !== 'ALL'
+                        ? STATUS_FILTERS.find(([value]) => value === statusFilter)?.[1]
+                        : 'Status'}
+                      {statusFilter !== 'ALL' && <span className="status-active-dot" />}
+                      <ChevronDown size={14} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    side="bottom"
+                    align="start"
+                    sideOffset={6}
+                    collisionPadding={12}
+                    className="cmp-menu w-40"
+                  >
+                    {STATUS_FILTERS.map(([value, label]) => (
+                      <DropdownMenuItem
+                        key={value}
+                        className={statusFilter === value ? 'is-selected' : undefined}
+                        onSelect={() => setStatusFilter(value)}
+                      >
+                        <span className="menu-item-check">
+                          {statusFilter === value && <Check size={14} />}
+                        </span>
+                        {value === 'PROCESSING' ? <span className="dot green" /> : null}
+                        {label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className="fchip modesel">
+                      {MODE_FILTERS.find(([value]) => value === modeFilter)?.[1] || 'All modes'}
+                      <ChevronDown size={14} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  {/* Opens below the trigger and is kept on screen: collision
+                      handling shifts it inward near a viewport edge, which is what
+                      keeps it visible on narrow screens. The panel is four rows
+                      tall, so on any realistic viewport there is room below and it
+                      does not flip up over the stats. */}
+                  <DropdownMenuContent
+                    side="bottom"
+                    align="start"
+                    sideOffset={6}
+                    collisionPadding={12}
+                    className="cmp-menu w-44"
+                  >
+                    {MODE_FILTERS.map(([value, label]) => (
+                      <DropdownMenuItem
+                        key={value}
+                        className={modeFilter === value ? 'is-selected' : undefined}
+                        onSelect={() => setModeFilter(value)}
+                      >
+                        <span className="menu-item-check">
+                          {modeFilter === value && <Check size={14} />}
+                        </span>
+                        {label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           </div>
 
           <TableManager
             {...{
+              tableRef: campaignTableRef,
               columns,
               fetcherKey: 'getCampaignListForPreview',
               fetcherFn: campaignList,
@@ -746,6 +777,8 @@ const Campaign = ({ embedded = false }: { embedded?: boolean }) => {
                 sort: { key: 'createdAt', desc: true },
               },
               customClass: 'w-full',
+              pagerAccentClassName: 'bg-red-600 text-white border-red-600',
+              hideFooterRefresh: true,
             }}
           />
 

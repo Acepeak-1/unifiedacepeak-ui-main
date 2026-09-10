@@ -1,10 +1,12 @@
-import { FC, useMemo } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Info } from 'lucide-react';
 
 import Loader from '@/components/custom/loader';
 import NumberWithFlag from '@/components/custom/number-with-flag';
 import CustomTooltip from '@/components/custom/custom-tooltip';
 import TableSearchHeader from '@/components/custom/table-search-header';
+import SimpleTableFooter, { type SimplePagination } from '@/components/custom/simple-table-footer';
 import { Icon } from '@/assets/icons/icon';
 import { fetchAllPages } from '@/lib/fetch-all-pages';
 import { allNumbersList } from '@/services/api';
@@ -50,9 +52,16 @@ interface NumbersByLineProps {
   setSearch: (value: string) => void;
   onEditLabel: (did: any) => void;
   canLabel: boolean;
+  menuPortalTarget?: HTMLElement | null;
 }
 
-const NumbersByLine: FC<NumbersByLineProps> = ({ search, setSearch, onEditLabel, canLabel }) => {
+const NumbersByLine: FC<NumbersByLineProps> = ({
+  search,
+  setSearch,
+  onEditLabel,
+  canLabel,
+  menuPortalTarget,
+}) => {
   const {
     data: numbers = [],
     isPending,
@@ -71,6 +80,23 @@ const NumbersByLine: FC<NumbersByLineProps> = ({ search, setSearch, onEditLabel,
   );
   const unlinked = useMemo(() => numbersWithoutLine(numbers).length, [numbers]);
 
+  /* Groups are the "records" this view paginates — each line's own numbers
+     stay together on one page rather than being split mid-line. Resets to
+     page 1 whenever the search narrows (or widens) the result set, the
+     same way TableManager's own pagination does. */
+  const [pagination, setPagination] = useState<SimplePagination>({ pageIndex: 0, pageSize: 25 });
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [search]);
+  const pagedVisible = useMemo(
+    () =>
+      visible.slice(
+        pagination.pageIndex * pagination.pageSize,
+        (pagination.pageIndex + 1) * pagination.pageSize,
+      ),
+    [visible, pagination],
+  );
+
   if (isPending) {
     return (
       <div className="flex w-full items-center justify-center p-8">
@@ -81,16 +107,22 @@ const NumbersByLine: FC<NumbersByLineProps> = ({ search, setSearch, onEditLabel,
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Description first, then search — matching All numbers' order. Its
-          own top margin (not left to the shared `p:first-child` CSS rule,
-          which only reaches one div deep into tbl-wrap and this component's
-          own root div sits a level below that) keeps its border from
-          touching the card above it, same as All numbers'. */}
-      <p className="mx-4 mt-4 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-gray-900">
-        <strong>These routes are stored but not yet carried out.</strong> Calls arriving on a number
-        are only connected when it points at an extension or a voicemail box. A number pointing at a
-        department, queue, menu or AI receptionist is saved correctly and shown here, but the call
-        is dropped rather than answered. This is switch work, not a setting on this page.
+      {/* Description first, then search — matching All numbers' order. All
+          numbers' own version of this banner is matched (and re-tinted) by
+          the shared `p:first-child` CSS rule (`.mcm-adminpage-body >
+          .panel-card > .tbl-wrap > div > p:first-child`) — border-primary/30
+          and text-gray-900 never actually render there, that rule's own
+          --accent-edge border/--ink-2 text/12.5px size win instead. This
+          paragraph sits one div deeper (inside this component's own root),
+          so that selector doesn't reach it; its colors/size are spelled out
+          directly here to match what All numbers actually renders, not what
+          its className claims. */}
+      <p className="mx-4 mt-4 flex items-start gap-2 rounded-lg border border-[var(--accent-edge)] bg-[var(--accent-wash)] px-[13px] py-[10px] text-[12.5px] leading-relaxed text-[var(--ink-2)]">
+        <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--accent)]" />
+        <span>
+          Only numbers pointing at an extension or voicemail are actually connected — others
+          (department, queue, menu, AI receptionist) save here but drop the call.
+        </span>
       </p>
 
       {/* Each line renders its own small table below, so there is no single
@@ -100,8 +132,11 @@ const NumbersByLine: FC<NumbersByLineProps> = ({ search, setSearch, onEditLabel,
           `customHeader` (see table-manager.tsx) — without it the search
           pill sat flush against the card's edges instead of inset like
           every other Numbers table's search bar. */}
-      <div className="ident-table-card ident-table-card--plain w-full flex flex-col">
-        <div className="border-b border-b-gray-200">
+      {/* -mt-2 pulls this closer to the description above without touching
+          the parent's gap-4, which also spaces the line cards and pagination
+          below this and should stay as-is. */}
+      <div className="ident-table-card ident-table-card--plain w-full flex flex-col -mt-2">
+        <div>
           <div className="px-3 py-2">
             <TableSearchHeader
               value={search}
@@ -124,7 +159,7 @@ const NumbersByLine: FC<NumbersByLineProps> = ({ search, setSearch, onEditLabel,
           </p>
         </div>
       ) : (
-        visible.map((group) => (
+        pagedVisible.map((group) => (
           <section key={group.line.key} className="ident-line-card flex flex-col">
             <header className="ident-line-card__head flex flex-wrap items-baseline gap-2">
               <h3 className="text-md font-semibold text-gray-900">{group.line.name}</h3>
@@ -153,8 +188,19 @@ const NumbersByLine: FC<NumbersByLineProps> = ({ search, setSearch, onEditLabel,
                     return (
                       <tr key={did?.uuid || did?.did_number}>
                         <td>
-                          <div className="flex items-center gap-2">
-                            <NumberWithFlag number={did?.did_number} />
+                          {/* inline-flex, not flex: a block-level flex div ignores
+                              the td's text-align: center entirely (block boxes
+                              don't respond to an ancestor's text-align for their
+                              own position), which is why this column alone stayed
+                              left-aligned while every plain-text column centered
+                              correctly. flex-col, not row: the number was
+                              wrapping onto two lines fighting the Primary badge
+                              for the same row's width — stacking them gives the
+                              number its own full-width line. */}
+                          <div className="inline-flex flex-col items-center gap-1">
+                            <span className="whitespace-nowrap">
+                              <NumberWithFlag number={did?.did_number} />
+                            </span>
                             {/* Not a stored flag — the platform has none. It is the
                                 first number on the line, which is the one people
                                 mean when they say "the Support number". */}
@@ -165,7 +211,15 @@ const NumbersByLine: FC<NumbersByLineProps> = ({ search, setSearch, onEditLabel,
                             ) : null}
                           </div>
                         </td>
-                        <td>{label || <span className="text-gray-500">No label</span>}</td>
+                        <td>
+                          {label ? (
+                            <span className="block max-w-[190px] truncate text-[13px] font-normal text-slate-950 transition-colors">
+                              {label}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">No label</span>
+                          )}
+                        </td>
                         <td>{numberTypeOf(did)}</td>
                         <td>{isSmsCapable(did) ? 'Yes' : 'No'}</td>
                         <td className="text-center">
@@ -195,13 +249,28 @@ const NumbersByLine: FC<NumbersByLineProps> = ({ search, setSearch, onEditLabel,
         ))
       )}
 
+      {/* Same red-bordered notice style as the banner above (and border/bg/
+          text colors and size match what that banner actually renders with,
+          not its literal Tailwind classes — see the comment on it), sitting
+          above the footer rather than after it. */}
       {unlinked ? (
-        <p className="text-xs text-gray-500">
-          {unlinked} {unlinked === 1 ? 'number rings' : 'numbers ring'} a person, or nothing at all,
-          so {unlinked === 1 ? 'it is' : 'they are'} not on a shared line. They are all in All
-          numbers.
+        <p className="mx-4 mb-3 flex items-start gap-2 rounded-lg border border-[var(--accent-edge)] bg-[var(--accent-wash)] px-[13px] py-[10px] text-[12.5px] leading-relaxed text-[var(--ink-2)]">
+          <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--accent)]" />
+          <span>
+            {unlinked} {unlinked === 1 ? "number isn't" : "numbers aren't"} on a shared line — see{' '}
+            {unlinked === 1 ? 'it' : 'them'} in All numbers.
+          </span>
         </p>
       ) : null}
+
+      {visible.length > 0 && (
+        <SimpleTableFooter
+          totalItems={visible.length}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          menuPortalTarget={menuPortalTarget}
+        />
+      )}
     </div>
   );
 };

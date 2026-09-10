@@ -419,25 +419,26 @@ const LocationManagement = () => {
       actions={
         <Button
           type="button"
-          variant="outline"
+          variant="dark"
           onClick={exportCsv}
           disabled={!rows.length}
-          className="rounded-lg bg-white text-black border-black hover:bg-white"
+          className="rounded-full"
         >
           <Download className="h-3.5 w-3.5" />
           Export list
         </Button>
       }
-      filters={
-        <>
+    >
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-10 py-6">
+        <div className="location-management-bar">
           <div className="min-w-[220px] flex-1">
             <Input
               placeholder="Search locations"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              Icon={<Search className="h-4 w-4 text-gray-500" />}
-              IconPosition="left-0 pl-2 inset-y-0"
-              className="pl-9 border-transparent shadow-none hover:border-transparent"
+              Icon={<Search className="h-3.5 w-3.5 text-gray-500" />}
+              IconPosition="left-0 pl-3 inset-y-0"
+              className="mcm-pill-input pl-8"
             />
           </div>
           <div className="min-w-[220px] flex-1">
@@ -473,10 +474,7 @@ const LocationManagement = () => {
           <span className="flex-1 text-center text-xs font-medium text-gray-500">
             {visible.length} of {rows.length}
           </span>
-        </>
-      }
-    >
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-10 py-6">
+        </div>
         <SettingCard
           title={
             <span className="flex items-center gap-1.5">
@@ -517,7 +515,7 @@ const LocationManagement = () => {
           <div className="grid grid-cols-1 gap-3 py-2 sm:grid-cols-2">
             <div className="rounded-lg border border-gray-400 bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md">
               <div className="mb-1.5 flex items-start justify-between gap-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ucass-primary-200 text-primary">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center text-primary">
                   <Clock className="h-4 w-4" />
                 </div>
                 <span className="rounded-full border border-black bg-white px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-black">
@@ -532,7 +530,7 @@ const LocationManagement = () => {
             </div>
             <div className="rounded-lg border border-gray-400 bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md">
               <div className="mb-1.5 flex items-start justify-between gap-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ucass-primary-200 text-primary">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center text-primary">
                   <AlertTriangle className="h-4 w-4" />
                 </div>
                 <span className="rounded-full border border-black bg-white px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-black">
@@ -592,7 +590,8 @@ const LocationManagement = () => {
                 </div>
                 <Button
                   type="button"
-                  variant="primary"
+                  variant="dark"
+                  className="rounded-full"
                   disabled={!selectedRows.length || !bulkZone?.value || isApplying}
                   onClick={() => bulkZone?.value && applyTimezone(bulkZone.value)}
                 >
@@ -664,10 +663,10 @@ const LocationManagement = () => {
                       ) : null}
                       <td>
                         <div className="list-row-name flex items-center gap-2">
-                          <MapPin className="h-3.5 w-3.5 text-gray-400" />
-                          {orDash(row.site?.name)}
+                          <MapPin className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                          <span className="truncate">{orDash(row.site?.name)}</span>
                           {row.site?.is_default === '1' ? (
-                            <span className="tag acc">Main</span>
+                            <span className="tag acc shrink-0">Main</span>
                           ) : null}
                         </div>
                         <div className="list-row-sub">{orDash(row.site?.address)}</div>

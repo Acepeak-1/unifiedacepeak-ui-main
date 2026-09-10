@@ -1,14 +1,13 @@
-import { RefreshCcw } from 'lucide-react';
+import { RefreshCcw, Search } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Input } from '@/components/ui/input';
-import { SearchIcon } from '@/components/custom/header/GlobalSearch';
 
-/* The search bar this renders is the CRM Integration page's own
-   `.mcm-intpage-search` control (same Input, same SearchIcon, same CSS) —
-   not a bespoke one-off — so every Numbers-section table (All numbers,
-   Call coverage, Identities, Addresses, Verifications) carries the exact
-   same icon, size and text as that reference. It sits inside the table's
-   own card, above its column headers, rather than up in the page head. */
+/* The search-bar-above-the-table-header row from the AI Receptionist list
+   (new-ai-receptionist.tsx's `customHeader`): a rounded-full pill with a
+   red circular icon badge, plus a refresh button, sitting inside the
+   table's own card above its column headers — same structure, border
+   color and icon as that reference. Shared here so every Numbers-section
+   table (All numbers, Call coverage, Identities, Addresses, Verifications)
+   renders the exact same control. */
 const TableSearchHeader = ({
   value,
   onChange,
@@ -25,18 +24,19 @@ const TableSearchHeader = ({
   rightSlot?: ReactNode;
 }) => (
   <div className="flex flex-col gap-3 py-1 sm:flex-row sm:items-center">
-    <div className="mcm-intpage-search w-full sm:max-w-[320px]">
-      <Input
-        placeholder={placeholder}
-        className="pl-9"
-        IconPosition="left-0 pl-3 inset-y-0"
+    <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border! border-neutral-200! bg-white! pl-2 pr-3 shadow-none! transition-colors focus-within:border-[rgba(220,38,38,0.4)]! sm:max-w-[320px]">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+        <Search className="h-3.5 w-3.5" />
+      </span>
+      <input
         value={value}
         onChange={(event) => {
           const next = event.target.value;
           if (next.startsWith(' ')) return;
           onChange(next);
         }}
-        Icon={<SearchIcon />}
+        placeholder={placeholder}
+        className="min-w-0 flex-1 border-none bg-transparent text-sm text-neutral-900 outline-none! placeholder:text-neutral-400"
       />
     </div>
     {onRefresh && (

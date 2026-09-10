@@ -1,10 +1,9 @@
 import { useEffect, useState, type FC } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import Stepper from '@/components/custom/stepper';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
   basicInitialState,
-  ERROR_TYPES,
-  ERROR_TYPES_MESSAGES,
   FORWARDING_TAB_CONSTANT,
   settingsInitialState,
   UPDATE_FORWARDING_INITIAL,
@@ -23,7 +22,6 @@ import { COMPANY_DEFAULTS_QUERY_KEY, fetchCompanyDefaults } from '@/lib/company-
 import { seedDeviceRingTime } from '@/lib/company-ring-time';
 import { getCompanyNewUserDefaults } from '@/lib/company-new-user-defaults';
 import { readRuleFlags } from '@/lib/company-rule-flags';
-import ErrorTooltip from '@/components/custom/error-tooltip';
 import { CUSTOM_HOURS_SCHEDULE_OPTIONS } from '@/pages/admin-settings/numbers/set-number-forwarding/constants';
 import Loader from '@/components/custom/loader';
 import CustomAvatar from '@/components/custom/custom-avatar';
@@ -140,12 +138,7 @@ const UpdateForwarding: FC<UpdateForwardingProps> = ({ setDrawerState, data, set
   const { user_info, company_info, uuid } = user || {};
   const IS_ADMIN = user_info?.role === 'ADMIN';
   const isAdminAccount = IS_ADMIN && uuid === data?.uuid;
-  const {
-    setValue,
-    trigger,
-    formState: { errors },
-    watch,
-  } = formInstance;
+  const { setValue, trigger, watch } = formInstance;
   const isSelectedTemplate = !!chooseTemplate?.selectedTemplate?.uuid;
 
   const handleTabChange = async (nextTab: string) => {
@@ -950,27 +943,16 @@ const UpdateForwarding: FC<UpdateForwardingProps> = ({ setDrawerState, data, set
                 </div>
               </div>
 
-              <TabsList className="mcm-steps" asChild>
-                <div>
-                  {TABS_ORDER.map((value, index) => {
-                    const hasError = Boolean((errors as any)[ERROR_TYPES[value]]);
-                    const isDone = index < TABS_ORDER.indexOf(activeTab);
-                    return (
-                      <TabsTrigger
-                        key={value}
-                        value={value}
-                        className={`mcm-step${value === activeTab ? ' on' : ''}${
-                          isDone ? ' done' : ''
-                        }${hasError ? ' err' : ''}`}
-                      >
-                        <span className="mcm-step-n">{isDone && !hasError ? '✓' : index + 1}</span>
-                        <span className="mcm-step-label">{value}</span>
-                        {hasError && <ErrorTooltip text={ERROR_TYPES_MESSAGES[value]} />}
-                      </TabsTrigger>
-                    );
-                  })}
-                </div>
-              </TabsList>
+              <Stepper
+                variant="breadcrumb"
+                steps={TABS_ORDER.map((value, index) => ({
+                  number: index + 1,
+                  title: value,
+                  handleChange: () => handleTabChange(value),
+                }))}
+                currentStep={TABS_ORDER.indexOf(activeTab) + 1}
+                customClass="justify-center border-b border-gray-200 px-0 pt-1 pb-2 sm:pt-2 sm:pb-3"
+              />
 
               <TabsContent
                 value={FORWARDING_TAB_CONSTANT.BASIC_INFORMATION}

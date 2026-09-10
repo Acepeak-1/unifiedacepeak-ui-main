@@ -594,7 +594,7 @@ const AddNumber = ({ handleClose }: any) => {
               }}
               variant="outline"
               type="button"
-              className="min-w-0 flex-1 rounded-full border-gray-300 bg-white px-5 text-black hover:bg-gray-100 hover:text-black sm:flex-none"
+              className="min-w-0 flex-1 rounded-full border-gray-300! bg-white! text-black! hover:bg-gray-100! hover:text-black! sm:flex-none"
             >
               {currentStep === 1 ? 'Close' : 'Back'}
             </Button>
@@ -608,10 +608,10 @@ const AddNumber = ({ handleClose }: any) => {
                   conditions the way two separate equality checks could. */}
               {!isLastStep && (
                 <Button
-                  variant="outline"
+                  variant="dark"
                   type="submit"
                   disabled={isLoading}
-                  className="min-w-0 flex-1 rounded-full border-black bg-black px-5 text-white hover:bg-gray-800 hover:text-white sm:flex-none"
+                  className="min-w-0 flex-1 rounded-full px-5 sm:flex-none"
                 >
                   {isLoading && <Loader variant="blue" />}Next
                   <ArrowRight className="h-4 w-4" />
@@ -619,8 +619,8 @@ const AddNumber = ({ handleClose }: any) => {
               )}
               {isLastStep && (
                 <Button
-                  variant="outline"
-                  className="min-w-0 flex-1 rounded-full border-black bg-black px-3 text-white hover:bg-gray-800 hover:text-white sm:min-w-32 sm:flex-none"
+                  variant="dark"
+                  className="min-w-0 flex-1 rounded-full px-3 sm:min-w-32 sm:flex-none"
                   onClick={() => setModalState(true)}
                 >
                   Pay

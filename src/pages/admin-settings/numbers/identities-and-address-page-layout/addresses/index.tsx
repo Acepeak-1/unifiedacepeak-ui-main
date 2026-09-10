@@ -12,7 +12,7 @@ import { deleteAddress, getAddressesList, updateAddress, uploadAddressProof } fr
 import { useRef, useState } from 'react';
 import CreateNewAddress from './create-new-address';
 import AlertConfirm from '@/components/custom/alert-confirm';
-import { MapPin, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Loader from '@/components/custom/loader';
 import { useForm } from 'react-hook-form';
@@ -66,12 +66,14 @@ const Addresses = ({
   search: debouncedSearch,
   liveSearch,
   setSearch,
+  menuPortalTarget,
 }: {
   /** Debounced value TableManager actually filters on. */
   search: string;
   /** Immediate value the search box itself displays. */
   liveSearch: string;
   setSearch: (value: string) => void;
+  menuPortalTarget?: HTMLElement | null;
 }) => {
   const [rowData, setRowData] = useState<any>(null);
   const [isTableRefreshing, setIsTableRefreshing] = useState(false);
@@ -156,13 +158,12 @@ const Addresses = ({
 
   const columns = [
     {
-      header: 'Country/Region',
+      header: 'Country',
       accessorKey: 'address.country',
-      cell: ({ row }: any) => {
-        const { country = '', state = '' } = row?.original?.address || {};
-        const name = `${country}/${state}`;
-        return name;
-      },
+    },
+    {
+      header: 'Region',
+      accessorKey: 'address.state',
     },
     {
       header: 'City',
@@ -204,7 +205,7 @@ const Addresses = ({
               setRowData({ isEdit: true, formData: data });
               setDrawerState((prev) => ({ ...prev, editAddress: true }));
             },
-            className: 'bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white',
+            className: 'bg-transparent! text-gray-900/80! hover:bg-gray-100! hover:text-gray-900!',
             tooltipText: 'Edit',
           },
           {
@@ -213,8 +214,7 @@ const Addresses = ({
               setRowData({ isEdit: true, formData: data });
               setModalState((prev) => ({ ...prev, deleteAddress: true }));
             },
-            className:
-              'bg-[var(--accent-wash)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white',
+            className: 'bg-transparent! text-gray-900/80! hover:bg-gray-100! hover:text-gray-900!',
             tooltipText: 'Delete',
           },
         ];
@@ -230,10 +230,10 @@ const Addresses = ({
                   <Icon name="MenuDots" className="w-5 h-5" />
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="border-red-300">
+              <DropdownMenuContent align="end" className="border-neutral-200! bg-white! text-black!">
                 {actions?.map((action, index) => (
-                  <DropdownMenuItem key={index} onClick={action.onClick}>
-                    <Icon name={action.icon as IconName} className="w-4 h-4" />
+                  <DropdownMenuItem key={index} onClick={action.onClick} className={action.className}>
+                    <Icon name={action.icon as IconName} className="w-4 h-4 text-current" />
                     {action.tooltipText}
                   </DropdownMenuItem>
                 ))}
@@ -286,6 +286,10 @@ const Addresses = ({
             search: debouncedSearch,
             tableRef,
             hideFooterRefresh: true,
+            pagerAccentClassName: 'border-red-600 bg-red-600 text-white',
+            perPageMenuPortalTarget: menuPortalTarget,
+            hideFooterDivider: true,
+            fitHeightToContent: true,
             customHeader: (
               <TableSearchHeader
                 value={liveSearch}
@@ -293,6 +297,17 @@ const Addresses = ({
                 onRefresh={handleRefreshTable}
                 refreshing={isTableRefreshing}
                 placeholder="Search addresses"
+                rightSlot={
+                  <div className="ml-auto flex h-9 shrink-0 items-center gap-3 rounded-full border border-neutral-200 bg-white px-3.5 text-sm">
+                    <span className="font-semibold text-gray-900">All {DUMMY_ADDRESSES.length}</span>
+                    <span className="h-4 w-px bg-neutral-200" />
+                    <span className="flex items-center gap-1.5 text-gray-500">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
+                      Countries{' '}
+                      {new Set(DUMMY_ADDRESSES.map((row) => row.address.country)).size}
+                    </span>
+                  </div>
+                }
               />
             ),
             fetcherKey: 'getAddressesList',
@@ -314,17 +329,14 @@ const Addresses = ({
             className="ident-form-popup flex max-h-[88vh] w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-2xl lg:max-w-3xl"
           >
             <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
-              <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-                <MapPin className="h-4 w-4 text-black" />
-                Edit Address
-              </DialogTitle>
+              <DialogTitle className="popup-title">Edit Address</DialogTitle>
               <button
                 type="button"
                 onClick={handleDrawerClose}
                 aria-label="Close"
-                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
               >
-                <Icon name="CloseIcon" className="h-4 w-4" />
+                <Icon name="CloseIcon" className="h-3 w-4" />
               </button>
             </DialogHeader>
             <form
@@ -347,7 +359,7 @@ const Addresses = ({
                   disabled={isLoading}
                   variant="outline"
                   type="submit"
-                  className="min-w-32 border-black bg-black text-white hover:bg-gray-800 hover:text-white"
+                  className="min-w-32 rounded-full border-black bg-black text-white hover:bg-gray-800 hover:text-white"
                 >
                   {isLoading && <Loader variant="blue" />}Update
                 </Button>
@@ -367,9 +379,11 @@ const Addresses = ({
             setOpen: () => handleModalClose(),
             icon: <Trash2 className="h-7 w-7" />,
             iconTone: 'danger',
-            confirmBtnClassName: 'bg-red-600 hover:bg-red-700 text-white border-red-600',
-            showDivider: true,
-            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5',
+            headerClassName: 'ident-confirm-title',
+            confirmBtnClassName: 'rounded-full bg-red-600 hover:bg-red-700 text-white border-red-600',
+            closeBtnClassName:
+              'rounded-full border border-gray-200 text-gray-700! hover:bg-gray-50! hover:text-gray-700! focus-visible:ring-0! shadow-none!',
+            className: 'sm:w-2/5 md:w-1/3 lg:w-[30%] bg-white!',
           }}
         />
       )}

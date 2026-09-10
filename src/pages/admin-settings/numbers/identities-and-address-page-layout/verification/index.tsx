@@ -1,5 +1,6 @@
 import { Icon, IconName } from '@/assets/icons/icon';
 import AlertConfirm from '@/components/custom/alert-confirm';
+import NumberWithFlag from '@/components/custom/number-with-flag';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ShieldCheck, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import TableManager from '@/components/custom/table-manager';
 import TableSearchHeader from '@/components/custom/table-search-header';
 import { getVerificationList } from '@/services/api';
@@ -45,12 +46,14 @@ const Verification = ({
   search: debouncedSearch,
   liveSearch,
   setSearch,
+  menuPortalTarget,
 }: {
   /** Debounced value TableManager actually filters on. */
   search: string;
   /** Immediate value the search box itself displays. */
   liveSearch: string;
   setSearch: (value: string) => void;
+  menuPortalTarget?: HTMLElement | null;
 }) => {
   const [rowData, setRowData] = useState<any>(null);
   const [isTableRefreshing, setIsTableRefreshing] = useState(false);
@@ -95,15 +98,17 @@ const Verification = ({
     {
       header: 'DID Number',
       accessorKey: 'did_number',
-      cell: ({ row }: any) => {
-        const { country = '', state = '' } = row?.original?.address || {};
-        const name = `${country}/${state}`;
-        return name;
-      },
+      cell: ({ row }: any) => <NumberWithFlag number={row?.original?.did_number} />,
     },
     {
-      header: 'Country/City',
-      accessorKey: 'country',
+      header: 'Country',
+      accessorKey: 'address.country',
+      cell: ({ row }: any) => row?.original?.address?.country || '',
+    },
+    {
+      header: 'City',
+      accessorKey: 'address.state',
+      cell: ({ row }: any) => row?.original?.address?.state || '',
     },
     {
       header: 'Status',
@@ -139,7 +144,7 @@ const Verification = ({
               setRowData({ isEdit: true, formData: data });
               setModalState((prev) => ({ ...prev, viewVerification: true }));
             },
-            className: 'bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white',
+            className: 'bg-transparent! text-gray-900/80! hover:bg-gray-100! hover:text-gray-900!',
             tooltipText: 'View Verification',
           },
           {
@@ -148,8 +153,7 @@ const Verification = ({
               setRowData({ isEdit: true, formData: data });
               setModalState((prev) => ({ ...prev, deleteAddress: true }));
             },
-            className:
-              'bg-[var(--accent-wash)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white',
+            className: 'bg-transparent! text-gray-900/80! hover:bg-gray-100! hover:text-gray-900!',
             tooltipText: 'Delete',
           },
         ];
@@ -165,10 +169,10 @@ const Verification = ({
                   <Icon name="MenuDots" className="w-5 h-5" />
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="border-red-300">
+              <DropdownMenuContent align="end" className="border-neutral-200! bg-white! text-black!">
                 {actions?.map((action, index) => (
-                  <DropdownMenuItem key={index} onClick={action.onClick}>
-                    <Icon name={action.icon as IconName} className="w-4 h-4" />
+                  <DropdownMenuItem key={index} onClick={action.onClick} className={action.className}>
+                    <Icon name={action.icon as IconName} className="w-4 h-4 text-current" />
                     {action.tooltipText}
                   </DropdownMenuItem>
                 ))}
@@ -189,6 +193,10 @@ const Verification = ({
             search: debouncedSearch,
             tableRef,
             hideFooterRefresh: true,
+            pagerAccentClassName: 'border-red-600 bg-red-600 text-white',
+            perPageMenuPortalTarget: menuPortalTarget,
+            hideFooterDivider: true,
+            fitHeightToContent: true,
             customHeader: (
               <TableSearchHeader
                 value={liveSearch}
@@ -215,17 +223,14 @@ const Verification = ({
             className="ident-form-popup flex w-full flex-col gap-4 overflow-hidden p-6 sm:max-w-md"
           >
             <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
-              <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-                <ShieldCheck className="h-4 w-4 text-black" />
-                Verification
-              </DialogTitle>
+              <DialogTitle className="popup-title">Verification</DialogTitle>
               <button
                 type="button"
                 onClick={handleModalClose}
                 aria-label="Close"
-                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
               >
-                <Icon name="CloseIcon" className="h-4 w-4" />
+                <Icon name="CloseIcon" className="h-3 w-4" />
               </button>
             </DialogHeader>
             <div className="flex flex-col gap-3 text-sm">
@@ -268,9 +273,11 @@ const Verification = ({
             setOpen: () => handleModalClose(),
             icon: <Trash2 className="h-7 w-7" />,
             iconTone: 'danger',
-            confirmBtnClassName: 'bg-red-600 hover:bg-red-700 text-white border-red-600',
-            showDivider: true,
-            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5',
+            headerClassName: 'ident-confirm-title',
+            confirmBtnClassName: 'rounded-full bg-red-600 hover:bg-red-700 text-white border-red-600',
+            closeBtnClassName:
+              'rounded-full border border-gray-200 text-gray-700! hover:bg-gray-50! hover:text-gray-700! focus-visible:ring-0! shadow-none!',
+            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5 bg-white!',
           }}
         />
       )}

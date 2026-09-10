@@ -1,7 +1,6 @@
 import { FC, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { Hash } from 'lucide-react';
 import { CloseIcon } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
@@ -84,19 +83,16 @@ const EditNumberLabel: FC<EditNumberLabelProps> = ({ did, open, onClose }) => {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-              <Hash className="h-4 w-4 text-black" />
-              Edit label
-            </div>
+            <div className="popup-title">Edit label</div>
             <div className="text-sm text-gray-500">{did?.did_number}</div>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+            className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
           >
-            <CloseIcon className="h-4 w-4" />
+            <CloseIcon className="h-3 w-4" />
           </button>
         </div>
 

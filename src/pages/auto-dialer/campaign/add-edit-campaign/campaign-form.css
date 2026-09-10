@@ -48,6 +48,11 @@
 .acp-modal {
   width: min(900px, calc(100vw - 32px)) !important;
   max-width: min(900px, calc(100vw - 32px)) !important;
+  /* Fixed, not capped: a step with little content (Media) would
+     otherwise shrink the whole modal instead of just leaving blank
+     space in its own scroll area, so every step keeps the same size
+     the tallest step needs. */
+  height: 90vh;
   max-height: 90vh;
   padding: 0;
   gap: 0;
@@ -61,6 +66,7 @@
   .acp-modal {
     width: min(900px, calc(100vw - 24px)) !important;
     max-width: min(900px, calc(100vw - 24px)) !important;
+    height: 94vh;
     max-height: 94vh;
   }
 }
@@ -68,6 +74,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: 90vh;
   max-height: 90vh;
   width: 100%;
   max-width: 100%;
@@ -115,50 +122,62 @@
     color 0.16s ease;
 }
 .acp-form .acp-close:hover {
-  background: var(--acp-wash);
-  border-color: var(--acp-edge);
-  color: var(--acp-red);
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: var(--acp-ink);
 }
 
-/* ── campaign type cards ──────────────────────────────────────
-   Three across on a comfortable width, wrapping to a single column
-   only when a third of the modal can no longer hold a label. */
+/* ── campaign type tabs ────────────────────────────────────────
+   One compact segmented control, same chrome as the Leads page's
+   Lead view/Lead Group tabs: a light-gray rounded track sized to its
+   content (not stretched full-width), the active mode a white pill
+   with a small shadow, everything else flat and muted. The radio
+   input stays in the DOM for form semantics but carries no visual of
+   its own — the tab's own background/text colour is the indicator. */
 .acp-form .acp-types {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  padding: 6px 15px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px;
+  border: 1px solid var(--acp-line);
+  border-radius: 999px;
+  background: #f3f4f6;
   flex: none;
+  margin: 8px auto 0;
 }
 @media (max-width: 560px) {
   .acp-form .acp-types {
-    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+  .acp-form .acp-type {
+    flex: 1 1 0;
   }
 }
-/* All three cards share one neutral resting look — gray card, soft-red
-   icon chip — so Preview/Progressive/Predictive read as one consistent
-   group. Selecting one only adds a thin soft-red border and a small red
-   radio dot; it never turns the card itself red. */
 .acp-form .acp-type {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 100%;
+  justify-content: center;
+  gap: 7px;
   min-width: 0;
-  padding: 9px 10px;
-  border: 1px solid var(--acp-line);
-  border-radius: 10px;
-  background: var(--acp-card-bg);
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--acp-muted);
   transition:
-    border-color 0.16s ease,
-    background-color 0.16s ease;
+    background-color 0.16s ease,
+    color 0.16s ease;
 }
-.acp-form .acp-type:hover:not(.is-locked) {
-  border-color: var(--acp-edge);
+.acp-form .acp-type:hover:not(.is-locked):not(.is-on) {
+  color: var(--acp-ink);
 }
 .acp-form .acp-type.is-on {
-  border-color: var(--acp-edge);
-  background: var(--acp-card-bg);
+  background: #ffffff;
+  color: var(--acp-ink);
+  box-shadow: 0 1px 2px rgba(23, 23, 23, 0.08);
 }
 .acp-form .acp-type.is-locked {
   opacity: 0.55;
@@ -167,29 +186,32 @@
 .acp-form .acp-type-ico {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
   flex: none;
-  border-radius: 7px;
-  background: var(--acp-wash);
   color: var(--acp-red);
 }
 .acp-form .acp-type-ico svg {
-  width: 13px;
-  height: 13px;
+  width: 15px;
+  height: 15px;
 }
 .acp-form .acp-type-body {
-  flex: 1;
   min-width: 0;
 }
 .acp-form .acp-type-title {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
-  color: var(--acp-ink);
+  color: inherit;
   line-height: 1.2;
+  white-space: nowrap;
+}
+.acp-form .acp-type.is-on .acp-type-title {
+  font-weight: 700;
 }
 .acp-form .acp-type [data-slot='radio-group-item'] {
-  margin-top: 1px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 /* The shared radio primitive adds a ring + shadow on checked state for
    emphasis elsewhere in the app; here that read as a red glow, so it's
@@ -215,87 +237,44 @@
    first and last circle's centre: with 5 equal-width columns, a
    circle's centre sits half a column in from each edge, and half of
    1/5 is 1/10. This assumes TABS_ORDER stays at 5 steps. */
-.acp-form .acp-steps {
-  position: relative;
+/* Breadcrumb-style step nav: one text trail, chevron between names,
+   current step bold/black, the rest muted grey. Neutral rather than the
+   reference's blue links — this form stays on the red/black/white
+   system used everywhere else. */
+.acp-form .acp-crumbs {
   display: flex;
-  align-items: flex-start;
-  padding: 16px 15px 4px;
-  flex: none;
-}
-/* `left`/`right: 10%` inset the track to land exactly on the first and
-   last circle's centre: with 5 equal-width columns, a centred circle's
-   centre sits half a column in from each edge, and half of 1/5 is 1/10. */
-.acp-form .acp-steps-track {
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  top: 28px;
-  height: 2px;
-  background: var(--acp-line);
-  border-radius: 99px;
-  overflow: hidden;
-}
-.acp-form .acp-steps-track-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  height: 100%;
-  background: var(--acp-ink);
-  transition: width 0.2s ease;
-}
-.acp-form .acp-step-item {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  flex: 1;
-  min-width: 0;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 6px;
-}
-.acp-form .acp-step-btn {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
+  padding: 16px 15px;
   flex: none;
-  border-radius: 99px;
-  border: 2px solid var(--acp-line);
-  background: #ffffff;
-  color: var(--acp-ink);
-  font-size: 10.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
 }
-.acp-form .acp-step-l {
-  font-size: 10.5px;
+.acp-form .acp-crumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.acp-form .acp-crumb-sep {
+  color: #dc2626;
+  flex: none;
+}
+.acp-form .acp-crumb-btn {
+  font-size: 14.5px;
   font-weight: 600;
-  line-height: 1.3;
   color: var(--acp-muted);
-  text-align: center;
-  max-width: 96px;
+  cursor: pointer;
+  transition: color 0.15s ease;
 }
-.acp-form .acp-step-item.is-on .acp-step-btn {
-  background: var(--acp-ink);
-  border-color: var(--acp-ink);
-  color: #ffffff;
-}
-.acp-form .acp-step-item.is-on .acp-step-l {
-  color: var(--acp-ink);
-  font-weight: 700;
-}
-.acp-form .acp-step-item.is-done .acp-step-btn {
-  background: #f3f4f6;
-  border-color: var(--acp-ink);
+.acp-form .acp-crumb-btn:hover {
   color: var(--acp-ink);
 }
-@media (max-width: 480px) {
-  .acp-form .acp-step-l {
-    display: none;
-  }
+.acp-form .acp-crumb-item.is-done .acp-crumb-btn {
+  color: var(--acp-ink);
+}
+.acp-form .acp-crumb-item.is-on .acp-crumb-btn {
+  color: var(--acp-ink);
+  font-weight: 800;
 }
 
 /* ── body: the only part that scrolls ─────────────────────── */
@@ -414,8 +393,8 @@
 .acp-form [data-slot='input']:focus,
 .acp-form .acp-textarea:focus {
   outline: none;
-  border-color: var(--acp-red);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+  border-color: #fecaca;
+  box-shadow: none;
 }
 .acp-form .acp-textarea {
   width: 100%;
@@ -431,7 +410,7 @@
     box-shadow 0.15s ease;
 }
 .acp-form .acp-textarea:hover {
-  border-color: var(--acp-edge);
+  border-color: #d1d5db;
 }
 .acp-form .acp-field-err {
   margin-top: 5px;
@@ -448,7 +427,7 @@
 }
 .acp-form .acp-invalid [data-slot='input'],
 .acp-form .acp-invalid .acp-textarea {
-  border-color: var(--acp-red);
+  border-color: #d1d5db;
 }
 
 /* ── footer ───────────────────────────────────────────────────
@@ -487,7 +466,7 @@
 }
 .acp-form .acp-prev:hover:not(:disabled) {
   background: var(--acp-wash);
-  border-color: var(--acp-edge);
+  border-color: #d1d5db;
   color: var(--acp-red);
 }
 .acp-form .acp-cancel {
@@ -512,7 +491,7 @@
   background: #ffffff;
 }
 .acp-form .acp-mode-card.acp-mode-predictive {
-  border-color: var(--acp-edge);
+  border-color: var(--acp-line);
 }
 .acp-form .acp-mode-card-head {
   display: flex;
@@ -582,7 +561,7 @@
    already renders (CustomSelect/Input's `label` prop takes a node), so
    there's no second, duplicate label sitting above it. */
 .acp-form .acp-field-card {
-  border: 1px solid var(--acp-line);
+  border: none;
   border-radius: 9px;
   padding: 9px 10px;
   background: #ffffff;
@@ -661,7 +640,7 @@
   line-height: 1.5;
   color: var(--acp-muted);
   background: #ffffff;
-  border: 1px dashed var(--acp-edge);
+  border: 1px dashed #d1d5db;
   border-radius: 9px;
   padding: 9px 11px;
 }
@@ -713,7 +692,7 @@
   transition: border-color 0.15s ease;
 }
 .acp-form .acp-disposition-card.is-on {
-  border-color: var(--acp-edge);
+  border-color: #d1d5db;
   background: #ffffff;
 }
 .acp-form .acp-disposition-ico {
@@ -758,7 +737,7 @@
     border-radius: 8px !important;
     border-color: #d1d5db !important;
     min-height: 34px !important;
-    height: 34px !important;
+    height: 43px !important;
   }
   /* The multi-selects grow with their chips, so they only get a floor. */
   .acp-form .team_chat.custom-react-select__control {
@@ -803,15 +782,15 @@
     flex: 1 !important;
   }
   .acp-form .custom-react-select__control:hover {
-    border-color: var(--acp-edge) !important;
+    border-color: #d1d5db !important;
   }
   .acp-form .custom-react-select__control--is-focused,
   .acp-form .custom-react-select__control--menu-is-open {
-    border-color: var(--acp-red) !important;
-    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+    border-color: var(--acp-edge) !important;
+    box-shadow: none !important;
   }
   .acp-form .react-select-error .custom-react-select__control {
-    border-color: var(--acp-red) !important;
+    border-color: #d1d5db !important;
   }
 
   /* Chips for the multi-selects: light gray ground, dark label, red remove. */
@@ -835,7 +814,7 @@
      on the `.acp-select` class react-select copies onto its own nodes,
      and they only affect selects this form renders. */
   .acp-select.custom-react-select__menu {
-    border-color: var(--acp-edge, #fca5a5) !important;
+    border-color: #e5e7eb !important;
     border-radius: 12px !important;
     box-shadow:
       0 8px 24px rgba(23, 23, 23, 0.08),
@@ -848,23 +827,30 @@
   }
   .acp-select.custom-react-select__menu .custom-react-select__option:hover,
   .acp-select.custom-react-select__menu .custom-react-select__option--is-focused {
-    background-color: #fef2f2 !important;
-    color: #dc2626 !important;
+    background-color: #f3f4f6 !important;
   }
   .acp-select.custom-react-select__menu .custom-react-select__option--is-selected {
     background-color: #fef2f2 !important;
-    color: #dc2626 !important;
     font-weight: 600 !important;
+  }
+  /* Multi-select checklist: react-select's own selected-option tracking
+     doesn't fire here (the checkbox tick is driven by the form's own
+     `members`/`callerId` value, not react-select's internal state), so
+     the pink highlight is keyed off the checkbox's own checked state
+     instead. */
+  .acp-select.custom-react-select__menu
+    .custom-react-select__option:has([data-slot='checkbox'][data-state='checked']) {
+    background-color: #fef2f2 !important;
   }
   /* The "Select All" strip CustomSelect prepends to every multi-select. */
   .acp-select.custom-react-select__menu .custom-react-select__menu-list > div:first-child {
-    color: #dc2626 !important;
+    color: #171717 !important;
   }
 
   /* A select in the invalid state, marked on the field wrapper so inputs and
      selects show the same error treatment. */
   .acp-form .acp-invalid .custom-react-select__control {
-    border-color: var(--acp-red) !important;
+    border-color: #d1d5db !important;
   }
 }
 
@@ -893,7 +879,7 @@
   transition: border-color 0.15s ease;
 }
 .acp-clock-trigger:hover:not(:disabled) {
-  border-color: #fca5a5;
+  border-color: #d1d5db;
 }
 .acp-clock-trigger:disabled {
   color: #9ca3af;
@@ -1014,6 +1000,33 @@
 }
 .acp-form .acp-agent-row-selected:hover {
   background: var(--acp-wash) !important;
+}
+/* Fixed column shares so Member/Name/Role/DID line up under their
+   headers instead of the browser splitting leftover width unevenly
+   across auto-sized columns. */
+.acp-form .acp-agents-table table {
+  table-layout: fixed;
+  width: 100%;
+}
+.acp-form .acp-agents-table th:nth-child(1),
+.acp-form .acp-agents-table td:nth-child(1) {
+  width: 60px;
+}
+.acp-form .acp-agents-table th:nth-child(2),
+.acp-form .acp-agents-table td:nth-child(2) {
+  width: 48%;
+  text-align: left;
+}
+.acp-form .acp-agents-table th:nth-child(3),
+.acp-form .acp-agents-table td:nth-child(3) {
+  width: 20%;
+  text-align: left;
+}
+.acp-form .acp-agents-table th:nth-child(4),
+.acp-form .acp-agents-table td:nth-child(4) {
+  width: 110px;
+  text-align: right;
+  padding-right: 24px;
 }
 .acp-form .acp-role-pill {
   display: inline-block;
