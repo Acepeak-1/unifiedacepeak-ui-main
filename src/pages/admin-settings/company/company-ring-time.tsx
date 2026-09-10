@@ -213,14 +213,14 @@ const CompanyRingTime = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center py-10">
+      <div className="flex w-full items-center justify-center py-10">
         <Loader />
       </div>
     );
   }
 
   return (
-    <section className="company-ring-time-page flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-200/15">
+    <section className="company-ring-time-page flex w-full flex-col bg-gray-200/15">
       <div className="flex items-center gap-1.5 px-4 pt-3">
         <p className="text-lg leading-none font-semibold text-gray-900">Ring time</p>
         <Tooltip>
@@ -242,8 +242,8 @@ const CompanyRingTime = () => {
         </Tooltip>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-3 sm:px-4">
-        <div className="mx-auto flex min-h-0 w-full max-w-[1040px] flex-col gap-4">
+      <div className="px-3 pt-3 pb-3 sm:px-4">
+        <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-4">
           {isError && (
             <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-6 text-center">
               <p className="text-sm font-semibold text-gray-900">
@@ -276,7 +276,7 @@ const CompanyRingTime = () => {
               const seconds = Number(form.seconds) || Number(DEFAULT_FORM.seconds);
               const percent = ((seconds - MIN_SECONDS) / (MAX_SECONDS - MIN_SECONDS)) * 100;
               return (
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-2">
                   <p className="text-sm font-semibold text-gray-900">Ring Duration</p>
                   <div className="flex items-center gap-3">
                     <span className="shrink-0 text-xs text-gray-500">Ring for</span>
@@ -300,7 +300,8 @@ const CompanyRingTime = () => {
                         onChange={(event) => updateForm({ seconds: event.target.value })}
                         className="h-1 w-full cursor-pointer appearance-none rounded-full"
                         style={{
-                          background: `linear-gradient(to right, #2563eb ${percent}%, #e5e7eb ${percent}%)`,
+                          accentColor: '#f87171',
+                          background: `linear-gradient(to right, #f87171 ${percent}%, #e5e7eb ${percent}%)`,
                         }}
                       />
                       <div className="flex justify-between text-[11px] text-gray-400">
@@ -310,7 +311,7 @@ const CompanyRingTime = () => {
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-[11px] text-gray-500">
                     Set the ring time from {MIN_SECONDS} to {MAX_SECONDS} seconds. Rings are
                     approximately {SECONDS_PER_RING} seconds each, as a caller hears.
                   </p>
@@ -321,11 +322,11 @@ const CompanyRingTime = () => {
             {/* Reference material for the curious, not something every admin
                 needs read every time — two short cards rather than the wall
                 of prose this used to be. */}
-            <div className="flex flex-col gap-2">
+            <div className="mt-5 flex flex-col gap-2">
               <p className="text-sm font-semibold text-gray-900">Where these numbers come from</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex items-start gap-2.5 rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
-                  <PhoneCall className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                <div className="group flex items-start gap-2.5 rounded-lg border border-gray-300 bg-white p-3 shadow-[0_4px_12px_rgba(17,17,17,0.08),0_1px_3px_rgba(17,17,17,0.05)] transition-all duration-200 hover:border-primary/40 hover:shadow-[0_8px_22px_rgba(17,17,17,0.12),0_2px_6px_rgba(17,17,17,0.07)]">
+                  <PhoneCall className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-primary" />
                   <div>
                     <p className="text-sm font-semibold text-gray-900">Most Desk Phones</p>
                     <p className="text-xs text-gray-500">
@@ -334,8 +335,8 @@ const CompanyRingTime = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-2.5 rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
-                  <Users className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                <div className="group flex items-start gap-2.5 rounded-lg border border-gray-300 bg-white p-3 shadow-[0_4px_12px_rgba(17,17,17,0.08),0_1px_3px_rgba(17,17,17,0.05)] transition-all duration-200 hover:border-primary/40 hover:shadow-[0_8px_22px_rgba(17,17,17,0.12),0_2px_6px_rgba(17,17,17,0.07)]">
+                  <Users className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-primary" />
                   <div>
                     <p className="text-sm font-semibold text-gray-900">Contact Centres</p>
                     <p className="text-xs text-gray-500">
@@ -345,7 +346,7 @@ const CompanyRingTime = () => {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-[11px] text-gray-500">
                 Capped at {MAX_SECONDS}s — most callers hang up before a minute anyway.
               </p>
             </div>
@@ -360,14 +361,7 @@ const CompanyRingTime = () => {
           >
             <SettingRow
               label="Use this for people added from now on"
-              description={
-                <>
-                  People already set up keep whatever ring time they have, either way.
-                  <br />
-                  Off: this number is recorded as intent only — not offered to anyone as a
-                  starting point.
-                </>
-              }
+              description="People already set up keep their ring time either way. Off, this number is just recorded — not offered as a starting point."
               control={
                 <Switch
                   checked={form.apply_to_new_people}
@@ -381,7 +375,7 @@ const CompanyRingTime = () => {
               ringing stops; what happens next is a different setting, in a
               different place, and an admin who changes one and not the other
               gets silence at the end of the call. */}
-          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ucass-primary-200 text-primary">
               <PhoneCall className="h-4 w-4" />
             </div>

@@ -7227,6 +7227,33 @@
   color: var(--primary);
 }
 
+/* Tooltip info icons ("i" glyphs, cursor-help) go red on hover, so the
+   hint reads as reachable rather than just decorative grey. */
+.mcm-company-theme .cursor-help:hover {
+  color: var(--primary);
+}
+
+/* More breathing room between a row's label and the sentence explaining it —
+   the shared 4px gap read as cramped once these description sentences grew
+   to two lines. */
+.mcm-company-theme .mcm-setrow-desc {
+  margin-top: 8px;
+}
+
+/* The shared 4px vertical padding left every card's body sitting almost flush
+   against its header and footnote — cramped once a card held more than one
+   row. More room top and bottom; sides left alone since they already line up
+   with the header. */
+.mcm-company-theme .mcm-setcard-body {
+  padding: 14px 16px 16px;
+}
+
+/* Icon-to-title gap in a card header: 16px read as a gap between two
+   unrelated things rather than an icon labelling the title next to it. */
+.mcm-company-theme .mcm-setcard-h {
+  gap: 8px;
+}
+
 /* Brand-coloured logo tiles. The channel marks are currentColor line icons,
    so all four rendered as identical black glyphs and the only way to tell
    the cards apart at a glance was the wordmark. Each tile takes its own
@@ -7930,7 +7957,7 @@
   width: 100%;
   justify-content: space-between;
   gap: 0;
-  background: #e5e7eb;
+  background: #ebeded;
 }
 .mcm-company-theme .company-tabs-nav > a {
   padding: 6px 9px;

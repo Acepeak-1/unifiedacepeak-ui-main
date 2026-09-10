@@ -442,15 +442,15 @@ const CompanyMessaging = () => {
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link
                   to={TEN_DLC_BRANDS_PATH}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-primary shadow-sm hover:bg-gray-50"
-                  style={{ boxShadow: '0 2px 6px rgba(17, 17, 17, 0.1)' }}
+                  data-slot="button"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-semibold text-white shadow-xs outline-none hover:bg-gray-700 focus-visible:bg-gray-700 focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-2 active:bg-gray-600"
                 >
                   Register or check your brand
                 </Link>
                 <Link
                   to={TEN_DLC_CAMPAIGNS_PATH}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-primary shadow-sm hover:bg-gray-50"
-                  style={{ boxShadow: '0 2px 6px rgba(17, 17, 17, 0.1)' }}
+                  data-slot="button"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-semibold text-white shadow-xs outline-none hover:bg-gray-700 focus-visible:bg-gray-700 focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-2 active:bg-gray-600"
                 >
                   Register an SMS campaign
                 </Link>

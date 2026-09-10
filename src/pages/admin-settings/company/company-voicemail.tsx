@@ -227,14 +227,14 @@ const CompanyVoicemail = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center py-10">
+      <div className="flex w-full items-center justify-center py-10">
         <Loader />
       </div>
     );
   }
 
   return (
-    <section className="company-voicemail-page flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-200/15">
+    <section className="company-voicemail-page flex w-full flex-col bg-gray-200/15">
       <div className="flex items-center gap-1.5 px-4 pt-3">
         <p className="text-lg font-semibold text-gray-900">Voicemail</p>
         <Tooltip>
@@ -256,8 +256,8 @@ const CompanyVoicemail = () => {
         </Tooltip>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-3 sm:px-4">
-        <div className="mx-auto flex w-full max-w-[1040px] min-h-0 flex-col gap-4">
+      <div className="px-3 pt-3 pb-3 sm:px-4">
+        <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-4">
           {isError && (
             <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-6 text-center">
               <p className="text-sm font-semibold text-gray-900">
@@ -288,7 +288,7 @@ const CompanyVoicemail = () => {
           >
             <SettingRow
               label="Let people change their own voicemail settings"
-              description="Left off, a person cannot open their own voicemail settings and an admin changes them instead. Be aware of the second reading: a new person set up from this record then also starts with the PIN and the voicemail-to-text choice below, so everyone set up that way shares one PIN."
+              description="Off, only an admin can change a person's voicemail settings. New people set up from this record also start with its PIN and voicemail-to-text choice below — so they share one PIN."
               control={
                 <Switch
                   checked={form.override}

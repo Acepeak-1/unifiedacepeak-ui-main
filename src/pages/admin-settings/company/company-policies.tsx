@@ -531,10 +531,8 @@ const CompanyPolicies = () => {
                   />
                 </div>
                 <p className="text-xs text-gray-500">
-                  Ten languages, not twenty. These are the ones this account can actually be given a
-                  recorded prompt set or a voice for — English, Spanish and Hindi already have AI
-                  voices here. A shorter list beats a long one where most choices quietly fall back
-                  to English.
+                  Ten languages, not twenty — the ones this account can actually give a prompt set
+                  or voice to. English, Spanish and Hindi already have AI voices here.
                 </p>
               </div>
             </div>
@@ -742,7 +740,7 @@ const CompanyPolicies = () => {
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1">
-                <div className="max-w-[220px]">
+                <div className="max-w-[320px]">
                   <CustomSelect
                     label="Default for new users"
                     options={INTERNATIONAL_OPTIONS}

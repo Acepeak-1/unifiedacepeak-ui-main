@@ -289,14 +289,14 @@ const CompanyProfileFields = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center py-10">
+      <div className="flex w-full items-center justify-center py-10">
         <Loader />
       </div>
     );
   }
 
   return (
-    <section className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gray-200/15">
+    <section className="flex w-full flex-col bg-gray-200/15">
       <div className="flex items-center gap-1.5 px-4 pt-3">
         <p className="text-lg font-semibold text-gray-900">Profile fields</p>
         <Tooltip>
@@ -319,8 +319,8 @@ const CompanyProfileFields = () => {
         </Tooltip>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-3 sm:px-4">
-        <div className="mx-auto flex w-full min-h-0 max-w-[1040px] flex-col gap-4">
+      <div className="px-3 pt-3 pb-3 sm:px-4">
+        <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-4">
           {isError && (
             <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-6 text-center">
               <p className="text-sm font-semibold text-gray-900">
@@ -378,7 +378,7 @@ const CompanyProfileFields = () => {
                   return (
                     <div
                       key={field.id}
-                      className="flex flex-col gap-3 rounded-lg border border-gray-200 p-3"
+                      className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-[0_4px_12px_rgba(17,17,17,0.08),0_1px_3px_rgba(17,17,17,0.05)]"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-xs font-semibold text-gray-500">
