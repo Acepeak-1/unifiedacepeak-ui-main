@@ -1,13 +1,12 @@
-import { SearchLine } from '@/assets/icons';
 import { Icon } from '@/assets/icons/icon';
 import CustomAvatar from '@/components/custom/custom-avatar';
 import CustomSelect from '@/components/custom/custom-select';
 import NumberWithFlag from '@/components/custom/number-with-flag';
 import TableManager from '@/components/custom/table-manager';
+import TableSearchHeader from '@/components/custom/table-search-header';
 import { invalidateNumberLists } from '@/lib/number-list-cache';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ISELECTVALUE } from '@/interfaces/api-interfaces';
@@ -16,8 +15,7 @@ import { handleAlert } from '@/lib/utils';
 import { allNumbersList, assignDIDNumber, getUserList } from '@/services/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { Hash } from 'lucide-react';
-import { FC, useState } from 'react';
+import { FC, useRef, useState } from 'react';
 
 interface IAssignDID {
   uuid: string;
@@ -36,6 +34,15 @@ interface IAsiignDIDProps extends ModalProps {
   selectedDidNumber: any;
 }
 
+/* The "You have selected this DID" picker showed each option as the raw
+   did_number string — no flag, no spacing — while the table right next to
+   it renders the same numbers through NumberWithFlag. Reusing that here
+   keeps the two reading as one consistent number format instead of one
+   looking unfinished next to the other. */
+const DidNumberOptionView = ({ option }: { option?: ISELECTVALUE }) => (
+  <NumberWithFlag number={option?.value} />
+);
+
 const AssignDIDNumber: FC<IAsiignDIDProps> = ({ modalState, setModalState, selectedDidNumber }) => {
   const [search, setSearch] = useState<string>('');
   const [selected, setSelected] = useState<IAssignDID | null>(null);
@@ -43,6 +50,21 @@ const AssignDIDNumber: FC<IAsiignDIDProps> = ({ modalState, setModalState, selec
     label: selectedDidNumber?.did_number || '',
     value: selectedDidNumber?.did_number || '',
   });
+  const [isTableRefreshing, setIsTableRefreshing] = useState(false);
+  const tableRef = useRef<any>(null);
+  /* The per-page picker's dropdown menu renders into document.body by
+     default, escaping the .ident-form-popup scope below (which lives on
+     the portaled DialogContent itself) — same fix as Identities &
+     addresses' own menuPortalTarget. */
+  const [menuPortalTarget, setMenuPortalTarget] = useState<HTMLDivElement | null>(null);
+  const handleRefreshTable = async () => {
+    setIsTableRefreshing(true);
+    try {
+      await tableRef.current?.refetchTable();
+    } finally {
+      setIsTableRefreshing(false);
+    }
+  };
   const queryClient: any = useQueryClient();
 
   const { data: DIDUnassignList = [] } = useQuery({
@@ -156,17 +178,18 @@ const AssignDIDNumber: FC<IAsiignDIDProps> = ({ modalState, setModalState, selec
   };
   return (
     <Dialog open={modalState} onOpenChange={(val) => setModalState(val)}>
-      <DialogContent className="min-w-3/5 w-fit p-3" showCloseButton={false}>
+      <DialogContent
+        ref={setMenuPortalTarget}
+        className="ident-form-popup min-w-3/5 w-fit p-3"
+        showCloseButton={false}
+      >
         <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
-          <DialogTitle className="flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-            <Hash className="h-4 w-4 text-black" />
-            Assign Number
-          </DialogTitle>
+          <DialogTitle className="popup-title">Assign Number</DialogTitle>
           <button
             type="button"
             onClick={() => setModalState(false)}
             aria-label="Close"
-            className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+            className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
           >
             <Icon name="CloseIcon" className="h-4 w-4" />
           </button>
@@ -189,25 +212,19 @@ const AssignDIDNumber: FC<IAsiignDIDProps> = ({ modalState, setModalState, selec
                     setDIDNumber(e);
                   }}
                   value={didNumber}
+                  FormatOptionLabel={DidNumberOptionView}
                 />
               </div>
             </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Search"
-                className="pl-10 w-full"
-                IconPosition="left-0 pl-2 inset-y-0"
-                value={search}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value.startsWith(' ')) return;
-                  setSearch(e.target.value);
-                }}
-                Icon={<SearchLine className="text-black" />}
-              />{' '}
-            </div>
+            <TableSearchHeader
+              value={search}
+              onChange={setSearch}
+              onRefresh={handleRefreshTable}
+              refreshing={isTableRefreshing}
+              placeholder="Search"
+            />
           </div>
-          <div className="flex flex-col gap-2 h-[calc(100vh_-_19rem)] overflow-auto">
+          <div className="ident-table-card flex h-[calc(100vh_-_19rem)] flex-col overflow-auto rounded-t-xl rounded-b-none border-x border-t border-gray-200 bg-white">
             <TableManager
               {...{
                 emptyTablePlaceholder: 'No spare numbers',
@@ -217,6 +234,12 @@ const AssignDIDNumber: FC<IAsiignDIDProps> = ({ modalState, setModalState, selec
                 fetcherKey: 'getUserListQueryFn',
                 fetcherFn: getUserList,
                 showPagination: true,
+                pagerAccentClassName: 'border-red-600 bg-red-600 text-white',
+                perPageMenuPortalTarget: menuPortalTarget,
+                hideFooterDivider: true,
+                hideFooterRefresh: true,
+                fitHeightToContent: true,
+                tableRef,
                 search,
               }}
             />
@@ -224,7 +247,12 @@ const AssignDIDNumber: FC<IAsiignDIDProps> = ({ modalState, setModalState, selec
         </div>
         <DialogFooter>
           <div className="justify-end flex gap-2">
-            <Button type="button" variant={'transparent'} onClick={() => setModalState(false)}>
+            <Button
+              type="button"
+              variant={'transparent'}
+              className="rounded-full border border-gray-300! bg-white! text-gray-700! hover:bg-gray-50! hover:text-gray-700! focus-visible:ring-0! shadow-none!"
+              onClick={() => setModalState(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -232,6 +260,7 @@ const AssignDIDNumber: FC<IAsiignDIDProps> = ({ modalState, setModalState, selec
               type="button"
               disabled={!selected?.uuid}
               onClick={() => handleSubmit()}
+              className="rounded-full border-black bg-black px-5 text-white hover:bg-gray-800 hover:text-white disabled:border-gray-300 disabled:bg-gray-300 disabled:text-gray-500"
             >
               {isPendingAssignNumber ? 'Submiting...' : 'Submit'}
             </Button>

@@ -7,7 +7,7 @@ import SideDrawer from '@/components/custom/side-drawer';
 import SendWhatsappMessage from '@/pages/messenger/drawers/send-whatsapp-message';
 import { useConsoleDialer } from '@/pages/phone/console/dial-number';
 import { Ic } from '@/components/mcm/icons';
-import { DirectoryPage, EmptyRow, FilterChip, SearchChip } from './page-shell';
+import { DirectoryPage, EmptyRow, FilterChip, SearchChip, TableFooter } from './page-shell';
 import { usePeopleRows, type PersonRow } from './people-rows';
 import { useDirectoryFavourites } from './use-directory-favourites';
 import { InfoIcon, MoreVertical } from 'lucide-react';
@@ -140,9 +140,13 @@ const Favourites = () => {
   const [kind, setKind] = useState('All');
   const [whatsappTo, setWhatsappTo] = useState('');
 
-  const { rows: people, isLoading: peopleLoading } = usePeopleRows();
+  const { rows: people, isLoading: peopleLoading, refetch: refetchPeople } = usePeopleRows();
 
-  const { data: contacts = [], isPending: contactsLoading } = useQuery({
+  const {
+    data: contacts = [],
+    isPending: contactsLoading,
+    refetch: refetchContacts,
+  } = useQuery({
     /* Shares the ['getContactList'] prefix, so editing a contact refreshes
        this list too. */
     queryKey: ['getContactList', 'directoryFavourites'],
@@ -212,9 +216,24 @@ const Favourites = () => {
   const sendSms = (phone?: string) =>
     navigate(`/inbox?formState=contact&number=${encodeURIComponent(phone || '')}`);
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
+  const pagedRows = visible.slice((page - 1) * perPage, page * perPage);
+  if (page > pageCount) setPage(pageCount);
+
   return (
     <div className="fav-theme">
       <DirectoryPage
+        footer={
+          <TableFooter
+            page={page}
+            perPage={perPage}
+            total={visible.length}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+          />
+        }
         titleClassName="dir-serif-heading"
         title={
           <span className="flex items-center gap-2">
@@ -227,8 +246,8 @@ const Favourites = () => {
                   outside contacts together, one click from here.
                 </>
               }
-              side="top"
-              className="!bg-gray-300 !text-black whitespace-normal text-left"
+              side="right"
+              className="whitespace-normal text-left"
             >
               <InfoIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
             </CustomTooltip>
@@ -244,6 +263,18 @@ const Favourites = () => {
               tone="red"
             />
             <SearchChip value={search} onChange={setSearch} placeholder="Search favourites" />
+            <button
+              type="button"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+              title="Refresh"
+              aria-label="Refresh favourites"
+              onClick={() => {
+                refetchPeople();
+                refetchContacts();
+              }}
+            >
+              <Ic n="refresh" size={15} />
+            </button>
             <span className="fchip live" style={{ marginLeft: 'auto' }}>
               <span className="num">{rows.length}</span> favourite{rows.length === 1 ? '' : 's'}
             </span>
@@ -276,8 +307,8 @@ const Favourites = () => {
           <tbody>
             {isLoading ? (
               <EmptyRow span={8} message="Loading favourites…" />
-            ) : visible.length ? (
-              visible.map((row) => (
+            ) : pagedRows.length ? (
+              pagedRows.map((row) => (
                 <tr key={row.key} className="tbl__row">
                   <td className="tbl__td tbl__td--left">
                     <span className="tbl__agent">

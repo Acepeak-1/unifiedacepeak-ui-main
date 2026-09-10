@@ -33,7 +33,7 @@ const AddUsers: FC<AddUsersProps> = ({ setDrawerState, onReset }) => {
   const [isPaymentRequired, setIspaymentRequired] = useState<any>(false);
   const [orderSummary, setOrderSummary] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState(1);
-  const [typeOfPassword, setTypeOfPassword] = useState('common');
+  const [typeOfPassword, setTypeOfPassword] = useState('email');
   const [isUserValidatorError, setIsUserValidatorError] = useState(false);
   const [alertAssignNumber, setAlertAssignNumber] = useState(false);
   const [showAssignNumber, setShowAssignNumber] = useState(false);
@@ -43,6 +43,7 @@ const AddUsers: FC<AddUsersProps> = ({ setDrawerState, onReset }) => {
   const queryClient: any = useQueryClient();
   const paymentRef = useRef<any>(null);
   const paymentData = useRef<any>(null);
+  const addUserInfoRef = useRef<any>(null);
 
   const [paymentCalculation, setPaymentCalculation] = useState<{
     total_amount: number;
@@ -260,6 +261,7 @@ const AddUsers: FC<AddUsersProps> = ({ setDrawerState, onReset }) => {
   const stepLookUp: any = {
     1: (
       <AddUserInfo
+        ref={addUserInfoRef}
         {...{
           setIspaymentRequired,
           setOrderSummary,
@@ -341,6 +343,27 @@ const AddUsers: FC<AddUsersProps> = ({ setDrawerState, onReset }) => {
                 {status !== 'show_payment' && (
                   <button
                     type="submit"
+                    onClick={() => {
+                      /* "Add User" opens a fresh blank row for a second person,
+                         on the assumption more are coming. When they are not,
+                         that blank row still has to pass the same required-field
+                         schema as a real one — so Continue silently refused to
+                         advance and it looked like the form was looping back to
+                         "add a user" forever. One filled-in row is enough to
+                         continue; drop a trailing row nobody has touched instead
+                         of demanding it be filled in or deleted by hand.
+
+                         Goes through AddUserInfo's own field-array `remove`
+                         (not a plain setValue on `users`) — react-hook-form
+                         keeps a ref registry for uncontrolled inputs per array
+                         index, and shrinking the array any other way left that
+                         registry out of sync, so the next person added at the
+                         same index inherited the removed row's stale values
+                         (passwords included) instead of starting blank. */
+                      if (currentStep === 1) {
+                        addUserInfoRef.current?.pruneTrailingBlankRow?.();
+                      }
+                    }}
                     disabled={isPendingAddMember || isUserValidatorError}
                     className="btn primary shrink-0"
                   >

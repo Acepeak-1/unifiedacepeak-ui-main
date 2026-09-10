@@ -29,14 +29,16 @@ const AiForward: FC<AiForwardProps> = ({ modalState, setModalState }) => {
     <Dialog open={modalState} onOpenChange={(val) => setModalState(val)}>
       <DialogContent className="w-fit p-3 max-h-[99%]  overflow-y-auto" showCloseButton={false}>
         <div className="flex flex-col gap-1.5  text-900/80">
-          <div className="font-semibold truncate text-md flex items-center justify-between">
+          <div className="ident-confirm-title truncate flex items-center justify-between">
             Forward to AI
-            <div
+            <button
+              type="button"
               onClick={handleCancel}
-              className="cursor-pointer text-gray-500 ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
+              aria-label="Close"
+              className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
             >
-              <CloseIcon className="w-3 h-3" />
-            </div>
+              <CloseIcon className="h-4 w-4" />
+            </button>
           </div>
         </div>
         <ForwardingActions
@@ -51,10 +53,20 @@ const AiForward: FC<AiForwardProps> = ({ modalState, setModalState }) => {
         />
         <DialogFooter>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant={'transparent'} onClick={handleCancel}>
+            <Button
+              type="button"
+              variant={'transparent'}
+              className="rounded-full border border-gray-300! bg-white! text-gray-700! hover:bg-gray-50! hover:text-gray-700! focus-visible:ring-0! shadow-none!"
+              onClick={handleCancel}
+            >
               Cancel
             </Button>
-            <Button type="button" variant={'outline'} onClick={() => handleSubmit()}>
+            <Button
+              type="button"
+              variant={'outline'}
+              className="rounded-full border-black! bg-black! px-5 text-white! hover:bg-gray-800! hover:text-white!"
+              onClick={() => handleSubmit()}
+            >
               Submit
             </Button>
           </div>

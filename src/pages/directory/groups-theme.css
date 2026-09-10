@@ -126,14 +126,16 @@
   min-height: 0;
 }
 
-/* Next — solid black at rest, not just on hover. new-department/index.tsx is
-   shared with the platform's own department screen, so this only touches
-   the button here, inside the Create Group dialog. */
+/* Prev/Next — solid black at rest, not just on hover. new-department/index.tsx
+   is shared with the platform's own department screen, so this only touches
+   the buttons here, inside the Create Group dialog. */
+.grp-create-theme .grp-prev-btn,
 .grp-create-theme .grp-next-btn {
   background: #171717 !important;
   border-color: #171717 !important;
   color: #fff !important;
 }
+.grp-create-theme .grp-prev-btn:hover,
 .grp-create-theme .grp-next-btn:hover {
   background: #000 !important;
   border-color: #000 !important;
@@ -197,3 +199,63 @@
   }
 }
 
+
+/* Secondary buttons (Export, Close, etc.) filled black to match .btn.primary. */
+.grp-theme .btn.ghost {
+  background: #171717;
+  border-color: #171717;
+  color: #fff;
+}
+.grp-theme .btn.ghost .ic {
+  color: #fff;
+}
+.grp-theme .btn.ghost:hover {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+
+/* Page head (title + actions) filled white like the stats band and the
+   table card below it, so the top of the page reads as three distinct
+   cards instead of the title floating on the bare grey page background. */
+.mcm-page .grp-theme .page-head {
+  background: #fff;
+  margin: -22px -26px 20px;
+  padding: 20px 26px;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 0;
+}
+
+/* Only the table body scrolls — title/stats/search stay put. See
+   people-theme.css for the full reasoning: `.page` becomes a column flex
+   box so the head/kpis/search keep their natural height and the table card
+   takes the rest of the space, scrolling internally instead of the whole
+   page moving. */
+.grp-theme .page {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+  padding-bottom: 12px;
+}
+.grp-theme .page-head,
+.grp-theme .kpis.kpi-grid,
+.grp-theme .page-caveat {
+  flex-shrink: 0;
+}
+.grp-theme .panel-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.grp-theme .tbar-in-card {
+  flex-shrink: 0;
+}
+.grp-theme .tbl-wrap {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}

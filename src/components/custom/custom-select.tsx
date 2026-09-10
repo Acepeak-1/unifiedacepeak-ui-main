@@ -1,6 +1,6 @@
 import { ISELECTVALUE } from '@/interfaces/api-interfaces';
 import { cn } from '@/lib/utils';
-import { isValidElement, useCallback, useEffect, useMemo, useState } from 'react';
+import { isValidElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Select, { components } from 'react-select';
 import { Label } from '../ui/label';
 import ErrorTooltip from './error-tooltip';
@@ -32,6 +32,45 @@ interface CustomSelectType {
 }
 
 const SELECT_PAGE_SIZE = 25;
+
+/* Popup dialogs (.ident-form-popup) are centered with a CSS `transform`
+   (Radix Dialog's own `translate-x-[-50%] translate-y-[-50%]`), and a
+   `transform` on an ancestor becomes the containing block for any
+   descendant using `position: fixed` — which is exactly how react-select
+   places a portaled menu. Portaling straight into the dialog itself (or
+   any of its themed descendants) made the menu's fixed-position math
+   resolve against the dialog's transformed box instead of the viewport,
+   so it opened offset from its trigger instead of directly under it (e.g.
+   Create Identity's "Type" menu opening well right of the field it belongs
+   to). Two stable divs — each carrying the class structure the theme's CSS
+   actually keys off, appended straight to body so nothing above them ever
+   gets a transform — sidestep that while still giving the portaled menu
+   the styling it needs. `.ident-coral-theme`'s red CSS variables are only
+   defined under a `.mcm-admin` ancestor (see mcm-page.css), so that root
+   nests the same way; `.ident-form-popup`'s own rules are all literal
+   colors with no such requirement. */
+let coralThemePortalRoot: HTMLDivElement | null = null;
+let formPopupPortalRoot: HTMLDivElement | null = null;
+const getThemedPortalRoot = (kind: 'ident-coral-theme' | 'ident-form-popup'): HTMLDivElement | null => {
+  if (typeof document === 'undefined') return null;
+  if (kind === 'ident-form-popup') {
+    if (formPopupPortalRoot && document.body.contains(formPopupPortalRoot)) return formPopupPortalRoot;
+    const root = document.createElement('div');
+    root.className = 'ident-form-popup';
+    document.body.appendChild(root);
+    formPopupPortalRoot = root;
+    return root;
+  }
+  if (coralThemePortalRoot && document.body.contains(coralThemePortalRoot)) return coralThemePortalRoot;
+  const admin = document.createElement('div');
+  admin.className = 'mcm-admin';
+  const root = document.createElement('div');
+  root.className = 'ident-coral-theme';
+  admin.appendChild(root);
+  document.body.appendChild(admin);
+  coralThemePortalRoot = root;
+  return root;
+};
 
 const toOptionsArray = (input: any): any[] => {
   if (Array.isArray(input)) return input;
@@ -88,6 +127,32 @@ const CustomSelect = ({
   onInputChange,
   isSearchable = true,
 }: CustomSelectType & { label?: any }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  /* react-select's menu portals into document.body by default, which
+     escapes the .ident-form-popup/.ident-coral-theme wrapper that scopes
+     this app's Numbers-section red theme (hover=grey, selected=light red,
+     text=black) — every caller that forgot to pass its own menuPortalTarget
+     fell back to react-select's raw defaults instead. Rather than relying
+     on every page to thread a ref down to its own CustomSelect calls,
+     detect once at mount whether this select sits inside either themed
+     scope and, if so, portal into the shared themed root above instead of
+     document.body — callers that already pass an explicit menuPortalTarget
+     (including `false`, to disable portalling) are left alone. */
+  const [autoPortalTarget, setAutoPortalTarget] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (menuPortalTarget !== undefined) return;
+    /* Checked in this order because a select inside an .ident-form-popup
+       dialog that itself renders within an .ident-coral-theme page (Add
+       Number's own portalled dialog, say) should still get the popup's
+       literal-color rules, not the page's CSS-variable ones the portal
+       can't see anyway. */
+    const scope = containerRef.current?.closest('.ident-form-popup')
+      ? 'ident-form-popup'
+      : containerRef.current?.closest('.ident-coral-theme')
+        ? 'ident-coral-theme'
+        : null;
+    setAutoPortalTarget(scope ? getThemedPortalRoot(scope) : null);
+  }, [menuPortalTarget]);
   const normalizedOptions = useMemo(
     () =>
       toOptionsArray(options)
@@ -296,9 +361,10 @@ const CustomSelect = ({
     ) {
       return menuPortalTarget;
     }
+    if (menuPortalTarget === undefined && autoPortalTarget) return autoPortalTarget;
     if (typeof document !== 'undefined') return document.body;
     return undefined;
-  }, [menuPortalTarget]);
+  }, [menuPortalTarget, autoPortalTarget]);
 
   const classNamePrefix = useMemo(
     () => `${inputClass || ''} custom-react-select`.trim(),
@@ -306,7 +372,7 @@ const CustomSelect = ({
   );
 
   return (
-    <div className={cn('flex flex-col gap-1.5 w-full', className)}>
+    <div ref={containerRef} className={cn('flex flex-col gap-1.5 w-full', className)}>
       {label || error ? (
         <div className="flex items-center justify-between">
           {label && <Label>{label}</Label>}

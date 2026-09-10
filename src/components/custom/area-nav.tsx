@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { Icon } from '@/assets/icons/icon';
 import type { IconType } from '@/assets/icons/type';
 import { AREA_VIEWS, NAV_AREAS, areaOfPath, type NavArea } from './nav-areas';
-import { navList, navListBottom } from './sidebar';
+import { navList, navListBottom } from './sidebar-nav-list';
 
 /**
  * The console's top-level area nav.

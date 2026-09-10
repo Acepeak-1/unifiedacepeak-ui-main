@@ -129,55 +129,26 @@ const NewSiteSteps = ({ data = {}, handleClose }: any) => {
       onSubmit={handleSubmit(onSubmit)}
       className="flex h-full min-h-0 flex-col justify-between gap-3 pt-1"
     >
-      {/* Static: stays put while the step content below scrolls. */}
-      <div className="mx-auto flex w-full max-w-[940px] shrink-0 flex-col gap-2 pb-1">
-        <div className="flex w-fit flex-col">
-          <p
-            className="uppercase"
-            style={{
-              fontFamily: "'IBM Plex Mono', 'ui-monospace', 'SF Mono', Menlo, monospace",
-              fontWeight: 800,
-              fontStyle: 'normal',
-              fontSize: '12px',
-              lineHeight: '18px',
-              letterSpacing: '0.1em',
-              color: 'rgb(23, 23, 23)',
-            }}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
+        <div className="mb-1.5 flex items-center gap-2">
+          <h3 className="font-mono text-[12px] font-extrabold uppercase leading-[18px] text-red-600">
+            {isEdit ? 'Edit Site' : 'Create New Site'}
+          </h3>
+          <CustomTooltip
+            text={
+              <>
+                Add different office locations or branch sites
+                <br />
+                for your company — group users by location
+                <br />
+                (e.g., London, Dubai) under one billing account.
+              </>
+            }
+            side="right"
+            className="whitespace-normal text-left"
           >
-            Location
-          </p>
-          <div className="flex w-fit items-center gap-2 pb-1">
-            <p
-              className="italic"
-              style={{
-                fontFamily: "'Instrument Serif', Georgia, serif",
-                fontWeight: 400,
-                fontSize: '27px',
-                lineHeight: '33px',
-                color: 'rgb(220, 38, 38)',
-              }}
-            >
-              {isEdit ? 'Edit Site' : 'Create New Site'}
-            </p>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-4 w-4 shrink-0 cursor-help text-gray-400" />
-              </TooltipTrigger>
-              <TooltipContent
-                side="right"
-                className="w-max max-w-[300px] text-black [&_svg]:fill-[#fdf7f5]"
-                style={{
-                  background: '#fdf7f5',
-                  border: 'none',
-                  color: '#000',
-                  boxShadow: '0 6px 20px rgba(17,17,17,0.18)',
-                }}
-              >
-                Add office locations or branch sites to group users by location, all under one
-                billing account.
-              </TooltipContent>
-            </Tooltip>
-          </div>
+            <InfoIcon className="w-3.5 h-3.5 text-gray-500 cursor-pointer" />
+          </CustomTooltip>
         </div>
         <div className="flex items-center gap-1.5 text-sm">
           {StepContent.map((step, index) => (

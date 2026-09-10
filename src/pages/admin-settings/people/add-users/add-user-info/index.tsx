@@ -3,7 +3,15 @@ import CustomSelect from '@/components/custom/custom-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/hooks/use-user';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { userInitialState } from '../../../constants';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getRoleList, getUserList, validateUser } from '@/services/api';
@@ -61,13 +69,16 @@ const debounce = (fn: any, delay: any) => {
   };
 };
 
-const AddUserInfo = ({
-  setIspaymentRequired,
-  setOrderSummary,
-  setIsUserValidatorError,
-  dataGetMyPlanDetails,
-  setPaymentCalculation,
-}: any) => {
+const AddUserInfo = forwardRef(function AddUserInfo(
+  {
+    setIspaymentRequired,
+    setOrderSummary,
+    setIsUserValidatorError,
+    dataGetMyPlanDetails,
+    setPaymentCalculation,
+  }: any,
+  ref: any,
+) {
   const {
     register,
     watch,
@@ -400,6 +411,27 @@ const AddUserInfo = ({
     setActiveIndex((prev) => (prev > index ? prev - 1 : prev));
   };
 
+  /* Called from the wizard's own "Save & Continue" before it submits. A
+     trailing row nobody has touched (opened by "Add User" for a second person
+     who was then never filled in) has to go through `remove` here rather than
+     a plain `setValue` in the parent — react-hook-form keeps a ref registry
+     for uncontrolled inputs per array index, and shrinking the array any other
+     way leaves it out of sync, so the next row appended at that same index can
+     silently inherit the previous row's stale field values (passwords
+     included) instead of starting blank. */
+  useImperativeHandle(ref, () => ({
+    pruneTrailingBlankRow: () => {
+      const lastIndex = fields.length - 1;
+      if (lastIndex <= 0) return;
+      const lastRow = users?.[lastIndex];
+      const isUntouched =
+        !lastRow?.first_name && !lastRow?.last_name && !lastRow?.email && !lastRow?.phone;
+      if (!isUntouched) return;
+      remove(lastIndex);
+      setActiveIndex((prev) => (prev >= lastIndex ? lastIndex - 1 : prev));
+    },
+  }));
+
   // const handleAddUser = () => {
   //   const count = Math.min(userAddCount, 10 - users.length);
 
@@ -528,7 +560,7 @@ const AddUserInfo = ({
           <div className="rounded-lg border border-transparent bg-white p-2 shadow-sm">
             <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-gray-500">
               Unused licenses
-              <CustomTooltip text="License purchased" side="top">
+              <CustomTooltip text="License purchased" side="right">
                 <InfoIcon className="w-3 h-3 text-gray-500 cursor-pointer" />
               </CustomTooltip>
             </div>
@@ -568,8 +600,8 @@ const AddUserInfo = ({
             )}
             <CustomTooltip
               text={roleDecision.reason}
-              side="top"
-              className="!bg-gray-300 !text-black max-w-[240px] whitespace-normal text-left leading-snug"
+              side="right"
+              className="max-w-[240px] whitespace-normal text-left leading-snug"
             >
               <InfoIcon className="w-3.5 h-3.5 text-gray-500 cursor-pointer" />
             </CustomTooltip>
@@ -721,7 +753,7 @@ const AddUserInfo = ({
             <Button
               type="button"
               variant={'outline'}
-              className="h-10 w-10 shrink-0 rounded-xl border-0 bg-gray-100 text-gray-900/80 hover:bg-primary hover:text-white"
+              className="h-10 w-10 shrink-0 rounded-full border-0 bg-[#171717] text-white hover:bg-black hover:text-white"
               onClick={() => generateNewExtension(activeIndex)}
             >
               <Icon name="Refresh" className="w-5 h-5" />
@@ -834,6 +866,6 @@ const AddUserInfo = ({
       ) : null}
     </div>
   );
-};
+});
 
 export default AddUserInfo;
