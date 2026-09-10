@@ -98,6 +98,18 @@
   color: #020617;
 }
 
+/* "New role" — solid black instead of the tenant's default red --accent,
+   matching every other primary button in Directory. */
+.rol-theme .btn.primary {
+  background: #171717;
+  border-color: #171717;
+  color: #fff;
+}
+.rol-theme .btn.primary:hover {
+  background: #000;
+  border-color: #000;
+}
+
 /* Secondary buttons (Export, Close, etc.) filled black to match .btn.primary. */
 .rol-theme .btn.ghost {
   background: #171717;

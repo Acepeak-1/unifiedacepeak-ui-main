@@ -478,7 +478,10 @@ const People = () => {
                       <CustomAvatar name={row.name} image={row.image} size="30" />
                       <span className="tbl__agent-meta">
                         <span className="tbl__name">{row.name}</span>
-                        {row.jobTitle ? <span className="tbl__subtitle">{row.jobTitle}</span> : null}
+                        {/* Job title is already the Role column right next to this
+                            cell — repeating it here as a second subtitle line was
+                            bloating every row past the 52.67px spec height, which
+                            is why only ~2 rows fit before the table had to scroll. */}
                         {row.email ? <span className="tbl__subtitle">{row.email}</span> : null}
                       </span>
                     </span>
