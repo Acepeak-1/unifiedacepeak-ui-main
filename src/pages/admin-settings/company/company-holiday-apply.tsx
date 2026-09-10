@@ -680,7 +680,7 @@ const CompanyHolidayApply = () => {
     <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center text-primary">
             <CalendarCheck2 className="h-5 w-5" />
           </div>
           <div className="flex min-w-0 items-center gap-1.5">
