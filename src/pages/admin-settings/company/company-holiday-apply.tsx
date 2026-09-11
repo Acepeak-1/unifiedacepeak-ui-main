@@ -710,6 +710,7 @@ const CompanyHolidayApply = () => {
           type="button"
           variant="dark"
           size="sm"
+          className="rounded-full"
           onClick={() => setOpen((previous) => !previous)}
           disabled={running}
         >
@@ -873,6 +874,7 @@ const CompanyHolidayApply = () => {
                   type="button"
                   variant="dark"
                   size="sm"
+                  className="rounded-full"
                   onClick={() => {
                     stopped.current = true;
                   }}
@@ -884,6 +886,7 @@ const CompanyHolidayApply = () => {
                 type="button"
                 variant="dark"
                 size="sm"
+                className="rounded-full"
                 onClick={start}
                 disabled={running || loadingLines || !companyHolidays.length}
               >

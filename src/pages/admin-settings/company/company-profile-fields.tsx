@@ -346,7 +346,7 @@ const CompanyProfileFields = () => {
                   Set out the details you want to keep, in the order you want to see them.
                 </p>
               </div>
-              <Button type="button" variant="dark" onClick={addField}>
+              <Button type="button" variant="dark" className="rounded-full" onClick={addField}>
                 <Plus className="h-3.5 w-3.5" />
                 Add a field
               </Button>
@@ -388,6 +388,7 @@ const CompanyProfileFields = () => {
                           <Button
                             type="button"
                             variant="dark"
+                            className="rounded-full"
                             onClick={() => moveField(index, -1)}
                             disabled={index === 0}
                             aria-label={`Move ${field.label || 'this field'} up`}
@@ -397,6 +398,7 @@ const CompanyProfileFields = () => {
                           <Button
                             type="button"
                             variant="dark"
+                            className="rounded-full"
                             onClick={() => moveField(index, 1)}
                             disabled={index === fields.length - 1}
                             aria-label={`Move ${field.label || 'this field'} down`}
@@ -406,6 +408,7 @@ const CompanyProfileFields = () => {
                           <Button
                             type="button"
                             variant="dark"
+                            className="rounded-full"
                             onClick={() =>
                               isSaved ? setConfirmingDelete(field.id) : removeField(field.id)
                             }
@@ -503,6 +506,7 @@ const CompanyProfileFields = () => {
                             <Button
                               type="button"
                               variant="dark"
+                              className="rounded-full"
                               onClick={() => setConfirmingDelete(null)}
                             >
                               Keep it
@@ -510,6 +514,7 @@ const CompanyProfileFields = () => {
                             <Button
                               type="button"
                               variant="dark"
+                              className="rounded-full"
                               onClick={() => removeField(field.id)}
                             >
                               Remove it
@@ -531,6 +536,7 @@ const CompanyProfileFields = () => {
             <Button
               type="button"
               variant="dark"
+              className="rounded-full"
               onClick={handleSave}
               disabled={isSaving || !isDirty}
             >

@@ -117,7 +117,7 @@ const CompanySettingsCard = () => {
         <Button
           type="button"
           variant="dark"
-          className="rounded-xl"
+          className="rounded-full"
           onClick={() => navigate(COMPANY_RULES_PATH)}
         >
           {hasDefaults ? 'Edit' : 'Set up'}
