@@ -391,7 +391,7 @@ const CompanyRingTime = () => {
             <Button
               type="button"
               variant="dark"
-              className="shrink-0"
+              className="shrink-0 rounded-full"
               onClick={() => navigate(NUMBERS_IN_USE_PATH)}
             >
               Check your numbers
@@ -406,6 +406,7 @@ const CompanyRingTime = () => {
             <Button
               type="button"
               variant="dark"
+              className="rounded-full"
               onClick={handleSave}
               disabled={isSaving || !isDirty}
             >

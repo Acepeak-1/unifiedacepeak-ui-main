@@ -621,7 +621,13 @@ const CompanyBulkSettings = () => {
                 People are saved one at a time, so a long list takes a moment. Please leave this
                 page open until it finishes.
               </p>
-              <Button type="button" variant="dark" onClick={() => run()} disabled={!canRun}>
+              <Button
+                type="button"
+                variant="dark"
+                className="rounded-full"
+                onClick={() => run()}
+                disabled={!canRun}
+              >
                 {running
                   ? 'Applying...'
                   : `Apply to ${preview?.changed || 0} ${

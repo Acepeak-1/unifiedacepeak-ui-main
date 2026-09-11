@@ -499,6 +499,7 @@ const CompanyCallingPermissions = () => {
             <Button
               type="button"
               variant="dark"
+              className="rounded-full"
               onClick={handleSave}
               disabled={isSaving || !isDirty}
             >
