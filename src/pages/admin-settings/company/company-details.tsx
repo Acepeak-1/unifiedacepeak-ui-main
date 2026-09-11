@@ -84,7 +84,7 @@ const CompanyDetails = ({
     <div className="flex h-full w-full flex-col gap-3 overflow-y-auto pt-2 pr-1">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center text-primary">
             <Icon name="CompayIcon" className="h-5 w-5" />
           </div>
           <div>

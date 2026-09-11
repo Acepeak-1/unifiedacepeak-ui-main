@@ -6,7 +6,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import TableManager from '@/components/custom/table-manager';
 import TableSearchHeader from '@/components/custom/table-search-header';
 import {
@@ -28,7 +28,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Loader from '@/components/custom/loader';
 import { handleAlert } from '@/lib/utils';
 import AlertConfirm from '@/components/custom/alert-confirm';
-import { Trash2 } from 'lucide-react';
 import Flag from '@/components/flag';
 
 export const DUMMY_IDENTITIES = [
@@ -228,9 +227,12 @@ const Identities = ({
       ),
     },
     {
-      /* Indented to clear the flag icon (roughly 15px) plus the gap next to
-         it (gap-1.5 = 6px), same reasoning as the Name column's indent. */
-      header: () => <span className="pl-[21px]">Phone Number</span>,
+      /* No longer indented to clear the flag icon — that offset was for
+         when this header sat left-aligned over a left-aligned value. Both
+         are centered now (see the column's own centering below), so the
+         plain header text and the value's own centered content line up
+         without it. */
+      header: 'Phone Number',
       accessorKey: 'exp_year',
       cell: ({ row }: any) => {
         const data = row?.original || {};
@@ -244,7 +246,12 @@ const Identities = ({
           // Keep the plain prefix + digits fallback above.
         }
         return (
-          <span className="flex items-center gap-1.5 text-[var(--ink)]">
+          /* inline-flex, not flex: a block-level flex span ignores the
+             td's text-align: center entirely (block boxes don't respond
+             to an ancestor's text-align for their own position), which is
+             why this value stayed pinned left while the now-centered
+             header floated off to the right of it. */
+          <span className="inline-flex items-center gap-1.5 text-[var(--ink)]">
             <Flag phoneNumber={phone} svg />
             {formatted}
           </span>
@@ -441,7 +448,7 @@ const Identities = ({
                 aria-label="Close"
                 className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-black"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-4" />
               </button>
             </DialogHeader>
             <form
@@ -493,7 +500,7 @@ const Identities = ({
             confirmBtnClassName: 'rounded-full bg-red-600 hover:bg-red-700 text-white border-red-600',
             closeBtnClassName:
               'rounded-full border border-gray-200 text-gray-700! hover:bg-gray-50! hover:text-gray-700! focus-visible:ring-0! shadow-none!',
-            className: 'sm:w-1/2 md:w-1/2 lg:w-2/5 bg-white!',
+            className: 'sm:w-2/5 md:w-1/3 lg:w-[30%] bg-white!',
           }}
         />
       )}

@@ -136,7 +136,7 @@ const NumbersByLine: FC<NumbersByLineProps> = ({
           the parent's gap-4, which also spaces the line cards and pagination
           below this and should stay as-is. */}
       <div className="ident-table-card ident-table-card--plain w-full flex flex-col -mt-2">
-        <div className="border-b border-b-gray-200">
+        <div>
           <div className="px-3 py-2">
             <TableSearchHeader
               value={search}
@@ -188,8 +188,19 @@ const NumbersByLine: FC<NumbersByLineProps> = ({
                     return (
                       <tr key={did?.uuid || did?.did_number}>
                         <td>
-                          <div className="flex items-center gap-2">
-                            <NumberWithFlag number={did?.did_number} />
+                          {/* inline-flex, not flex: a block-level flex div ignores
+                              the td's text-align: center entirely (block boxes
+                              don't respond to an ancestor's text-align for their
+                              own position), which is why this column alone stayed
+                              left-aligned while every plain-text column centered
+                              correctly. flex-col, not row: the number was
+                              wrapping onto two lines fighting the Primary badge
+                              for the same row's width — stacking them gives the
+                              number its own full-width line. */}
+                          <div className="inline-flex flex-col items-center gap-1">
+                            <span className="whitespace-nowrap">
+                              <NumberWithFlag number={did?.did_number} />
+                            </span>
                             {/* Not a stored flag — the platform has none. It is the
                                 first number on the line, which is the one people
                                 mean when they say "the Support number". */}
