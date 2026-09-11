@@ -86,9 +86,6 @@ const BussinessHoursModal: FC<IBussinessModalProps> = ({
 
   const watchBusinessHour = watch('settings.operational_hours');
   const [activeTab, setActiveTab] = useState(TABS.GENERAL_SETTINGS);
-  const handleChangeScheduleOption = (checked: boolean, day: string) =>
-    handleChangeScheduleOptionForDays(checked, [day]);
-
   const handleChangeScheduleOptionForDays = (checked: boolean, days: string[]) => {
     const currentScheduleOptions = watchBusinessHour?.value || {};
     const updatedScheduleOptions = { ...currentScheduleOptions };
