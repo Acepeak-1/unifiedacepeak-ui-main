@@ -192,7 +192,7 @@ const NewSiteSteps = ({ data = {}, handleClose }: any) => {
           variant={'primary'}
           disabled={isPending}
           type="submit"
-          className="w-full bg-black border-black hover:bg-black/90 sm:w-auto"
+          className="w-full rounded-full bg-black border-black hover:bg-black/90 sm:w-auto"
         >
           {isPending ? (
             <Loader variant="blue" size="sm" />

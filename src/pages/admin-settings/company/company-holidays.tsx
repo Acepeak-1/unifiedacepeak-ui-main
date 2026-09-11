@@ -567,7 +567,7 @@ const CompanyHolidays = () => {
     <div className="rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center text-primary">
             <CalendarDays className="h-5 w-5" />
           </div>
           <div className="flex min-w-0 items-center gap-1.5">
@@ -594,7 +594,14 @@ const CompanyHolidays = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button type="button" variant="dark" size="sm" onClick={openAdd} disabled={isAdding}>
+          <Button
+            type="button"
+            variant="dark"
+            size="sm"
+            className="rounded-full"
+            onClick={openAdd}
+            disabled={isAdding}
+          >
             <Plus className="h-3.5 w-3.5" />
             Add holiday
           </Button>
@@ -602,6 +609,7 @@ const CompanyHolidays = () => {
             type="button"
             variant="dark"
             size="sm"
+            className="rounded-full"
             onClick={() => save()}
             disabled={!dirty || isPending || isLoading}
           >
@@ -687,6 +695,7 @@ const CompanyHolidays = () => {
           <Button
             type="button"
             variant="dark"
+            className="rounded-full"
             onClick={addPreset}
             disabled={!selectedPreset || presetNewCount === 0}
           >
@@ -760,6 +769,7 @@ const CompanyHolidays = () => {
                     type="button"
                     variant="dark"
                     size="sm"
+                    className="rounded-full"
                     onClick={() => openEdit(item)}
                     aria-label={`Edit ${item.title}`}
                   >
@@ -842,7 +852,7 @@ const CompanyHolidays = () => {
               />
               <span className="text-xs text-gray-600">Repeats every year</span>
             </label>
-            <Button type="button" variant="dark" onClick={commitDraft}>
+            <Button type="button" variant="dark" className="rounded-full" onClick={commitDraft}>
               {draft.id ? 'Update' : 'Add'}
             </Button>
           </div>

@@ -58,9 +58,6 @@
   color: #171717;
 }
 
-.ppl-red-theme .ppl-row-menu-trigger svg {
-  color: #dc2626;
-}
 .mcm-page .ppl-red-theme .fchip-select {
   background: #171717;
   border-color: #171717;
@@ -211,22 +208,24 @@
   z-index: 1;
 }
 
+/* Maps the .tbl__action-btn spec onto the trigger this table actually
+   renders for row actions. */
 .ppl-row-menu-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  background: var(--surface);
-  color: var(--ink-3);
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  color: #737373;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
 .ppl-row-menu-trigger:hover,
 .ppl-row-menu-trigger[data-state='open'] {
-  border-color: #fca5a5;
-  background: #fde2e2;
-  color: #dc2626;
+  background: #f5f5f5;
+  color: #171717;
 }
 
 .ppl-row-menu-item.ppl-row-menu-item {
@@ -585,7 +584,10 @@
   top: 0;
   z-index: 2;
   background: #fafafa;
-  padding: 13px 10px;
+  /* ai-tools-table.css (loaded globally via index.css) sets `.tbl__th`
+     padding with !important — only !important here can win that fight,
+     so the 13px 10px from the provided spec actually renders. */
+  padding: 13px 10px !important;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -651,8 +653,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1.25rem;
+  color: #020617;
+}
+.ppl-red-theme .tbl__name:hover {
   color: #020617;
 }
 .ppl-red-theme .tbl__subtitle {
@@ -678,6 +683,12 @@
   padding: 0 6px;
   font-size: 11px;
   font-weight: 800;
+  cursor: pointer;
+  outline: none;
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    border-color 0.2s;
 }
 .ppl-red-theme .tbl__pill-dot {
   width: 6px;

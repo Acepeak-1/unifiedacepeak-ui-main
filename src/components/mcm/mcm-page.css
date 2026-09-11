@@ -139,15 +139,18 @@
   overflow: hidden;
 }
 /* Excludes the Switch (its own classes give it the track's border/background
-   — see switch.tsx) and the shared Button component: [data-slot='button']
+   — see switch.tsx), the shared Button component: [data-slot='button']
    always carries its own variant styling (bg-black, bg-primary, ...) via
    Tailwind, and those utilities live in Tailwind's layered stylesheet, which
    loses to this un-layered reset regardless of specificity. Without the
    exclusion every Button rendered under this shell — Save, Manage, New
    location, every "dark"/"primary"/"outline" variant — kept its classes but
-   showed no background or border at all. Plain, unstyled `<button>`s (icon
+   showed no background or border at all. Also excludes the Checkbox
+   ([data-slot='checkbox'], see checkbox.tsx/checkbox.css) for the same
+   reason — Radix renders it as a <button>, so it was silently losing its
+   border and background to this reset too. Plain, unstyled `<button>`s (icon
    buttons, chevrons, dropdown triggers, ...) still get the reset. */
-.mcm-page button:not([data-slot='switch']):not([data-slot='button']) {
+.mcm-page button:not([data-slot='switch']):not([data-slot='button']):not([data-slot='checkbox']) {
   font: inherit;
   color: inherit;
   border: 0;
@@ -486,11 +489,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  height: 40px;
-  padding: 0 18px;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
   border-radius: 9999px;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
   transition: all 0.12s;
@@ -498,8 +501,8 @@
   white-space: nowrap;
 }
 .mcm-page .btn .ic {
-  width: 17px;
-  height: 17px;
+  width: 15px;
+  height: 15px;
 }
 .mcm-page .btn.primary {
   background: var(--accent);
@@ -6121,7 +6124,7 @@
   align-items: center;
   gap: 8px;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 550;
   color: var(--ink);
 }
@@ -7522,6 +7525,23 @@
    unrelated things rather than an icon labelling the title next to it. */
 .mcm-company-theme .mcm-setcard-h {
   gap: 8px;
+}
+
+/* Bulk settings ("Apply to many people"): each field used to be told apart
+   only by a thin underline, which reads as one continuous list rather than a
+   set of separate decisions. Giving each row its own bordered card makes the
+   boundary between one setting and the next obvious at a glance. */
+.bulk-settings-page .mcm-setrow {
+  border: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--r-md, 10px);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: var(--card, #fff);
+}
+.bulk-settings-page .mcm-setcard-body > .mcm-setrow:last-child {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0;
 }
 
 /* Brand-coloured logo tiles. The channel marks are currentColor line icons,

@@ -294,7 +294,7 @@ const CompanyInfo = () => {
               <div className="rounded-xl bg-white shadow-md ring-2 ring-primary/25 ring-offset-2 ring-offset-gray-100">
                 <div className="p-4">
                   <div className="flex gap-3">
-                    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
+                    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center text-primary">
                       <Icon name="CompayIcon" className="h-5 w-5" />
                       <span className="absolute bottom-0 -right-1 h-3 w-3 rounded-full border border-white bg-green-500" />
                     </div>
@@ -483,7 +483,7 @@ const CompanyInfo = () => {
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-200 pb-4">
                         <div className="flex items-start gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
+                          <div className="flex h-10 w-10 items-center justify-center text-primary">
                             <Icon name="CompayIcon" className="h-5 w-5" />
                           </div>
                           <div>
