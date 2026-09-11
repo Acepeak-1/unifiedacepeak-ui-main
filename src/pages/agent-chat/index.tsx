@@ -988,7 +988,7 @@ const SidebarContent = ({
               }}
               placeholder="Search chats, users…"
               aria-label="Search chats and users"
-              className="h-[34px] w-[190px] max-w-[46vw] rounded-[9px] border border-red-200 bg-white px-3 text-[13px] text-gray-900 shadow-[0_1px_3px_rgba(17,17,17,0.06)] outline-none placeholder:text-gray-400"
+              className="h-[34px] w-[190px] max-w-[46vw] rounded-full border border-red-200 bg-white px-4 text-[13px] text-gray-900 shadow-[0_1px_3px_rgba(17,17,17,0.06)] outline-none placeholder:text-gray-400"
             />
           ) : (
             <button

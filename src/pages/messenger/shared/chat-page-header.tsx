@@ -14,19 +14,23 @@ const ChatPageHeader = ({
   searchQuery,
   onSearchChange,
   searchPlaceholder = 'Search…',
+  showSearch = true,
   actions,
 }: {
   title: string;
   searchQuery: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
+  /** Hide the search icon — used where the content below already has its
+      own search (e.g. the Facebook/Instagram/WhatsApp/Telegram lists). */
+  showSearch?: boolean;
   /** Extra icon buttons (e.g. the channel filter) rendered after search. */
   actions?: ReactNode;
 }) => {
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <div className="mcm-chat-head flex items-center justify-between px-3.5 py-3">
+    <div className="mcm-chat-head flex items-center justify-between px-3.5 py-2">
       <div className="flex w-full gap-3">
         <div className="flex w-full items-center justify-between gap-2">
           <div
@@ -36,7 +40,7 @@ const ChatPageHeader = ({
             {title}
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {searchOpen ? (
+            {!showSearch ? null : searchOpen ? (
               <input
                 autoFocus
                 value={searchQuery}
@@ -52,7 +56,7 @@ const ChatPageHeader = ({
                 }}
                 placeholder={searchPlaceholder}
                 aria-label={searchPlaceholder}
-                className="h-[34px] w-[190px] max-w-[46vw] rounded-[9px] border border-[var(--mcm-accent-edge)] bg-white px-3 text-[13px] text-gray-900 outline-none shadow-[0_1px_3px_rgba(17,17,17,0.06)] placeholder:text-[var(--mcm-ink-4)]"
+                className="h-[34px] w-[190px] max-w-[46vw] rounded-full border border-[var(--mcm-accent-edge)] bg-white px-4 text-[13px] text-gray-900 outline-none shadow-[0_1px_3px_rgba(17,17,17,0.06)] placeholder:text-[var(--mcm-ink-4)]"
               />
             ) : (
               <button

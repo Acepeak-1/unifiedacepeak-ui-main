@@ -519,18 +519,20 @@ const ListItem = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white rounded-lg shadow-lg border border-gray-200 p-1 min-w-[200px]">
                   <DropdownMenuItem
-                    className="flex items-center gap-3 p-2 text-xs font-normal cursor-pointer rounded-md hover:bg-gray-50"
+                    className="group flex items-center gap-3 p-2 text-xs font-normal cursor-pointer rounded-md hover:bg-[#fff1f2]"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleUnread({ chatId: chat?.chatId, type: 'read' }, true);
                     }}
                   >
                     {/* <LetterOpenedLine className="text-gray-900 w-4 h-4" /> */}
-                    <LetterOpenedLine className="w-3.5 h-3.5 text-gray-600" />
-                    <span className="text-gray-700">Mark as read</span>
+                    <LetterOpenedLine className="w-3.5 h-3.5 text-gray-900 transition-colors group-hover:text-primary" />
+                    <span className="text-gray-900 transition-colors group-hover:text-primary">
+                      Mark as read
+                    </span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="flex items-center gap-3 p-2 text-xs font-normal cursor-pointer rounded-md hover:bg-gray-50"
+                    className="group flex items-center gap-3 p-2 text-xs font-normal cursor-pointer rounded-md hover:bg-[#fff1f2]"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleFavorite(chat);
@@ -538,18 +540,22 @@ const ListItem = ({
                   >
                     {isFavorited ? (
                       <>
-                        <StarOff className="w-3.5 h-3.5 text-gray-600" />
-                        <span className="text-gray-700">Remove from favorites</span>
+                        <StarOff className="w-3.5 h-3.5 text-gray-900 transition-colors group-hover:text-primary" />
+                        <span className="text-gray-900 transition-colors group-hover:text-primary">
+                          Remove from favorites
+                        </span>
                       </>
                     ) : (
                       <>
-                        <Star className="w-3.5 h-3.5 text-gray-600" />
-                        <span className="text-gray-700">Add to favorites</span>
+                        <Star className="w-3.5 h-3.5 text-gray-900 transition-colors group-hover:text-primary" />
+                        <span className="text-gray-900 transition-colors group-hover:text-primary">
+                          Add to favorites
+                        </span>
                       </>
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="flex items-center gap-3 p-2 text-xs font-normal cursor-pointer rounded-md hover:bg-gray-50"
+                    className="group flex items-center gap-3 p-2 text-xs font-normal cursor-pointer rounded-md hover:bg-[#fff1f2]"
                     onClick={(e) => {
                       e.stopPropagation();
                       togglePinConversation(chat);
@@ -557,20 +563,24 @@ const ListItem = ({
                   >
                     {isConversationPinned ? (
                       <>
-                        <PinOff className="w-3.5 h-3.5 text-gray-600" />
-                        <span className="text-gray-700">Unpin conversation</span>
+                        <PinOff className="w-3.5 h-3.5 text-gray-900 transition-colors group-hover:text-primary" />
+                        <span className="text-gray-900 transition-colors group-hover:text-primary">
+                          Unpin conversation
+                        </span>
                       </>
                     ) : (
                       <>
-                        <Pin className="w-3.5 h-3.5 text-gray-600" />
-                        <span className="text-gray-700">Pin conversation</span>
+                        <Pin className="w-3.5 h-3.5 text-gray-900 transition-colors group-hover:text-primary" />
+                        <span className="text-gray-900 transition-colors group-hover:text-primary">
+                          Pin conversation
+                        </span>
                       </>
                     )}
                   </DropdownMenuItem>
 
                   {!isOwnChat && (
                     <DropdownMenuItem
-                      className="flex items-center gap-3 p-2 text-xs font-normal cursor-pointer rounded-md hover:bg-gray-50"
+                      className="group flex items-center gap-3 p-2 text-xs font-normal cursor-pointer rounded-md hover:bg-[#fff1f2]"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleMute(chat);
@@ -578,13 +588,17 @@ const ListItem = ({
                     >
                       {isMuted ? (
                         <>
-                          <Bell className="w-3.5 h-3.5 text-gray-600" />
-                          <span className="text-gray-700">Unmute conversation</span>
+                          <Bell className="w-3.5 h-3.5 text-gray-900 transition-colors group-hover:text-primary" />
+                          <span className="text-gray-900 transition-colors group-hover:text-primary">
+                            Unmute conversation
+                          </span>
                         </>
                       ) : (
                         <>
-                          <BellOff className="w-3.5 h-3.5 text-gray-600" />
-                          <span className="text-gray-700">Mute conversation</span>
+                          <BellOff className="w-3.5 h-3.5 text-gray-900 transition-colors group-hover:text-primary" />
+                          <span className="text-gray-900 transition-colors group-hover:text-primary">
+                            Mute conversation
+                          </span>
                         </>
                       )}
                     </DropdownMenuItem>
@@ -1120,7 +1134,7 @@ const SidebarContent = ({
                   }}
                   placeholder="Search chats…"
                   aria-label="Search chats"
-                  className="h-[34px] w-[190px] max-w-[46vw] rounded-[9px] border border-[var(--mcm-accent-edge)] bg-white px-3 text-[13px] text-gray-900 outline-none shadow-[0_1px_3px_rgba(17,17,17,0.06)] placeholder:text-[var(--mcm-ink-4)]"
+                  className="h-[34px] w-[190px] max-w-[46vw] rounded-full border border-[var(--mcm-accent-edge)] bg-white px-4 text-[13px] text-gray-900 outline-none shadow-[0_1px_3px_rgba(17,17,17,0.06)] placeholder:text-[var(--mcm-ink-4)]"
                 />
               ) : (
                 <button
@@ -1433,7 +1447,13 @@ const Messenger = ({ mode = 'messenger' }: { mode?: MessengerMode }) => {
       return;
     }
 
-    if (chatType !== normalizedChatTypeInUrl) {
+    // All Channels never writes a `chatType` URL param (the branch above
+    // strips it back out the moment it appears), so `normalizedChatTypeInUrl`
+    // can never equal 'all_channels' — without this guard the block below
+    // saw a permanent mismatch and looped: navigate → param reappears →
+    // stripped → mismatch again → setSelectedChat(null) on every cycle,
+    // wiping out row selection almost as soon as it was made.
+    if (chatType !== 'all_channels' && chatType !== normalizedChatTypeInUrl) {
       setSelectedChat(null);
       if (chatType === 'chat') {
         navigate(location.pathname);

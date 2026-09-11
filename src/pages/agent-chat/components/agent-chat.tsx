@@ -399,8 +399,11 @@ const AgentChat = ({
     ];
 
     return (
-      <div className="h-full w-full overflow-y-auto bg-ucass-gray">
-        <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col items-center gap-8 px-6 py-10 lg:flex-row lg:items-center lg:gap-10">
+      <div
+        className="no-scrollbar h-full w-full overflow-y-auto bg-ucass-gray"
+        style={{ overflowAnchor: 'none' }}
+      >
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-6 py-10 lg:flex-row lg:items-start lg:gap-10">
           {/* Left: welcome hero */}
           <div className="w-full lg:flex-1">
             <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">

@@ -9600,7 +9600,7 @@
   font-size: 12.5px;
   font-weight: 500;
   color: #64748b;
-  background: #f5f5f5;
+  background: transparent;
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -9609,11 +9609,12 @@
 }
 .mcm-chat-tabs button:hover:not(.on) {
   color: #e50914;
-  background: #fdeaec;
 }
+/* The active tab only — everything else stays plain text with no pill. */
 .mcm-chat-tabs button.on {
-  color: #ffffff;
-  background: #0b1220;
+  color: #ffffff !important;
+  background: #0b1220 !important;
+  font-weight: 500;
 }
 
 /* ============================================================
@@ -9695,4 +9696,17 @@
   color: #171717 !important;
   font-size: 12.5px !important;
   font-weight: 700 !important;
+}
+
+/* All Channels' channel filter tabs (Facebook / Instagram / WhatsApp /
+   Telegram) — each one its own separate rounded pill, not merged into a
+   shared capsule. CHANNELS_ICON hard-codes w-8/h-8 for other contexts (the
+   old per-channel page headers), so the size is reset here. */
+.mcm-channel-tab {
+  width: 56px;
+  height: 56px;
+}
+.mcm-channel-tab-icon svg {
+  width: 32px !important;
+  height: 32px !important;
 }
