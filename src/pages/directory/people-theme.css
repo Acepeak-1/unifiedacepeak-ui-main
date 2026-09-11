@@ -137,21 +137,62 @@
   white-space: nowrap;
   color: #171717;
 }
-.ppl-red-theme .btn.ghost {
-  background: #171717;
-  border-color: #171717;
-  color: #fff;
+/* Every header/footer button on this page (Groups, Export, Invite person,
+   Close, Edit, ...) is a plain <button class="btn ...">, not the shadcn
+   Button — so mcm-page.css's generic reset for plain buttons
+   (`button:not([data-slot='button']):...`) applies to all of them. That
+   reset is unlayered CSS with higher specificity (.mcm-page + button type +
+   3 :not() attribute selectors) than a 3-4-class page override, so it wins
+   background/border/color regardless of source order — same reason the
+   invite-dialog's own .btn.primary rule below already needs !important.
+   Pinning every state (rest/hover/focus/active) here rather than depending
+   on winning that fight through specificity alone. */
+.ppl-red-theme .btn.ghost,
+.ppl-red-theme .btn.ghost:focus,
+.ppl-red-theme .btn.ghost:active {
+  background: #171717 !important;
+  border-color: #171717 !important;
+  color: #fff !important;
 }
 .ppl-red-theme .btn.ghost .ic {
-  color: #fff;
+  color: #fff !important;
 }
 .ppl-red-theme .btn.ghost:hover {
-  background: #000;
-  border-color: #000;
-  color: #fff;
+  background: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+}
+/* `.soft-accent` (mcm-page.css) sets its own pink-wash background on top of
+   the above — same fight, same fix. */
+.ppl-red-theme .btn.ghost.soft-accent,
+.ppl-red-theme .btn.ghost.soft-accent:focus,
+.ppl-red-theme .btn.ghost.soft-accent:active,
+.ppl-red-theme .btn.ghost.soft-accent .ic {
+  background: #171717 !important;
+  border-color: #171717 !important;
+  color: #fff !important;
+}
+.ppl-red-theme .btn.ghost.soft-accent:hover {
+  background: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+}
+/* "Invite person" — explicit black in every state instead of routing
+   through --accent or relying on cascade order against the reset above. */
+.ppl-red-theme .btn.primary,
+.ppl-red-theme .btn.primary:focus,
+.ppl-red-theme .btn.primary:active {
+  background: #171717 !important;
+  border-color: #171717 !important;
+  color: #fff !important;
 }
 .ppl-red-theme .btn.primary:hover {
-  border-color: #fca5a5;
+  background: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+}
+.ppl-red-theme .btn.primary .ic {
+  color: #fff !important;
 }
 
 .ppl-red-theme .panel-card {

@@ -248,7 +248,7 @@ const Roles = () => {
 
       {(creating || editing) && (
         <Dialog open={creating || Boolean(editing)} onOpenChange={(val) => !val && closeForm()}>
-          <DialogContent className="flex w-[92vw] max-w-[760px] max-h-[85vh] flex-col gap-0 overflow-hidden bg-white p-0">
+          <DialogContent className="rol-modal-theme flex w-[92vw] max-w-[760px] max-h-[85vh] flex-col gap-0 overflow-hidden bg-white p-0">
             <DialogTitle className="dir-serif-heading flex items-center gap-2 px-5 py-4 text-gray-900">
               {editing ? `Update role (${editing?.name || ''})` : 'New role'}
               <CustomTooltip
