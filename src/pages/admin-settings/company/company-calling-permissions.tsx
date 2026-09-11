@@ -165,7 +165,7 @@ interface PermissionCardProps {
 const PermissionCard = ({ icon, title, summary, children }: PermissionCardProps) => (
   <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
     <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 p-4">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ucass-primary-200 text-primary">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center text-primary">
         {icon}
       </div>
       <div className="flex min-w-[220px] flex-1 items-center gap-1.5">
