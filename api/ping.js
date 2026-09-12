@@ -11,6 +11,10 @@ export default function handler(req, res) {
       target: process.env.API_PROXY_TARGET || 'https://api2.acepeak.com',
       tenant: process.env.API_PROXY_TENANT_ORIGIN || 'https://ucaas.acepeak.com',
       viteApiBaseUrlIsSet: Boolean(process.env.VITE_API_BASE_URL),
+      /* Names only, never values: the point is to see what the platform adds
+         to a request on its way through, and a header's contents here could
+         be somebody's bearer token. */
+      incomingHeaderNames: Object.keys(req.headers).sort(),
     }),
   );
 }
