@@ -65,6 +65,28 @@ const HOP_BY_HOP = new Set([
   'upgrade',
 ]);
 
+/* Headers the platform adds on the way into this function, none of which the
+   dev proxy this mirrors ever sends - so forwarding them makes the deployed
+   request differ from the local one that works.
+
+   x-forwarded-host is the harmful one: it names the deployment's own hostname,
+   and a backend that trusts proxy headers will believe that over the Origin
+   set below, which is the whole mechanism this proxy depends on. The
+   x-forwarded-for/x-real-ip family is dropped for the same reason - a request
+   should look like it comes from here, consistently, rather than carrying a
+   client address the API may bind a one-time code to and then re-check from a
+   different instance's address.
+
+   x-vercel-oidc-token and the proxy signatures are dropped because they are
+   credentials: they identify this deployment to the platform, and an API on
+   someone else's host has no business receiving them. */
+const isInjectedByPlatform = (name) =>
+  name.startsWith('x-vercel-') ||
+  name.startsWith('x-forwarded-') ||
+  name === 'forwarded' ||
+  name === 'x-real-ip' ||
+  name === 'x-invocation-id';
+
 /* The platform parses JSON and form bodies for us and leaves anything else -
    a file upload, most importantly - unread on the stream. Forward whichever
    one actually happened, byte for byte where it matters. */
@@ -95,7 +117,8 @@ export default async function handler(req, res) {
 
   const headers = {};
   for (const [name, value] of Object.entries(req.headers)) {
-    if (HOP_BY_HOP.has(name.toLowerCase()) || value === undefined) continue;
+    const lower = name.toLowerCase();
+    if (HOP_BY_HOP.has(lower) || isInjectedByPlatform(lower) || value === undefined) continue;
     headers[name] = Array.isArray(value) ? value.join(', ') : value;
   }
   /* The whole point of the hop: present the tenant the API knows, not the
