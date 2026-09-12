@@ -26,8 +26,15 @@
  * there directly again, which is the CORS failure above.
  *
  * Written against the (req, res) signature rather than Web Request/Response:
- * it is the form every version of the Node runtime accepts, and a catch-all
- * that silently fails to register is indistinguishable from a missing route.
+ * it is the form every version of the Node runtime accepts.
+ *
+ * Reached through the /api/(.*) rewrite in vercel.json rather than by a
+ * bracketed catch-all filename (api/[...path].js), which this project never
+ * registered - every /api/* path answered with the platform's own NOT_FOUND
+ * while a plain sibling file in the same directory served fine. The rewrite
+ * hands the original path over in `path`, since the request that arrives here
+ * names this file instead. Rewrites are consulted only after the filesystem,
+ * so a real function file (api/ping.js) still wins over this one.
  */
 
 const API_ORIGIN = stripTrailingSlash(process.env.API_PROXY_TARGET || 'https://api2.acepeak.com');
@@ -77,9 +84,14 @@ async function readBody(req) {
 }
 
 export default async function handler(req, res) {
-  /* req.url is the path as asked for, "/api/..." and query included, which is
-     the same shape the API expects. */
-  const target = `${API_ORIGIN}${req.url}`;
+  /* Rebuild what the caller actually asked for: the rewrite replaced the path
+     with this file's own and moved the real one into `path`, so drop that
+     parameter again and keep whatever query the caller sent alongside it. */
+  const asked = new URL(req.url, 'http://proxy.invalid');
+  const forwardedPath = (asked.searchParams.get('path') || '').replace(/^\/+/, '');
+  asked.searchParams.delete('path');
+  const query = asked.searchParams.toString();
+  const target = `${API_ORIGIN}/api/${forwardedPath}${query ? `?${query}` : ''}`;
 
   const headers = {};
   for (const [name, value] of Object.entries(req.headers)) {
