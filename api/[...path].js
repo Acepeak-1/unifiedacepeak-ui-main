@@ -3,18 +3,18 @@
  * dev proxy in vite.config.ts. Everything below mirrors the reasoning there.
  *
  * Two things break when the built app talks to api2.acepeak.com straight from
- * the browser on a host the backend does not know (a *.vercel.app preview, for
- * instance):
+ * the browser on a host the backend does not know (a *.vercel.app deployment,
+ * for instance):
  *
  *   1. CORS. The API answers preflights but only echoes
  *      Access-Control-Allow-Origin for origins registered as a tenant, so the
  *      browser discards every response and the app renders the maintenance
  *      screen.
- *   2. Tenant resolution. The API picks the "website settings" record from the
- *      Origin/Referer of the request, so a request that arrives with an
- *      unknown origin matches no site and comes back 422 "Website settings not
- *      found" - which the login screen reports as bad credentials even when
- *      they are correct.
+ *   2. Tenant resolution. The API matches the "website settings" record on the
+ *      Origin/Referer of the request, so a request arriving with an unknown
+ *      origin matches no site and comes back 422 "Website settings not found" -
+ *      which the login screen reports as bad credentials even when they are
+ *      correct.
  *
  * Routing the calls through this function fixes both: the browser talks only to
  * its own origin (CORS never applies), and the hop to the API is made here,
@@ -22,7 +22,12 @@
  *
  * For this to be used, VITE_API_BASE_URL must be empty in the deployment's
  * environment, exactly as it is in the local .env, so the app's requests stay
- * relative and land here.
+ * relative and land here. Set it to the API's absolute URL and the browser goes
+ * there directly again, which is the CORS failure above.
+ *
+ * Written against the (req, res) signature rather than Web Request/Response:
+ * it is the form every version of the Node runtime accepts, and a catch-all
+ * that silently fails to register is indistinguishable from a missing route.
  */
 
 const API_ORIGIN = stripTrailingSlash(process.env.API_PROXY_TARGET || 'https://api2.acepeak.com');
@@ -37,8 +42,8 @@ function stripTrailingSlash(value) {
 /* Connection-level headers describe the hop that just ended, not the message,
    so they must not be replayed onto the next one. content-length goes with them
    because the body is re-sent here and fetch recomputes it; accept-encoding
-   because letting the API compress for us would mean decompressing before we
-   could hand the bytes back. */
+   because letting the API compress for us would mean decompressing before the
+   bytes could be handed back. */
 const HOP_BY_HOP = new Set([
   'accept-encoding',
   'connection',
@@ -53,47 +58,67 @@ const HOP_BY_HOP = new Set([
   'upgrade',
 ]);
 
-async function proxy(request) {
-  const incoming = new URL(request.url);
-  const target = `${API_ORIGIN}${incoming.pathname}${incoming.search}`;
+/* The platform parses JSON and form bodies for us and leaves anything else -
+   a file upload, most importantly - unread on the stream. Forward whichever
+   one actually happened, byte for byte where it matters. */
+async function readBody(req) {
+  if (req.method === 'GET' || req.method === 'HEAD') return undefined;
 
-  const headers = new Headers();
-  request.headers.forEach((value, name) => {
-    if (!HOP_BY_HOP.has(name.toLowerCase())) headers.set(name, value);
-  });
+  if (req.body !== undefined && req.body !== null) {
+    if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) return req.body;
+    return JSON.stringify(req.body);
+  }
+
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+  }
+  return chunks.length ? Buffer.concat(chunks) : undefined;
+}
+
+export default async function handler(req, res) {
+  /* req.url is the path as asked for, "/api/..." and query included, which is
+     the same shape the API expects. */
+  const target = `${API_ORIGIN}${req.url}`;
+
+  const headers = {};
+  for (const [name, value] of Object.entries(req.headers)) {
+    if (HOP_BY_HOP.has(name.toLowerCase()) || value === undefined) continue;
+    headers[name] = Array.isArray(value) ? value.join(', ') : value;
+  }
   /* The whole point of the hop: present the tenant the API knows, not the
      deployment's own hostname. */
-  headers.set('origin', TENANT_ORIGIN);
-  headers.set('referer', `${TENANT_ORIGIN}/`);
-
-  const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
+  headers.origin = TENANT_ORIGIN;
+  headers.referer = `${TENANT_ORIGIN}/`;
 
   let upstream;
   try {
     upstream = await fetch(target, {
-      method: request.method,
+      method: req.method,
       headers,
-      body: hasBody ? await request.arrayBuffer() : undefined,
+      body: await readBody(req),
       /* A 3xx is the API's answer and belongs to the browser, which knows its
          own origin; following it here would resolve it against the API host. */
       redirect: 'manual',
     });
   } catch (error) {
-    /* A failure to reach the API at all is a gateway problem, not the API
+    /* Failing to reach the API at all is a gateway problem, not the API
        answering - say so rather than passing up a misleading status. */
-    return new Response(
+    res.statusCode = 502;
+    res.setHeader('content-type', 'application/json');
+    res.end(
       JSON.stringify({ success: false, message: `API unreachable: ${error?.message || error}` }),
-      { status: 502, headers: { 'content-type': 'application/json' } },
     );
+    return;
   }
 
-  const responseHeaders = new Headers();
   upstream.headers.forEach((value, name) => {
     const lower = name.toLowerCase();
-    /* The body is streamed back as-is, so length/encoding are recomputed for
-       this response; copying the old ones would describe the wrong message.
-       CORS headers are dropped because the browser's request was same-origin -
-       an Allow-Origin naming the tenant would only contradict that. */
+    /* The body is re-sent here, so length and encoding are recomputed for this
+       response; copying the old ones would describe the wrong message. CORS
+       headers are dropped because the browser's request was same-origin - an
+       Allow-Origin naming the tenant would only contradict that. Set-Cookie is
+       handled below, where it can stay several headers. */
     if (
       lower === 'content-encoding' ||
       lower === 'content-length' ||
@@ -104,28 +129,16 @@ async function proxy(request) {
     ) {
       return;
     }
-    responseHeaders.append(name, value);
+    res.setHeader(name, value);
   });
 
   /* Several Set-Cookie headers must stay several headers; the iteration above
-     would fold them into one comma-joined string that no browser will parse. */
+     would fold them into one comma-joined string no browser will parse. */
   if (typeof upstream.headers.getSetCookie === 'function') {
-    for (const cookie of upstream.headers.getSetCookie()) {
-      responseHeaders.append('set-cookie', cookie);
-    }
+    const cookies = upstream.headers.getSetCookie();
+    if (cookies.length) res.setHeader('set-cookie', cookies);
   }
 
-  return new Response(upstream.body, {
-    status: upstream.status,
-    statusText: upstream.statusText,
-    headers: responseHeaders,
-  });
+  res.statusCode = upstream.status;
+  res.end(Buffer.from(await upstream.arrayBuffer()));
 }
-
-export const GET = proxy;
-export const POST = proxy;
-export const PUT = proxy;
-export const PATCH = proxy;
-export const DELETE = proxy;
-export const HEAD = proxy;
-export const OPTIONS = proxy;
